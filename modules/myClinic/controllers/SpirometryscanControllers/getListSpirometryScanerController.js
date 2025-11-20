@@ -1,0 +1,64 @@
+import SpirometryScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/SpirometryScansTemplates/SpirometryScan.js";
+import User, { decrypt } from "../../../../common/models/Auth/users.js";
+import dayjs from "dayjs";
+
+const getListSpirometryScanerController = async (req, res) => {
+  const { id } = req.params; // Получаем ID пациента из параметров запроса
+  const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
+
+  console.log(
+    `[${timestamp}] 🔍 [SpirometryScan] Запрос на список КТ-исследований для пациента ${id}`
+  );
+
+  try {
+    const spirometrScansRaw = await SpirometryScan.find({ patientId: id }) // Фильтруем по patientId
+      .populate("patientId", "firstNameEncrypted lastNameEncrypted birthDate")
+      .populate("doctor", "firstNameEncrypted lastNameEncrypted birthDate")
+      .populate("reportTemplate")
+      .populate("diagnosisTemplate")
+      .populate("recomandationTemplate");
+
+    // 🔓 Расшифровка имён и фамилий
+    const spirometrScan = spirometrScansRaw.map((scan) => {
+      const scanObj = scan.toObject();
+
+      if (scanObj.doctor && scanObj.doctor.firstNameEncrypted) {
+        scanObj.doctor.firstName = decrypt(scanObj.doctor.firstNameEncrypted);
+        scanObj.doctor.lastName = decrypt(scanObj.doctor.lastNameEncrypted);
+      }
+
+      if (scanObj.patientId && scanObj.patientId.firstNameEncrypted) {
+        scanObj.patientId.firstName = decrypt(
+          scanObj.patientId.firstNameEncrypted
+        );
+        scanObj.patientId.lastName = decrypt(
+          scanObj.patientId.lastNameEncrypted
+        );
+      }
+
+      return scanObj;
+    });
+
+    console.log(
+      `[${timestamp}] ✅ Получено ${spirometrScan.length} КТ-исследований`
+    );
+
+    res.status(200).json({
+      success: true,
+      count: spirometrScan.length,
+      data: spirometrScan,
+      message: "Список исследований успешно получен",
+    });
+  } catch (error) {
+    console.error(
+      `[${timestamp}] ❌ Ошибка получения исследований: ${error.message}`
+    );
+    res.status(500).json({
+      success: false,
+      message: "Ошибка при получении исследований",
+      error: error.message,
+    });
+  }
+};
+
+export default getListSpirometryScanerController;
