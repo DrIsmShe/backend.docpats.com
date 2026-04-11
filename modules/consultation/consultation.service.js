@@ -92,6 +92,7 @@ export async function getStatus(userId, guestId) {
       max: maxE,
     },
     plan,
+    isAuthenticated: !!userId,
     limits: {
       consultationGuest: CONSULTATION_LIMITS.guest,
       epicrisisGuest: EPICRISIS_LIMITS.guest,

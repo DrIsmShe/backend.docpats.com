@@ -182,6 +182,10 @@ const userSchema = new mongoose.Schema(
       ],
       default: "free",
     },
+    subscriptionExpiresAt: {
+      type: Date,
+      default: null,
+    },
     emailHash: { type: String, required: true, unique: true, index: true },
     emailEncrypted: { type: String, required: true },
     firstNameHash: { type: String, required: true, index: true },
