@@ -169,7 +169,19 @@ const userSchema = new mongoose.Schema(
     lastOffenseAt: { type: Date },
     blockedUntil: { type: Date, default: null },
     permanentlyBanned: { type: Boolean, default: false },
-
+    subscriptionPlan: {
+      type: String,
+      enum: [
+        "free",
+        "standard",
+        "premium",
+        "doctor_free",
+        "doctor_super",
+        "doctor_pro",
+        "clinic",
+      ],
+      default: "free",
+    },
     emailHash: { type: String, required: true, unique: true, index: true },
     emailEncrypted: { type: String, required: true },
     firstNameHash: { type: String, required: true, index: true },

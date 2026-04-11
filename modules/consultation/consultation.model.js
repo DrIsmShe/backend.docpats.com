@@ -6,6 +6,8 @@ const schema = new mongoose.Schema(
     guestId: { type: String, default: null },
     consultationsUsed: { type: Number, default: 0 },
     epicrisesUsed: { type: Number, default: 0 },
+    dailyMessagesUsed: { type: Number, default: 0 },
+    dailyMessagesResetAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

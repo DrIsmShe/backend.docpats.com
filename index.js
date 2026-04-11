@@ -85,7 +85,7 @@ app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use("/api/consultation", consultationRoutes);
+
 // ======================= SESSION =======================
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URL;
 
@@ -140,6 +140,10 @@ const sessionMiddleware = session({
 });
 
 app.use(sessionMiddleware);
+
+// ✅ ИСПРАВЛЕНО: consultation routes теперь после sessionMiddleware,
+// чтобы req.session был доступен в контроллерах
+app.use("/api/consultation", consultationRoutes);
 
 process.on("unhandledRejection", (err) => {
   if (err?.message?.includes("Unable to find the session to touch")) {
