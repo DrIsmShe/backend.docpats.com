@@ -1,31 +1,39 @@
 import {
   checkConsultationSession,
   checkEpicrisisSession,
-  checkDailyMessageLimit,
   getStatus,
   chatWithClaude,
   buildEpicrisis,
 } from "./consultation.service.js";
 import User from "../../common/models/Auth/users.js";
 
+// ─── Извлечь userId из сессии (всегда строка или null) ────────────
+function extractUserId(req) {
+  return req.session?.userId ? String(req.session.userId) : null;
+}
+
+function extractGuestId(req) {
+  return req.headers["x-guest-id"] || req.ip;
+}
+
 // ─── GET /api/consultation/session-status ─────────────────────────
 export async function sessionStatus(req, res) {
   try {
-    const userId = req.session?.userId || null;
-    const guestId = req.headers["x-guest-id"] || req.ip;
-    res.json(await getStatus(userId, guestId));
+    const userId = extractUserId(req);
+    const guestId = extractGuestId(req);
+    const data = await getStatus(userId, guestId);
+    // isAuthenticated уже включён в data из getStatus()
+    res.json(data);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 }
 
 // ─── POST /api/consultation/start ─────────────────────────────────
-// Проверяет лимит по тарифному плану и увеличивает счётчик.
-// Блокирует 429 если лимит исчерпан.
 export async function startSession(req, res) {
   try {
-    const userId = req.session?.userId || null;
-    const guestId = req.headers["x-guest-id"] || req.ip;
+    const userId = extractUserId(req);
+    const guestId = extractGuestId(req);
 
     const result = await checkConsultationSession(userId, guestId);
     if (!result.allowed) {
@@ -39,29 +47,19 @@ export async function startSession(req, res) {
 }
 
 // ─── POST /api/consultation/message ───────────────────────────────
-// Проверяет:
-// 1. Что сессия была открыта через /start
-// 2. Дневной лимит сообщений по тарифному плану
 export async function chat(req, res) {
   try {
-    const userId = req.session?.userId || null;
-    const guestId = req.headers["x-guest-id"] || req.ip;
+    const userId = extractUserId(req);
+    const guestId = extractGuestId(req);
 
     const status = await getStatus(userId, guestId);
 
-    // Если пользователь вообще не открывал сессию через /start — отказываем
     if (status.consultations.used === 0) {
       return res.status(403).json({ error: "NO_ACTIVE_SESSION" });
     }
 
-    // Проверяем дневной лимит сообщений
-    const msgLimit = await checkDailyMessageLimit(userId, guestId);
-    if (!msgLimit.allowed) {
-      return res.status(429).json({
-        error: "DAILY_MESSAGE_LIMIT",
-        message: "Дневной лимит сообщений исчерпан",
-        resetsAt: msgLimit.resetsAt,
-      });
+    if (status.consultations.remaining <= 0) {
+      return res.status(429).json({ error: "SESSION_LIMIT" });
     }
 
     const { messages, patientInfo } = req.body;
@@ -70,7 +68,7 @@ export async function chat(req, res) {
     }
 
     const reply = await chatWithClaude(messages, patientInfo || {});
-    res.json({ reply, dailyRemaining: msgLimit.remaining });
+    res.json({ reply });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -79,8 +77,8 @@ export async function chat(req, res) {
 // ─── POST /api/consultation/epicrisis ─────────────────────────────
 export async function epicrisis(req, res) {
   try {
-    const userId = req.session?.userId || null;
-    const guestId = req.headers["x-guest-id"] || req.ip;
+    const userId = extractUserId(req);
+    const guestId = extractGuestId(req);
 
     const limitResult = await checkEpicrisisSession(userId, guestId);
     if (!limitResult.allowed) {

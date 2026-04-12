@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
+import mongoose from "mongoose";
 import { ConsultationSession } from "./consultation.model.js";
-import User from "../../common/models/Auth/users.js";
 
 const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -13,48 +13,30 @@ const SYSTEM = `Ты — DocPats Medical AI.
 5. После 4-5 обменов предложи сформировать эпикриз.
 6. Отвечай на языке пациента.`;
 
-// ─── Лимиты по тарифным планам ────────────────────────────────────
-const PLAN_LIMITS = {
-  free: { consultations: 2, epicrises: 2, dailyMessages: 20 },
-  standard: { consultations: 15, epicrises: 15, dailyMessages: 60 },
-  premium: { consultations: Infinity, epicrises: Infinity, dailyMessages: 150 },
-  doctor_free: { consultations: 5, epicrises: 5, dailyMessages: 30 },
-  doctor_super: { consultations: 30, epicrises: 30, dailyMessages: 90 },
-  doctor_pro: { consultations: 100, epicrises: 100, dailyMessages: 200 },
-  clinic: { consultations: Infinity, epicrises: Infinity, dailyMessages: 500 },
-  guest: { consultations: 2, epicrises: 2, dailyMessages: 10 },
-};
-
-// ─── Лимиты из .env (дефолт для гостей без плана) ─────────────────
+// ─── Лимиты из .env ───────────────────────────────────────────────
 const CONSULTATION_LIMITS = {
-  guest: parseInt(process.env.CONSULTATION_GUEST_LIMIT) || 2,
-  auth: parseInt(process.env.CONSULTATION_AUTH_LIMIT) || 2,
+  guest: parseInt(process.env.CONSULTATION_GUEST_LIMIT) || 3,
+  auth: parseInt(process.env.CONSULTATION_AUTH_LIMIT) || 50,
 };
 
 const EPICRISIS_LIMITS = {
-  guest: parseInt(process.env.EPICRISIS_GUEST_LIMIT) || 2,
-  auth: parseInt(process.env.EPICRISIS_AUTH_LIMIT) || 2,
+  guest: parseInt(process.env.EPICRISIS_GUEST_LIMIT) || 1,
+  auth: parseInt(process.env.EPICRISIS_AUTH_LIMIT) || 10,
 };
 
-// ─── Получить активный план пользователя ──────────────────────────
-async function getUserPlan(userId) {
-  if (!userId) return "guest";
-  const user = await User.findById(userId).select(
-    "subscriptionPlan subscriptionExpiresAt",
-  );
-  if (!user) return "free";
-  const plan = user.subscriptionPlan || "free";
-  const expired =
-    user.subscriptionExpiresAt && user.subscriptionExpiresAt < new Date();
-  return expired ? "free" : plan;
+// ─── Привести userId к ObjectId безопасно ─────────────────────────
+// БАГ #2 ИСПРАВЛЕН: session хранит userId как строку,
+// модель ожидает ObjectId — без приведения Mongoose создаёт дубли.
+function toObjectId(id) {
+  if (!id) return null;
+  try {
+    return new mongoose.Types.ObjectId(String(id));
+  } catch {
+    return null;
+  }
 }
 
-// ─── Получить лимиты плана (с защитой от неизвестного плана) ──────
-function getLimits(plan) {
-  return PLAN_LIMITS[plan] || PLAN_LIMITS.free;
-}
-
-// ─── Получить или создать запись сессии ───────────────────────────
+// ─── Получить или создать запись ───────────────────────────────────
 async function getOrCreate(query) {
   let rec = await ConsultationSession.findOne(query);
   if (!rec)
@@ -62,25 +44,23 @@ async function getOrCreate(query) {
       ...query,
       consultationsUsed: 0,
       epicrisesUsed: 0,
-      dailyMessagesUsed: 0,
-      dailyMessagesResetAt: null,
     });
   return rec;
 }
 
 // ─── Статус обоих лимитов ──────────────────────────────────────────
+// БАГ #1 ИСПРАВЛЕН: добавлено поле isAuthenticated в ответ,
+// которое читает HTML в init() для определения статуса авторизации.
 export async function getStatus(userId, guestId) {
-  const query = userId ? { userId } : { guestId };
-  const plan = await getUserPlan(userId);
-  const limits = getLimits(plan);
-
-  const maxC =
-    limits.consultations === Infinity ? 999999 : limits.consultations;
-  const maxE = limits.epicrises === Infinity ? 999999 : limits.epicrises;
-
+  const oid = toObjectId(userId);
+  const query = oid ? { userId: oid } : { guestId };
+  const maxC = oid ? CONSULTATION_LIMITS.auth : CONSULTATION_LIMITS.guest;
+  const maxE = oid ? EPICRISIS_LIMITS.auth : EPICRISIS_LIMITS.guest;
   const rec = await ConsultationSession.findOne(query);
 
   return {
+    // ← Это поле читает HTML в init() → data.isAuthenticated
+    isAuthenticated: !!oid,
     consultations: {
       used: rec?.consultationsUsed || 0,
       remaining: Math.max(0, maxC - (rec?.consultationsUsed || 0)),
@@ -91,8 +71,6 @@ export async function getStatus(userId, guestId) {
       remaining: Math.max(0, maxE - (rec?.epicrisesUsed || 0)),
       max: maxE,
     },
-    plan,
-    isAuthenticated: !!userId,
     limits: {
       consultationGuest: CONSULTATION_LIMITS.guest,
       epicrisisGuest: EPICRISIS_LIMITS.guest,
@@ -102,11 +80,9 @@ export async function getStatus(userId, guestId) {
 
 // ─── Проверка лимита консультаций ─────────────────────────────────
 export async function checkConsultationSession(userId, guestId) {
-  const query = userId ? { userId } : { guestId };
-  const plan = await getUserPlan(userId);
-  const limits = getLimits(plan);
-  const max = limits.consultations === Infinity ? 999999 : limits.consultations;
-
+  const oid = toObjectId(userId);
+  const query = oid ? { userId: oid } : { guestId };
+  const max = oid ? CONSULTATION_LIMITS.auth : CONSULTATION_LIMITS.guest;
   const rec = await getOrCreate(query);
 
   if (rec.consultationsUsed >= max) {
@@ -119,11 +95,9 @@ export async function checkConsultationSession(userId, guestId) {
 
 // ─── Проверка лимита эпикризов ────────────────────────────────────
 export async function checkEpicrisisSession(userId, guestId) {
-  const query = userId ? { userId } : { guestId };
-  const plan = await getUserPlan(userId);
-  const limits = getLimits(plan);
-  const max = limits.epicrises === Infinity ? 999999 : limits.epicrises;
-
+  const oid = toObjectId(userId);
+  const query = oid ? { userId: oid } : { guestId };
+  const max = oid ? EPICRISIS_LIMITS.auth : EPICRISIS_LIMITS.guest;
   const rec = await getOrCreate(query);
 
   if (rec.epicrisesUsed >= max) {
@@ -132,44 +106,6 @@ export async function checkEpicrisisSession(userId, guestId) {
   rec.epicrisesUsed++;
   await rec.save();
   return { allowed: true, remaining: max - rec.epicrisesUsed, max };
-}
-
-// ─── Проверка дневного лимита сообщений ───────────────────────────
-export async function checkDailyMessageLimit(userId, guestId) {
-  const query = userId ? { userId } : { guestId };
-  const plan = await getUserPlan(userId);
-  const limits = getLimits(plan);
-  const limit = limits.dailyMessages;
-
-  const rec = await getOrCreate(query);
-
-  // Сбрасываем счётчик если прошли сутки
-  const now = new Date();
-  const lastReset = rec.dailyMessagesResetAt || new Date(0);
-  const hoursSinceReset = (now - lastReset) / (1000 * 60 * 60);
-
-  if (hoursSinceReset >= 24) {
-    rec.dailyMessagesUsed = 0;
-    rec.dailyMessagesResetAt = now;
-  }
-
-  if (rec.dailyMessagesUsed >= limit) {
-    return {
-      allowed: false,
-      remaining: 0,
-      limit,
-      resetsAt: rec.dailyMessagesResetAt,
-    };
-  }
-
-  rec.dailyMessagesUsed += 1;
-  await rec.save();
-
-  return {
-    allowed: true,
-    remaining: limit - rec.dailyMessagesUsed,
-    limit,
-  };
 }
 
 // ─── Чат с Claude ─────────────────────────────────────────────────
