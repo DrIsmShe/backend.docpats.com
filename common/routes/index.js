@@ -14,6 +14,9 @@ import AiAssistentModule from "../../modules/aiAssistant/index.js";
 import communicationModule from "../../modules/communication/index.js";
 import translationArticle from "../routes/article.routes.js";
 import translationScientificArticle from "../routes/articleScine.routes.js";
+import surgeryRoutes from "../../modules/surgery/surgicalCase.routes.js";
+import simulationRoutes from "../../modules/surgery/simulation.routes.js";
+
 const router = Router();
 
 router.use("/doctor-profile", doctorProfileModule);
@@ -28,8 +31,9 @@ router.use("/clinic", myClinicModule);
 router.use("/admin", adminModule);
 router.use("/ai", AiAssistentModule);
 router.use("/communication", communicationModule);
-router.use("/doctor-profile", translationArticle); // ← вот сюда
-router.use("/doctor-profile", translationScientificArticle); // ← вот сюда
-//router.use("/appointments", appointmentsModule);
+router.use("/doctor-profile", translationArticle);
+router.use("/doctor-profile", translationScientificArticle);
+router.use("/api/surgery", surgeryRoutes);
+router.use("/api/surgery", simulationRoutes);
 
-export default router; // 🔥 Важно! Экспортируем router как default
+export default router;

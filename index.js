@@ -1,5 +1,6 @@
 // ======================= IMPORTS =======================
 import "./modules/translation/translation.worker.js";
+import "./modules/surgery/simulation.worker.js";
 import express from "express";
 
 import dotenv from "dotenv";
@@ -34,7 +35,7 @@ import { initCommunicationGateway } from "./modules/communication/gateway/socket
 import { initCallGateway } from "./modules/communication/calls/call.gateway.js";
 
 import sitemapRoutes from "./common/sitemap/routes/sitemap.routes.js";
-
+import { setSimulationIo } from "./modules/surgery/simulationIo.js";
 import "./jobs/prefetch.job.js";
 
 // ======================= PATHS =======================
@@ -330,7 +331,7 @@ async function bootstrap(startPort = PORT) {
     initCallGateway(nsp);
 
     app.set("io", io);
-
+    setSimulationIo(io);
     server.listen(startPort, () =>
       console.log(
         `🚀 Сервер + WebSocket запущен: http://localhost:${startPort}`,

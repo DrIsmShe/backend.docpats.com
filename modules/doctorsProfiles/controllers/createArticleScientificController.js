@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { uploadFile } from "../../../common/middlewares/uploadMiddleware.js"; // ⬅ Добавили
 import { JSDOM } from "jsdom";
 import createDOMPurify from "dompurify";
-import { clearSitemapCache } from "../../../common/sitemap/services/sitemap.service.js";
+import { invalidateSitemapCache } from "../../../common/sitemap/services/sitemap.service.js";
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
 
