@@ -94,6 +94,7 @@ export const createArticleScientificController = async (req, res) => {
       authorId: userId,
       category,
       imageUrl,
+      originalLanguage: req.body.originalLanguage || "ru",
     });
 
     const saved = await newArticle.save();

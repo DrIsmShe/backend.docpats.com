@@ -31,9 +31,10 @@ const cleanResponse = (text) => {
   return text
     .replace(/```json/g, "")
     .replace(/```/g, "")
+    .replace(/^[^{]*/s, "") // убрать всё до первой {
+    .replace(/[^}]*$/s, "") // убрать всё после последней }
     .trim();
 };
-
 // -------- ONE CHUNK --------
 
 const translateSingle = async ({
