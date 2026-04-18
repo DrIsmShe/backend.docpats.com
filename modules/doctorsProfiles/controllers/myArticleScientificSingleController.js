@@ -52,6 +52,8 @@ export const myArticleScientificSingleController = async (req, res) => {
     }
 
     const targetLanguage =
+      req.headers["x-language"] ||
+      req.query.lang ||
       req.language ||
       req.headers["accept-language"]?.split(",")[0]?.split("-")[0] ||
       "en";
