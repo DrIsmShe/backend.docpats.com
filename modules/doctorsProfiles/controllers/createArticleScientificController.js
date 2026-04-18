@@ -99,15 +99,13 @@ export const createArticleScientificController = async (req, res) => {
 
     const saved = await newArticle.save();
     await invalidateSitemapCache();
-
     const LANGUAGES = ["ru", "en", "az", "tr", "ar"];
     for (const lang of LANGUAGES) {
-      if (lang === (saved.originalLanguage || "en")) continue;
       enqueueTranslation({
-        entity: saved,
+        entity: saved.toObject(),
         entityType: "ArticleScine",
         targetLanguage: lang,
-      }).catch(console.error); // fire-and-forget
+      }).catch(console.error);
     }
     return res.status(201).json({
       message: "ArticleScientific created",

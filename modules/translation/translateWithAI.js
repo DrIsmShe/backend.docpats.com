@@ -28,12 +28,14 @@ const normalizeField = (value) => {
 };
 
 const cleanResponse = (text) => {
-  return text
+  text = text
     .replace(/```json/g, "")
     .replace(/```/g, "")
-    .replace(/^[^{]*/s, "") // убрать всё до первой {
-    .replace(/[^}]*$/s, "") // убрать всё после последней }
     .trim();
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("No JSON found in response");
+  return text.slice(start, end + 1);
 };
 // -------- ONE CHUNK --------
 

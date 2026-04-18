@@ -54,23 +54,7 @@ export const getOrCreateTranslation = async ({
     String(entity._id),
     "→",
     targetLanguage,
-    "| original:",
-    entity.originalLanguage,
   );
-
-  // 1. язык совпадает
-  if (entity.originalLanguage === targetLanguage) {
-    console.log("↩️ Same language, returning original");
-    return {
-      title: entity.title,
-      content: entity.content,
-      abstract: entity.abstract || "",
-      displayedLanguage: entity.originalLanguage,
-      isOriginal: true,
-      isAutoTranslated: false,
-      translatedFrom: null,
-    };
-  }
 
   const cacheKey = getCacheKey({
     entityId: entity._id,
@@ -79,14 +63,14 @@ export const getOrCreateTranslation = async ({
     version: entity.translationVersion,
   });
 
-  // 2. Redis cache (async!)
+  // 1. Redis cache
   const cached = await getFromCache(cacheKey);
   if (cached) {
     console.log("⚡ Cache hit:", cacheKey);
     return cached;
   }
 
-  // 3. DB
+  // 2. DB
   const existing = await findTranslation({
     entityId: entity._id,
     entityType,
@@ -109,16 +93,16 @@ export const getOrCreateTranslation = async ({
     return result;
   }
 
-  // 4. нет перевода → в очередь
+  // 3. нет перевода → в очередь
   console.log("📭 No translation found, enqueueing...");
   await enqueueTranslation({ entity, entityType, targetLanguage });
 
-  // 5. возвращаем оригинал пока переводится
+  // 4. возвращаем оригинал пока переводится
   return {
     title: entity.title,
     content: entity.content,
     abstract: entity.abstract || "",
-    displayedLanguage: entity.originalLanguage,
+    displayedLanguage: entity.originalLanguage || targetLanguage,
     isOriginal: true,
     isAutoTranslated: false,
     translatedFrom: null,
@@ -130,15 +114,6 @@ export const getTranslationIfExists = async ({
   entityType,
   targetLanguage,
 }) => {
-  if (entity.originalLanguage === targetLanguage) {
-    return {
-      title: entity.title,
-      abstract: entity.abstract || "",
-      displayedLanguage: entity.originalLanguage,
-      isOriginal: true,
-    };
-  }
-
   const cacheKey = getCacheKey({
     entityId: entity._id,
     entityType,
@@ -169,7 +144,7 @@ export const getTranslationIfExists = async ({
   return {
     title: entity.title,
     abstract: entity.abstract || "",
-    displayedLanguage: entity.originalLanguage,
+    displayedLanguage: entity.originalLanguage || targetLanguage,
     isOriginal: true,
   };
 };
