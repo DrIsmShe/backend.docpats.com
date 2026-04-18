@@ -40,36 +40,13 @@ const isPlaceholder = (p) => {
 };
 
 const pickDefaultByGender = (g) => {
-  const s = String(g || "")
-    .trim()
-    .toLowerCase();
+  const s = String(g || "").trim().toLowerCase();
   if (
-    [
-      "female",
-      "f",
-      "woman",
-      "жен",
-      "женщина",
-      "ж",
-      "qadin",
-      "qadın",
-      "kadın",
-      "kadin",
-    ].includes(s)
+    ["female", "f", "woman", "жен", "женщина", "ж", "qadin", "qadın", "kadın", "kadin"].includes(s)
   )
     return "default/default-patient-woman.png";
   if (
-    [
-      "male",
-      "m",
-      "man",
-      "м",
-      "муж",
-      "мужчина",
-      "kişi",
-      "kisi",
-      "erkek",
-    ].includes(s)
+    ["male", "m", "man", "м", "муж", "мужчина", "kişi", "kisi", "erkek"].includes(s)
   )
     return "default/default-patient-man.png";
   return "default/default-patient.png";
@@ -82,41 +59,26 @@ const buildPhotoRelative = (patient, rawGender) => {
 };
 
 const ruGender = (g) => {
-  const s = String(g || "")
-    .trim()
-    .toLowerCase();
+  const s = String(g || "").trim().toLowerCase();
   if (
-    [
-      "male",
-      "m",
-      "man",
-      "м",
-      "муж",
-      "мужчина",
-      "мужской",
-      "kişi",
-      "kisi",
-      "erkek",
-    ].includes(s)
+    ["male", "m", "man", "м", "муж", "мужчина", "мужской", "kişi", "kisi", "erkek"].includes(s)
   )
     return "Мужской";
   if (
-    [
-      "female",
-      "f",
-      "woman",
-      "ж",
-      "жен",
-      "женщина",
-      "женский",
-      "qadin",
-      "qadın",
-      "kadin",
-      "kadın",
-    ].includes(s)
+    ["female", "f", "woman", "ж", "жен", "женщина", "женский", "qadin", "qadın", "kadin", "kadın"].includes(s)
   )
     return "Женский";
   return s || "—";
+};
+
+/** Безопасная расшифровка — ловит ошибки от битых ключей */
+const safeDecrypt = (val) => {
+  if (!val) return null;
+  try {
+    return decrypt(val) || null;
+  } catch (e) {
+    return null;
+  }
 };
 
 /** Берём пол из любых разумных ключей, включая User.bio */
@@ -125,10 +87,12 @@ const pickRawGender = (p = {}) => {
     p.gender,
     p.bio,
     p.BIO,
-    // если популятили userId → это User-документ
+    // если популятили linkedUserId/userId → это User-документ
+    p.linkedUserId?.gender,
+    p.linkedUserId?.bio,
     p.userId?.gender,
     p.userId?.bio,
-    // иногда поле может называться иначе
+    // запасные имена
     p.sex,
     p.genderText,
     p.gender_ru,
@@ -138,6 +102,19 @@ const pickRawGender = (p = {}) => {
     if (v != null && String(v).trim() !== "") return v;
   }
   return "";
+};
+
+/** Превращает массив в строку или возвращает строку как есть */
+const arrToStr = (v) => {
+  if (v == null) return "";
+  if (Array.isArray(v)) {
+    return v
+      .map((x) => (typeof x === "object" ? x?.name || x?.title || "" : String(x)))
+      .filter(Boolean)
+      .join(", ");
+  }
+  if (typeof v === "object") return v?.name || v?.title || "";
+  return String(v);
 };
 
 /* ========== controller ========== */
@@ -151,6 +128,12 @@ const getMyMedicalHistoryDetailsController = async (req, res) => {
       });
     }
 
+    /* ────────────────────────────────────────────────
+       ВАЖНО: в БД MedicalHistory поле называется `patientRef`,
+       а модель пациента указана в `patientTypeModel`
+       (например: "NewPatientPolyclinic").
+       Поэтому используем refPath-стиль: populate с динамической моделью.
+       ──────────────────────────────────────────────── */
     const history = await newPatientMedicalHistoryModel
       .findById(id)
       // автор записи
@@ -176,19 +159,17 @@ const getMyMedicalHistoryDetailsController = async (req, res) => {
         select: "position workplace educationInstitution profileImage",
         options: { strictPopulate: false },
       })
-      // пациент (из поликлиники) + вложенно попытаться подтянуть связанного User
+      // ✅ ПАЦИЕНТ — patientRef + linkedUserId внутри
       .populate({
-        path: "patientId",
+        path: "patientRef",
         options: { strictPopulate: false },
-        populate: [
-          // если в схеме NewPatientPolyclinic есть связь userId → User
-          {
-            path: "userId",
-            model: User, // важен сам класс модели, а не строка, чтобы не было "Use mongoose.model(name, schema)"
-            select: "bio gender",
-            options: { strictPopulate: false },
-          },
-        ],
+        populate: {
+          path: "linkedUserId",
+          model: User,
+          select:
+            "firstNameEncrypted lastNameEncrypted bio gender dateOfBirth avatar",
+          options: { strictPopulate: false },
+        },
       })
       .populate(
         "files allergies familyHistoryOfDisease operations chronicDiseases immunization"
@@ -201,45 +182,80 @@ const getMyMedicalHistoryDetailsController = async (req, res) => {
         .json({ success: false, message: "История болезни не найдена" });
     }
 
-    // --- врач ---
+    /* ───── врач ───── */
     if (history.doctorId) {
       history.doctorId.firstName =
         history.doctorId.firstName ??
-        decrypt(history.doctorId.firstNameEncrypted) ??
+        safeDecrypt(history.doctorId.firstNameEncrypted) ??
         null;
       history.doctorId.lastName =
         history.doctorId.lastName ??
-        decrypt(history.doctorId.lastNameEncrypted) ??
+        safeDecrypt(history.doctorId.lastNameEncrypted) ??
         null;
     }
     if (history.createdBy) {
       history.createdBy.firstName =
         history.createdBy.firstName ??
-        decrypt(history.createdBy.firstNameEncrypted) ??
+        safeDecrypt(history.createdBy.firstNameEncrypted) ??
         null;
       history.createdBy.lastName =
         history.createdBy.lastName ??
-        decrypt(history.createdBy.lastNameEncrypted) ??
+        safeDecrypt(history.createdBy.lastNameEncrypted) ??
         null;
     }
 
-    // --- пациент ---
-    if (history.patientId) {
-      const p = history.patientId;
+    /* ───── пациент ───── */
+    if (history.patientRef) {
+      const p = history.patientRef;
+      const u = p.linkedUserId || null;
 
-      // имя/фамилия (если у поликлинической карточки есть зашифрованные)
-      history.patientId.firstName =
-        p.firstName ?? decrypt(p.firstNameEncrypted) ?? null;
-      history.patientId.lastName =
-        p.lastName ?? decrypt(p.lastNameEncrypted) ?? null;
+      // 1. ИМЯ И ФАМИЛИЯ — пробуем расшифровать сначала из NewPatientPolyclinic,
+      //    если там пусто — из связанного User.
+      const firstFromPatient = safeDecrypt(p.firstNameEncrypted);
+      const lastFromPatient = safeDecrypt(p.lastNameEncrypted);
+      const firstFromUser = u ? safeDecrypt(u.firstNameEncrypted) : null;
+      const lastFromUser = u ? safeDecrypt(u.lastNameEncrypted) : null;
 
-      // ключевая строка: берём пол из gender/bio/BIO или из связанного User (userId.bio / userId.gender)
+      p.firstName = p.firstName || firstFromPatient || firstFromUser || null;
+      p.lastName = p.lastName || lastFromPatient || lastFromUser || null;
+
+      // 2. ПОЛ — из patient.bio/gender или User.bio/gender
       const rawGender = pickRawGender(p);
-      history.patientId.gender = rawGender;
-      history.patientId.genderRu = ruGender(rawGender);
+      p.gender = rawGender;
+      p.genderRu = ruGender(rawGender);
 
-      // фото
-      history.patientId.photo = buildPhotoRelative(p, rawGender);
+      // 3. ДАТА РОЖДЕНИЯ — в NewPatientPolyclinic поле birthDate,
+      //    в User — dateOfBirth. Берём первое доступное.
+      p.birthDate = p.birthDate || u?.dateOfBirth || null;
+
+      // 4. ФОТО
+      p.photo = buildPhotoRelative(p, rawGender);
+
+      // 5. Нормализуем массивы → строки (для удобства фронта)
+      p.allergiesText = arrToStr(p.allergies ?? history.allergies);
+      p.chronicDiseasesText = arrToStr(p.chronicDiseases ?? history.chronicDiseases);
+      p.familyHistoryText = arrToStr(p.familyHistoryOfDisease ?? history.familyHistoryOfDisease);
+      p.immunizationText = arrToStr(p.immunization ?? history.immunization);
+      p.operationsText = arrToStr(p.operations ?? history.operations);
+
+      // 6. Чистим зашифрованные поля из ответа (безопасность)
+      delete p.firstNameEncrypted;
+      delete p.lastNameEncrypted;
+      delete p.emailEncrypted;
+      delete p.phoneEncrypted;
+      delete p.firstNameHash;
+      delete p.lastNameHash;
+      delete p.emailHash;
+      delete p.phoneHash;
+      if (u) {
+        delete u.firstNameEncrypted;
+        delete u.lastNameEncrypted;
+        delete u.emailEncrypted;
+        delete u.phoneEncrypted;
+      }
+
+      // 7. ✅ Дублируем под старым именем `patientId` для обратной совместимости с фронтом
+      history.patientId = p;
     }
 
     return res.status(200).json({ success: true, data: history });

@@ -37,7 +37,7 @@ import { initCallGateway } from "./modules/communication/calls/call.gateway.js";
 import sitemapRoutes from "./common/sitemap/routes/sitemap.routes.js";
 import { setSimulationIo } from "./modules/surgery/simulationIo.js";
 import "./jobs/prefetch.job.js";
-
+import userSynthesisRoutes from "./modules/userSynthesis/userSynthesis.routes.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -263,7 +263,7 @@ app.get("/common-for-user", async (req, res) => {
     res.status(200).json({ authenticated: false });
   }
 });
-
+app.use("/api/user-synthesis", userSynthesisRoutes);
 // ======================= ROUTES =======================
 app.use("/api", uploadFileRoutes);
 app.use(uploadRoutes);
