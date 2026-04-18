@@ -2,8 +2,6 @@ import Anthropic from "@anthropic-ai/sdk";
 import UserSynthesis from "./userSynthesis.model.js";
 import User from "../../common/models/Auth/users.js";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 const MONTHLY_LIMITS = {
   free: 1,
   standard: 5,
@@ -13,6 +11,10 @@ const MONTHLY_LIMITS = {
   doctor_pro: 50,
   clinic: 999,
 };
+
+function getClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
 
 export async function checkUserLimit(userId) {
   if (!userId) return { allowed: true, used: 0, limit: 1 };
@@ -102,8 +104,9 @@ ${sourcesText}
 4. Живой язык без шаблонных фраз
 5. Не упоминай ИИ
 6. В конце каждого раздела — блок "Что это значит на практике:" (2-3 предложения)
+7. ОБЯЗАТЕЛЬНО завершить статью разделом Литература с 10 источниками
 
-СТРУКТУРА:
+СТРУКТУРА (строго соблюдай):
 # [Яркий заголовок]
 [Введение — 400-500 слов]
 ## [Раздел 1] — 600-700 слов
@@ -112,19 +115,20 @@ ${sourcesText}
 ## [Раздел 4] — 400-500 слов
 ## Заключение — 300-400 слов
 ## Литература
-Приведи не менее 10 источников в формате научной статьи. Используй реальные источники по теме из PubMed, The Lancet, NEJM, WHO, CDC, PLOS Medicine и других авторитетных изданий.
+
+ВАЖНО: Раздел "Литература" — ОБЯЗАТЕЛЬНЫЙ. Приведи ровно 10 реальных источников из PubMed, The Lancet, NEJM, WHO, CDC, PLOS Medicine.
 
 Формат каждого источника:
-[1] Фамилия И.О., Фамилия И.О. Название статьи. Название журнала. Год; Том(Номер): Страницы. DOI или URL
+[1] Фамилия И.О., Фамилия И.О. Название статьи. Название журнала. Год; Том(Номер): Страницы. DOI
 
 Пример:
 [1] Smith J.A., Johnson R.B. Gut microbiome alterations in type 2 diabetes. Nature Medicine. 2023; 29(4): 891-902. https://doi.org/10.1038/s41591-023-0001-1
 
-Начни с # заголовка:`;
+Начни с # заголовка и закончи разделом Литература:`;
 
-  const message = await client.messages.create({
+  const message = await getClient().messages.create({
     model: "claude-sonnet-4-5",
-    max_tokens: 10000,
+    max_tokens: 16000,
     messages: [{ role: "user", content: prompt }],
   });
 
