@@ -5,6 +5,7 @@ import { uploadFile } from "../../../common/middlewares/uploadMiddleware.js"; //
 import { JSDOM } from "jsdom";
 import createDOMPurify from "dompurify";
 import { invalidateSitemapCache } from "../../../common/sitemap/services/sitemap.service.js";
+import { enqueueTranslation } from "../../../modules/translation/translation.service.js";
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
 
@@ -96,7 +97,17 @@ export const createArticleScientificController = async (req, res) => {
     });
 
     const saved = await newArticle.save();
-    await clearSitemapCache();
+    await invalidateSitemapCache();
+
+    const LANGUAGES = ["ru", "en", "az", "tr", "ar"];
+    for (const lang of LANGUAGES) {
+      if (lang === (saved.originalLanguage || "en")) continue;
+      enqueueTranslation({
+        entity: saved,
+        entityType: "ArticleScine",
+        targetLanguage: lang,
+      }).catch(console.error); // fire-and-forget
+    }
     return res.status(201).json({
       message: "ArticleScientific created",
       article: saved,
