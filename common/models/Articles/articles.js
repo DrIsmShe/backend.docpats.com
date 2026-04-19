@@ -37,18 +37,17 @@ const articleSchema = new mongoose.Schema(
       ref: "User",
       required: false, // можно не указывать авторов
     },
+
     originalLanguage: {
       type: String,
       enum: ["en", "ru", "az", "tr", "ar"],
-      required: true,
-      default: "en",
-      index: true,
+      default: "ru",
     },
-
     translationVersion: {
       type: Number,
       default: 1,
     },
+
     authors: {
       type: String,
       required: false,
