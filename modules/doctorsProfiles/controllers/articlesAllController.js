@@ -2,7 +2,7 @@
 import sanitizeHtml from "sanitize-html";
 import Article from "../../../common/models/Articles/articles.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
-
+import { getOrCreateTranslation } from "../../../modules/translation/translation.service.js";
 // Если есть явные модели — можно подставить реальные имена коллекций:
 // import Category from "../../../common/models/category.js";
 // import ProfileDoctor from "../../../common/models/profileDoctor.js";
@@ -329,7 +329,7 @@ const articlesAllController = async (req, res) => {
           (d) =>
             typeof d.authorNameSearchLower === "string" &&
             d.authorNameSearchLower &&
-            rx.test(d.authorNameSearchLower)
+            rx.test(d.authorNameSearchLower),
         );
         if (fast.length) {
           filtered = fast;
@@ -409,39 +409,65 @@ const articlesAllController = async (req, res) => {
     const pageItems = filtered.slice(start, end);
 
     // финальный ответ
-    const articles = pageItems.map((a) => {
-      const firstName =
-        a.authorFirstNameEnc != null
-          ? decrypt(a.authorFirstNameEnc) || "Имя"
-          : "Имя";
-      const lastName =
-        a.authorLastNameEnc != null
-          ? decrypt(a.authorLastNameEnc) || "Фамилия"
-          : "Фамилия";
+    const targetLanguage =
+      req.headers["x-language"] ||
+      req.headers["accept-language"]?.split(",")[0]?.split("-")[0] ||
+      "ru";
 
-      return {
-        _id: a._id,
-        title: stripHtmlToText(a.title) || a.title || "Без заголовка",
-        imageUrl: a.imageUrl ?? null,
-        createdAt: a.createdAt,
-        updatedAt: a.updatedAt,
-        preview: makePreview(a.content, previewWords),
+    const articles = await Promise.all(
+      pageItems.map(async (a) => {
+        const firstName =
+          a.authorFirstNameEnc != null
+            ? decrypt(a.authorFirstNameEnc) || "Имя"
+            : "Имя";
+        const lastName =
+          a.authorLastNameEnc != null
+            ? decrypt(a.authorLastNameEnc) || "Фамилия"
+            : "Фамилия";
 
-        likes: Array.isArray(a.likes) ? a.likes : [],
-        likesCount:
-          a.likesCount ?? (Array.isArray(a.likes) ? a.likes.length : 0),
-        commentCount: a.commentCount ?? 0,
+        let title = stripHtmlToText(a.title) || a.title || "Без заголовка";
+        let preview = makePreview(a.content, previewWords);
 
-        author: { firstName, lastName },
+        // Применяем перевод если язык не совпадает
+        try {
+          const fakeEntity = {
+            _id: a._id,
+            title: a.title,
+            content: a.content,
+            abstract: "",
+            originalLanguage: "ru",
+            translationVersion: 1,
+          };
+          const localized = await getOrCreateTranslation({
+            entity: fakeEntity,
+            entityType: "Article", // или "ArticleScine" для научных
+            targetLanguage,
+          });
+          if (localized && !localized.isOriginal) {
+            title = stripHtmlToText(localized.title) || title;
+            preview = makePreview(localized.content, previewWords) || preview;
+          }
+        } catch {}
 
-        category: a.categoryDoc || null,
-        categories: a.categoryNames || [],
-
-        country: a.country || "Не указано",
-        specialization: a.specialization || null,
-      };
-    });
-
+        return {
+          _id: a._id,
+          title,
+          imageUrl: a.imageUrl ?? null,
+          createdAt: a.createdAt,
+          updatedAt: a.updatedAt,
+          preview,
+          likes: Array.isArray(a.likes) ? a.likes : [],
+          likesCount:
+            a.likesCount ?? (Array.isArray(a.likes) ? a.likes.length : 0),
+          commentCount: a.commentCount ?? 0,
+          author: { firstName, lastName },
+          category: a.categoryDoc || null,
+          categories: a.categoryNames || [],
+          country: a.country || "Не указано",
+          specialization: a.specialization || null,
+        };
+      }),
+    );
     // meta: списки для селектов
     const [specializationsAgg, categoriesAgg] = await Promise.all([
       Article.aggregate([
