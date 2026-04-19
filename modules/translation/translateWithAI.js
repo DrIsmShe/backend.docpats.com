@@ -11,13 +11,22 @@ const parseJSON = (text) => {
   try {
     return JSON.parse(text);
   } catch (e) {
-    console.error("❌ JSON parse error:", text);
-    throw new Error("Translation JSON parse error");
+    try {
+      const fixed = text.replace(/:\s*"([\s\S]*?)"/g, (match, p1) => {
+        const cleaned = p1
+          .replace(/\n/g, "\\n")
+          .replace(/\r/g, "\\r")
+          .replace(/\t/g, "\\t");
+        return `: "${cleaned}"`;
+      });
+      return JSON.parse(fixed);
+    } catch (e2) {
+      console.error("❌ JSON parse error:", text.slice(0, 200));
+      throw new Error("Translation JSON parse error");
+    }
   }
 };
 
-// GPT иногда возвращает объект вместо строки для abstract (background/objective/...)
-// Эта функция всегда возвращает строку
 const normalizeField = (value) => {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -37,6 +46,7 @@ const cleanResponse = (text) => {
   if (start === -1 || end === -1) throw new Error("No JSON found in response");
   return text.slice(start, end + 1);
 };
+
 // -------- ONE CHUNK --------
 
 const translateSingle = async ({
@@ -126,7 +136,6 @@ export const translateWithAI = async ({
   try {
     const chunks = splitTextIntoChunks(content, 4000);
 
-    // 🔥 короткий текст → обычный перевод
     if (chunks.length === 1) {
       const result = await translateSingle({
         title,
@@ -143,7 +152,6 @@ export const translateWithAI = async ({
       };
     }
 
-    // 🔥 длинный текст → параллельный chunk перевод
     const [translatedContent, meta] = await Promise.all([
       translateChunks({ chunks, fromLanguage, toLanguage }),
       translateSingle({
