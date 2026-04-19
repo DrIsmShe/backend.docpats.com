@@ -1,16 +1,8 @@
-// server/modules/doctorProfile/controllers/articlesAllController.js
 import sanitizeHtml from "sanitize-html";
 import ArticleScine from "../../../common/models/Articles/articles-scince.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
 import { getOrCreateTranslation } from "../../../modules/translation/translation.service.js";
-// Если есть явные модели — можно подставить реальные имена коллекций:
-// import Category from "../../../common/models/category.js";
-// import ProfileDoctor from "../../../common/models/profileDoctor.js";
-// import CommentDocpats from "../../../common/models/commentDocpats.js";
-// const CATEGORIES = Category.collection.name;
-// const DOCTOR_PROFILES = ProfileDoctor.collection.name;
-// const COMMENTS = CommentDocpats.collection.name;
-// const USERS = User.collection.name;
+import ContentTranslation from "../../../common/models/Articles/contentTranslation.js";
 
 const USERS = "users";
 const CATEGORIES = "categories";
@@ -18,7 +10,6 @@ const DOCTOR_PROFILES = "doctorprofiles";
 const COMMENTS = "commentdocpats";
 const SPECIALIZATIONS = "specializations";
 
-/* ===== helpers ===== */
 const stripHtmlToText = (html) =>
   sanitizeHtml(html || "", { allowedTags: [], allowedAttributes: {} })
     .replace(/\s+/g, " ")
@@ -60,10 +51,8 @@ const parseCats = (val) => {
     .filter(Boolean);
 };
 
-/* ===== controller ===== */
 const articlesScientificAllController = async (req, res) => {
   try {
-    // query
     const page = Math.max(toInt(req.query.page, 1, 1), 1);
     const perPage = toInt(req.query.perPage, 12, 1, 100);
     const previewWords = toInt(req.query.previewWords, 30, 5, 200);
@@ -79,13 +68,40 @@ const articlesScientificAllController = async (req, res) => {
     const dateTo = norm(req.query.dateTo);
     const sortBy = norm(req.query.sortBy) || "date_desc";
 
-    /* базовый match */
+    const targetLanguage =
+      req.headers["x-language"] ||
+      req.headers["accept-language"]?.split(",")[0]?.split("-")[0] ||
+      "ru";
+
+    // Поиск по переводам если язык не русский
+    let translationEntityIds = [];
+    if (qTitle && targetLanguage !== "ru") {
+      const rx = buildRegex(qTitle);
+      if (rx) {
+        const translationMatches = await ContentTranslation.find({
+          entityType: "ArticleScine",
+          language: targetLanguage,
+          title: rx,
+        })
+          .select("entityId")
+          .lean();
+        translationEntityIds = translationMatches.map((t) => t.entityId);
+      }
+    }
+
     const baseMatch = { isPublished: true };
 
     if (qTitle) {
       const rx = buildRegex(qTitle);
-      if (rx) baseMatch.$or = [{ title: rx }, { content: rx }];
+      if (rx) {
+        const orConditions = [{ title: rx }, { content: rx }];
+        if (translationEntityIds.length > 0) {
+          orConditions.push({ _id: { $in: translationEntityIds } });
+        }
+        baseMatch.$or = orConditions;
+      }
     }
+
     if (withImage) {
       baseMatch.imageUrl = { $exists: true, $ne: null, $type: "string" };
     }
@@ -105,11 +121,8 @@ const articlesScientificAllController = async (req, res) => {
       };
     }
 
-    /* агрег. без пагинации (полный фильтр), затем сорт и слайс */
     const pipeline = [
       { $match: baseMatch },
-
-      // Автор
       {
         $lookup: {
           from: USERS,
@@ -120,8 +133,6 @@ const articlesScientificAllController = async (req, res) => {
       },
       { $unwind: { path: "$author", preserveNullAndEmptyArrays: true } },
       { $match: { "author._id": { $exists: true } } },
-
-      // Категория одиночная
       {
         $lookup: {
           from: CATEGORIES,
@@ -131,8 +142,6 @@ const articlesScientificAllController = async (req, res) => {
         },
       },
       { $unwind: { path: "$categoryDoc", preserveNullAndEmptyArrays: true } },
-
-      // Профиль врача → страна
       {
         $lookup: {
           from: DOCTOR_PROFILES,
@@ -145,8 +154,6 @@ const articlesScientificAllController = async (req, res) => {
         },
       },
       { $unwind: { path: "$doctorProfile", preserveNullAndEmptyArrays: true } },
-
-      // Специализация (по ссылке из User)
       {
         $lookup: {
           from: SPECIALIZATIONS,
@@ -161,8 +168,6 @@ const articlesScientificAllController = async (req, res) => {
           preserveNullAndEmptyArrays: true,
         },
       },
-
-      // Комментарии
       {
         $lookup: {
           from: COMMENTS,
@@ -184,8 +189,6 @@ const articlesScientificAllController = async (req, res) => {
           as: "commentStats",
         },
       },
-
-      // Вычисления/нормализация
       {
         $addFields: {
           likesCount: {
@@ -198,18 +201,13 @@ const articlesScientificAllController = async (req, res) => {
           commentCount: {
             $ifNull: [{ $arrayElemAt: ["$commentStats.count", 0] }, 0],
           },
-
           countryUnified: {
             $ifNull: ["$doctorProfile.country", "$author.country"],
           },
           specializationName: "$specializationDoc.name",
-
-          // быстрый поиск по автору (если поле поддерживается в users)
           authorNameSearchLower: {
             $ifNull: ["$author.fullNameSearchLower", ""],
           },
-
-          // категории: одиночная + массив
           categoryNames: {
             $setUnion: [
               {
@@ -246,13 +244,9 @@ const articlesScientificAllController = async (req, res) => {
           },
         },
       },
-
-      // Фильтры по стране/спец/категориям
       ...(() => {
         const and = [];
-        if (country && country !== "all") {
-          and.push({ countryUnified: country });
-        }
+        if (country && country !== "all") and.push({ countryUnified: country });
         if (specialization && specialization !== "all") {
           and.push({
             $expr: {
@@ -288,8 +282,6 @@ const articlesScientificAllController = async (req, res) => {
         }
         return and.length ? [{ $match: { $and: and } }] : [];
       })(),
-
-      // Проекция
       {
         $project: {
           _id: 1,
@@ -301,11 +293,9 @@ const articlesScientificAllController = async (req, res) => {
           likes: 1,
           likesCount: 1,
           commentCount: 1,
-
           authorFirstNameEnc: "$author.firstNameEncrypted",
           authorLastNameEnc: "$author.lastNameEncrypted",
           authorNameSearchLower: 1,
-
           country: "$countryUnified",
           specialization: "$specializationName",
           categoryDoc: {
@@ -320,7 +310,6 @@ const articlesScientificAllController = async (req, res) => {
 
     const raw = await ArticleScine.aggregate(pipeline).allowDiskUse(true);
 
-    // post-filter по автору (если qAuthor): быстрый путь по authorNameSearchLower; иначе — расшифровка
     let filtered = raw;
     if (qAuthor) {
       const rx = buildRegex(qAuthor);
@@ -342,8 +331,7 @@ const articlesScientificAllController = async (req, res) => {
                   : "";
               const ln =
                 d.authorLastNameEnc != null ? decrypt(d.authorLastNameEnc) : "";
-              const full = `${fn} ${ln}`.trim().toLowerCase();
-              return rx.test(full);
+              return rx.test(`${fn} ${ln}`.trim().toLowerCase());
             } catch {
               return false;
             }
@@ -352,7 +340,6 @@ const articlesScientificAllController = async (req, res) => {
       }
     }
 
-    // сортировка
     const cmp = (A, B) => {
       switch (sortBy) {
         case "date_asc":
@@ -372,9 +359,7 @@ const articlesScientificAllController = async (req, res) => {
         case "author_asc": {
           const fa = (() => {
             try {
-              return `${decrypt(A.authorFirstNameEnc) || ""} ${
-                decrypt(A.authorLastNameEnc) || ""
-              }`
+              return `${decrypt(A.authorFirstNameEnc) || ""} ${decrypt(A.authorLastNameEnc) || ""}`
                 .trim()
                 .toLowerCase();
             } catch {
@@ -383,9 +368,7 @@ const articlesScientificAllController = async (req, res) => {
           })();
           const fb = (() => {
             try {
-              return `${decrypt(B.authorFirstNameEnc) || ""} ${
-                decrypt(B.authorLastNameEnc) || ""
-              }`
+              return `${decrypt(B.authorFirstNameEnc) || ""} ${decrypt(B.authorLastNameEnc) || ""}`
                 .trim()
                 .toLowerCase();
             } catch {
@@ -394,25 +377,15 @@ const articlesScientificAllController = async (req, res) => {
           })();
           return fa.localeCompare(fb, "ru");
         }
-        case "date_desc":
         default:
           return new Date(B.createdAt) - new Date(A.createdAt);
       }
     };
     filtered.sort(cmp);
 
-    // пагинация
     const total = filtered.length;
     const totalPages = Math.max(Math.ceil(total / perPage), 1);
-    const start = (page - 1) * perPage;
-    const end = start + perPage;
-    const pageItems = filtered.slice(start, end);
-
-    // финальный ответ
-    const targetLanguage =
-      req.headers["x-language"] ||
-      req.headers["accept-language"]?.split(",")[0]?.split("-")[0] ||
-      "ru";
+    const pageItems = filtered.slice((page - 1) * perPage, page * perPage);
 
     const articles = await Promise.all(
       pageItems.map(async (a) => {
@@ -428,19 +401,17 @@ const articlesScientificAllController = async (req, res) => {
         let title = stripHtmlToText(a.title) || a.title || "Без заголовка";
         let preview = makePreview(a.content, previewWords);
 
-        // Применяем перевод если язык не совпадает
         try {
-          const fakeEntity = {
-            _id: a._id,
-            title: a.title,
-            content: a.content,
-            abstract: "",
-            originalLanguage: "ru",
-            translationVersion: 1,
-          };
           const localized = await getOrCreateTranslation({
-            entity: fakeEntity,
-            entityType: "ArticleScine", // или "ArticleScine" для научных
+            entity: {
+              _id: a._id,
+              title: a.title,
+              content: a.content,
+              abstract: "",
+              originalLanguage: "ru",
+              translationVersion: 1,
+            },
+            entityType: "ArticleScine",
             targetLanguage,
           });
           if (localized && !localized.isOriginal) {
@@ -468,7 +439,7 @@ const articlesScientificAllController = async (req, res) => {
         };
       }),
     );
-    // meta: списки для селектов
+
     const [specializationsAgg, categoriesAgg] = await Promise.all([
       ArticleScine.aggregate([
         { $match: { isPublished: true } },
@@ -550,17 +521,15 @@ const articlesScientificAllController = async (req, res) => {
       ]),
     ]);
 
-    const meta = {
-      specializations: specializationsAgg.map((x) => x.name),
-      categories: categoriesAgg.map((x) => x.name),
-    };
-
     return res.status(200).json({
       page,
       perPage,
       total,
       totalPages,
-      meta,
+      meta: {
+        specializations: specializationsAgg.map((x) => x.name),
+        categories: categoriesAgg.map((x) => x.name),
+      },
       articles,
     });
   } catch (err) {
