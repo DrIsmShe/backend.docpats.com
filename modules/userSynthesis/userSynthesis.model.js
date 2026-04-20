@@ -14,7 +14,8 @@ const userSynthesisSchema = new mongoose.Schema(
     language: { type: String, default: "ru" },
     wordCount: { type: Number },
     style: { type: String },
-    isPublic: { type: Boolean, default: false }, // врач может опубликовать
+    isPublic: { type: Boolean, default: false },
+    lsiKeywords: [{ type: String }],
     sources: [
       {
         title: { type: String },
@@ -29,6 +30,11 @@ const userSynthesisSchema = new mongoose.Schema(
       enum: ["published", "draft"],
       default: "published",
     },
+    // ── SEO & мета ──
+    metaDescription: { type: String, default: "" },
+    abstract: { type: String, default: "" },
+    keywords: [{ type: String }],
+    tags: [{ type: String }],
   },
   { timestamps: true },
 );

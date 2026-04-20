@@ -141,6 +141,86 @@ ${sourcesText}
   const title = titleMatch ? titleMatch[1].trim() : `Обзор: ${topic}`;
   const wordCount = body.split(/\s+/).filter(Boolean).length;
 
+  // ── Генерация SEO-метаданных ──────────────────────────────
+  let seoData = {};
+  try {
+    const seoMessage = await getClient().messages.create({
+      model: "claude-sonnet-4-5",
+      max_tokens: 1200,
+      messages: [
+        {
+          role: "user",
+          content: `Ты — SEO-специалист для медицинского сайта DocPats. На основе статьи сгенерируй профессиональные SEO-метаданные.
+
+Заголовок статьи: ${title}
+Тема: ${topic}
+Начало статьи: ${body.slice(0, 2000)}
+
+Верни ТОЛЬКО JSON объект без markdown, без пояснений:
+{
+  "metaDescription": "...",
+  "abstract": "...",
+  "keywords": ["...", "...", "...", "...", "..."],
+  "lsiKeywords": ["...", "...", "...", "...", "..."],
+  "tags": ["...", "...", "...", "...", "..."]
+}
+
+Требования к каждому полю:
+
+metaDescription (СТРОГО 150-160 символов):
+- Первые 50-60 символов: главный ключевой запрос темы
+- Середина: конкретная польза или факт из статьи
+- Конец: призыв к действию ("Читайте клиническое руководство.", "Узнайте подробнее.", "Полный разбор в статье.")
+- Без воды, без общих фраз
+
+abstract (3-5 предложений для E-E-A-T):
+- Написан от лица эксперта-практика
+- Содержит конкретные цифры или клинические факты из статьи
+- Показывает глубину экспертизы
+- Полезен читателю как самостоятельный текст
+
+keywords (5 штук — реальные поисковые запросы):
+- 2 коротких (1-2 слова): основные термины темы
+- 3 длинных хвоста (3-5 слов): конкретные вопросы пользователей
+- Используй реальные запросы которые вводят в поисковик
+
+lsiKeywords (5 штук — LSI семантика):
+- Семантически связанные термины, НЕ повторяющие keywords
+- Синонимы, смежные понятия, связанные симптомы/методы/заболевания
+- Обогащают семантическое поле статьи для поисковиков
+
+tags (5 штук — категориальные теги):
+- Широкие медицинские специальности и рубрики
+- Используются для навигации на сайте
+
+Язык всех полей: ${LANG_MAP[language] || "русский"}.
+Только JSON, ничего кроме JSON.`,
+        },
+      ],
+    });
+
+    const rawText = seoMessage.content[0].text.trim();
+    console.log("🔍 SEO raw:", rawText.slice(0, 400));
+
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("JSON не найден в ответе SEO");
+
+    seoData = JSON.parse(jsonMatch[0]);
+    console.log("✅ SEO готов:", Object.keys(seoData));
+    console.log("📝 metaDescription длина:", seoData.metaDescription?.length);
+  } catch (err) {
+    console.error("❌ SEO генерация ошибка:", err.message);
+    const cleanBody = body.replace(/#+\s/g, "").replace(/\n+/g, " ").trim();
+    seoData = {
+      metaDescription: cleanBody.slice(0, 155),
+      abstract: cleanBody.slice(0, 400),
+      keywords: [topic],
+      lsiKeywords: [],
+      tags: [topic],
+    };
+  }
+  // ──────────────────────────────────────────────────────────
+
   if (userId) {
     const saved = await UserSynthesis.create({
       userId,
@@ -156,6 +236,21 @@ ${sourcesText}
         authors: s.authors,
         year: s.year || new Date().getFullYear(),
       })),
+      metaDescription: seoData.metaDescription || "",
+      abstract: seoData.abstract || "",
+      keywords: Array.isArray(seoData.keywords) ? seoData.keywords : [],
+      lsiKeywords: Array.isArray(seoData.lsiKeywords)
+        ? seoData.lsiKeywords
+        : [],
+      tags: Array.isArray(seoData.tags) ? seoData.tags : [],
+    });
+
+    console.log("💾 Сохранено с SEO:", {
+      metaDescription: `${saved.metaDescription?.slice(0, 60)}... (${saved.metaDescription?.length} симв.)`,
+      abstract: saved.abstract?.slice(0, 60),
+      keywords: saved.keywords,
+      lsiKeywords: saved.lsiKeywords,
+      tags: saved.tags,
     });
 
     return {
@@ -165,6 +260,11 @@ ${sourcesText}
       wordCount,
       remaining: limitCheck.remaining - 1,
       plan: limitCheck.plan,
+      metaDescription: saved.metaDescription,
+      abstract: saved.abstract,
+      keywords: saved.keywords,
+      lsiKeywords: saved.lsiKeywords,
+      tags: saved.tags,
     };
   }
 
