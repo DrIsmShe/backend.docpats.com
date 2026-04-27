@@ -16,7 +16,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import http from "http";
 import { Server } from "socket.io";
-
+import simulation from "./modules/simulation/index.js";
 import connectDB from "./common/config/db/mongodb.js";
 import routes from "./common/routes/index.js";
 import uploadRoutes from "./common/routes/uploadRoutes.js";
@@ -38,6 +38,9 @@ import sitemapRoutes from "./common/sitemap/routes/sitemap.routes.js";
 import { setSimulationIo } from "./modules/surgery/simulationIo.js";
 import "./jobs/prefetch.job.js";
 import userSynthesisRoutes from "./modules/userSynthesis/userSynthesis.routes.js";
+// ✅ NEW: anthropometry module
+import { routes as anthropometryRoutes } from "./modules/anthropometry/index.js";
+
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -264,12 +267,14 @@ app.get("/common-for-user", async (req, res) => {
   }
 });
 app.use("/api/user-synthesis", userSynthesisRoutes);
+// ✅ NEW: anthropometry module routes
+app.use("/api/anthropometry", anthropometryRoutes);
 // ======================= ROUTES =======================
 app.use("/api", uploadFileRoutes);
 app.use(uploadRoutes);
 app.use(routes);
 app.use("/update-email-doctor", emailLimiter);
-
+app.use(simulation.basePath, simulation.router);
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
 await import("./common/models/index.js")

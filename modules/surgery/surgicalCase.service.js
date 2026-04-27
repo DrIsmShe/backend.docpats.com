@@ -146,20 +146,23 @@ export async function getCaseById(caseId, surgeonId) {
 // ─── Список кейсов ────────────────────────────────────────────────────────
 export async function listCases(
   surgeonId,
-  { status, procedure, patientType, page = 1, limit = 20 } = {},
+  { status, procedure, patientType, page = 1, limit = 12 } = {},
 ) {
   const filter = { surgeonId, deletedAt: null };
   if (status) filter.status = status;
   if (procedure) filter.procedure = procedure;
   if (patientType) filter.patientType = patientType;
 
-  const skip = (Number(page) - 1) * Number(limit);
+  // Защита от ?limit=10000
+  const pageNum = Math.max(1, Number(page) || 1);
+  const limitNum = Math.min(50, Math.max(1, Number(limit) || 12));
+  const skip = (pageNum - 1) * limitNum;
 
   const [items, total] = await Promise.all([
     SurgicalCase.find(filter)
       .sort({ operationDate: -1, createdAt: -1 })
       .skip(skip)
-      .limit(Number(limit))
+      .limit(limitNum)
       .select("-planEncrypted -simulations"),
     SurgicalCase.countDocuments(filter),
   ]);
@@ -167,8 +170,8 @@ export async function listCases(
   return {
     items: items.map(_decryptCase),
     total,
-    page: Number(page),
-    pages: Math.ceil(total / Number(limit)),
+    page: pageNum,
+    pages: Math.ceil(total / limitNum) || 1,
   };
 }
 
