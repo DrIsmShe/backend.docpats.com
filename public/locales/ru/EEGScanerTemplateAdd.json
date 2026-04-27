@@ -1,0 +1,178 @@
+{
+  "EEGScanerTemplateAdd": {
+    "title": "Добавить название исследования",
+    "form": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Содержание",
+      "saveButton": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон названия исследования успешно добавлен.",
+      "errorDefault": "❌ Не удалось добавить шаблон.",
+      "networkError": "❌ Ошибка сети"
+    }
+  },
+  "EEGScanerTemplateDiagnosisDetails": {
+    "loading": "Загрузка...",
+    "error": "Не удалось загрузить шаблон.",
+    "title": "Детали шаблона диагноза ЭЭГ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "actions": {
+      "edit": "Редактировать"
+    }
+  },
+  "EEGScanerTemplateDiagnosisEdit": {
+    "title": "Редактировать шаблон диагноза ЭЭГ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "actions": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон диагноза успешно обновлён!",
+      "error": "❌ Ошибка при обновлении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "EEGScanerTemplateDiagnosisList": {
+    "title": "🧾 Шаблоны диагноза ЭЭГ",
+    "actions": {
+      "edit": "Редактировать",
+      "delete": "🗑️ Удалить"
+    },
+    "messages": {
+      "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+      "deleteError": "❌ Ошибка при удалении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблоны диагнозов."
+    }
+  },
+  "EEGScanerTemplateReport": {
+    "titlePage": "Добавить шаблон отчёта ЭЭГ",
+    "titlePlaceholder": "Заголовок",
+    "contentPlaceholder": "Содержание",
+    "save": "Сохранить",
+    "success": "✅ Шаблон отчёта успешно добавлен",
+    "errorAdd": "❌ Ошибка при добавлении шаблона",
+    "networkError": "⚠️ Сетевая ошибка"
+  },
+  "EEGScanerTemplateRecomendationAdd": {
+    "title": "Добавить рекомендации",
+    "fields": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Содержание"
+    },
+    "actions": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон рекомендаций успешно добавлен.",
+      "error": "❌ Ошибка при добавлении шаблона.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "EEGScanerTemplateRecomendationDetails": {
+    "loading": "Загрузка...",
+    "title": "Детали шаблона рекомендаций ЭЭГ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "actions": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loadError": "Не удалось загрузить шаблон."
+    }
+  },
+  "EEGScanerTemplateRecomendationEdit": {
+    "title": "Редактировать шаблон рекомендаций ЭЭГ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "actions": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон рекомендаций успешно обновлён!",
+      "error": "❌ Ошибка при обновлении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "EEGScanerTemplateRecomendationList": {
+    "title": "📋 Шаблоны рекомендаций ЭЭГ",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteError": "❌ Ошибка при удалении шаблона",
+    "loadingError": "Ошибка загрузки шаблонов рекомендаций",
+    "delete": "🗑️ Удалить",
+    "edit": "Редактировать",
+    "successDelete": "✅ Шаблон успешно удалён"
+  },
+  "EEGScanerTemplateReportDetails": {
+    "titlePage": "Детали шаблона отчёта ЭЭГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "doctorLabel": "Врач",
+    "edit": "Редактировать",
+    "loading": "Загрузка...",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "EEGScanerTemplateReportEdit": {
+    "titlePage": "Редактирование шаблона отчёта ЭЭГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "update": "Обновить шаблон",
+    "success": "✅ Шаблон отчёта успешно обновлён!",
+    "errorUpdate": "❌ Не удалось обновить шаблон",
+    "loadingError": "Ошибка загрузки шаблона"
+  },
+  "EEGScanerTemplateReportList": {
+    "titlePage": "📝 Шаблоны отчётов ЭЭГ",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteError": "❌ Не удалось удалить шаблон",
+    "loadingError": "Ошибка загрузки шаблонов отчётов",
+    "delete": "🗑️ Удалить",
+    "edit": "Редактировать"
+  },
+  "EEGScanTemplateNameofexam": {
+    "titlePage": "Добавить шаблон названия исследования ЭЭГ",
+    "titlePlaceholder": "Заголовок",
+    "contentPlaceholder": "Содержание",
+    "save": "Сохранить",
+    "success": "✅ Шаблон названия исследования успешно добавлен",
+    "errorAdd": "❌ Ошибка при добавлении шаблона",
+    "networkError": "⚠️ Ошибка сети"
+  },
+  "EEGScanTemplateNameofexamDetail": {
+    "titlePage": "Детали шаблона названия исследования ЭЭГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "edit": "Редактировать",
+    "loading": "Загрузка...",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "EEGScanTemplateNameofexamEdit": {
+    "titlePage": "Редактирование шаблона названия исследования ЭЭГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "update": "Обновить шаблон",
+    "success": "✅ Шаблон названия исследования успешно обновлён!",
+    "errorUpdate": "❌ Не удалось обновить шаблон",
+    "loadingError": "Ошибка загрузки шаблона"
+  },
+  "EEGScanTemplateNameofexamList": {
+    "titlePage": "📌 Шаблоны названий исследований ЭЭГ",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteError": "❌ Не удалось удалить шаблон",
+    "loadingError": "Ошибка загрузки шаблонов названий исследований",
+    "delete": "🗑️ Удалить",
+    "edit": "Редактировать"
+  }
+}

@@ -1,0 +1,221 @@
+{
+  "SPECTScanerTemplateDiagnosis": {
+    "title": "Tanı Şablonu Ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Tanı şablonu başarıyla eklendi.",
+      "error": "❌ Şablon eklenemedi.",
+      "networkError": "❌ Ağ hatası"
+    }
+  },
+  "SPECTScanerTemplateDiagnosisDetails": {
+    "title": "SPECT Tanı Şablonu Detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "SPECTScanerTemplateDiagnosisEdit": {
+    "title": "SPECT Tanı Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "success": "✅ Tanı şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenirken hata oluştu.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "SPECTScanerTemplateDiagnosisList": {
+    "title": "🧾 SPECT Tanı Şablonları",
+    "actions": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+      "deleteError": "❌ Şablon silinirken hata oluştu.",
+      "loadError": "❌ Tanı şablonları yüklenemedi."
+    }
+  },
+  "SPECTScanerTemplateRecomendation": {
+    "title": "Öneri Şablonu Ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Öneri şablonu başarıyla eklendi.",
+      "error": "Şablon eklenirken hata oluştu.",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "SPECTScanerTemplateRecomendationDetails": {
+    "title": "SPECT Öneri Şablonu Detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "SPECTScanerTemplateRecomendationEdit": {
+    "title": "SPECT Öneri Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "success": "✅ Öneri şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenirken hata oluştu.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "SPECTScanerTemplateRecomendationList": {
+    "title": "📋 SPECT Öneri Şablonları",
+    "actions": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+      "deleteError": "❌ Şablon silinirken hata oluştu.",
+      "loadError": "❌ Öneri şablonları yüklenemedi."
+    }
+  },
+  "SPECTScanerTemplateReport": {
+    "title": "SPECT Rapor Şablonu Ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Rapor şablonu başarıyla eklendi.",
+      "error": "Şablon eklenirken hata oluştu.",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "SPECTScanerTemplateReportDetails": {
+    "title": "SPECT Rapor Şablonu Detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "SPECTScanerTemplateReportEdit": {
+    "title": "SPECT Rapor Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "success": "✅ Rapor şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenirken hata oluştu.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "SPECTScanerTemplateReportList": {
+    "title": "📝 SPECT Rapor Şablonları",
+    "actions": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+      "deleteError": "❌ Şablon silinirken hata oluştu.",
+      "loadError": "❌ Rapor şablonları yüklenemedi."
+    }
+  },
+  "SPECTScanTemplateNameofexam": {
+    "title": "SPECT Tetkik Adı Şablonu Ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Tetkik adı şablonu başarıyla eklendi.",
+      "error": "Şablon eklenirken hata oluştu.",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "SPECTScanTemplateNameofexamDetails": {
+    "title": "SPECT Tetkik Adı Şablonu Detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "SPECTScanTemplateNameofexamEdit": {
+    "title": "SPECT Tetkik Adı Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "success": "✅ Tetkik adı şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenirken hata oluştu.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "SPECTScanTemplateNameofexamList": {
+    "title": "📌 SPECT Tetkik Adı Şablonları",
+    "actions": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+      "deleteError": "❌ Şablon silinirken hata oluştu.",
+      "loadError": "❌ Şablonlar yüklenemedi."
+    }
+  }
+}

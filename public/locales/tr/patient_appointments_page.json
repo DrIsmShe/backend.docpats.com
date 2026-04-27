@@ -1,0 +1,44 @@
+{
+  "page_title": "Doktor randevusu oluştur",
+
+  "error_load_doctors": "Doktor listesi yüklenemedi",
+  "error_load_slots": "Uygun saatler yüklenemedi",
+  "error_create": "Randevu oluşturulamadı",
+  "error_whatsapp_required": "Online randevu için geçerli bir WhatsApp numarası girin",
+  "error_select_doctor": "Randevu almadan önce doktor seçin",
+
+  "success_created": "✅ Randevu başarıyla oluşturuldu!",
+
+  "filters_title": "Doktor arama filtreleri",
+  "all_countries": "Tüm ülkeler",
+  "all_specialties": "Tüm branşlar",
+  "min_rating": "Min. puan",
+  "min_reviews": "Min. yorum",
+
+  "sort_price_asc": "Fiyat ↑",
+  "sort_price_desc": "Fiyat ↓",
+  "sort_rating": "Puan ↓",
+  "sort_reviews": "Yorumlar ↓",
+
+  "clear_filters": "Filtreleri temizle",
+
+  "select_doctor": "Doktor seçin:",
+  "not_selected": "— Seçilmedi —",
+  "no_name": "İsimsiz",
+  "no_specialty": "Branş yok",
+
+  "appointment_type": "Randevu türü",
+  "offline": "Yüz yüze (klinikte)",
+  "online": "Online (video görüşme)",
+  "online_disabled": "Bu doktor için online randevu mevcut değil",
+
+  "select_date": "Tarih seçin",
+  "show_slots": "Uygun saatleri göster",
+
+  "whatsapp_label": "Online randevu için iletişim numarası (WhatsApp)",
+  "whatsapp_hint": "Bu numara online randevu sırasında doktor tarafından kullanılacaktır",
+
+  "available_slots": "Uygun saatler",
+  "book": "Randevu al",
+  "no_slots": "Seçilen tarih için boş saat yok."
+}

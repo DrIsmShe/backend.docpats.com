@@ -1,0 +1,231 @@
+{
+  "CoronographyScanerTemplateDiagnosis": {
+    "title": "إضافة قالب تشخيص تصوير الشرايين التاجية",
+    "fields": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى"
+    },
+    "messages": {
+      "createSuccess": "✅ تم إضافة قالب التشخيص بنجاح",
+      "createError": "❌ فشل في إضافة القالب",
+      "networkError": "خطأ في الشبكة"
+    },
+
+    "buttons": {
+      "save": "حفظ",
+      "update": "تحديث",
+      "delete": "حذف",
+      "edit": "تعديل",
+      "cancel": "إلغاء",
+      "back": "رجوع"
+    }
+  },
+  "CoronographyScanerTemplateDiagnosisDetails": {
+    "title": "تفاصيل قالب تشخيص تصوير الشرايين التاجية",
+    "page": {
+      "loading": "جارٍ التحميل..."
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القالب"
+    },
+    "buttons": {
+      "save": "حفظ",
+      "update": "تحديث",
+      "delete": "حذف",
+      "edit": "تعديل",
+      "cancel": "إلغاء",
+      "back": "رجوع"
+    }
+  },
+  "CoronographyScanerTemplateDiagnosisEdit": {
+    "title": "تعديل قالب تشخيص تصوير الشرايين التاجية",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "messages": {
+      "updateSuccess": "✅ تم تحديث قالب التشخيص بنجاح",
+      "updateError": "❌ فشل في تحديث القالب",
+      "loadError": "فشل في تحميل القالب"
+    },
+    "buttons": {
+      "save": "حفظ",
+      "update": "تحديث",
+      "delete": "حذف",
+      "edit": "تعديل",
+      "cancel": "إلغاء",
+      "back": "رجوع"
+    }
+  },
+  "CoronographyScanerTemplateDiagnosisList": {
+    "title": "🧾 قوالب تشخيص تصوير الشرايين التاجية",
+    "confirm": {
+      "delete": "هل أنت متأكد من حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القوالب",
+      "deleteError": "❌ فشل في حذف القالب"
+    },
+    "buttons": {
+      "save": "حفظ",
+      "update": "تحديث",
+      "delete": "حذف",
+      "edit": "تعديل",
+      "cancel": "إلغاء",
+      "back": "رجوع"
+    }
+  },
+  "CoronographyScanTemplateNameofexam": {
+    "title": "إضافة قالب اسم فحص تصوير الشرايين التاجية",
+    "fields": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى"
+    },
+    "messages": {
+      "createSuccess": "✅ تم إضافة القالب بنجاح",
+      "createError": "❌ فشل في إضافة القالب",
+      "networkError": "⚠️ خطأ في الشبكة"
+    },
+    "buttons": {
+      "save": "حفظ",
+      "update": "تحديث",
+      "delete": "حذف",
+      "edit": "تعديل",
+      "cancel": "إلغاء"
+    }
+  },
+  "buttons": {
+    "save": "حفظ",
+    "update": "تحديث",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "cancel": "إلغاء"
+  },
+  "CoronographyScanTemplateNameofexamDetail": {
+    "title": "تفاصيل قالب اسم فحص تصوير الشرايين التاجية",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القالب"
+    }
+  },
+  "CoronographyScanTemplateNameofexamEdit": {
+    "title": "تعديل قالب اسم فحص تصوير الشرايين التاجية",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القالب",
+      "updateSuccess": "✅ تم تحديث القالب بنجاح",
+      "updateError": "❌ فشل في تحديث القالب"
+    }
+  },
+  "CoronographyScanTemplateNameofexamList": {
+    "title": "📌 قوالب اسم فحص تصوير الشرايين التاجية",
+    "confirm": {
+      "delete": "هل أنت متأكد أنك تريد حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القوالب",
+      "deleteError": "❌ فشل في حذف القالب"
+    }
+  },
+  "CoronographyScanerTemplateRecomendation": {
+    "title": "إضافة قالب توصيات تصوير الشرايين التاجية",
+    "fields": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى"
+    },
+    "messages": {
+      "createSuccess": "✅ تم إضافة قالب التوصيات بنجاح",
+      "createError": "❌ فشل في إضافة القالب",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "CoronographyScanerTemplateRecomendationDetails": {
+    "title": "تفاصيل قالب توصيات تصوير الشرايين التاجية",
+    "page": {
+      "loading": "جارٍ التحميل..."
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القالب"
+    }
+  },
+  "CoronographyScanerTemplateRecomendationEdit": {
+    "title": "تعديل قالب توصيات تصوير الشرايين التاجية",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القالب",
+      "updateSuccess": "✅ تم تحديث قالب التوصيات بنجاح",
+      "updateError": "❌ فشل في تحديث القالب"
+    }
+  },
+  "CoronographyScanerTemplateRecomendationList": {
+    "title": "قوالب توصيات تصوير الشرايين التاجية",
+    "confirm": {
+      "delete": "هل أنت متأكد من حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القوالب",
+      "deleteError": "❌ فشل في حذف القالب"
+    }
+  },
+  "CoronographyScanTemplateReport": {
+    "title": "إضافة قالب تقرير تصوير الشرايين التاجية",
+    "fields": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى"
+    },
+    "messages": {
+      "createSuccess": "✅ تم إضافة قالب التقرير بنجاح",
+      "createError": "فشل في إضافة قالب التقرير",
+      "networkError": "خطأ في الشبكة"
+    }
+  },
+  "CoronographyScanTemplateReportDetails": {
+    "title": "تفاصيل قالب تقرير تصوير الشرايين التاجية",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القالب"
+    }
+  },
+  "CoronographyScanTemplateReportEdit": {
+    "title": "تعديل قالب تقرير تصوير الشرايين التاجية",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القالب",
+      "updateSuccess": "✅ تم تحديث قالب التقرير بنجاح",
+      "updateError": "❌ فشل في تحديث القالب"
+    }
+  },
+  "CoronographyScanTemplateReportList": {
+    "title": "قوالب تقارير تصوير الشرايين التاجية",
+    "messages": {
+      "loadError": "فشل في تحميل قوالب التقارير",
+      "deleteError": "❌ فشل في حذف القالب"
+    }
+  }
+}

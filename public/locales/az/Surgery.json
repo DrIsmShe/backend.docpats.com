@@ -1,0 +1,1478 @@
+{
+  "page": {
+    "loading": "Yüklənir...",
+    "notFound": "Keys tapılmadı",
+    "allCases": "← Bütün keyslər",
+    "backToList": "← Gündəliyə qayıt",
+    "breadcrumb": "DocPats · Cərrahiyyə · Keys"
+  },
+  "procedures": {
+    "rhinoplasty": "Rinoplastika",
+    "blepharoplasty": "Blefaroplastika",
+    "facelift": "Üz germə (SMAS/MACS)",
+    "brow_lift": "Qaş qaldırılması",
+    "otoplasty": "Otoplastika",
+    "chin_implant": "Çənə implantı",
+    "cheek_implant": "Yanaq implantı",
+    "lip_augmentation": "Dodaq böyütmə",
+    "lip_lift": "Dodaq qaldırılması",
+    "neck_lift": "Boyun germə",
+    "fat_grafting_face": "Üzə yağ köçürülməsi",
+    "ear_reconstruction": "Qulaq rekonstruksiyası",
+    "breast_augmentation": "Döş böyütmə",
+    "breast_reduction": "Döş kiçiltmə",
+    "breast_lift": "Döş qaldırılması (mastopeksiya)",
+    "breast_reconstruction": "Döş rekonstruksiyası",
+    "abdominoplasty": "Abdominoplastika",
+    "liposuction": "Liposaksiya",
+    "bbl": "BBL (Braziliya popo estetikası)",
+    "body_contouring": "Bədənin kontur cərrahiyyəsi",
+    "arm_lift": "Qol germə (braxioplastika)",
+    "thigh_lift": "Bud germə",
+    "lower_body_lift": "Alt bədən germə",
+    "gynecomastia": "Ginekomastiya",
+    "labiaplasty": "Labioplastika",
+    "vaginoplasty": "Vaginoplastika",
+    "appendectomy": "Appendektomiya",
+    "cholecystectomy": "Xolesistektomiya",
+    "hernia_repair": "Yırtıq cərrahiyyəsi",
+    "gastrectomy": "Qastrektomiya",
+    "colectomy": "Kolektomiya",
+    "splenectomy": "Splenektomiya",
+    "bowel_resection": "Bağırsaq rezeksiyası",
+    "liver_resection": "Qaraciyər rezeksiyası",
+    "pancreatic_surgery": "Mədəaltı vəzin cərrahiyyəsi",
+    "rectal_surgery": "Düz bağırsağın cərrahiyyəsi",
+    "stoma_formation": "Stoma yaradılması",
+    "bariatric_sleeve": "Mədənin sleeve əməliyyatı",
+    "bariatric_bypass": "Mədə bypassı",
+    "bariatric_band": "Mədə bandı",
+    "cabg": "KABG (Koronar bypass)",
+    "valve_replacement": "Klapan dəyişdirilməsi",
+    "valve_repair": "Klapanın təmiri",
+    "aortic_surgery": "Aorta cərrahiyyəsi",
+    "pacemaker": "Ürək stimulyatorunun implantasiyası",
+    "icd_implant": "ICD implantasiyası",
+    "heart_transplant": "Ürək transplantasiyası",
+    "atrial_repair": "Aritmiya ablasiyası",
+    "vad_implant": "LVAD implantasiyası",
+    "pericardectomy": "Perikardektomiya",
+    "aaa_repair": "AAA təmiri",
+    "carotid_endarterectomy": "Karotid endarterektomiya",
+    "bypass_peripheral": "Periferik bypass",
+    "varicose_veins": "Varikoz damarların cərrahiyyəsi",
+    "av_fistula": "AV fistul",
+    "embolectomy": "Embolektomiya",
+    "angioplasty": "Angioplastika / stent",
+    "amputation": "Amputasiya",
+    "craniotomy": "Kraniotomiya",
+    "brain_tumor": "Beyin şişinin çıxarılması",
+    "spine_discectomy": "Diskektomiya",
+    "spine_fusion": "Onurğa füzyonu",
+    "laminectomy": "Laminektomiya",
+    "vp_shunt": "VP şant",
+    "dbs": "Dərin beyin stimulyasiyası (DBS)",
+    "aneurysm_clipping": "Anevrizma klipləmə",
+    "carpal_tunnel": "Karpal tunel sindromu",
+    "peripheral_nerve": "Periferik sinirlərin cərrahiyyəsi",
+    "lobectomy": "Ağciyər lobektomiyası",
+    "pneumonectomy": "Pnevmonektomiya",
+    "wedge_resection": "Pazlı rezeksiya",
+    "thymectomy": "Timektomiya",
+    "esophagectomy": "Ezofagektomiya",
+    "pleurectomy": "Plevrektomiya",
+    "lung_transplant": "Ağciyərin transplantasiyası",
+    "chest_wall_repair": "Döş qəfəsi divarının təmiri",
+    "hip_replacement": "Bud-çanaq oynaq protezi",
+    "knee_replacement": "Diz oynağı protezi",
+    "shoulder_replacement": "Çiyin oynağı protezi",
+    "acl_repair": "ACL rekonstruksiyası",
+    "meniscus_repair": "Meniskin təmiri",
+    "fracture_fixation": "Sınıq fiksasiyası",
+    "arthroscopy": "Artroskopiya",
+    "spinal_deformity": "Onurğa deformasiyasının korreksiyası",
+    "bone_tumor": "Sümük şişinin cərrahiyyəsi",
+    "tendon_repair": "Vətər təmiri",
+    "foot_surgery": "Pəncənin cərrahiyyəsi",
+    "hand_surgery": "Əlin cərrahiyyəsi",
+    "prostatectomy": "Prostatektomiya",
+    "nephrectomy": "Nefrektomiya",
+    "kidney_transplant": "Böyrəyin transplantasiyası",
+    "ureteroscopy": "Ureteroskopiya (daşlar)",
+    "pcnl": "PNL (perkutan nefrolitotomiya)",
+    "bladder_surgery": "Sidik kisəsinin cərrahiyyəsi",
+    "cystectomy": "Sistektomiya",
+    "orchiectomy": "Orxiektomiya",
+    "varicocele": "Varikoselin cərrahiyyəsi",
+    "circumcision": "Sünnət",
+    "penile_implant": "Penis implantı",
+    "sling_procedure": "Sling əməliyyatı",
+    "hysterectomy": "Histerektomiya",
+    "myomectomy": "Miyomektomiya",
+    "ovarian_cyst": "Yumurtalıq kistasının çıxarılması",
+    "oophorectomy": "Ooforektomiya",
+    "laparoscopy_gyn": "Diaqnostik laparoskopiya",
+    "endometriosis": "Endometriozun cərrahiyyəsi",
+    "tubal_ligation": "Boruların bağlanması",
+    "cesarean": "Sezaryen",
+    "prolapse_repair": "Çanaq orqanlarının prolapsının korreksiyası",
+    "cervical_conization": "Boyun konizasiyası",
+    "cataract": "Katarakt (fakoemulsifikasiya)",
+    "lasik": "LASIK / SMILE (görmə korreksiyası)",
+    "glaucoma_surgery": "Qlaukoma cərrahiyyəsi",
+    "retinal_detachment": "Şəbəkə pərdəsinin qopmasının cərrahiyyəsi",
+    "vitrectomy": "Vitrektomiya",
+    "strabismus": "Çəpgözlüyün cərrahiyyəsi",
+    "corneal_transplant": "Buynuz qişanın transplantasiyası",
+    "pterygium": "Pteriqiumun cərrahiyyəsi",
+    "tonsillectomy": "Tonzillektomiya",
+    "adenoidectomy": "Adenoidektomiya",
+    "septoplasty": "Septoplastika",
+    "sinus_surgery": "FESS (endoskopik sinüs cərrahiyyəsi)",
+    "tympanoplasty": "Timpanoplastika",
+    "cochlear_implant": "Koxlear implant",
+    "laryngoscopy": "Larinqoskopiya / qırtlağın mikrocərrahiyyəsi",
+    "parotidectomy": "Parotidektomiya",
+    "thyroidectomy": "Tiroidektomiya",
+    "parathyroidectomy": "Paratiroidektomiya",
+    "mastectomy": "Mastektomiya",
+    "sentinel_node": "Sentinel limfa düyününün biopsiyası",
+    "lymphadenectomy": "Limfadenektomiya",
+    "tumor_excision": "Şişin eksiziyası",
+    "cytoreductive": "Sitoreduktiv cərrahiyyə",
+    "hipec": "HIPEC (hipertermik kimyəvi perfuziya)",
+    "exenteration": "Çanaq ekzenterasiyası",
+    "port_implant": "Port kateterin implantasiyası",
+    "liver_transplant": "Qaraciyərin transplantasiyası",
+    "pancreas_transplant": "Mədəaltı vəzin transplantasiyası",
+    "bone_marrow_transplant": "Sümük iliyinin transplantasiyası",
+    "cornea_transplant": "Buynuz qişanın transplantasiyası",
+    "hand_transplant": "Əlin transplantasiyası",
+    "face_transplant": "Üzün transplantasiyası",
+    "pyloric_stenosis": "Pilor stenozunun cərrahiyyəsi",
+    "intussusception": "İnvaginasiya",
+    "hirschsprung": "Hirşspranq xəstəliyi",
+    "cleft_lip_palate": "Dovşan dodaq / qurd ağız",
+    "hypospadias": "Hipospadiyanın cərrahiyyəsi",
+    "undescended_testis": "Enməmiş xayanın cərrahiyyəsi",
+    "vsd_asd_repair": "VSD / ASD təmiri",
+    "dialysis_access": "Dializ girişi",
+    "wound_debridement": "Yaranın debridmanı",
+    "abscess_drainage": "Absesin drenajı",
+    "circumcision_adult": "Yetkin sünnəti",
+    "pilonidal_cyst": "Pilonidal kista",
+    "hemorrhoidectomy": "Hemoroidektomiya",
+    "fistula_repair": "Fistulun təmiri",
+    "skin_graft": "Dəri qrefti",
+    "other": "Digər (siyahıda yoxdur)"
+  },
+  "photoLabels": {
+    "before": "Əvvəl",
+    "after": "Sonra",
+    "intra_op": "Əməliyyat anı",
+    "1week": "1 həftə",
+    "1month": "1 ay",
+    "3months": "3 ay",
+    "6months": "6 ay",
+    "simulation": "Simulyasiya"
+  },
+  "statuses": {
+    "planned": "Planlaşdırılıb",
+    "completed": "Tamamlanıb",
+    "follow_up": "Müşahidə",
+    "closed": "Bağlanıb"
+  },
+  "tabs": {
+    "info": "Məlumat",
+    "plan": "Planlama",
+    "photos": "Fotolar",
+    "simulator": "AI Simulyasiya",
+    "followup": "Müşahidə"
+  },
+  "header": {
+    "changeStatusTooltip": "Dəyişmək üçün klikləyin",
+    "publish": "Dərc et",
+    "unpublish": "Dərcdən çıxar",
+    "publicCase": "Açıq keys",
+    "privateCase": "Şəxsi keys"
+  },
+  "stats": {
+    "date": "Tarix",
+    "status": "Status",
+    "score": "Qiymət",
+    "photos": "Fotolar",
+    "followups": "Müşahidələr",
+    "noScore": "—"
+  },
+  "info": {
+    "params": "Əməliyyat parametrləri",
+    "procedure": "Prosedur",
+    "anesthesia": "Anesteziya",
+    "technique": "Texnika",
+    "implantType": "İmplant",
+    "implantSize": "Ölçü",
+    "volume": "Həcm",
+    "duration": "Müddət",
+    "minutes": "dəq",
+    "plan": "Əməliyyat planı",
+    "planNotFilled": "Plan hələ doldurulmayıb",
+    "fillPlan": "Planı doldur →",
+    "score": "Nəticənin qiymətləndirilməsi",
+    "scoreHint": "Nəticəni 1-dən 10-a qədər qiymətləndirin",
+    "save": "Yadda saxla",
+    "currentScore": "Cari qiymət: {{score}}/10",
+    "consent": "Pasiyent razılığı",
+    "consentReceived": "✓ Razılıq alınıb {{date}}",
+    "consentNotReceived": "Dərc üçün razılıq alınmayıb",
+    "markConsent": "Razılığı qeyd et"
+  },
+  "photos": {
+    "selectLabel": "Etiket seçin",
+    "addPhoto": "+ Foto əlavə et",
+    "uploading": "Yüklənir...",
+    "noPhotos": "Hələ foto yoxdur",
+    "noPhotosHint": "Əməliyyatdan əvvəl, sonra və müşahidə zamanı fotolar yükləyin",
+    "public": "Açıq",
+    "confirmDelete": "Bu fotonu silmək istəyirsiniz?"
+  },
+  "followup": {
+    "addRecord": "Müşahidə qeydi əlavə et",
+    "datePlaceholder": "Ziyarət tarixi",
+    "notesPlaceholder": "Cərrahın qeydləri...",
+    "complicationsPlaceholder": "Ağırlaşmalar (varsa)",
+    "addEntry": "Qeyd əlavə et",
+    "noRecords": "Hələ müşahidə qeydləri yoxdur",
+    "complications": "Ağırlaşmalar",
+    "addedBy": "Əlavə etdi",
+    "surgeon": "cərrah",
+    "patient": "pasiyent",
+    "totalVisits": "Ümumi ziyarət",
+    "lastVisit": "Son ziyarət"
+  },
+  "errors": {
+    "publishError": "Dərc zamanı xəta"
+  },
+  "planForm": {
+    "back": "← Geri",
+    "next": "İrəli →",
+    "save": "Yadda saxla",
+    "saving": "Saxlanılır...",
+    "saved": "✓ Yadda saxlanıldı",
+    "generating": "Yaradılır...",
+    "downloadPdf": "PDF yüklə",
+    "saveError": "Saxlama xətası",
+    "pdfError": "PDF yaratma xətası",
+    "selectPlaceholder": "— seçin —",
+    "yes": "Bəli"
+  },
+  "tab": {
+    "loadError": "Cərrahi keyslər yüklənə bilmədi",
+    "noCases": "Hələ cərrahi keys yoxdur",
+    "noCasesHint": "Bu pasiyent üçün ilk əməliyyat keysini yaradın",
+    "newCase": "+ Yeni keys",
+    "createCase": "Keys yarat",
+    "dateNotSet": "Tarix göstərilməyib",
+    "casesCount_one": "{{count}} keys",
+    "casesCount_other": "{{count}} keys",
+    "photosCount_one": "{{count}} foto",
+    "photosCount_other": "{{count}} foto"
+  },
+  "list": {
+    "breadcrumb": "DocPats · Cərrahiyyə",
+    "title": "Əməliyyat gündəliyi",
+    "newCase": "Yeni keys",
+    "totalCases": "Ümumi keyslər",
+    "proceduresTypes_one": "{{count}} əməliyyat növü",
+    "proceduresTypes_other": "{{count}} əməliyyat növü",
+    "averageScore": "orta {{score}} / 10",
+    "allProcedures": "Bütün əməliyyatlar",
+    "noCases": "Hələ keys yoxdur",
+    "noCasesHint": "İlk əməliyyat keysinizi yaradın — əməliyyat planı, fotolar və nəticəni bir yerdə saxlayın.",
+    "createFirst": "İlk keysi yarat",
+    "portfolioBadge": "Portfolio",
+    "noScore": "Qiymətsiz",
+    "delete": "Sil",
+    "confirmDelete": "Bu keys silinsin? Bu əməliyyat geri qaytarıla bilməz.",
+    "filterAll": "Hamısı",
+    "filterPlanned": "Planlaşdırılanlar",
+    "filterCompleted": "Tamamlananlar",
+    "filterFollowUp": "Müşahidədə",
+    "filterClosed": "Bağlananlar"
+  },
+  "simulator": {
+    "sourcePhoto": "Əsas foto",
+    "uploadFirst": "Əvvəlcə «Fotolar» tabına foto yükləyin",
+    "additionalWishes": "Əlavə istəklər",
+    "optional": "məcburi deyil",
+    "wishesPlaceholder": "Məs.: daha dar burun ucu, təbii görünüş...",
+    "disclaimer": "Başa düşürəm ki, AI simulyasiyası yalnız illüstrativdir və əməliyyatın real nəticəsinə <1>zəmanət vermir</1>",
+    "generate": "{{count}} variant yarat",
+    "generating": "Yaradılır...",
+    "generatingWithTime": "Yaradılır... (~{{sec}} san)",
+    "history": "Simulyasiya tarixi",
+    "noHistory": "Hələ simulyasiya yoxdur",
+    "noHistoryHint": "Maska çəkin və «Yarat» düyməsini basın",
+    "drawMaskArea": "Dəyişdirmək istədiyiniz sahəni çəkin",
+    "brushHint": "fırça əməliyyat zonasını boyayır",
+    "clearMask": "Təmizlə",
+    "maskDrawn": "✓ Maska çəkildi",
+    "falaiProcessing": "Fal.ai variantları yaradır...",
+    "variant": "Variant {{n}}",
+    "selected": "✓ Seçildi",
+    "download": "Yüklə",
+    "close": "Bağla",
+    "zoom": "Böyüt",
+    "delete": "Sil",
+    "confirmDelete": "Bu simulyasiyanı silmək istəyirsiniz?",
+    "unknownError": "Naməlum xəta",
+    "errorSelectPhoto": "Foto seçin",
+    "errorDrawMask": "Dəyişdirmək istədiyiniz sahəni çəkin",
+    "errorAcceptDisclaimer": "Məsuliyyətdən imtinanı qəbul edin",
+    "errorPrefix": "Xəta",
+    "errorLaunch": "Simulyasiyanı başlatma xətası",
+    "simStatusPending": "Gözləyir",
+    "simStatusProcessing": "Yaradılır...",
+    "simStatusDone": "Hazır",
+    "simStatusFailed": "Uğursuz"
+  },
+  "procedureGroups": {
+    "facial_plastic": "Üzün plastik cərrahiyyəsi",
+    "body_plastic": "Bədənin plastik cərrahiyyəsi",
+    "abdominal": "Abdominal cərrahiyyə",
+    "cardiac": "Ürək cərrahiyyəsi",
+    "vascular": "Damar cərrahiyyəsi",
+    "neuro": "Neyrocərrahiyyə",
+    "thoracic": "Torakal cərrahiyyə",
+    "orthopedic": "Ortopediya və travmatologiya",
+    "urology": "Urologiya",
+    "gynecology": "Ginekologiya",
+    "ophthalmology": "Oftalmologiya",
+    "ent": "LOR cərrahiyyəsi",
+    "oncology": "Onkoloji cərrahiyyə",
+    "transplant": "Transplantologiya",
+    "pediatric": "Pediatrik cərrahiyyə",
+    "other_group": "Digər"
+  },
+  "newCase": {
+    "breadcrumb": "DocPats · Cərrahiyyə · Yeni keys",
+    "title": "Yeni keys",
+    "patient": "Pasiyent",
+    "patientType": "Pasiyent tipi",
+    "patientTypes": {
+      "registered": "Pasiyentlər bazasından",
+      "private": "Şəxsi pasiyent",
+      "anonymous": "Anonim kod"
+    },
+    "searchRegistered": "Pasiyentlər bazasında axtarış",
+    "searchPrivate": "Şəxsi pasiyentlər arasında axtarış",
+    "searchPlaceholder": "Ad, soyad və ya email...",
+    "searching": "Axtarış...",
+    "selected": "Seçildi",
+    "notFoundInPatients": "Pasiyentlər siyahınızda tapılmadı",
+    "anonymousCode": "Anonim kod",
+    "noPersonalData": "şəxsi məlumatlar olmadan",
+    "anonymousCodePlaceholder": "Məs.: PT-2024-001",
+    "consentText": "Pasiyent fotoların anonim istifadəsinə yazılı razılıq verib",
+    "mainInfo": "Əsas məlumat",
+    "procedureRequired": "Əməliyyat növü *",
+    "selectProcedurePlaceholder": "— əməliyyat seçin —",
+    "operationDate": "Əməliyyat tarixi",
+    "technicalParams": "Texniki parametrlər",
+    "notSpecified": "Göstərilməyib",
+    "anesthesia": {
+      "local": "Lokal",
+      "sedation": "Sedasiya",
+      "general": "Ümumi (endotraxeal)",
+      "spinal": "Spinal",
+      "epidural": "Epidural",
+      "regional": "Regional (blokada)"
+    },
+    "techniqueLabel": "Texnika / giriş",
+    "techniquePlaceholder": "Məs.: laparoskopik, açıq giriş...",
+    "implantLabel": "İmplant / material",
+    "implantPlaceholder": "İmplant, tikiş materialı, protez...",
+    "sizeLabel": "Ölçü / həcm",
+    "sizePlaceholder": "325 ml, L, 3 sm...",
+    "durationLabel": "Müddət (dəq)",
+    "planHint": "Qısa təsvir — detallı plan ayrıca bölmədə doldurulur. Şifrlənmiş şəkildə saxlanılır.",
+    "planPlaceholder": "Əməliyyat planını, pasiyentin xüsusiyyətlərini, kontrendikasiyaları təsvir edin...",
+    "cancel": "Ləğv et",
+    "creating": "Yaradılır...",
+    "errors": {
+      "selectProcedure": "Əməliyyat növünü seçin",
+      "selectPatient": "Siyahıdan pasiyent seçin",
+      "enterAnonymousCode": "Anonim pasiyent kodunu daxil edin",
+      "createFailed": "Keys yaratma xətası",
+      "noUserId": "userId müəyyən edilməyib",
+      "requestFailed": "Xəta"
+    }
+  },
+  "planSchema": {
+    "common": {
+      "consultation": {
+        "title": "İlkin konsultasiya",
+        "fields": {
+          "motivation": {
+            "label": "Pasiyentin motivasiyası",
+            "placeholder": "Nədən narahatdır, hansı nəticəni gözləyir..."
+          },
+          "complaints": {
+            "label": "Şikayətlər",
+            "placeholder": "Əsas şikayətlər..."
+          },
+          "anamnesis": {
+            "label": "Xəstəlik anamnezi",
+            "placeholder": "Xroniki xəstəliklər, keçmiş əməliyyatlar..."
+          },
+          "medications": {
+            "label": "Qəbul edilən dərmanlar",
+            "placeholder": "Antikoaqulyantlar, hormonlar, qida əlavələri..."
+          },
+          "allergies": {
+            "label": "Allergiyalar",
+            "placeholder": "Allergik reaksiyalar..."
+          },
+          "smoking": {
+            "label": "Siqaret",
+            "options": [
+              "Xeyr",
+              "Tərgitdi >3 ay",
+              "Tərgitdi <3 ay",
+              "Siqaret çəkir"
+            ]
+          },
+          "alcohol": {
+            "label": "Alkoqol",
+            "options": ["Yoxdur", "Nadirən", "Orta", "Tez-tez"]
+          },
+          "previousSurgeries": {
+            "label": "Əvvəlki əməliyyatlar",
+            "placeholder": "Əvvəlki əməliyyatları sadalayın..."
+          }
+        }
+      },
+      "preop_tests": {
+        "title": "Əməliyyatdan əvvəlki müayinə",
+        "fields": {
+          "tests": {
+            "label": "Təyin edilmiş analizlər",
+            "options": [
+              "Tam qan analizi",
+              "Tam sidik analizi",
+              "Koaqulyasiya paneli",
+              "Biokimya",
+              "Qan qrupu və Rh faktoru",
+              "HİV",
+              "Hepatit B (HBsAg)",
+              "Hepatit C (anti-HCV)",
+              "Sifiliz (RPR)",
+              "EKQ",
+              "Döş qəfəsinin rentgeni",
+              "Terapevtin məsləhəti",
+              "Anestezioloqun məsləhəti"
+            ]
+          },
+          "contraindications": {
+            "label": "Kontrendikasiyalar (aşkar edilibsə)",
+            "placeholder": "Aşkar edilmiş kontrendikasiyaları göstərin..."
+          },
+          "anesthesia": {
+            "label": "Anesteziya növü",
+            "options": ["Lokal", "Sedasiya", "Ümumi (endotraxeal)", "Spinal"]
+          }
+        }
+      },
+      "risks_consent": {
+        "title": "Risklər və məlumatlandırılmış razılıq",
+        "fields": {
+          "risks_discussed": {
+            "label": "Müzakirə edilmiş risklər",
+            "options": [
+              "İnfeksiya",
+              "Qanaxma / hematoma",
+              "Seroma",
+              "Tikiş ayrılması",
+              "Hipertrofik / keloid çapıq",
+              "Asimmetriya",
+              "Hissiyatın dəyişməsi",
+              "DDV / PE",
+              "Anesteziya riskləri",
+              "Nəticədən razı qalmamaq",
+              "Təkrar əməliyyatın zəruriliyi"
+            ]
+          },
+          "consent_given": {
+            "label": "Məlumatlandırılmış razılıq alındı"
+          },
+          "consent_date": {
+            "label": "Razılığın imzalanma tarixi",
+            "placeholder": "gg.aa.iiii"
+          },
+          "consent_notes": {
+            "label": "Xüsusi istəklər",
+            "placeholder": "Xüsusi istəklər, məhdudiyyətlər..."
+          }
+        }
+      },
+      "postop_plan": {
+        "title": "Əməliyyatdan sonrakı izləmə",
+        "fields": {
+          "compression": {
+            "label": "Kompressiya geyimi / sarğı",
+            "placeholder": "Tip, müddət..."
+          },
+          "activity": {
+            "label": "Aktivlik məhdudiyyəti",
+            "placeholder": "Fiziki fəaliyyət, idman, müddətlər..."
+          },
+          "antibiotics": {
+            "label": "Antibiotik profilaktikası",
+            "placeholder": "Dərman, doza, kurs..."
+          },
+          "pain_management": {
+            "label": "Ağrıkəsici terapiya",
+            "placeholder": "Dərmanlar, sxem..."
+          },
+          "followup_schedule": {
+            "label": "Müşahidə cədvəli",
+            "placeholder": "1 gün, 7 gün, 1 ay, 3 ay..."
+          },
+          "drain": {
+            "label": "Drenaj",
+            "options": ["Qoyulmayıb", "Aktiv (1)", "Aktiv (2)", "Passiv"]
+          },
+          "special_instructions": {
+            "label": "Xüsusi təlimatlar",
+            "placeholder": "Bu pasiyent üçün xüsusi tövsiyələr..."
+          }
+        }
+      }
+    },
+    "shared": {
+      "surgeon_notes": {
+        "label": "Cərrahın qeydləri",
+        "placeholder": "Texnika xüsusiyyətləri, nüanslar..."
+      },
+      "duration_min": {
+        "label": "Planlaşdırılan müddət (dəq)",
+        "placeholder": "dəqiqə"
+      }
+    },
+    "rhinoplasty": {
+      "examination": {
+        "title": "Müayinə və antropometriya",
+        "fields": {
+          "skin_type": {
+            "label": "Dəri tipi",
+            "options": ["Nazik", "Orta", "Qalın / piyli"]
+          },
+          "nasal_tip": {
+            "label": "Burun ucu",
+            "options": [
+              "Normal",
+              "Geniş",
+              "Dar",
+              "Aşağı düşmüş",
+              "Qaldırılmış",
+              "İkiyə bölünmüş"
+            ]
+          },
+          "nasal_bridge": {
+            "label": "Burun kürəyi",
+            "options": ["Düz", "Qozbel", "Yəhərvarı", "Asimmetrik"]
+          },
+          "septum": {
+            "label": "Burun arakəsməsi",
+            "options": [
+              "Düz",
+              "Yüngül deviasiya",
+              "Orta deviasiya",
+              "Güclü deviasiya"
+            ]
+          },
+          "nasal_base_width": {
+            "label": "Təməl eni (mm)",
+            "placeholder": "mm"
+          },
+          "tip_projection": {
+            "label": "Uc proyeksiyası",
+            "options": ["Normal", "Kafi deyil", "Həddindən artıq"]
+          },
+          "nasofrontal_angle": {
+            "label": "Nazofrontal bucaq (°)",
+            "placeholder": "dərəcə"
+          },
+          "nasolabial_angle": {
+            "label": "Nazolabial bucaq (°)",
+            "placeholder": "dərəcə"
+          },
+          "asymmetry": {
+            "label": "Asimmetriya",
+            "placeholder": "Asimmetriyanın təsviri..."
+          },
+          "breathing": {
+            "label": "Burunla nəfəsalma",
+            "options": [
+              "Normal",
+              "Sağda pozulub",
+              "Solda pozulub",
+              "İki tərəfdə pozulub"
+            ]
+          }
+        }
+      },
+      "plan": {
+        "title": "Cərrahi plan",
+        "fields": {
+          "approach": {
+            "label": "Giriş",
+            "options": ["Açıq", "Qapalı"]
+          },
+          "osteotomy": {
+            "label": "Osteotomiya",
+            "options": ["Medial", "Lateral", "Transversal", "Planlaşdırılmır"]
+          },
+          "tip_technique": {
+            "label": "Ucun korreksiya texnikası",
+            "options": [
+              "Delivery approach",
+              "Lateral crural overlay",
+              "Tongue-in-groove",
+              "Qreftlə septoplastika",
+              "Columellar strut qreft"
+            ]
+          },
+          "graft_material": {
+            "label": "Qreft materialı",
+            "options": [
+              "Tələb olunmur",
+              "Autoqreft (septal)",
+              "Autoqreft (qulaq)",
+              "Autoqreft (qabırğa)",
+              "Alloqreft"
+            ]
+          },
+          "septoplasty": {
+            "label": "Septoplastika"
+          },
+          "turbinoplasty": {
+            "label": "Turbinoplastika"
+          }
+        }
+      }
+    },
+    "breast_augmentation": {
+      "examination": {
+        "title": "Müayinə və antropometriya",
+        "fields": {
+          "current_size": {
+            "label": "Mövcud döş ölçüsü",
+            "placeholder": "Məs.: 2A, 75B..."
+          },
+          "desired_size": {
+            "label": "Arzu edilən ölçü",
+            "placeholder": "Pasiyentin istəkləri..."
+          },
+          "breast_base_width": {
+            "label": "Təməl eni (mm)",
+            "placeholder": "mm"
+          },
+          "skin_thickness": {
+            "label": "Yumşaq toxumanın qalınlığı (mm)",
+            "placeholder": "mm"
+          },
+          "ptosis_degree": {
+            "label": "Ptoz dərəcəsi",
+            "options": [
+              "Ptoz yoxdur",
+              "I dərəcə (yüngül)",
+              "II dərəcə (orta)",
+              "III dərəcə (güclü)",
+              "Psevdoptoz"
+            ]
+          },
+          "nipple_position": {
+            "label": "Məməcik mövqeyi",
+            "options": ["Normal", "IMF-dən aşağıda", "IMF-dən yuxarıda"]
+          },
+          "asymmetry": {
+            "label": "Asimmetriya",
+            "placeholder": "Ölçü, forma, mövqe fərqi..."
+          },
+          "skin_quality": {
+            "label": "Dəri keyfiyyəti",
+            "options": [
+              "Yaxşı",
+              "Yüngül stria",
+              "Güclü stria",
+              "Azalmış turqor"
+            ]
+          },
+          "lactation_history": {
+            "label": "Laktasiya tarixi",
+            "options": [
+              "Olmayıb",
+              "Tamamlanıb >6 ay",
+              "Tamamlanıb <6 ay",
+              "Davam edir"
+            ]
+          }
+        }
+      },
+      "implant": {
+        "title": "İmplantın seçimi",
+        "fields": {
+          "implant_shape": {
+            "label": "İmplantın forması",
+            "options": ["Yumru", "Anatomik (damcıvarı)"]
+          },
+          "implant_profile": {
+            "label": "Profil",
+            "options": ["Low", "Moderate", "High", "Extra High"]
+          },
+          "implant_volume_l": {
+            "label": "Sol həcm (cc)",
+            "placeholder": "cc"
+          },
+          "implant_volume_r": {
+            "label": "Sağ həcm (cc)",
+            "placeholder": "cc"
+          },
+          "implant_fill": {
+            "label": "Doldurma",
+            "options": [
+              "Silikon (kohezif gel)",
+              "Silikon (maye)",
+              "Fizioloji məhlul"
+            ]
+          },
+          "implant_surface": {
+            "label": "Səth",
+            "options": ["Hamar", "Teksturlu", "Poliuretan"]
+          },
+          "implant_brand": {
+            "label": "Marka / kod",
+            "placeholder": "Mentor, Allergan, Polytech..."
+          },
+          "sizer_used": {
+            "label": "Sizer istifadə edilib"
+          }
+        }
+      },
+      "plan": {
+        "title": "Cərrahi plan",
+        "fields": {
+          "access": {
+            "label": "Giriş",
+            "options": [
+              "İnframammar",
+              "Periareolar",
+              "Qoltuqaltı",
+              "Transumbilikal (TUBA)"
+            ]
+          },
+          "pocket": {
+            "label": "İmplantın yeri",
+            "options": [
+              "Subqlandulyar",
+              "Submuskulyar (tam)",
+              "Dual plane I",
+              "Dual plane II",
+              "Dual plane III",
+              "Subfasial"
+            ]
+          },
+          "mastopexy_planned": {
+            "label": "Eyni zamanda mastopeksiya"
+          }
+        }
+      },
+      "specific_risks": {
+        "title": "Xüsusi risklər",
+        "fields": {
+          "specific_risks": {
+            "label": "Döş böyütməsinin riskləri",
+            "options": [
+              "Kapsulyar kontraktura (I-IV)",
+              "İmplantın yerdəyişməsi / rotasiya",
+              "İmplantın cırılması",
+              "Dalğalanma",
+              "Məməcik hissiyatının dəyişməsi",
+              "Əmizdirmənin mümkünsüzlüyü",
+              "BIA-ALCL",
+              "İmplantın dəyişdirilmə zəruriliyi"
+            ]
+          }
+        }
+      }
+    },
+    "breast_reduction": {
+      "examination": {
+        "title": "Müayinə və antropometriya",
+        "fields": {
+          "current_size": {
+            "label": "Mövcud ölçü",
+            "placeholder": "Sinəbənd ölçüsü..."
+          },
+          "desired_size": {
+            "label": "Arzu edilən ölçü",
+            "placeholder": "Pasiyentin istəkləri..."
+          },
+          "breast_weight_l": {
+            "label": "Sol toxumanın təxmini kütləsi (q)",
+            "placeholder": "q"
+          },
+          "breast_weight_r": {
+            "label": "Sağ toxumanın təxmini kütləsi (q)",
+            "placeholder": "q"
+          },
+          "ptosis_degree": {
+            "label": "Ptoz dərəcəsi",
+            "options": [
+              "I dərəcə",
+              "II dərəcə",
+              "III dərəcə",
+              "IV dərəcə (ağır)"
+            ]
+          },
+          "nipple_to_fold": {
+            "label": "Məməcik-qat məsafəsi (mm)",
+            "placeholder": "mm"
+          },
+          "sternal_notch_nipple": {
+            "label": "Sinə çökəkliyi-məməcik (mm)",
+            "placeholder": "mm"
+          },
+          "symptoms": {
+            "label": "Simptomlar",
+            "options": [
+              "Boyun / kürək ağrısı",
+              "İnframammar dermatit",
+              "Sinəbənd iz",
+              "Məhdud aktivlik",
+              "Psixoloji narahatlıq"
+            ]
+          }
+        }
+      },
+      "plan": {
+        "title": "Cərrahi plan",
+        "fields": {
+          "technique": {
+            "label": "Texnika",
+            "options": [
+              "Vertikal (lolipop)",
+              "Wise (lövbər)",
+              "Yuxarı pedikül",
+              "Aşağı pedikül",
+              "Medial pedikül",
+              "Sərbəst məməcik qrefti"
+            ]
+          },
+          "resection_volume_l": {
+            "label": "Sol rezeksiya həcmi (q)",
+            "placeholder": "q"
+          },
+          "resection_volume_r": {
+            "label": "Sağ rezeksiya həcmi (q)",
+            "placeholder": "q"
+          },
+          "new_nipple_position": {
+            "label": "Yeni məməcik mövqeyi",
+            "placeholder": "Sinə çökəkliyindən məsafə (mm)..."
+          },
+          "liposuction_planned": {
+            "label": "Əlavə liposaksiya"
+          }
+        }
+      }
+    },
+    "blepharoplasty": {
+      "examination": {
+        "title": "Müayinə",
+        "fields": {
+          "type": {
+            "label": "Blefaroplastika tipi",
+            "options": ["Yuxarı", "Aşağı", "Kombinə edilmiş (4 göz qapağı)"]
+          },
+          "upper_excess_skin": {
+            "label": "Yuxarıda artıq dəri (mm)",
+            "placeholder": "mm"
+          },
+          "ptosis_upper": {
+            "label": "Yuxarı göz qapağının ptozu",
+            "options": ["Yoxdur", "Yüngül", "Orta", "Güclü"]
+          },
+          "fat_herniation_upper": {
+            "label": "Yuxarıda piy yırtığı",
+            "options": ["Medial cib", "Mərkəzi cib", "Lateral cib"]
+          },
+          "fat_herniation_lower": {
+            "label": "Aşağıda piy yırtığı",
+            "options": ["Medial cib", "Mərkəzi cib", "Lateral cib"]
+          },
+          "tear_trough": {
+            "label": "Göz yaşı şırımı",
+            "options": ["Yoxdur", "Yüngül", "Orta", "Güclü"]
+          },
+          "lower_skin_excess": {
+            "label": "Aşağıda artıq dəri (mm)",
+            "placeholder": "mm"
+          },
+          "canthal_laxity": {
+            "label": "Kantal zəiflik",
+            "options": ["Yoxdur", "Yüngül", "Orta", "Güclü"]
+          },
+          "dry_eye": {
+            "label": "Quru göz sindromu",
+            "options": [
+              "Yoxdur",
+              "Var (kompensə)",
+              "Var (dekompensə — nisbi kontrendikasiya)"
+            ]
+          },
+          "schirmer_test": {
+            "label": "Şirmer testi (mm/5 dəq)",
+            "placeholder": "mm/5 dəq..."
+          }
+        }
+      },
+      "plan": {
+        "title": "Cərrahi plan",
+        "fields": {
+          "upper_skin_resection": {
+            "label": "Yuxarı dəri rezeksiyası (mm)",
+            "placeholder": "mm"
+          },
+          "upper_fat_removal": {
+            "label": "Yuxarı piyin çıxarılması",
+            "options": ["Medial cib", "Mərkəzi cib", "Çıxarma"]
+          },
+          "lower_approach": {
+            "label": "Aşağı qapaq girişi",
+            "options": ["Transkutan", "Transkonyunktival"]
+          },
+          "lower_fat_management": {
+            "label": "Aşağı göz qapağı piyi",
+            "options": ["Çıxarılma", "Transpozisiya", "Toxunma"]
+          },
+          "canthopexy": {
+            "label": "Kantopeksiya"
+          },
+          "asian_technique": {
+            "label": "Asiya texnikası (2 qapaq)"
+          }
+        }
+      }
+    },
+    "liposuction": {
+      "examination": {
+        "title": "Müayinə və zonalar",
+        "fields": {
+          "bmi": {
+            "label": "BKİ",
+            "placeholder": "kq/m²"
+          },
+          "weight": {
+            "label": "Çəki (kq)",
+            "placeholder": "kq"
+          },
+          "target_zones": {
+            "label": "Hədəf zonalar",
+            "options": [
+              "Qarının üstü",
+              "Qarının altı",
+              "Böyürlər",
+              "Kürəyin üstü",
+              "Kürəyin altı",
+              "Daxili bud",
+              "Xarici bud",
+              "Saddlebag",
+              "Dizlər",
+              "Daxili qol",
+              "Xarici qol",
+              "Çənə / boyun",
+              "Döş (ginekomastiya)",
+              "Mons pubis"
+            ]
+          },
+          "skin_elasticity": {
+            "label": "Dərinin elastikliyi",
+            "options": [
+              "Əla",
+              "Yaxşı",
+              "Qənaətbəxş",
+              "Azalmış (düzgünsüzlük riski)"
+            ]
+          },
+          "cellulite": {
+            "label": "Sellülit",
+            "options": ["Yoxdur", "I dərəcə", "II dərəcə", "III dərəcə"]
+          },
+          "stretch_marks": {
+            "label": "Strialar",
+            "options": ["Yoxdur", "Minimal", "Orta", "Güclü"]
+          }
+        }
+      },
+      "plan": {
+        "title": "Cərrahi plan",
+        "fields": {
+          "technique": {
+            "label": "Texnika",
+            "options": [
+              "Klassik (SAL)",
+              "Ultrasəs (UAL/VASER)",
+              "Lazer (LAL)",
+              "PAL",
+              "Su jeti (WAL)",
+              "Hi-Def"
+            ]
+          },
+          "tumescent_volume": {
+            "label": "Tumesan həcmi (ml)",
+            "placeholder": "ml"
+          },
+          "expected_aspirate": {
+            "label": "Gözlənilən aspirat (ml)",
+            "placeholder": "ml"
+          },
+          "cannula_size": {
+            "label": "Kanyulun ölçüsü (mm)",
+            "placeholder": "mm..."
+          },
+          "skin_excision": {
+            "label": "Dəri eksiziyası (planlaşdırılıbsa)"
+          }
+        }
+      }
+    },
+    "abdominoplasty": {
+      "examination": {
+        "title": "Müayinə",
+        "fields": {
+          "type": {
+            "label": "Abdominoplastika tipi",
+            "options": [
+              "Tam",
+              "Mini",
+              "Genişləndirilmiş",
+              "Fleur-de-lis",
+              "Belt lipektomiya"
+            ]
+          },
+          "diastasis_width": {
+            "label": "Rektus diastazı (mm)",
+            "placeholder": "mm"
+          },
+          "diastasis_length": {
+            "label": "Diastazın yayılması",
+            "options": ["Yoxdur", "Göbək", "Supraumbilikal", "Tam"]
+          },
+          "skin_excess": {
+            "label": "Artıq dəri",
+            "options": ["Minimal", "Orta", "Güclü (önlük)"]
+          },
+          "hernia": {
+            "label": "Qarın divarı yırtığı",
+            "options": ["Yoxdur", "Göbək yırtığı", "Postoperativ", "Digər"]
+          },
+          "previous_scars": {
+            "label": "Mövcud çapıqlar",
+            "placeholder": "Laparotomiya, sezaryen, appendektomiya..."
+          },
+          "bmi": {
+            "label": "BKİ",
+            "placeholder": "kq/m²"
+          }
+        }
+      },
+      "plan": {
+        "title": "Cərrahi plan",
+        "fields": {
+          "incision_level": {
+            "label": "Kəsik səviyyəsi",
+            "placeholder": "Qasıq simfizindən sm..."
+          },
+          "neoumbilicoplasty": {
+            "label": "Neoumbilikoplastika"
+          },
+          "diastasis_repair": {
+            "label": "Diastazın təmiri"
+          },
+          "liposuction_zones": {
+            "label": "Eyni zamanda liposaksiya",
+            "options": [
+              "Böyürlər",
+              "Kürək",
+              "Sinəbənd büküşləri",
+              "Planlaşdırılmır"
+            ]
+          },
+          "drain_count": {
+            "label": "Drenajların sayı",
+            "options": ["0", "1", "2"]
+          }
+        }
+      },
+      "specific_risks": {
+        "title": "Xüsusi risklər",
+        "fields": {
+          "specific_risks": {
+            "label": "Abdominoplastikanın riskləri",
+            "options": [
+              "Göbək nekrozu",
+              "Dəri nekrozu",
+              "Seroma (tez-tez)",
+              "Aşağı tikişin ayrılması",
+              "DDV / PE (yüksək risk)",
+              "Hissi sinirin zədələnməsi"
+            ]
+          }
+        }
+      }
+    },
+    "facelift": {
+      "examination": {
+        "title": "Müayinə və qiymətləndirmə",
+        "fields": {
+          "age": {
+            "label": "Yaş",
+            "placeholder": "yaş"
+          },
+          "skin_quality": {
+            "label": "Dərinin keyfiyyəti",
+            "options": ["Əla", "Yaxşı", "Qənaətbəxş", "Sallaq / foto-zədəli"]
+          },
+          "jowls": {
+            "label": "Çənə sallanması (jowl)",
+            "options": ["Yoxdur", "Yüngül", "Orta", "Güclü"]
+          },
+          "nasolabial_folds": {
+            "label": "Nazolabial qatlar",
+            "options": ["Yoxdur", "Yüngül", "Orta", "Dərin"]
+          },
+          "neck_laxity": {
+            "label": "Boynun zəifliyi",
+            "options": ["Yoxdur", "Yüngül", "Orta", "Güclü"]
+          },
+          "platysmal_bands": {
+            "label": "Platizma zolaqları",
+            "options": ["Yoxdur", "Orta", "Güclü"]
+          },
+          "fat_distribution": {
+            "label": "Piyin paylanması",
+            "placeholder": "Piy kompartmentlərinin ptozu, həcm çatışmazlığı..."
+          },
+          "facial_asymmetry": {
+            "label": "Asimmetriya",
+            "placeholder": "Asimmetriyanın təsviri..."
+          },
+          "hair_line": {
+            "label": "Saç xətti",
+            "options": ["Normal", "Yüksək", "Seyrək saç"]
+          }
+        }
+      },
+      "plan": {
+        "title": "Cərrahi plan",
+        "fields": {
+          "technique": {
+            "label": "Texnika",
+            "options": [
+              "MACS",
+              "SMAS plikasiyası",
+              "SMASectomy",
+              "Dərin plan",
+              "Kompozit lift",
+              "Səthi (yalnız dəri)",
+              "Endoskopik"
+            ]
+          },
+          "neck_lift": {
+            "label": "Boyun germə"
+          },
+          "platysmaplasty": {
+            "label": "Platizmaplastika"
+          },
+          "brow_lift": {
+            "label": "Qaş qaldırılması"
+          },
+          "fat_grafting": {
+            "label": "Yağ qrefti"
+          },
+          "fat_grafting_zones": {
+            "label": "Yağ qrefti zonaları",
+            "placeholder": "Yanaqlar, nazolabial qatlar, gicgahlar..."
+          },
+          "liposuction": {
+            "label": "Liposaksiya (çənə / boyun)"
+          },
+          "incision_type": {
+            "label": "Kəsik",
+            "options": [
+              "Klassik (pre-/postaurikular)",
+              "Minimal (yalnız preaurikular)",
+              "Temporal"
+            ]
+          }
+        }
+      }
+    },
+    "otoplasty": {
+      "examination": {
+        "title": "Müayinə",
+        "fields": {
+          "protrusion_l": {
+            "label": "Sol çıxıntı (°)",
+            "placeholder": "dərəcə"
+          },
+          "protrusion_r": {
+            "label": "Sağ çıxıntı (°)",
+            "placeholder": "dərəcə"
+          },
+          "distance_scalp_l": {
+            "label": "Sol baş dərisindən məsafə (mm)",
+            "placeholder": "mm"
+          },
+          "distance_scalp_r": {
+            "label": "Sağ baş dərisindən məsafə (mm)",
+            "placeholder": "mm"
+          },
+          "antihelix": {
+            "label": "Antiheliks",
+            "options": ["Normal", "Yastılaşıb", "Yoxdur"]
+          },
+          "conchal_excess": {
+            "label": "Konxada artıqlıq",
+            "options": ["Yoxdur", "Orta", "Güclü"]
+          },
+          "earlobe": {
+            "label": "Qulaq memesi",
+            "options": ["Normal", "Çıxıq", "Cırıq", "Hipertrofik"]
+          },
+          "asymmetry": {
+            "label": "Asimmetriya",
+            "placeholder": "Təsvir..."
+          }
+        }
+      },
+      "plan": {
+        "title": "Cərrahi plan",
+        "fields": {
+          "technique": {
+            "label": "Texnika",
+            "options": [
+              "Mustardé",
+              "Furnas",
+              "Kombinə edilmiş",
+              "Qığırdaq qoruyucu",
+              "Qığırdaq eksiziyası ilə"
+            ]
+          },
+          "conchal_setback": {
+            "label": "Konxomastoid fiksasiya"
+          },
+          "skin_excision": {
+            "label": "Dəri eksiziyası"
+          },
+          "earlobe_correction": {
+            "label": "Qulaq memesinin korreksiyası"
+          },
+          "bilateral": {
+            "label": "İki tərəfli"
+          }
+        }
+      }
+    },
+    "chin_implant": {
+      "examination": {
+        "title": "Müayinə və antropometriya",
+        "fields": {
+          "chin_projection": {
+            "label": "Çənənin proyeksiyası",
+            "options": [
+              "Normal",
+              "Retrogeniya (zəif çənə)",
+              "Progeniya (çıxıq)"
+            ]
+          },
+          "chin_projection_mm": {
+            "label": "Proyeksiya çatışmazlığı (mm)",
+            "placeholder": "mm"
+          },
+          "facial_thirds": {
+            "label": "Üzün hissələri",
+            "placeholder": "Yuxarı, orta, aşağı üçdə bir..."
+          },
+          "occlusion": {
+            "label": "Dişləmə",
+            "options": ["Normal", "Distal", "Mezial", "Açıq", "Çarpaz"]
+          },
+          "orthodontics": {
+            "label": "Ortodontik müalicə",
+            "options": ["Aparılmayıb", "Tamamlanıb", "Davam edir"]
+          },
+          "neck_jaw_angle": {
+            "label": "Servikomental bucaq",
+            "options": ["Yaxşı", "Azalmış", "Artmış"]
+          }
+        }
+      },
+      "plan": {
+        "title": "Cərrahi plan",
+        "fields": {
+          "implant_size": {
+            "label": "İmplantın ölçüsü",
+            "placeholder": "Small / Medium / Large / XL..."
+          },
+          "implant_type": {
+            "label": "İmplantın tipi",
+            "options": [
+              "Standart anatomik",
+              "Genişləndirilmiş",
+              "Vertikal chin cup",
+              "Silikon gel",
+              "Polietilen (Medpor)"
+            ]
+          },
+          "access": {
+            "label": "Giriş",
+            "options": ["Submental", "İntraoral"]
+          },
+          "liposuction": {
+            "label": "Çənə / boyun liposaksiyası"
+          },
+          "platysmaplasty": {
+            "label": "Platizmaplastika"
+          }
+        }
+      }
+    },
+    "lip_augmentation": {
+      "examination": {
+        "title": "Müayinə",
+        "fields": {
+          "upper_lip_height": {
+            "label": "Yuxarı dodağın hündürlüyü (mm)",
+            "placeholder": "mm"
+          },
+          "lower_lip_volume": {
+            "label": "Aşağı dodağın həcmi",
+            "options": ["Normal", "Azalmış", "Artmış"]
+          },
+          "lip_ratio": {
+            "label": "Yuxarı/aşağı nisbəti",
+            "placeholder": "Məs.: 1/1.5..."
+          },
+          "cupid_bow": {
+            "label": "Kupidon oxu",
+            "options": ["Dəqiq", "Yastılaşıb", "Asimmetrik"]
+          },
+          "philtrum": {
+            "label": "Filtrum",
+            "options": ["Dəqiq", "Yastılaşıb", "Normal"]
+          },
+          "previous_fillers": {
+            "label": "Əvvəlki fillerlər",
+            "placeholder": "Preparat, tarix, həcm, nəticə..."
+          },
+          "asymmetry": {
+            "label": "Asimmetriya",
+            "placeholder": "Təsvir..."
+          }
+        }
+      },
+      "plan": {
+        "title": "Korreksiya planı",
+        "fields": {
+          "technique": {
+            "label": "Texnika",
+            "options": [
+              "Klassik inyeksiya",
+              "Rus dodaqları",
+              "Lip flip",
+              "Perioral korreksiya",
+              "Feather touch"
+            ]
+          },
+          "filler_brand": {
+            "label": "Preparat",
+            "placeholder": "Juvederm, Restylane, Belotero..."
+          },
+          "volume_upper_ml": {
+            "label": "Yuxarı dodağın həcmi (ml)",
+            "placeholder": "ml"
+          },
+          "volume_lower_ml": {
+            "label": "Aşağı dodağın həcmi (ml)",
+            "placeholder": "ml"
+          },
+          "volume_total_ml": {
+            "label": "Ümumi həcm (ml)",
+            "placeholder": "ml"
+          },
+          "cannula_needle": {
+            "label": "Alət",
+            "options": ["İynə", "Kanyula", "Kombinasiya"]
+          },
+          "zones": {
+            "label": "Korreksiya zonaları",
+            "options": [
+              "Yuxarı dodağın gövdəsi",
+              "Aşağı dodağın gövdəsi",
+              "Kupidon oxu",
+              "Ağız küncləri",
+              "Filtrum",
+              "Vermilyon sərhədi",
+              "Perioral qırışlar"
+            ]
+          }
+        }
+      },
+      "postop_specific": {
+        "title": "Prosedurdan sonra",
+        "fields": {
+          "ice_application": {
+            "label": "Buz / soyutma"
+          },
+          "avoid_heat": {
+            "label": "İstilikdən qaçınma (48s)"
+          },
+          "followup_days": {
+            "label": "Yoxlanış (gün)",
+            "placeholder": "gün"
+          },
+          "special_instructions": {
+            "label": "Xüsusi tövsiyələr",
+            "placeholder": "..."
+          }
+        }
+      }
+    },
+    "other": {
+      "examination": {
+        "title": "Müayinə",
+        "fields": {
+          "exam_notes": {
+            "label": "Müayinə qeydləri",
+            "placeholder": "Müayinə nəticələri..."
+          },
+          "measurements": {
+            "label": "Ölçümlər",
+            "placeholder": "Antropometrik məlumatlar..."
+          }
+        }
+      },
+      "plan": {
+        "title": "Cərrahi plan",
+        "fields": {
+          "technique": {
+            "label": "Texnika / metod",
+            "placeholder": "Planlaşdırılan texnikanı təsvir edin..."
+          }
+        }
+      }
+    }
+  }
+}

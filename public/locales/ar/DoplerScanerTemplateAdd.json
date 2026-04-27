@@ -1,0 +1,261 @@
+{
+  "DoplerScanerTemplateDiagnosis": {
+    "page": {
+      "title": "إضافة قالب تشخيص دوبلر"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "عنوان التشخيص"
+      },
+      "content": {
+        "placeholder": "وصف التشخيص"
+      }
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب تشخيص دوبلر بنجاح.",
+      "error": "حدث خطأ أثناء إضافة قالب التشخيص.",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "DoplerScanerTemplateDiagnosisDetails": {
+    "page": {
+      "title": "تفاصيل قالب تشخيص دوبلر"
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loadError": "فشل تحميل قالب التشخيص."
+    }
+  },
+  "DoplerScanerTemplateDiagnosisEdit": {
+    "page": {
+      "title": "تعديل قالب تشخيص دوبلر"
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "loadError": "فشل تحميل قالب التشخيص.",
+      "updateSuccess": "✅ تم تحديث قالب التشخيص بنجاح!",
+      "updateError": "❌ حدث خطأ أثناء تحديث القالب."
+    }
+  },
+  "DoplerScanerTemplateDiagnosisList": {
+    "page": {
+      "title": "🧾 قوالب تشخيص دوبلر",
+      "empty": "لا توجد قوالب تشخيص."
+    },
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد من حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "❌ فشل تحميل قوالب التشخيص.",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب."
+    }
+  },
+  "DoplerScanerTemplateRecomendation": {
+    "page": {
+      "title": "إضافة قالب توصيات دوبلر"
+    },
+    "fields": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى"
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "addSuccess": "✅ تم إضافة قالب التوصيات بنجاح",
+      "addError": "حدث خطأ أثناء إضافة القالب",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "DoplerScanerTemplateRecomendationDetails": {
+    "page": {
+      "title": "تفاصيل قالب توصيات دوبلر"
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loadError": "فشل تحميل قالب التوصيات."
+    }
+  },
+  "DoplerScanerTemplateRecomendationEdit": {
+    "page": {
+      "title": "تعديل قالب توصيات دوبلر"
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "loadError": "فشل تحميل قالب التوصيات.",
+      "updateSuccess": "✅ تم تحديث قالب التوصيات بنجاح!",
+      "updateError": "❌ حدث خطأ أثناء تحديث القالب."
+    }
+  },
+  "DoplerScanerTemplateRecomendationList": {
+    "page": {
+      "title": "📋 قوالب توصيات دوبلر",
+      "empty": "لا توجد قوالب توصيات."
+    },
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد من حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "❌ فشل تحميل قوالب التوصيات.",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب."
+    }
+  },
+  "DoplerScanerTemplateReport": {
+    "page": {
+      "title": "إضافة قالب تقرير الدوبلر"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التقرير بنجاح",
+      "error": "حدث خطأ أثناء إضافة قالب التقرير",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "common": {
+    "title": "العنوان",
+    "content": "المحتوى",
+    "save": "حفظ"
+  },
+  "DoplerScanerTemplateReportDetails": {
+    "page": {
+      "title": "تفاصيل قالب تقرير فحص الدوبلر"
+    },
+    "messages": {
+      "loadError": "حدث خطأ أثناء تحميل قالب التقرير."
+    },
+    "common": {
+      "loading": "جارٍ التحميل...",
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب",
+      "edit": "تعديل"
+    }
+  },
+  "DoplerScanerTemplateReportEdit": {
+    "page": {
+      "title": "تعديل قالب تقرير فحص الدوبلر"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب التقرير بنجاح!",
+      "error": "❌ فشل في تحديث القالب"
+    },
+    "common": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "update": "تحديث القالب"
+    }
+  },
+  "DoplerScanerTemplateReportList": {
+    "page": {
+      "title": "📝 قوالب تقارير الدوبلر"
+    },
+    "buttons": {
+      "edit": "تعديل",
+      "delete": "🗑️ حذف"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد من حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "فشل تحميل قوالب التقارير",
+      "deleteSuccess": "✅ تم حذف القالب بنجاح",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب"
+    }
+  },
+  "DoplerScanTemplateNameofexam": {
+    "page": {
+      "title": "إضافة قالب اسم فحص الدوبلر"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب اسم الفحص بنجاح",
+      "error": "حدث خطأ أثناء إضافة القالب",
+      "networkError": "⚠️ خطأ في الشبكة"
+    },
+    "common": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "save": "حفظ"
+    }
+  },
+  "DoplerScanTemplateNameofexamDetail": {
+    "page": {
+      "title": "تفاصيل قالب اسم الفحص"
+    },
+    "messages": {
+      "loadError": "فشل تحميل القالب"
+    },
+    "common": {
+      "loading": "جاري التحميل...",
+      "title": "العنوان",
+      "content": "المحتوى",
+      "edit": "تعديل"
+    }
+  },
+  "DoplerScanTemplateNameofexamEdit": {
+    "page": {
+      "title": "تعديل قالب اسم الفحص"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب اسم الفحص بنجاح!",
+      "error": "❌ فشل تحديث القالب"
+    },
+    "common": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "update": "تحديث القالب"
+    }
+  },
+  "DoplerScanTemplateNameofexamList": {
+    "page": {
+      "title": "📌 قوالب أسماء الفحوصات"
+    },
+    "buttons": {
+      "edit": "تعديل",
+      "delete": "🗑️ حذف"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد من حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "فشل تحميل قوالب أسماء الفحوصات",
+      "deleteSuccess": "✅ تم حذف القالب بنجاح",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب"
+    }
+  }
+}

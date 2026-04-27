@@ -1,0 +1,141 @@
+{
+  "MRIScanerTemplateDiagnosis": {
+    "titlePage": "Добавить шаблон диагноза",
+    "inputTitlePlaceholder": "Заголовок",
+    "textareaContentPlaceholder": "Содержание",
+    "buttonSave": "Сохранить",
+    "successMessage": "✅ Шаблон диагноза успешно добавлен.",
+    "errorDefault": "Не удалось добавить шаблон.",
+    "errorNetwork": "Ошибка сети"
+  },
+  "MRIScanerTemplateDiagnosisDetails": {
+    "titlePage": "Детали шаблона диагноза МРТ",
+    "labelTitle": "Заголовок",
+    "labelContent": "Содержание",
+    "labelDoctor": "Врач",
+    "buttonEdit": "Редактировать",
+    "loading": "Загрузка...",
+    "errorLoad": "Не удалось загрузить шаблон."
+  },
+  "MRIScanerTemplateDiagnosisEdit": {
+    "titlePage": "Редактирование шаблона диагноза МРТ",
+    "labelTitle": "Заголовок",
+    "labelContent": "Содержание",
+    "buttonUpdate": "Обновить шаблон",
+    "successUpdate": "Шаблон диагноза успешно обновлён!",
+    "errorUpdate": "Ошибка при обновлении шаблона.",
+    "errorLoad": "Не удалось загрузить шаблон."
+  },
+  "MRIScanerTemplateDiagnosisList": {
+    "titlePage": "🧾 Шаблоны диагнозов МРТ",
+    "buttonEdit": "Редактировать",
+    "buttonDelete": "🗑️ Удалить",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "errorLoad": "Не удалось загрузить шаблоны диагнозов.",
+    "errorDelete": "Ошибка при удалении шаблона."
+  },
+  "MRIScanerTemplateRecomendation": {
+    "titlePage": "Добавить шаблон рекомендаций МРТ",
+    "inputTitlePlaceholder": "Заголовок",
+    "textareaContentPlaceholder": "Содержание",
+    "buttonSave": "Сохранить",
+    "successAdd": "Шаблон рекомендаций успешно добавлен.",
+    "errorAdd": "Ошибка при добавлении шаблона.",
+    "errorNetwork": "Ошибка сети"
+  },
+  "MRIScanerTemplateRecomendationDetails": {
+    "titlePage": "Детали шаблона рекомендаций МРТ",
+    "labelTitle": "Заголовок",
+    "labelContent": "Содержание",
+    "labelDoctor": "Врач",
+    "buttonEdit": "Редактировать",
+    "loading": "Загрузка...",
+    "errorLoad": "Не удалось загрузить шаблон."
+  },
+  "MRIScanerTemplateRecomendationEdit": {
+    "titlePage": "Редактирование шаблона рекомендаций МРТ",
+    "labelTitle": "Заголовок",
+    "labelContent": "Содержание",
+    "buttonUpdate": "Обновить шаблон",
+    "successUpdate": "Шаблон рекомендаций успешно обновлён!",
+    "errorUpdate": "Ошибка при обновлении шаблона.",
+    "errorLoad": "Не удалось загрузить шаблон."
+  },
+  "MRIScanerTemplateRecomendationList": {
+    "titlePage": "📋 Шаблоны рекомендаций МРТ",
+    "buttonEdit": "Редактировать",
+    "buttonDelete": "🗑️ Удалить",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "errorLoad": "Не удалось загрузить шаблоны рекомендаций.",
+    "errorDelete": "Ошибка при удалении шаблона."
+  },
+  "MRIScanerTemplateReport": {
+    "titlePage": "Добавить шаблон отчёта МРТ",
+    "inputTitlePlaceholder": "Заголовок",
+    "textareaContentPlaceholder": "Содержание",
+    "buttonSave": "Сохранить",
+    "successAdd": "Шаблон отчёта успешно добавлен.",
+    "errorAdd": "Ошибка при добавлении шаблона.",
+    "errorNetwork": "Ошибка сети"
+  },
+  "MRIScanerTemplateReportDetails": {
+    "titlePage": "Детали шаблона отчёта МРТ",
+    "labelTitle": "Заголовок",
+    "labelContent": "Содержание",
+    "labelDoctor": "Врач",
+    "buttonEdit": "Редактировать",
+    "loading": "Загрузка...",
+    "errorLoad": "Не удалось загрузить шаблон."
+  },
+  "MRIScanerTemplateReportEdit": {
+    "titlePage": "Редактирование шаблона отчёта МРТ",
+    "labelTitle": "Заголовок",
+    "labelContent": "Содержание",
+    "buttonUpdate": "Обновить шаблон",
+    "successUpdate": "Шаблон отчёта успешно обновлён!",
+    "errorUpdate": "Не удалось обновить шаблон.",
+    "errorLoad": "Не удалось загрузить шаблон."
+  },
+  "MRIScanerTemplateReportList": {
+    "titlePage": "📝 Шаблоны отчётов МРТ",
+    "buttonEdit": "Редактировать",
+    "buttonDelete": "🗑️ Удалить",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "errorLoad": "Не удалось загрузить шаблоны отчётов.",
+    "errorDelete": "Не удалось удалить шаблон."
+  },
+  "MRIScanTemplateNameofexam": {
+    "titlePage": "Добавить шаблон названия исследования МРТ",
+    "inputTitlePlaceholder": "Заголовок",
+    "textareaContentPlaceholder": "Содержание",
+    "buttonSave": "Сохранить",
+    "successAdd": "Шаблон названия исследования успешно добавлен.",
+    "errorAdd": "Ошибка при добавлении шаблона.",
+    "errorNetwork": "Ошибка сети"
+  },
+  "MRIScanTemplateNameofexamDetail": {
+    "titlePage": "Детали шаблона названия исследования МРТ",
+    "labelTitle": "Заголовок",
+    "labelContent": "Содержание",
+    "buttonEdit": "Редактировать",
+    "loading": "Загрузка...",
+    "errorLoad": "Не удалось загрузить шаблон."
+  },
+  "MRIScanTemplateNameofexamEdit": {
+    "titlePage": "Редактирование шаблона названия исследования МРТ",
+    "labelTitle": "Заголовок",
+    "labelContent": "Содержание",
+    "buttonUpdate": "Обновить шаблон",
+    "successUpdate": "Шаблон названия исследования успешно обновлён!",
+    "errorUpdate": "Не удалось обновить шаблон.",
+    "errorLoad": "Не удалось загрузить шаблон."
+  },
+  "MRIScanTemplateNameofexamList": {
+    "titlePage": "📌 Шаблоны названий исследований МРТ",
+    "buttonEdit": "Редактировать",
+    "buttonDelete": "🗑️ Удалить",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "errorLoad": "Не удалось загрузить шаблоны названий исследований.",
+    "errorDelete": "Не удалось удалить шаблон."
+  }
+}

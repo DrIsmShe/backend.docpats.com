@@ -1,0 +1,301 @@
+{
+  "CTScanerTemplateDiagnosis": {
+    "page": {
+      "title": "إضافة قالب تشخيص الأشعة المقطعية"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "عنوان القالب"
+      },
+      "content": {
+        "placeholder": "محتوى قالب التشخيص"
+      }
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التشخيص بنجاح.",
+      "error": "فشل في إضافة قالب التشخيص.",
+      "networkError": "خطأ في الشبكة"
+    }
+  },
+  "CTScanerTemplateDiagnosisDetails": {
+    "page": {
+      "title": "تفاصيل قالب تشخيص الأشعة المقطعية",
+      "loading": "جارٍ التحميل...",
+      "errors": {
+        "fetchError": "فشل تحميل قالب التشخيص."
+      }
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    }
+  },
+  "CTScanerTemplateDiagnosisEdit": {
+    "page": {
+      "title": "تعديل قالب تشخيص الأشعة المقطعية"
+    },
+    "fields": {
+      "title": {
+        "label": "العنوان"
+      },
+      "content": {
+        "label": "المحتوى"
+      }
+    },
+    "buttons": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب التشخيص بنجاح.",
+      "error": "❌ حدث خطأ أثناء تحديث القالب.",
+      "loadError": "❌ فشل تحميل القالب."
+    }
+  },
+  "CTScanerTemplateDiagnosisList": {
+    "page": {
+      "title": "🧾 قوالب تشخيص الأشعة المقطعية",
+      "empty": "لا توجد قوالب تشخيص."
+    },
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد من حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "❌ فشل تحميل قوالب التشخيص.",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب."
+    }
+  },
+  "CTScanerTemplateRecomendation": {
+    "page": {
+      "title": "إضافة قالب توصيات الأشعة المقطعية"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "عنوان القالب"
+      },
+      "content": {
+        "placeholder": "محتوى التوصيات"
+      }
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التوصيات بنجاح.",
+      "error": "حدث خطأ أثناء إضافة قالب التوصيات.",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "CTScanerTemplateRecomendationDetails": {
+    "page": {
+      "title": "تفاصيل قالب توصيات الأشعة المقطعية",
+      "loading": "جارٍ التحميل...",
+      "errors": {
+        "fetchError": "فشل تحميل قالب التوصيات."
+      }
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    }
+  },
+  "CTScanerTemplateRecomendationEdit": {
+    "page": {
+      "title": "تعديل قالب توصيات الأشعة المقطعية"
+    },
+    "fields": {
+      "title": {
+        "label": "العنوان"
+      },
+      "content": {
+        "label": "المحتوى"
+      }
+    },
+    "buttons": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب التوصيات بنجاح.",
+      "error": "❌ حدث خطأ أثناء تحديث القالب.",
+      "loadError": "❌ فشل تحميل القالب."
+    }
+  },
+  "CTScanerTemplateRecomendationList": {
+    "page": {
+      "title": "📋 قوالب توصيات الأشعة المقطعية",
+      "empty": "لا توجد قوالب توصيات."
+    },
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد من حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "❌ فشل تحميل قوالب التوصيات.",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب."
+    }
+  },
+  "CTScanerTemplateReport": {
+    "page": {
+      "title": "إضافة قالب تقرير الأشعة المقطعية"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "عنوان القالب"
+      },
+      "content": {
+        "placeholder": "محتوى التقرير"
+      }
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التقرير بنجاح.",
+      "error": "حدث خطأ أثناء إضافة قالب التقرير.",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "CTScanerTemplateReportDetails": {
+    "page": {
+      "title": "تفاصيل قالب تقرير الأشعة المقطعية",
+      "loading": "جارٍ التحميل...",
+      "errors": {
+        "fetchError": "فشل تحميل قالب التقرير."
+      }
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    }
+  },
+  "CTScanerTemplateReportEdit": {
+    "page": {
+      "title": "تعديل قالب تقرير الأشعة المقطعية"
+    },
+    "fields": {
+      "title": {
+        "label": "العنوان"
+      },
+      "content": {
+        "label": "المحتوى"
+      }
+    },
+    "buttons": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب التقرير بنجاح.",
+      "error": "❌ حدث خطأ أثناء تحديث القالب.",
+      "loadError": "❌ فشل تحميل القالب."
+    }
+  },
+  "CTScanerTemplateReportList": {
+    "page": {
+      "title": "📝 قوالب تقارير الأشعة المقطعية",
+      "empty": "لا توجد قوالب تقارير."
+    },
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد من حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "❌ فشل تحميل قوالب التقارير.",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب."
+    }
+  },
+  "CTScanerTemplateNameofexam": {
+    "page": {
+      "title": "إضافة قالب اسم فحص الأشعة المقطعية"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "اسم الفحص"
+      },
+      "content": {
+        "placeholder": "وصف أو ملاحظات"
+      }
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب اسم الفحص بنجاح.",
+      "error": "حدث خطأ أثناء إضافة قالب اسم الفحص.",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "CTScanerTemplateNameofexamDetails": {
+    "page": {
+      "title": "تفاصيل قالب اسم فحص الأشعة المقطعية",
+      "loading": "جارٍ التحميل...",
+      "errors": {
+        "fetchError": "فشل تحميل قالب اسم الفحص."
+      }
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    }
+  },
+  "CTScanerTemplateNameofexamEdit": {
+    "page": {
+      "title": "تعديل قالب اسم فحص الأشعة المقطعية"
+    },
+    "fields": {
+      "title": { "label": "العنوان" },
+      "content": { "label": "المحتوى" }
+    },
+    "buttons": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث القالب بنجاح.",
+      "error": "❌ حدث خطأ أثناء تحديث القالب.",
+      "loadError": "❌ فشل تحميل القالب."
+    }
+  },
+  "CTScanerTemplateNameofexamList": {
+    "page": {
+      "title": "📌 قوالب أسماء فحوصات الأشعة المقطعية",
+      "empty": "لا توجد قوالب أسماء فحوصات."
+    },
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد من حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "❌ فشل تحميل القوالب.",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب."
+    }
+  }
+}

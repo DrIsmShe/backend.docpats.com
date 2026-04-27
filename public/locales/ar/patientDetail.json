@@ -1,0 +1,153 @@
+{
+  "titles": {
+    "moreAboutPatient": "معلومات إضافية عن المريض {{firstName}} {{lastName}}"
+  },
+
+  "buttons": {
+    "addMedicalHistory": "إضافة التاريخ الطبي",
+    "addMedicalExamination": "إضافة فحص طبي",
+    "choosePhoto": "اختر صورة",
+    "save": "حفظ التغييرات",
+    "sendCode": "إرسال الرمز",
+    "confirmEmail": "تأكيد البريد الإلكتروني",
+    "changePassword": "تغيير كلمة المرور",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور",
+    "loadingPatient": "جارٍ تحميل المريض",
+    "patientNotFound": "لم يتم العثور على المريض",
+    "loadingExaminations": "جارٍ تحميل الفحوصات",
+    "addGenerateClinicalSummary": "إنشاء ملخص سريري",
+    "generating": "جارٍ الإنشاء",
+    "aiGeneratedSummaryDisclaimer": "تم إنشاء هذا الملخص بواسطة الذكاء الاصطناعي. للاستخدام المهني فقط."
+  },
+  "examAddedSuccess": "✅ تمّت إضافة الفحص بنجاح",
+  "tabs": {
+    "generalInfo": "المعلومات العامة",
+    "clinicalInfo": "المعلومات السريرية",
+    "caseHistories": "سجلات الحالات",
+    "conductedExaminations": "الفحوصات التي تم إجراؤها",
+    "overview": "نظرة عامة",
+    "details": "التفاصيل",
+    "edit": "تعديل الملف الشخصي",
+    "settings": "الإعدادات",
+    "changePassword": "تغيير كلمة المرور",
+    "changeEmail": "تغيير البريد الإلكتروني",
+    "ctScan": "تصوير مقطعي",
+    "mri": "رنين مغناطيسي",
+    "ultrasound": "تصوير بالموجات فوق الصوتية",
+    "xray": "أشعة سينية",
+    "petScan": "تصوير PET",
+    "spectScan": "تصوير SPECT",
+    "gastroscopyColonoscopy": "تنظير المعدة والقولون",
+    "eeg": "EEG تخطيط دماغ",
+    "gynecology": "طب النساء",
+    "holterMonitor": "جهاز هولتر",
+    "spirometry": "قياس التنفس",
+    "dopplerScan": "فحص دوبلر",
+    "gastroscopy": "تنظير معدة",
+    "colonoscopy": "تنظير قولون",
+    "capsuleEndoscopy": "تنظير كبسولي",
+    "angiography": "تصوير الأوعية",
+    "ekg": "تخطيط القلب ECG",
+    "echoEkg": "تصوير صدى القلب",
+    "coronography": "تصوير الشرايين التاجية",
+    "labTests": "التحاليل المخبرية"
+  },
+
+  "generalInfo": {
+    "firstName": "الاسم",
+    "lastName": "اللقب",
+    "gender": "الجنس",
+    "age": "تاريخ الميلاد",
+    "ageWithYears": "{{count}} سنة",
+    "country": "البلد",
+    "phone": "رقم الهاتف",
+    "dpMessengerNumber": "رقم DP Messenger",
+    "email": "البريد الإلكتروني"
+  },
+
+  "clinicalInfo": {
+    "chronicDiseases": "الأمراض المزمنة",
+    "operations": "العمليات الجراحية",
+    "familyHistory": "التاريخ العائلي للأمراض",
+    "allergies": "الحساسيات",
+    "immunization": "التطعيمات",
+    "badHabits": "العادات السيئة"
+  },
+
+  "tables": {
+    "date": "التاريخ",
+    "diagnosis": "التشخيص",
+    "doctor": "الطبيب",
+    "speciality": "الاختصاص",
+    "dateOfAdmission": "تاريخ الاستقبال",
+    "examName": "اسم الفحص",
+    "examResult": "نتيجة الفحص"
+  },
+
+  "scans": {
+    "unknownDoctor": "طبيب غير معروف"
+  },
+
+  "labTests": {
+    "bloodGeneral": "تحليل دم شامل",
+    "bloodBiochemistry": "تحليل كيمياء الدم",
+    "urine": "تحليل البول",
+    "stool": "تحليل البراز",
+    "hormones": "تحليل الهرمونات",
+    "tumorMarkers": "علامات الأورام",
+    "pcr": "فحص PCR",
+    "immunology": "علم المناعة",
+    "geneticScreening": "الفحص الجيني",
+    "other": "فحوصات أخرى",
+    "labName": "اسم المختبر"
+  },
+
+  "states": {
+    "loading": "جارٍ التحميل...",
+    "patientNotFound": "لم يتم العثور على المريض"
+  },
+
+  "errors": {
+    "failedToLoad": "فشل تحميل البيانات",
+    "errorRetrievingPatientInfo": "حدث خطأ أثناء استرجاع معلومات المريض",
+    "errorLoadingData": "خطأ في تحميل البيانات",
+    "pageNotFoundText": "الصفحة التي تبحث عنها غير موجودة.",
+    "backToHome": "العودة إلى الصفحة الرئيسية",
+    "pageNotFoundAlt": "الصفحة غير موجودة",
+    "notEnoughClinicalData": "لا توجد بيانات سريرية كافية لإنشاء الملخص."
+  },
+
+  "gender": {
+    "man": "ذكر",
+    "woman": "أنثى",
+    "unknown": "غير معروف"
+  },
+
+  "values": {
+    "notSpecified": "غير محدد",
+    "unknown": "غير معروف",
+    "choose": "اختر",
+    "man": "ذكر",
+    "woman": "أنثى",
+    "chooseCountry": "اختر البلد"
+  },
+
+  "messages": {
+    "loading": "جارٍ التحميل...",
+    "photoNotSelected": "لم يتم اختيار صورة"
+  },
+
+  "avatar_choose": {
+    "chooseAvatar": "اختر صورة رمزية"
+  },
+
+  "exams": {
+    "date": "تاريخ الاستقبال",
+    "name": "اسم الفحص",
+    "result": "النتيجة",
+    "labName": "المختبر",
+    "unknownDoctor": "طبيب غير معروف",
+    "notSpecified": "غير محدد"
+  }
+}

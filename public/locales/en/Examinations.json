@@ -1,0 +1,2195 @@
+{
+  "tempComplaints": {
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully!",
+      "submitError": "Error submitting data"
+    }
+  },
+  "tempAnamnesisMorbi": {
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully!",
+      "submitError": "Error while sending data"
+    }
+  },
+  "tempAnamnesisVitae": {
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully!",
+      "submitError": "Error while submitting data"
+    }
+  },
+  "tempStatusPreasens": {
+    "title": "Create Status Praesens Template",
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "placeholders": {
+      "title": "Enter title...",
+      "content": "Enter content...",
+      "tags": "Comma-separated tags..."
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully.",
+      "submitError": "Error submitting the form."
+    }
+  },
+  "tempStatusLocalis": {
+    "title": "Create Status Localis Template",
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "placeholders": {
+      "title": "Enter title...",
+      "content": "Enter content...",
+      "tags": "Enter tags separated by commas..."
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully.",
+      "submitError": "Failed to submit template."
+    }
+  },
+  "tempCTScanResults": {
+    "title": "Create CT Scan Results Template",
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "placeholders": {
+      "title": "Enter title...",
+      "content": "Enter CT scan findings...",
+      "tags": "Enter comma-separated tags..."
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully.",
+      "submitError": "Error while submitting data."
+    }
+  },
+  "tempMRIResults": {
+    "title": "Create MRI Results Template",
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "placeholders": {
+      "title": "Enter title...",
+      "content": "Enter MRI findings...",
+      "tags": "Enter comma-separated tags..."
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully.",
+      "submitError": "Error during data submission."
+    }
+  },
+  "tempUltrasoundResults": {
+    "title": "Create Ultrasound Results Template",
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "placeholders": {
+      "title": "Enter title...",
+      "content": "Enter ultrasound findings...",
+      "tags": "Enter comma-separated tags..."
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully.",
+      "submitError": "Error while submitting data."
+    }
+  },
+  "tempLaboratoryTestResults": {
+    "title": "Create Laboratory Test Results Template",
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "placeholders": {
+      "title": "Enter title...",
+      "content": "Enter laboratory test results...",
+      "tags": "Enter comma-separated tags..."
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully.",
+      "submitError": "Error during data submission."
+    }
+  },
+  "tempAdditionalDiagnosis": {
+    "title": "Create Additional Diagnosis Template",
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "placeholders": {
+      "title": "Enter title...",
+      "content": "Enter additional diagnosis...",
+      "tags": "Enter comma-separated tags..."
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully.",
+      "submitError": "Error submitting data."
+    }
+  },
+  "tempRecommendations": {
+    "title": "Create Recommendations Template",
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "tags": "Tags"
+    },
+    "placeholders": {
+      "title": "Enter title...",
+      "content": "Enter recommendations...",
+      "tags": "Enter comma-separated tags..."
+    },
+    "buttons": {
+      "submit": "Submit"
+    },
+    "messages": {
+      "submitSuccess": "Template saved successfully.",
+      "submitError": "Error submitting data."
+    }
+  },
+  "tempComplaintsList": {
+    "searchPlaceholder": "Search...",
+    "buttons": {
+      "createNew": "Create a new template"
+    },
+    "columns": {
+      "title": "Complaint title",
+      "date": "Creation date"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Error loading data",
+      "noData": "No templates found"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "tempAnamnesisMorbiList": {
+    "searchPlaceholder": "Search...",
+    "buttons": {
+      "createNew": "Create a new template"
+    },
+    "columns": {
+      "title": "Template name",
+      "date": "Creation date"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Error while loading data",
+      "noData": "No templates found"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "tempAnamnesisVitaeList": {
+    "searchPlaceholder": "Search...",
+    "buttons": {
+      "createNew": "Create a new template"
+    },
+    "columns": {
+      "title": "Template title",
+      "date": "Created at"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Failed to load data",
+      "noData": "No templates found"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "tempStatusPreasensList": {
+    "searchPlaceholder": "Search...",
+    "buttons": {
+      "createNew": "Create a new template"
+    },
+    "columns": {
+      "title": "Template title",
+      "date": "Created at"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Failed to load data",
+      "noData": "No templates found"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "tempStatusLocalisList": {
+    "searchPlaceholder": "Search...",
+    "buttons": {
+      "createNew": "Create a new template"
+    },
+    "columns": {
+      "title": "Template title",
+      "date": "Created at"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Failed to load data",
+      "noData": "No templates found"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "tempCTScanList": {
+    "searchPlaceholder": "Search...",
+    "buttons": {
+      "createNew": "Create a new template"
+    },
+    "columns": {
+      "title": "Template title",
+      "date": "Created at"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Failed to load data",
+      "noData": "No templates found"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "mriList": {
+    "searchPlaceholder": "Search...",
+    "buttons": {
+      "createNew": "Create a new template"
+    },
+    "columns": {
+      "title": "Template title",
+      "date": "Created at"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Failed to load data",
+      "noData": "No templates found"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "ultrasound": {
+    "searchPlaceholder": "Search...",
+    "buttons": {
+      "createNew": "Create a new template"
+    },
+    "columns": {
+      "title": "Template title",
+      "date": "Created at"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Failed to load data",
+      "noData": "No templates found"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "laboratory": {
+    "searchPlaceholder": "Search...",
+    "buttons": {
+      "createNew": "Create a new template"
+    },
+    "columns": {
+      "title": "Template name",
+      "date": "Date created"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Failed to load data",
+      "noData": "No templates found"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "additionalDiagnosis": {
+    "searchPlaceholder": "Search...",
+    "buttons": {
+      "createNew": "Create a new template"
+    },
+    "columns": {
+      "title": "Title",
+      "date": "Created at"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Error loading data",
+      "noData": "No results found"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "complaints": {
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Error loading data",
+      "noData": "Data not found",
+      "deleted": "Template deleted successfully",
+      "deleteError": "Error deleting template",
+      "noTags": "No tags"
+    },
+    "fields": {
+      "createdAt": "Created at",
+      "tags": "Tags",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "delete": "Delete template",
+      "createNew": "Create a new template",
+      "confirmDelete": "Are you sure you want to delete this template?"
+    }
+  },
+  "additionalDiagnosisDetails": {
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Error loading data",
+      "noData": "Data not found",
+      "deleted": "Template deleted successfully",
+      "deleteError": "Error deleting template",
+      "noTags": "No tags"
+    },
+    "fields": {
+      "createdAt": "Created at",
+      "tags": "Tags",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "delete": "Delete template",
+      "createNew": "Create a new template",
+      "confirmDelete": "Are you sure you want to delete this template?"
+    }
+  },
+  "anamnesisMorbi": {
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Error loading data",
+      "noData": "Data not found",
+      "deleted": "Template deleted successfully",
+      "deleteError": "Error deleting template",
+      "noTags": "No tags available"
+    },
+    "fields": {
+      "createdAt": "Created at",
+      "tags": "Tags",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "delete": "Delete template",
+      "createNew": "Create new template",
+      "confirmDelete": "Are you sure you want to delete this template?"
+    }
+  },
+  "anamnesisVitae": {
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Error loading data",
+      "noData": "Data not found",
+      "deleted": "Template deleted successfully",
+      "deleteError": "Error deleting template",
+      "noTags": "No tags available"
+    },
+    "fields": {
+      "createdAt": "Created at",
+      "tags": "Tags",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "delete": "Delete template",
+      "createNew": "Create new template",
+      "confirmDelete": "Are you sure you want to delete this template?"
+    }
+  },
+  "ctScan": {
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Failed to load data",
+      "noData": "No data found",
+      "deleted": "Template deleted successfully",
+      "deleteError": "Error deleting template",
+      "noTags": "No tags available"
+    },
+    "fields": {
+      "createdAt": "Created at",
+      "tags": "Tags",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "delete": "Delete template",
+      "createNew": "Create a new template",
+      "confirmDelete": "Are you sure you want to delete this template?"
+    }
+  },
+  "laboratory-detail": {
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Error loading data",
+      "noData": "Data not found",
+      "deleted": "Template successfully deleted",
+      "deleteError": "Error deleting template",
+      "noTags": "No tags"
+    },
+    "fields": {
+      "createdAt": "Creation date",
+      "tags": "Tags",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "delete": "Delete template",
+      "createNew": "Create a new template",
+      "confirmDelete": "Are you sure you want to delete this template?"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "noResults": "No templates found",
+    "loadError": "Error loading data"
+  },
+
+  "list": {
+    "search": "Search..."
+  },
+
+  "actions": {
+    "createNew": "Create a new template",
+    "delete": "Delete template",
+    "deletedSuccess": "Template successfully deleted",
+    "deleteError": "Error deleting template"
+  },
+
+  "pagination": {
+    "prev": "Prev",
+    "next": "Next",
+    "page": "Page",
+    "of": "of"
+  },
+
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "TempStatusPreasensDetail": {
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Error loading data",
+      "noData": "Data not found",
+      "deleted": "Template successfully deleted",
+      "deleteError": "Error deleting template",
+      "noTags": "none"
+    },
+    "fields": {
+      "createdAt": "Created at",
+      "tags": "Tags",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "delete": "Delete template",
+      "createNew": "Create a new template",
+      "confirmDelete": "Are you sure you want to delete this template?"
+    }
+  },
+  "TempUltrasoundResultsDetail": {
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Error loading data",
+      "noData": "No data found",
+      "deleted": "Template successfully deleted",
+      "deleteError": "Error deleting template",
+      "noTags": "No tags"
+    },
+    "fields": {
+      "createdAt": "Creation date",
+      "tags": "Tags",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "delete": "Delete template",
+      "createNew": "Create a new template",
+      "confirmDelete": "Are you sure you want to delete this template?"
+    }
+  },
+
+  "addAngiographyScanUpload": {
+    "page": {
+      "title": "Add Angiography Results"
+    },
+
+    "messages": {
+      "success": "✅ Angiography scan was added successfully!",
+      "errorPrefix": "❌ Error loading:",
+      "patientMissing": "Patient ID is missing!",
+      "outsideSpecialization": "⚠ The examination was added outside your primary specialization."
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the Study",
+        "placeholder": "Enter the title of the study"
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter the description"
+      },
+      "diagnosis": {
+        "label": "Doctor's Conclusion",
+        "placeholder": "Enter medical conclusion"
+      },
+      "recomandation": {
+        "label": "Doctor's Recommendations",
+        "placeholder": "Enter recommendations"
+      },
+      "radiationDose": {
+        "label": "Radiation Dose (mSv)",
+        "placeholder": "Enter radiation dose"
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noneSelected": "No files selected",
+        "selected": "{{count}} file(s) selected",
+        "details": {
+          "type": "Type",
+          "size": "Size",
+          "extension": "Extension"
+        },
+        "typeDescription": {
+          "image": "Image",
+          "pdf": "PDF document",
+          "video": "Video file",
+          "audio": "Audio file",
+          "other": "File"
+        }
+      }
+    },
+    "templates": {
+      "use": "Use template",
+      "new": "New template",
+      "list": "List of templates",
+      "modal": {
+        "title": "Select a template for \"{{field}}\"",
+        "insert": "Insert",
+        "close": "Close"
+      }
+    },
+    "buttons": {
+      "submit": "Add Results",
+      "loading": "Loading..."
+    }
+  },
+
+  "AddCoronographyScanUpload": {
+    "page": {
+      "title": "Add Coronography Results"
+    }
+  },
+  "AddCapsulEndoscopyScanUpload": {
+    "page": {
+      "title": "Add Capsule Endoscopy Results"
+    },
+    "messages": {
+      "success": "✅ Capsule Endoscopy results added successfully!",
+      "errorPrefix": "❌ Error loading:",
+      "patientMissing": "Patient ID is missing!"
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the study title"
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description"
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter medical conclusion"
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter recommendations"
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter dose"
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noneSelected": "No files selected",
+        "selected": "{{count}} file(s) selected",
+        "details": {
+          "type": "Type",
+          "size": "Size",
+          "extension": "Extension"
+        },
+        "typeDescription": {
+          "image": "Image",
+          "pdf": "PDF Document",
+          "video": "Video File",
+          "audio": "Audio File",
+          "other": "File"
+        }
+      }
+    },
+    "templates": {
+      "use": "Use template",
+      "new": "New template",
+      "list": "List of templates",
+      "modal": {
+        "title": "Select a template for \"{{field}}\"",
+        "insert": "Insert",
+        "close": "Close"
+      }
+    },
+    "buttons": {
+      "submit": "Add results",
+      "loading": "Loading..."
+    }
+  },
+
+  "AddCTScanUpload": {
+    "page": {
+      "title": "Add CT Scan Results"
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the study title"
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter the study description"
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter the doctor's conclusion"
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter recommendations"
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose"
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "noneSelected": "No files selected",
+        "choose": "Choose files",
+        "selected": "{{count}} file(s) selected"
+      }
+    },
+    "templates": {
+      "use": "Use template",
+      "new": "New template",
+      "list": "List of templates",
+      "modal": {
+        "title": "Select a template for {{field}}",
+        "insert": "Insert",
+        "close": "Close"
+      }
+    },
+    "buttons": {
+      "loading": "Loading...",
+      "submit": "Add results"
+    },
+    "messages": {
+      "success": "✅ CT scan result added successfully!",
+      "errorPrefix": "❌ Error:",
+      "patientMissing": "Patient ID is missing!"
+    }
+  },
+  "AddDoplerScanUpload": {
+    "page": {
+      "title": "Add Doppler Scan Results"
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the study title"
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter scan description"
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter the doctor's conclusion"
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter recommendations"
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose"
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "noneSelected": "No files selected",
+        "choose": "Choose files",
+        "selected": "{{count}} file(s) selected"
+      }
+    },
+    "templates": {
+      "use": "Use template",
+      "new": "New template",
+      "list": "List of templates",
+      "modal": {
+        "title": "Select a template for {{field}}",
+        "insert": "Insert",
+        "close": "Close"
+      }
+    },
+    "buttons": {
+      "loading": "Loading...",
+      "submit": "Add results"
+    },
+    "messages": {
+      "success": "✅ Doppler scan result added successfully!",
+      "errorPrefix": "❌ Error:",
+      "patientMissing": "Patient ID is missing!"
+    }
+  },
+  "AddEchoEKGScanUpload": {
+    "page": {
+      "title": "Add Echo / EKG Results"
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the name of the examination"
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter the study description"
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter the diagnosis"
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter recommendations"
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose"
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noneSelected": "No files selected"
+      }
+    },
+    "templates": {
+      "use": "📋 Use template",
+      "new": "➕ New template",
+      "list": "📂 List of templates",
+      "selectTitle": "Select a template for",
+      "insert": "Insert",
+      "close": "Close"
+    },
+    "buttons": {
+      "submit": "Add results",
+      "loading": "Loading..."
+    },
+    "messages": {
+      "success": "✅ Results added successfully!",
+      "error": "❌ Error: "
+    }
+  },
+  "AddEEGScanUpload": {
+    "page": {
+      "title": "Add EEG results"
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the title of the study..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter the description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter the doctor's conclusion..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noneSelected": "No files selected",
+        "selected": "{{count}} file(s) selected"
+      }
+    },
+    "templates": {
+      "use": "Use template",
+      "new": "New template",
+      "list": "List of templates",
+      "modal": {
+        "title": "Select a template for '{{field}}'",
+        "insert": "Insert",
+        "close": "Close"
+      }
+    },
+    "messages": {
+      "patientMissing": "Error: Patient ID missing!",
+      "success": "EEG result added successfully!",
+      "errorPrefix": "Loading error:"
+    },
+    "buttons": {
+      "loading": "Loading...",
+      "submit": "Add results"
+    }
+  },
+  "AddEKGScanUpload": {
+    "page": {
+      "title": "Add EKG results"
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the study title..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter doctor's conclusion..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noneSelected": "No files selected",
+        "selected": "Files selected: {{count}}"
+      }
+    },
+    "templates": {
+      "use": "Use template",
+      "new": "New template",
+      "list": "Template list",
+      "modal": {
+        "title": "Choose a template for “{{field}}”",
+        "insert": "Insert",
+        "close": "Close"
+      }
+    },
+    "messages": {
+      "patientMissing": "Error: Patient ID is missing!",
+      "success": "EKG result added successfully!",
+      "errorPrefix": "Loading error:"
+    },
+    "buttons": {
+      "loading": "Loading...",
+      "submit": "Add results"
+    }
+  },
+  "AddGastroscopyScanUpload": {
+    "page": {
+      "title": "Add Gastroscopy and Colonoscopy results"
+    },
+    "messages": {
+      "success": "✅ Results added successfully!",
+      "error": "❌ Error: ",
+      "noPatientId": "❌ Error: Patient ID is missing!"
+    },
+    "buttons": {
+      "useTemplate": "📋 Use template",
+      "newTemplate": "➕ New template",
+      "listTemplates": "📂 List of templates",
+      "insert": "Insert",
+      "close": "Close",
+      "loading": "Loading...",
+      "submit": "Add results"
+    },
+    "modal": {
+      "selectTemplateFor": "Select a template for"
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter name of study..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter diagnosis..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "selected": "file(s) selected",
+        "none": "No files selected",
+        "type": "Type",
+        "size": "Size"
+      }
+    }
+  },
+  "AddGinecologyUpload": {
+    "page": {
+      "title": "Add Gynecology test results"
+    },
+    "messages": {
+      "success": "✅ Results added successfully!",
+      "error": "❌ Error: ",
+      "noPatientId": "❌ Error: Patient ID missing!"
+    },
+    "buttons": {
+      "useTemplate": "📋 Use template",
+      "newTemplate": "➕ New template",
+      "listTemplates": "📂 List of templates",
+      "insert": "Insert",
+      "close": "Close",
+      "loading": "Loading...",
+      "submit": "Add results"
+    },
+    "modal": {
+      "selectTemplateFor": "Select a template for"
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter study title..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter diagnosis..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "selected": "file(s) selected",
+        "none": "No files selected",
+        "type": "Type",
+        "size": "Size"
+      }
+    }
+  },
+  "AddHOLTERScanUpload": {
+    "page": {
+      "title": "Add HOLTER scan results"
+    },
+    "messages": {
+      "success": "✅ HOLTER scan result added successfully!",
+      "error": "❌ Error: ",
+      "noPatientId": "❌ Error: Patient ID missing!"
+    },
+    "buttons": {
+      "useTemplate": "📋 Use template",
+      "newTemplate": "➕ New template",
+      "listTemplates": "📂 List of templates",
+      "insert": "Insert",
+      "close": "Close",
+      "loading": "Loading...",
+      "submit": "Add results"
+    },
+    "modal": {
+      "selectTemplateFor": "Select a template for"
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter study title..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter diagnosis..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "selected": "file(s) selected",
+        "none": "No files selected",
+        "type": "Type",
+        "size": "Size"
+      }
+    }
+  },
+  "AddLabTest": {
+    "params": {
+      "UrineTest": {
+        "color": {
+          "name": "Color",
+          "options": {
+            "strawYellow": "straw yellow",
+            "yellow": "yellow",
+            "amber": "amber",
+            "other": "other"
+          }
+        },
+        "clarity": {
+          "name": "Clarity",
+          "options": {
+            "clear": "clear",
+            "slightlyCloudy": "slightly cloudy",
+            "cloudy": "cloudy"
+          }
+        },
+        "specificGravity": { "name": "Specific gravity" },
+        "pH": { "name": "pH" },
+        "protein": { "name": "Protein" },
+        "glucose": { "name": "Glucose" },
+        "leukocytes": { "name": "Leukocytes" }
+      },
+
+      "BloodTestGeneral": {
+        "hemoglobin": { "name": "Hemoglobin" },
+        "erythrocytes": { "name": "Erythrocytes" },
+        "leukocytes": { "name": "Leukocytes" },
+        "platelets": { "name": "Platelets" }
+      },
+
+      "BloodTestBiochemistry": {
+        "glucose": { "name": "Glucose" },
+        "creatinine": { "name": "Creatinine" },
+        "urea": { "name": "Urea" },
+        "alt": { "name": "ALT" },
+        "ast": { "name": "AST" }
+      },
+
+      "StoolTest": {
+        "consistency": {
+          "name": "Consistency",
+          "options": {
+            "formed": "formed",
+            "soft": "soft",
+            "mushy": "mushy",
+            "watery": "watery"
+          }
+        },
+        "color": { "name": "Color" },
+        "reaction": { "name": "Reaction" },
+        "mucus": {
+          "name": "Mucus",
+          "options": {
+            "none": "none",
+            "traces": "traces",
+            "present": "present"
+          }
+        },
+        "leukocytes": { "name": "Leukocytes" }
+      },
+
+      "HormonePanel": {
+        "tsh": { "name": "TSH" },
+        "freeT4": { "name": "Free T4" },
+        "freeT3": { "name": "Free T3" }
+      },
+
+      "TumorMarkers": {
+        "cea": { "name": "CEA" },
+        "ca125": { "name": "CA 125" },
+        "ca199": { "name": "CA 19-9" }
+      },
+
+      "PCR": {
+        "covid19": {
+          "name": "COVID-19 (SARS-CoV-2)",
+          "options": {
+            "notDetected": "not detected",
+            "detected": "detected"
+          }
+        },
+        "influenzaAB": {
+          "name": "Influenza A/B",
+          "options": {
+            "notDetected": "not detected",
+            "detected": "detected"
+          }
+        }
+      },
+
+      "Immunology": {
+        "igg": { "name": "IgG" },
+        "iga": { "name": "IgA" },
+        "igm": { "name": "IgM" }
+      },
+
+      "GeneticScreening": {
+        "brca1": {
+          "name": "BRCA1",
+          "options": {
+            "mutationNotDetected": "mutation not detected",
+            "mutationDetected": "mutation detected"
+          }
+        },
+        "brca2": {
+          "name": "BRCA2",
+          "options": {
+            "mutationNotDetected": "mutation not detected",
+            "mutationDetected": "mutation detected"
+          }
+        }
+      },
+
+      "CoagulationPanel": {
+        "pt": { "name": "PT" },
+        "inr": { "name": "INR" },
+        "aptt": { "name": "aPTT" },
+        "fibrinogen": { "name": "Fibrinogen" },
+        "ddimer": { "name": "D-dimer" }
+      },
+
+      "LipidProfile": {
+        "totalCholesterol": { "name": "Total cholesterol" },
+        "ldl": { "name": "LDL-C" },
+        "hdl": { "name": "HDL-C" },
+        "triglycerides": { "name": "Triglycerides" },
+        "apoB": { "name": "ApoB" },
+        "lpa": { "name": "Lp(a)" }
+      },
+
+      "LiverFunction": {
+        "ast": { "name": "AST" },
+        "alt": { "name": "ALT" },
+        "alp": { "name": "ALP" },
+        "ggt": { "name": "GGT" },
+        "totalBilirubin": { "name": "Total bilirubin" },
+        "directBilirubin": { "name": "Direct bilirubin" },
+        "albumin": { "name": "Albumin" }
+      },
+
+      "RenalElectrolytes": {
+        "creatinine": { "name": "Creatinine" },
+        "egfr": { "name": "eGFR" },
+        "urea": { "name": "Urea" },
+        "sodium": { "name": "Sodium" },
+        "potassium": { "name": "Potassium" },
+        "chloride": { "name": "Chloride" },
+        "magnesium": { "name": "Magnesium" }
+      },
+
+      "IronStudies": {
+        "iron": { "name": "Iron" },
+        "ferritin": { "name": "Ferritin" },
+        "tibc": { "name": "TIBC" },
+        "transferrinSaturation": {
+          "name": "Transferrin saturation"
+        }
+      },
+
+      "DiabetesPanel": {
+        "fastingGlucose": { "name": "Fasting glucose" },
+        "hba1c": { "name": "HbA1c" },
+        "insulin": { "name": "Insulin" },
+        "cPeptide": { "name": "C-peptide" }
+      },
+
+      "ThyroidPanel": {
+        "tsh": { "name": "TSH" },
+        "freeT4": { "name": "Free T4" },
+        "freeT3": { "name": "Free T3" },
+        "antiTPO": { "name": "anti-TPO" },
+        "antiTG": { "name": "anti-TG" }
+      },
+
+      "CardiacMarkers": {
+        "troponin": { "name": "Troponin I/T" },
+        "ckmb": { "name": "CK-MB" },
+        "ntproBNP": { "name": "NT-proBNP" }
+      },
+
+      "VitaminsTrace": {
+        "vitaminD": { "name": "Vitamin D (25-OH)" },
+        "vitaminB12": { "name": "Vitamin B12" },
+        "folate": { "name": "Folate" },
+        "zinc": { "name": "Zinc" }
+      },
+
+      "InfectiousSerology": {
+        "hbsAg": {
+          "name": "HBsAg",
+          "options": {
+            "negative": "negative",
+            "positive": "positive"
+          }
+        },
+        "antiHbs": { "name": "anti-HBs" },
+        "antiHcv": {
+          "name": "anti-HCV",
+          "options": {
+            "negative": "negative",
+            "positive": "positive"
+          }
+        },
+        "hivAgAb": {
+          "name": "HIV Ag/Ab",
+          "options": {
+            "negative": "negative",
+            "positive": "positive"
+          }
+        },
+        "rprVdrl": {
+          "name": "RPR/VDRL",
+          "options": {
+            "nonReactive": "non-reactive",
+            "reactive": "reactive"
+          }
+        }
+      },
+
+      "UrineAlbuminACR": {
+        "urineAlbumin": { "name": "Urine albumin" },
+        "urineCreatinine": { "name": "Urine creatinine" },
+        "acr": { "name": "ACR" }
+      },
+
+      "StoolInflammation": {
+        "calprotectin": { "name": "Calprotectin" },
+        "occultBloodFit": {
+          "name": "Occult blood (FIT)",
+          "options": {
+            "negative": "negative",
+            "positive": "positive"
+          }
+        },
+        "hpyloriAntigen": {
+          "name": "H. pylori antigen (stool)",
+          "options": {
+            "negative": "negative",
+            "positive": "positive"
+          }
+        }
+      }
+    },
+
+    "testTypes": {
+      "UrineTest": "Urinalysis",
+      "BloodTestGeneral": "Complete blood count",
+      "BloodTestBiochemistry": "Biochemistry test",
+      "StoolTest": "Stool analysis",
+      "HormonePanel": "Hormone panel",
+      "TumorMarkers": "Tumor markers",
+      "PCR": "PCR tests",
+      "Immunology": "Immunology tests",
+      "GeneticScreening": "Genetic screening",
+      "Other": "Other tests",
+
+      "CoagulationPanel": "Coagulation panel",
+      "LipidProfile": "Lipid profile",
+      "LiverFunction": "Liver function tests",
+      "RenalElectrolytes": "Renal function and electrolytes",
+      "IronStudies": "Iron studies",
+      "DiabetesPanel": "Diabetes panel",
+      "ThyroidPanel": "Thyroid panel (extended)",
+      "CardiacMarkers": "Cardiac markers",
+      "VitaminsTrace": "Vitamins and trace elements",
+      "InfectiousSerology": "Infectious serology",
+      "UrineAlbuminACR": "Microalbuminuria (ACR)",
+      "StoolInflammation": "Stool — inflammation / blood",
+      "blood": "Complete blood count",
+      "urine": "Urinalysis",
+      "biochem": "Biochemistry",
+      "hormones": "Hormone panel",
+      "immunology": "Immunology",
+      "coagulogram": "Coagulogram",
+      "tumor": "Tumor markers",
+      "electrolytes": "Electrolytes",
+      "vitamins": "Vitamin levels",
+      "others": "Other tests"
+    },
+
+    "units": {
+      "none": "",
+      "unit.defaultText": "—",
+      "unit.defaultNumber": "unit",
+
+      "g/L": "g/L",
+      "mmol/L": "mmol/L",
+      "cells/hpf": "per field of view",
+
+      "10^12/L": "10^12/L",
+      "10^9/L": "10^9/L",
+
+      "µmol/L": "µmol/L",
+      "U/L": "U/L",
+      "pmol/L": "pmol/L",
+      "µIU/mL": "µIU/mL",
+      "ng/mL": "ng/mL",
+      "IU/mL": "IU/mL",
+      "pg/mL": "pg/mL",
+      "ng/L": "ng/L",
+
+      "mg/dL": "mg/dL",
+      "mg/L": "mg/L",
+      "mg/g": "mg/g",
+
+      "µg/dL": "µg/dL",
+      "µg/g": "µg/g",
+      "µU/mL": "µU/mL",
+      "mIU/mL": "mIU/mL",
+
+      "mL/min/1.73m²": "mL/min/1.73m²",
+      "nmol/L": "nmol/L",
+      "%": "%",
+      "sec": "sec",
+      "mg/L_FEU": "mg/L FEU",
+
+      "gPerL": "g/L",
+      "mmolPerL": "mmol/L",
+      "mcmolPerL": "µmol/L",
+      "uPerL": "U/L",
+      "ngPerMl": "ng/mL",
+      "ngPerL": "ng/L",
+      "nmolPerL": "nmol/L",
+      "pgPerMl": "pg/mL",
+      "gPerDl": "g/dL",
+      "mgPerDl": "mg/dL",
+      "mgPerL": "mg/L",
+      "mgPerG": "mg/g",
+      "mcgPerG": "µg/g",
+      "mcgPerDl": "µg/dL",
+      "mmEPerMl": "mIU/mL",
+      "mEPerMl": "IU/mL",
+      "mlPerMinPer173": "mL/min/1.73m²",
+      "percent": "%",
+      "mgPerLFEU": "mg/L FEU"
+    },
+
+    "page": {
+      "title": "Add Laboratory Test"
+    },
+
+    "fields": {
+      "testType": {
+        "label": "Test type",
+        "placeholder": "-- select test type --"
+      },
+
+      "labName": {
+        "label": "Laboratory",
+        "placeholder": "Enter laboratory name..."
+      },
+
+      "report": {
+        "label": "Doctor's comment (result)",
+        "placeholder": "Enter doctor's comment..."
+      },
+
+      "parameter": {
+        "label": "Parameter",
+        "placeholder": "Parameter name...",
+        "valueTextPlaceholder": "Enter text value...",
+        "valueNumberPlaceholder": "Enter numeric value..."
+      },
+
+      "unit": {
+        "label": "Unit",
+        "placeholder": "Measurement unit..."
+      },
+
+      "referenceRange": {
+        "label": "Reference range",
+        "min": "Lower limit",
+        "max": "Upper limit"
+      },
+
+      "files": {
+        "label": "Attach files (PDF, images)",
+        "choose": "Add files",
+        "noFile": "No files selected"
+      }
+    },
+
+    "section": {
+      "parameters": "Test parameters"
+    },
+
+    "valueType": {
+      "text": "Text",
+      "number": "Number"
+    },
+
+    "buttons": {
+      "copyFromPrevious": "Copy from previous test",
+      "addParameter": "Add parameter",
+      "deleteParameter": "Delete parameter",
+      "loading": "Saving...",
+      "submit": "Save test"
+    },
+
+    "messages": {
+      "success": "✅ Test successfully added.",
+      "error": "❌ An error occurred: ",
+      "noPrevious": "No previous test found to copy.",
+      "copyError": "❌ Failed to load previous test."
+    },
+
+    "errors": {
+      "noTestType": "❗ Please select a test type and add at least one parameter.",
+      "missingValues": "Please enter values for the following parameters: {{list}}"
+    }
+  },
+  "testTypes": {
+    "UrineTest": "Urine analysis",
+    "BloodTestGeneral": "Complete blood count (CBC)",
+    "BloodTestBiochemistry": "Biochemical blood test",
+    "StoolTest": "Stool analysis",
+    "HormonePanel": "Hormone panel",
+    "TumorMarkers": "Tumor markers",
+    "PCR": "PCR tests",
+    "Immunology": "Immunology tests",
+    "GeneticScreening": "Genetic screening",
+    "Other": "Other tests",
+    "blood": "Complete Blood Count (CBC)",
+    "urine": "Urinalysis",
+    "biochem": "Biochemical blood test",
+    "hormones": "Hormonal panel",
+    "immunology": "Immunology test",
+    "coagulogram": "Coagulogram",
+    "tumor": "Tumor markers",
+    "electrolytes": "Electrolytes",
+    "vitamins": "Vitamin levels",
+    "others": "Other tests",
+    "CoagulationPanel": "Coagulation panel",
+    "LipidProfile": "Lipid profile",
+    "LiverFunction": "Liver function tests",
+    "RenalElectrolytes": "Renal function and electrolytes",
+    "IronStudies": "Iron studies",
+    "DiabetesPanel": "Diabetes panel",
+    "ThyroidPanel": "Thyroid panel (extended)",
+    "CardiacMarkers": "Cardiac markers",
+    "VitaminsTrace": "Vitamins and trace elements",
+    "InfectiousSerology": "Infectious disease serology",
+    "UrineAlbuminACR": "Microalbuminuria (ACR)",
+    "StoolInflammation": "Stool – inflammation / blood"
+  },
+
+  "units": {
+    "none": "",
+    "unit.defaultText": "—",
+    "unit.defaultNumber": "unit",
+
+    "g/L": "g/L",
+    "mmol/L": "mmol/L",
+    "cells/hpf": "cells/hpf",
+
+    "10^12/L": "10^12/L",
+    "10^9/L": "10^9/L",
+
+    "µmol/L": "µmol/L",
+    "U/L": "U/L",
+    "pmol/L": "pmol/L",
+    "µIU/mL": "µIU/mL",
+    "ng/mL": "ng/mL",
+    "IU/mL": "IU/mL",
+    "pg/mL": "pg/mL",
+    "ng/L": "ng/L",
+
+    "mg/dL": "mg/dL",
+    "mg/L": "mg/L",
+    "mg/g": "mg/g",
+
+    "µg/dL": "µg/dL",
+    "µg/g": "µg/g",
+    "µU/mL": "µU/mL",
+    "mIU/mL": "mIU/mL",
+
+    "mL/min/1.73m²": "mL/min/1.73m²",
+    "nmol/L": "nmol/L",
+    "%": "%",
+    "sec": "sec",
+    "mg/L_FEU": "mg/L FEU",
+
+    "gPerL": "g/L",
+    "mmolPerL": "mmol/L",
+    "mcmolPerL": "µmol/L",
+    "uPerL": "U/L",
+    "ngPerMl": "ng/mL",
+    "ngPerL": "ng/L",
+    "nmolPerL": "nmol/L",
+    "pgPerMl": "pg/mL",
+    "gPerDl": "g/dL",
+    "mgPerDl": "mg/dL",
+    "mgPerL": "mg/L",
+    "mgPerG": "mg/g",
+    "mcgPerG": "µg/g",
+    "mcgPerDl": "µg/dL",
+    "mmEPerMl": "mIU/mL",
+    "mEPerMl": "IU/mL",
+    "mlPerMinPer173": "mL/min/1.73m²",
+    "percent": "%",
+    "mgPerLFEU": "mg/L FEU"
+  },
+
+  "page": {
+    "title": "Add Laboratory Test"
+  },
+
+  "fields": {
+    "testType": {
+      "label": "Type of test",
+      "placeholder": "-- select type --"
+    },
+    "templateTitle": "Template Title",
+    "createdAt": "Date of Creation",
+    "tags": "Tags",
+    "status": "Status",
+    "labName": {
+      "label": "Laboratory",
+      "placeholder": "Enter laboratory name..."
+    },
+
+    "report": {
+      "label": "Doctor's comment (conclusion)",
+      "placeholder": "Enter doctor's comment..."
+    },
+
+    "parameter": {
+      "label": "Parameter",
+      "placeholder": "Parameter name...",
+      "valueTextPlaceholder": "Enter text value...",
+      "valueNumberPlaceholder": "Enter numeric value..."
+    },
+
+    "unit": {
+      "label": "Unit",
+      "placeholder": "Unit of measurement..."
+    },
+
+    "referenceRange": {
+      "label": "Reference range",
+      "min": "Lower norm",
+      "max": "Upper norm"
+    },
+
+    "files": {
+      "label": "Attach files (PDF, images)",
+      "choose": "Add files",
+      "noFile": "No files selected"
+    }
+  },
+
+  "section": {
+    "parameters": "Test parameters"
+  },
+
+  "valueType": {
+    "text": "Text",
+    "number": "Number"
+  },
+
+  "buttons": {
+    "copyFromPrevious": "Copy from previous test",
+    "addParameter": "Add parameter",
+    "deleteParameter": "Delete parameter",
+    "loading": "Saving...",
+    "submit": "Save test"
+  },
+
+  "messages": {
+    "success": "✅ Test successfully added.",
+    "error": "❌ Error occurred: ",
+    "noPrevious": "There is no previous test to copy.",
+    "copyError": "❌ Failed to load previous test."
+  },
+
+  "errors": {
+    "noTestType": "❗ Please select the type of test and add at least one parameter.",
+    "missingValues": "Please fill in the values for: {{list}}",
+    "insufficientRightsRegisteredPatient": "Insufficient rights to add examination for a registered patient"
+  },
+  "AddMRIScanUpload": {
+    "page": {
+      "title": "Add MRI results"
+    },
+
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the study title..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter doctor's conclusion..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter doctor's recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noFiles": "No files selected",
+        "selected": "{{count}} file(s) selected"
+      }
+    },
+
+    "buttons": {
+      "useTemplate": "Use template",
+      "newTemplate": "New template",
+      "listTemplates": "List of templates",
+      "insert": "Insert",
+      "close": "Close",
+      "submit": "Add results",
+      "loading": "Loading..."
+    },
+
+    "messages": {
+      "success": "MRI result added successfully!",
+      "error": "Error loading"
+    }
+  },
+  "AddPETScanUpload": {
+    "page": {
+      "title": "Add PET results"
+    },
+
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the study title..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter doctor's conclusion..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter doctor's recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noFiles": "No files selected",
+        "selected": "{{count}} file(s) selected"
+      }
+    },
+
+    "buttons": {
+      "useTemplate": "Use template",
+      "newTemplate": "New template",
+      "listTemplates": "List of templates",
+      "insert": "Insert",
+      "close": "Close",
+      "submit": "Add results",
+      "loading": "Loading..."
+    },
+
+    "modal": {
+      "title": "Template selection",
+      "select": "Select a template for"
+    },
+
+    "files": {
+      "image": "Image",
+      "pdf": "PDF document",
+      "video": "Video file",
+      "audio": "Audio file",
+      "file": "File"
+    },
+
+    "messages": {
+      "success": "PET result added successfully!",
+      "error": "Error loading"
+    }
+  },
+  "AddSPECTScanUpload": {
+    "page": {
+      "title": "Add SPECT results"
+    },
+
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the study title..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter doctor's conclusion..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter doctor's recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noFiles": "No files selected",
+        "selected": "{{count}} file(s) selected"
+      }
+    },
+
+    "buttons": {
+      "useTemplate": "Use template",
+      "newTemplate": "New template",
+      "listTemplates": "List of templates",
+      "insert": "Insert",
+      "close": "Close",
+      "submit": "Add results",
+      "loading": "Loading..."
+    },
+
+    "modal": {
+      "title": "Template selection",
+      "select": "Select a template for"
+    },
+
+    "files": {
+      "image": "Image",
+      "pdf": "PDF document",
+      "video": "Video file",
+      "audio": "Audio file",
+      "file": "File"
+    },
+
+    "messages": {
+      "success": "SPECT result added successfully!",
+      "error": "Error loading"
+    }
+  },
+  "AddSpirometryScanUpload": {
+    "page": {
+      "title": "Add Spirometry results"
+    },
+
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the study title..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter doctor's conclusion..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter doctor's recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noFiles": "No files selected",
+        "selected": "{{count}} file(s) selected"
+      }
+    },
+
+    "buttons": {
+      "useTemplate": "Use template",
+      "newTemplate": "New template",
+      "listTemplates": "List of templates",
+      "insert": "Insert",
+      "close": "Close",
+      "submit": "Add results",
+      "loading": "Loading..."
+    },
+
+    "modal": {
+      "title": "Template selection",
+      "select": "Select a template for"
+    },
+
+    "files": {
+      "image": "Image",
+      "pdf": "PDF document",
+      "video": "Video file",
+      "audio": "Audio file",
+      "file": "File"
+    },
+
+    "messages": {
+      "success": "Spirometry result added successfully!",
+      "error": "Loading error"
+    }
+  },
+  "AddUSMScanUpload": {
+    "page": {
+      "title": "Add Ultrasound (USM) results"
+    },
+
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the study title..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter doctor's conclusion..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter doctor's recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noFiles": "No files selected",
+        "selected": "{{count}} file(s) selected"
+      }
+    },
+
+    "buttons": {
+      "useTemplate": "Use template",
+      "newTemplate": "New template",
+      "listTemplates": "List of templates",
+      "insert": "Insert",
+      "close": "Close",
+      "submit": "Add results",
+      "loading": "Loading..."
+    },
+
+    "modal": {
+      "title": "Template selection",
+      "select": "Select a template for"
+    },
+
+    "files": {
+      "image": "Image",
+      "pdf": "PDF document",
+      "video": "Video file",
+      "audio": "Audio file",
+      "file": "File"
+    },
+
+    "messages": {
+      "success": "Ultrasound result added successfully!",
+      "error": "Loading error"
+    }
+  },
+  "AddXRAYScanUpload": {
+    "page": {
+      "title": "Add XRAY results"
+    },
+    "messages": {
+      "noPatientId": "Error: Patient ID is missing!",
+      "success": "✅ X-ray result added successfully!",
+      "error": "❌ Loading error"
+    },
+    "buttons": {
+      "useTemplate": "Use template",
+      "newTemplate": "New template",
+      "listTemplates": "List of templates",
+      "insert": "Insert",
+      "close": "Close",
+      "loading": "Loading...",
+      "submit": "Add results"
+    },
+    "modal": {
+      "title": "Choose template",
+      "select": "Select a template for"
+    },
+    "fields": {
+      "nameofexam": {
+        "label": "Title of the study",
+        "placeholder": "Enter the study title..."
+      },
+      "report": {
+        "label": "Description",
+        "placeholder": "Enter description..."
+      },
+      "diagnosis": {
+        "label": "Doctor's conclusion",
+        "placeholder": "Enter doctor's conclusion..."
+      },
+      "recomandation": {
+        "label": "Doctor's recommendations",
+        "placeholder": "Enter doctor's recommendations..."
+      },
+      "radiationDose": {
+        "label": "Radiation dose (mSv)",
+        "placeholder": "Enter radiation dose..."
+      },
+      "contrastUsed": {
+        "label": "Was contrast used?"
+      },
+      "files": {
+        "label": "Files (images, PDF, video, audio)",
+        "choose": "Choose files",
+        "noFiles": "No files selected",
+        "selected": "{{count}} file(s) selected"
+      }
+    },
+    "files": {
+      "image": "Image",
+      "pdf": "PDF document",
+      "video": "Video file",
+      "audio": "Audio file",
+      "file": "File",
+      "type": "Type",
+      "size": "Size"
+    }
+  },
+  "TempStatusPreasens": {
+    "labels": {
+      "createdAt": "Created at",
+      "tags": "Tags",
+      "noTags": "none",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "buttons": {
+      "delete": "Delete template",
+      "createNew": "Create new template"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "loadError": "Failed to load template",
+      "notFound": "Template not found",
+      "confirmDelete": "Are you sure you want to delete this template?",
+      "deleteSuccess": "Template successfully deleted",
+      "deleteError": "Failed to delete template"
+    }
+  }
+}

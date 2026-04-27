@@ -1,0 +1,301 @@
+{
+  "CTScanerTemplateDiagnosis": {
+    "page": {
+      "title": "Добавить шаблон диагноза КТ"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "Название шаблона"
+      },
+      "content": {
+        "placeholder": "Текст шаблона диагноза"
+      }
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон диагноза успешно добавлен.",
+      "error": "Не удалось добавить шаблон диагноза.",
+      "networkError": "Ошибка сети"
+    }
+  },
+  "CTScanerTemplateDiagnosisDetails": {
+    "page": {
+      "title": "Детали шаблона диагноза КТ",
+      "loading": "Загрузка...",
+      "errors": {
+        "fetchError": "Не удалось загрузить шаблон диагноза."
+      }
+    },
+    "fields": {
+      "title": "Название",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "CTScanerTemplateDiagnosisEdit": {
+    "page": {
+      "title": "Редактировать шаблон диагноза КТ"
+    },
+    "fields": {
+      "title": {
+        "label": "Название"
+      },
+      "content": {
+        "label": "Содержание"
+      }
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон диагноза успешно обновлён.",
+      "error": "❌ Ошибка при обновлении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "CTScanerTemplateDiagnosisList": {
+    "page": {
+      "title": "🧾 Шаблоны диагнозов КТ",
+      "empty": "Шаблоны диагнозов отсутствуют."
+    },
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "❌ Не удалось загрузить шаблоны диагнозов.",
+      "deleteError": "❌ Ошибка при удалении шаблона."
+    }
+  },
+  "CTScanerTemplateRecomendation": {
+    "page": {
+      "title": "Добавить шаблон рекомендаций КТ"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "Название шаблона"
+      },
+      "content": {
+        "placeholder": "Текст рекомендаций"
+      }
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон рекомендаций успешно добавлен.",
+      "error": "Ошибка при добавлении шаблона рекомендаций.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "CTScanerTemplateRecomendationDetails": {
+    "page": {
+      "title": "Детали шаблона рекомендаций КТ",
+      "loading": "Загрузка...",
+      "errors": {
+        "fetchError": "Не удалось загрузить шаблон рекомендаций."
+      }
+    },
+    "fields": {
+      "title": "Название",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "CTScanerTemplateRecomendationEdit": {
+    "page": {
+      "title": "Редактировать шаблон рекомендаций КТ"
+    },
+    "fields": {
+      "title": {
+        "label": "Название"
+      },
+      "content": {
+        "label": "Содержание"
+      }
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон рекомендаций успешно обновлён.",
+      "error": "❌ Ошибка при обновлении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "CTScanerTemplateRecomendationList": {
+    "page": {
+      "title": "📋 Шаблоны рекомендаций КТ",
+      "empty": "Шаблоны рекомендаций отсутствуют."
+    },
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "❌ Не удалось загрузить шаблоны рекомендаций.",
+      "deleteError": "❌ Ошибка при удалении шаблона."
+    }
+  },
+  "CTScanerTemplateReport": {
+    "page": {
+      "title": "Добавить шаблон описания КТ"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "Название шаблона"
+      },
+      "content": {
+        "placeholder": "Текст описания"
+      }
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон описания успешно добавлен.",
+      "error": "Ошибка при добавлении шаблона описания.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "CTScanerTemplateReportDetails": {
+    "page": {
+      "title": "Детали шаблона описания КТ",
+      "loading": "Загрузка...",
+      "errors": {
+        "fetchError": "Не удалось загрузить шаблон описания."
+      }
+    },
+    "fields": {
+      "title": "Название",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "CTScanerTemplateReportEdit": {
+    "page": {
+      "title": "Редактировать шаблон описания КТ"
+    },
+    "fields": {
+      "title": {
+        "label": "Название"
+      },
+      "content": {
+        "label": "Содержание"
+      }
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон описания успешно обновлён.",
+      "error": "❌ Ошибка при обновлении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "CTScanerTemplateReportList": {
+    "page": {
+      "title": "📝 Шаблоны описаний КТ",
+      "empty": "Шаблоны описаний отсутствуют."
+    },
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "❌ Не удалось загрузить шаблоны описаний.",
+      "deleteError": "❌ Ошибка при удалении шаблона."
+    }
+  },
+  "CTScanerTemplateNameofexam": {
+    "page": {
+      "title": "Добавить шаблон названия исследования КТ"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "Название исследования"
+      },
+      "content": {
+        "placeholder": "Описание или примечания"
+      }
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон названия исследования успешно добавлен.",
+      "error": "Ошибка при добавлении шаблона названия исследования.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "CTScanerTemplateNameofexamDetails": {
+    "page": {
+      "title": "Детали шаблона названия исследования КТ",
+      "loading": "Загрузка...",
+      "errors": {
+        "fetchError": "Не удалось загрузить шаблон названия исследования."
+      }
+    },
+    "fields": {
+      "title": "Название",
+      "content": "Описание"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "CTScanerTemplateNameofexamEdit": {
+    "page": {
+      "title": "Редактировать шаблон названия исследования КТ"
+    },
+    "fields": {
+      "title": { "label": "Название" },
+      "content": { "label": "Содержание" }
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон успешно обновлён.",
+      "error": "❌ Ошибка при обновлении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "CTScanerTemplateNameofexamList": {
+    "page": {
+      "title": "📌 Шаблоны названий исследований КТ",
+      "empty": "Шаблоны названий исследований отсутствуют."
+    },
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "❌ Не удалось загрузить шаблоны.",
+      "deleteError": "❌ Ошибка при удалении шаблона."
+    }
+  }
+}

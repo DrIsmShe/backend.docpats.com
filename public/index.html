@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo_docpats.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>
+      DOCPATS MedConnect – AI Medical Platform for Doctors & Clinics
+    </title>
+
+    <meta
+      name="description"
+      content="DOCPATS MedConnect is a professional healthcare platform for doctors, patients and clinics. AI medical analysis, CT/MRI reports, telemedicine, secure medical records and clinic management system in one ecosystem."
+    />
+    <meta
+      name="keywords"
+      content="medical platform, healthcare system, doctor portal, patient portal, clinic management system, AI medical diagnostics, telemedicine platform, CT MRI reports, digital health ecosystem, medical SaaS"
+    />
+
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://docpats.com/" />
+    <meta property="og:title" content="DOCPATS – Digital Medical Ecosystem" />
+    <meta
+      property="og:description"
+      content="Professional medical platform for doctors, patients and clinics. AI-powered diagnostics and secure healthcare management."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://docpats.com" />
+    <meta property="og:image" content="https://docpats.com/og-image.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="DOCPATS – AI Digital Healthcare Platform"
+    />
+    <meta
+      name="twitter:description"
+      content="Secure AI-powered medical ecosystem for doctors, clinics and patients."
+    />
+    <meta name="twitter:image" content="https://docpats.com/og-image.jpg" />
+
+    <!-- Favicons -->
+    <link href="%PUBLIC_URL%/favicon.ico" rel="icon" />
+    <link href="%PUBLIC_URL%/logo_docpats.png" rel="apple-touch-icon" />
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700|Nunito:300,400,600,700|Poppins:300,400,500,600,700"
+      rel="stylesheet"
+    />
+
+    <!-- Vendor CSS Files -->
+    <link
+      href="/assets/vendor/bootstrap/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="/assets/vendor/bootstrap-icons/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link
+      href="/assets/vendor/boxicons/css/boxicons.min.css"
+      rel="stylesheet"
+    />
+    <link href="/assets/vendor/quill/quill.snow.css" rel="stylesheet" />
+    <link href="/assets/vendor/quill/quill.bubble.css" rel="stylesheet" />
+    <link href="/assets/vendor/remixicon/remixicon.css" rel="stylesheet" />
+    <link href="/assets/vendor/simple-datatables/style.css" rel="stylesheet" />
+
+    <!-- Template Main CSS Files -->
+    <link href="/assets/css/style.css" rel="stylesheet" />
+    <link href="/assets/css/index.css" rel="stylesheet" />
+    <link href="/assets/css/bundle.css" rel="stylesheet" />
+    <link href="/assets/css/app.css" rel="stylesheet" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "DOCPATS MedConnect",
+        "url": "https://docpats.com/",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "Web",
+        "description": "AI-powered healthcare SaaS platform connecting doctors, clinics and patients worldwide."
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <script>
+      // заглушка, чтобы app.js не падал
+      window.TynApp = window.TynApp || {
+        init: function () {},
+        toggle: function () {},
+      };
+    </script>
+    <!-- Bootstrap bundle (включает Popper) -->
+    <script src="/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Vendor JS Files -->
+    <script src="/assets/vendor/apexcharts/apexcharts.min.js"></script>
+    <script src="/assets/vendor/chart.js/chart.umd.js"></script>
+    <script src="/assets/vendor/echarts/echarts.min.js"></script>
+    <script src="/assets/vendor/quill/quill.min.js"></script>
+    <script src="/assets/vendor/simple-datatables/simple-datatables.js"></script>
+    <script src="/assets/vendor/tinymce/tinymce.min.js"></script>
+    <script src="/assets/vendor/php-email-form/validate.js"></script>
+
+    <!-- Template Main JS Files -->
+    <script src="/assets/js/main.js"></script>
+    <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/bundle.js"></script>
+
+    <script>
+      function scrollToBottom(el) {
+        if (el) el.scrollTop = el.scrollHeight;
+      }
+      const content = document.getElementById("content");
+      if (content) scrollToBottom(content);
+    </script>
+  </body>
+</html>

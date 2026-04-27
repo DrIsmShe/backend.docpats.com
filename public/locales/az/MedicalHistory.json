@@ -1,0 +1,40 @@
+{
+  "page": {
+    "loading": "Yüklənir...",
+    "error": "Tibbi tarix yüklənərkən xəta baş verdi.",
+    "extractFrom": "Pasiyentin ambulator kartından çıxarış tarixi"
+  },
+  "labels": {
+    "country": "Pasiyentin ölkəsi",
+    "badHabits": "Pasiyentin zərərli vərdişləri",
+    "immunization": "Pasiyentin immunizasiyası",
+    "familyHistory": "Ailəvi xəstəlik anamnezi",
+    "chronicDiseases": "Pasiyentin xroniki xəstəlikləri",
+    "age": "Pasiyentin yaşı",
+    "allergies": "Pasiyentin allergiyaları",
+    "complaints": "Şikayətlər",
+    "anamnesisMorbi": "Anamnesis morbi",
+    "anamnesisVitae": "Anamnesis vitae",
+    "statusPreasens": "Status praesens",
+    "statusLocalis": "Status localis",
+    "ctScanResults": "KT müayinəsinin nəticələri",
+    "mriResults": "MRT nəticələri",
+    "ultrasoundResults": "Ultrasəs müayinəsinin nəticələri",
+    "labResults": "Laborator analizlərin nəticələri",
+    "diagnosis": "Diaqnoz",
+    "additionalDiagnosis": "Əlavə diaqnoz",
+    "recommendations": "Tövsiyələr",
+    "doctor": "Həkim",
+    "unknownDoctor": "Naməlum",
+    "printDate": "Çap tarixi"
+  },
+  "buttons": {
+    "downloadPdf": "PDF yüklə",
+    "uploadPdf": "PDF göndər"
+  },
+  "pdf": {
+    "uploadSuccess": "PDF uğurla yükləndi! Keçid: {{link}}",
+    "uploadError": "PDF yüklənərkən xəta baş verdi."
+  },
+  "ageText": "{{age}} yaş"
+}

@@ -1,0 +1,61 @@
+{
+  "metaTitle": "Pricing – DOCPATS MedConnect",
+  "metaDescription": "Transparent pricing for DOCPATS MedConnect – digital healthcare platform for doctors, patients, and clinics.",
+
+  "back": "Back to homepage",
+
+  "title": "Pricing",
+  "subtitle": "Fair pricing for doctors and patients",
+  "limitReachedTitle": "You have reached your plan limit.",
+  "limitReachedSubtitle": "Upgrade your subscription to add more patients.",
+  "doctorsTitle": "For Doctors",
+  "patientsTitle": "For Patients",
+
+  "mostPopular": "Most popular",
+  "choose": "Choose plan",
+
+  "doctorFree": {
+    "name": "Doctor Free",
+    "price": "Free",
+    "desc": "For doctors with up to 10 patients.",
+    "f1": "Up to 10 patients",
+    "f2": "Basic medical records",
+    "f3": "Doctor–patient chat"
+  },
+
+  "doctorPro": {
+    "name": "Doctor Pro",
+    "price": "$7 / month",
+    "desc": "For doctors with more than 10 patients.",
+    "f1": "Unlimited patients",
+    "f2": "Structured reports & templates",
+    "f3": "Priority support"
+  },
+
+  "patientFree": {
+    "name": "Patient Free",
+    "price": "Free",
+    "desc": "Basic access for personal health tracking.",
+    "f1": "Medical history storage",
+    "f2": "Chat with doctors",
+    "f3": "Upload reports"
+  },
+
+  "patientPlus": {
+    "name": "Patient Plus",
+    "price": "$3 / month",
+    "desc": "Advanced tools for active patients.",
+    "f1": "Unlimited records",
+    "f2": "AI-assisted insights",
+    "f3": "Priority support"
+  },
+
+  "family": {
+    "name": "Family",
+    "price": "$5 / month",
+    "desc": "Manage health of your whole family.",
+    "f1": "Up to 5 family members",
+    "f2": "Shared medical history",
+    "f3": "Parental control"
+  }
+}

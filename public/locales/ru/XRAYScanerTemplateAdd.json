@@ -1,0 +1,221 @@
+{
+  "XRAYScanerTemplateDiagnosis": {
+    "title": "Добавить шаблон диагноза рентгена",
+    "form": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Содержание",
+      "saveButton": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон диагноза успешно добавлен.",
+      "error": "❌ Не удалось добавить шаблон.",
+      "networkError": "❌ Ошибка сети."
+    }
+  },
+  "XRAYScanerTemplateDiagnosisDetails": {
+    "title": "Детали шаблона диагноза рентгена",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "actions": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loading": "Загрузка...",
+      "loadError": "Не удалось загрузить шаблон."
+    }
+  },
+  "XRAYScanerTemplateDiagnosisEdit": {
+    "title": "Редактирование шаблона диагноза рентгена",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "actions": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон диагноза успешно обновлён!",
+      "updateError": "❌ Ошибка при обновлении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "XRAYScanerTemplateDiagnosisList": {
+    "title": "🧾 Шаблоны диагноза рентгена",
+    "actions": {
+      "edit": "Редактировать",
+      "delete": "Удалить"
+    },
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "messages": {
+      "loadError": "❌ Не удалось загрузить шаблоны диагнозов.",
+      "deleteError": "❌ Ошибка при удалении шаблона."
+    }
+  },
+  "XRAYScanerTemplateRecomendation": {
+    "title": "Добавить шаблон рекомендаций рентгена",
+    "form": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Содержание",
+      "saveButton": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон рекомендаций успешно добавлен.",
+      "error": "❌ Ошибка при добавлении шаблона.",
+      "networkError": "⚠️ Ошибка сети."
+    }
+  },
+  "XRAYScanerTemplateRecomendationDetails": {
+    "title": "Детали шаблона рекомендаций рентгена",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "actions": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loading": "Загрузка...",
+      "loadError": "Не удалось загрузить шаблон."
+    }
+  },
+  "XRAYScanerTemplateRecomendationEdit": {
+    "title": "Редактирование шаблона рекомендаций рентгена",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "actions": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон рекомендаций успешно обновлён!",
+      "updateError": "❌ Ошибка при обновлении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "XRAYScanerTemplateRecomendationList": {
+    "title": "📋 Шаблоны рекомендаций рентгена",
+    "actions": {
+      "edit": "Редактировать",
+      "delete": "Удалить"
+    },
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "messages": {
+      "loadError": "❌ Не удалось загрузить шаблоны рекомендаций.",
+      "deleteError": "❌ Ошибка при удалении шаблона."
+    }
+  },
+  "XRAYScanerTemplateReport": {
+    "title": "Добавить шаблон рентген-отчёта",
+    "form": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Содержание",
+      "saveButton": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон отчёта успешно добавлен.",
+      "error": "❌ Ошибка при добавлении шаблона.",
+      "networkError": "⚠️ Ошибка сети."
+    }
+  },
+  "XRAYScanerTemplateReportDetails": {
+    "title": "Детали шаблона рентген-отчёта",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "actions": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loading": "Загрузка...",
+      "loadError": "Не удалось загрузить шаблон."
+    }
+  },
+  "XRAYScanerTemplateReportEdit": {
+    "title": "Редактирование шаблона рентген-отчёта",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "actions": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон отчёта успешно обновлён!",
+      "updateError": "❌ Не удалось обновить шаблон.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "XRAYScanerTemplateReportList": {
+    "title": "📝 Шаблоны рентген-отчётов",
+    "actions": {
+      "edit": "Редактировать",
+      "delete": "Удалить"
+    },
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "messages": {
+      "loadError": "❌ Не удалось загрузить шаблоны отчётов.",
+      "deleteError": "❌ Не удалось удалить шаблон."
+    }
+  },
+  "XRAYScanerTemplateNameofexam": {
+    "title": "Добавить шаблон названия рентген-исследования",
+    "form": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Описание",
+      "saveButton": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон названия исследования успешно добавлен.",
+      "error": "❌ Ошибка при добавлении шаблона.",
+      "networkError": "⚠️ Ошибка сети."
+    }
+  },
+  "XRAYScanerTemplateNameofexamDetails": {
+    "title": "Детали шаблона названия рентген-исследования",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Описание"
+    },
+    "actions": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loading": "Загрузка...",
+      "loadError": "Не удалось загрузить шаблон."
+    }
+  },
+  "XRAYScanerTemplateNameofexamEdit": {
+    "title": "Редактирование шаблона названия рентген-исследования",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Описание"
+    },
+    "actions": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон названия исследования успешно обновлён!",
+      "updateError": "❌ Не удалось обновить шаблон.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "XRAYScanerTemplateNameofexamList": {
+    "title": "📌 Шаблоны названий рентген-исследований",
+    "actions": {
+      "edit": "Редактировать",
+      "delete": "Удалить"
+    },
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "messages": {
+      "loadError": "❌ Не удалось загрузить шаблоны названий исследований.",
+      "deleteError": "❌ Не удалось удалить шаблон."
+    }
+  }
+}

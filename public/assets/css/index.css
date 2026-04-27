@@ -1,0 +1,212 @@
+body {
+  margin: 0;
+  padding: 0;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+* {
+  margin: 0;
+  padding: 0;
+}
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.chat_container_area {
+  width: 100%;
+  height: 100vh;
+  background-color: #065477;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.toolbar {
+  width: 5%;
+  height: 100vh;
+  background-color: #104c67;
+  display: flex;
+  justify-content: space-evenly;
+  flex-direction: column;
+  align-items: center;
+}
+
+.side_bar {
+  width: 25%;
+  height: 95vh;
+  /* background-color: #065477; */
+}
+
+.main_bar {
+  width: 50%;
+  height: 90vh;
+  margin-left: 30px;
+}
+
+.man_profile > img {
+  border-radius: 50px;
+  width: 50px;
+  height: 50px;
+  border: 1px solid blue;
+  cursor: pointer;
+}
+
+.icon_man_params {
+  transition-duration: 0.5s;
+  font-size: 25px;
+  margin: 8px;
+  color: #adb0b3;
+  cursor: pointer;
+}
+
+.icon_man_params:hover {
+  font-size: 25px;
+  margin: 8px;
+  color: #248dee;
+  cursor: pointer;
+}
+
+.quit_icon > .out {
+  font-size: 25px;
+  color: #adb0b3;
+}
+
+.quit_icon > .out:hover {
+  font-size: 25px;
+  color: #248dee;
+  cursor: pointer;
+}
+.search_container {
+  height: 10%;
+  width: 100%;
+}
+.search_input {
+  background-color: #14465c;
+  display: flex;
+  justify-content: center;
+}
+
+.search_input > input {
+  padding: 3px;
+  border: none;
+  width: 80%;
+  background: none;
+}
+
+.serach_chat {
+  font-size: 20px;
+  margin: 8px;
+  color: aliceblue;
+  cursor: pointer;
+}
+
+input-placeholder {
+  color: blanchedalmond;
+}
+
+.users {
+  display: flex;
+  justify-items: center;
+  align-items: center;
+  justify-content: center;
+  height: 70px;
+  margin: 15px;
+  border-radius: 15px;
+  background-color: hsl(198.82deg 26.15% 38.24%);
+  transition: background-color 300ms;
+  cursor: pointer;
+}
+
+.users_image {
+  width: 15%;
+  height: 60px;
+  display: flex;
+  justify-items: center;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.users_image > img {
+  background-color: azure;
+  border-radius: 50px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid blue;
+  cursor: pointer;
+}
+.users_content {
+  width: 60%;
+  justify-items: left;
+  align-items: start;
+  justify-content: center;
+  padding: 5px;
+  margin-top: 10px;
+}
+.users_content_title {
+  color: white;
+  cursor: pointer;
+}
+.users_content_desc {
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+}
+.users_ansew_date {
+  width: 25%;
+  padding: 10px;
+  color: white;
+  cursor: pointer;
+}
+
+.main_bar_top {
+  background-color: #14465c;
+  height: 10vh;
+  display: flex;
+  justify-content: space-between;
+}
+.main_bar_content {
+  background: linear-gradient(#14465c, 30%, #738aa3);
+  height: 80vh;
+  border-radius: 5px;
+}
+.main_bar_top_left {
+  display: flex;
+  justify-content: space-around;
+}
+.main_bar_top_left_about_users_name {
+  color: white;
+  cursor: pointer;
+}
+.main_bar_top_left_users_active {
+  color: white;
+}
+.main_bar_top_left_about {
+  max-height: 10px;
+}
+.main_bar_top_right {
+  display: flex;
+  justify-content: space-around;
+  color: white;
+  font-size: 30px;
+}
+.main_bar_top_right_phone {
+  margin-right: 10px;
+  cursor: pointer;
+}
+.main_bar_top_right_video_call {
+  margin-right: 10px;
+  cursor: pointer;
+}
+.main_bar_top_right_block {
+  margin-right: 10px;
+  cursor: pointer;
+}
+.main_bar_top_right_delete {
+  margin-right: 10px;
+  cursor: pointer;
+}

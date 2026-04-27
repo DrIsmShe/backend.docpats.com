@@ -1,0 +1,453 @@
+{
+  "myMedicalHistories": {
+    "states": {
+      "loading": "Xəstəlik tarixçələri yüklənir…",
+      "error": "Məlumatları yükləmək mümkün olmadı. Zəhmət olmasa, daha sonra yenidən cəhd edin."
+    },
+    "header": {
+      "eyebrow": "Tibbi arxiv",
+      "title": "Mənim xəstəlik tarixçələrim",
+      "subtitle": "Tibbi qeydlərinizin və qəbullarınızın tam xronologiyası",
+      "totalLabel": "ümumi qeyd"
+    },
+    "filters": {
+      "sectionTitle": "Filtrlər və axtarış",
+      "foundLabel": "Tapıldı",
+      "dateFrom": "Tarix (başlanğıc)",
+      "dateTo": "Tarix (son)",
+      "doctor": "Həkim (ad / soyad)",
+      "doctorPlaceholder": "Məsələn: Əliyev",
+      "diagnosis": "Diaqnoz",
+      "diagnosisPlaceholder": "Diaqnoz üzrə axtarış",
+      "sort": "Sıralama",
+      "reset": "Filtrləri sıfırla",
+      "sortOptions": {
+        "newest": "Əvvəlcə yenilər",
+        "oldest": "Əvvəlcə köhnələr",
+        "doctorAsc": "Həkim A→Z",
+        "doctorDesc": "Həkim Z→A"
+      }
+    },
+    "empty": {
+      "title": "Heç nə tapılmadı",
+      "description": "Seçilmiş filtrlərə uyğun qeyd yoxdur. Axtarış meyarlarını dəyişdirməyi sınayın."
+    },
+    "card": {
+      "diagnosisEmpty": "Diaqnoz göstərilməyib",
+      "doctorEmpty": "Həkim göstərilməyib"
+    }
+  },
+  "myMedicalHistories": {
+    "states": {
+      "loading": "Xəstəlik tarixçələri yüklənir…",
+      "error": "Məlumatları yükləmək mümkün olmadı. Zəhmət olmasa, daha sonra yenidən cəhd edin."
+    },
+    "header": {
+      "eyebrow": "Tibbi arxiv",
+      "title": "Mənim xəstəlik tarixçələrim",
+      "subtitle": "Tibbi qeydlərinizin və qəbullarınızın tam xronologiyası",
+      "totalLabel": "ümumi qeyd"
+    },
+    "filters": {
+      "sectionTitle": "Filtrlər və axtarış",
+      "foundLabel": "Tapıldı",
+      "dateFrom": "Tarix (başlanğıc)",
+      "dateTo": "Tarix (son)",
+      "doctor": "Həkim (ad / soyad)",
+      "doctorPlaceholder": "Məsələn: Əliyev",
+      "diagnosis": "Diaqnoz",
+      "diagnosisPlaceholder": "Diaqnoz üzrə axtarış",
+      "sort": "Sıralama",
+      "reset": "Filtrləri sıfırla",
+      "sortOptions": {
+        "newest": "Əvvəlcə yenilər",
+        "oldest": "Əvvəlcə köhnələr",
+        "doctorAsc": "Həkim A→Z",
+        "doctorDesc": "Həkim Z→A"
+      }
+    },
+    "empty": {
+      "title": "Heç nə tapılmadı",
+      "description": "Seçilmiş filtrlərə uyğun qeyd yoxdur. Axtarış meyarlarını dəyişdirməyi sınayın."
+    },
+    "card": {
+      "diagnosisEmpty": "Diaqnoz göstərilməyib",
+      "doctorEmpty": "Həkim göstərilməyib"
+    }
+  },
+
+  "myMedicalHistoryDetail": {
+    "states": {
+      "loading": "Xəstəlik tarixçəsi yüklənir…",
+      "notFound": "Xəstəlik tarixçəsi tapılmadı."
+    },
+    "errors": {
+      "noId": "ID göstərilməyib",
+      "loadFailed": "Məlumatları yükləmək mümkün olmadı.",
+      "pdfFailed": "PDF hazırlamaq mümkün olmadı. Yenidən cəhd edin."
+    },
+    "brand": "DocPats · Tibbi qeyd",
+    "header": {
+      "title": "Pasiyentin xəstəlik tarixçəsi",
+      "subtitle": "Müşahidəçi həkim tərəfindən hazırlanmış tam klinik qeyd"
+    },
+    "patient": {
+      "photoAlt": "Pasiyentin şəkli"
+    },
+    "sections": {
+      "patientData": "Pasiyent məlumatları",
+      "diagnosis": "Diaqnoz",
+      "clinicalPicture": "Klinik mənzərə",
+      "tests": "Müayinə nəticələri",
+      "recommendations": "Tövsiyələr",
+      "attendingDoctor": "Müalicəedici həkim"
+    },
+    "fields": {
+      "fullName": "Soyad, ad, atasının adı",
+      "gender": "Cins",
+      "birthDate": "Doğum tarixi",
+      "citizenship": "Vətəndaşlıq",
+      "badHabits": "Pis vərdişlər",
+      "immunization": "İmmunizasiya",
+      "familyHistory": "İrsi xəstəliklər",
+      "chronicDiseases": "Xroniki xəstəliklər",
+      "allergies": "Allergiyalar",
+      "mainDiagnosis": "Əsas diaqnoz",
+      "additionalDiagnosis": "Əlavə diaqnoz",
+      "complaints": "Şikayətlər",
+      "anamnesisMorbi": "Xəstəliyin anamnezi",
+      "anamnesisVitae": "Həyatın anamnezi",
+      "statusPraesens": "Ümumi vəziyyət (Status praesens)",
+      "statusLocalis": "Lokal vəziyyət (Status localis)",
+      "ctScan": "Kompüter tomoqrafiyası (KT)",
+      "mri": "Maqnit rezonans tomoqrafiyası (MRT)",
+      "ultrasound": "Ultrasəs müayinəsi (USM)",
+      "laboratoryTests": "Laboratoriya müayinələri",
+      "doctorRecommendations": "Həkimin təyinatları və tövsiyələri"
+    },
+    "doctor": {
+      "label": "Müşahidəçi mütəxəssis"
+    },
+    "empty": {
+      "notSpecified": "göstərilməyib"
+    },
+    "units": {
+      "years": "yaş"
+    },
+    "actions": {
+      "downloadPdf": "PDF yüklə",
+      "preparingPdf": "PDF hazırlanır…"
+    }
+  },
+  "doctorsAll": {
+    "loading": "Həkimlər yüklənir…",
+    "error": "Həkimlər yüklənərkən xəta baş verdi",
+    "header": {
+      "eyebrow": "Mütəxəssislər kataloqu",
+      "title": "Platforma həkimləri",
+      "subtitle": "Ad, ixtisas, ölkə və ya nəşrlərin sayına görə mütəxəssis tapın",
+      "totalLabel": "ümumi həkim sayı"
+    },
+    "filters": {
+      "title": "Filtrlər və axtarış",
+      "found": "Tapıldı",
+      "reset": "Filtrləri sıfırla",
+      "fields": {
+        "name": {
+          "label": "Ad və soyad",
+          "placeholder": "Məsələn: Əli Məmmədov"
+        },
+        "clinic": {
+          "label": "Klinika və ya təsvir",
+          "placeholder": "Məsələn: kardiologiya, 1 saylı klinika…"
+        },
+        "country": {
+          "label": "Ölkə",
+          "all": "Bütün ölkələr"
+        },
+        "specialty": {
+          "label": "İxtisas",
+          "all": "Bütün ixtisaslar"
+        },
+        "minArticles": {
+          "label": "Minimum məqalə sayı"
+        },
+        "sort": {
+          "label": "Çeşidləmə",
+          "dateDesc": "Əvvəl yenilər",
+          "dateAsc": "Əvvəl köhnələr",
+          "reviewsDesc": "Rəylərə görə (azalan)",
+          "articlesDesc": "Məqalə sayına görə (azalan)",
+          "likesDesc": "Bəyənmələrə görə (azalan)",
+          "nameAsc": "Ada görə (A→Z)",
+          "countryAsc": "Ölkəyə görə (A→Z)"
+        }
+      },
+      "toggles": {
+        "withPhoto": "Yalnız şəkilli",
+        "withClinic": "Yalnız klinikası göstərilənlər"
+      }
+    },
+    "card": {
+      "specialtyFallback": "İxtisas göstərilməyib",
+      "nameFallback": "Ad göstərilməyib",
+      "aboutFallback": "Təsvir yoxdur.",
+      "clinicLabel": "Klinika:",
+      "clinicFallback": "göstərilməyib",
+      "countryLabel": "Ölkə:",
+      "countryFallback": "Göstərilməyib",
+      "altDoctor": "Həkim",
+      "stats": {
+        "dateTitle": "Qeydiyyat tarixi",
+        "reviewsTitle": "Rəylər",
+        "likesTitle": "Bəyənmələr",
+        "articles": "Məqalələr"
+      }
+    },
+    "empty": {
+      "title": "Həkim tapılmadı",
+      "text": "Axtarış parametrlərini dəyişməyə və ya filtrləri sıfırlamağa cəhd edin"
+    }
+  },
+  "doctorDetail": {
+    "loading": "Yüklənir…",
+    "notFound": "Həkim tapılmadı.",
+    "speciality": {
+      "unknown": "Naməlum"
+    },
+    "errors": {
+      "noProfileId": "Xəta: Həkim ID-si tapılmadı.",
+      "loadFailed": "Həkim məlumatları yüklənə bilmədi.",
+      "noDoctorId": "Həkim ID-si müəyyən edilə bilmədi.",
+      "noUserId": "Həkimin userId-si tapılmadı",
+      "noDialogId": "Server dialogId qaytarmadı",
+      "dialogCreate": "Dialoq yaradılarkən xəta",
+      "addDoctor": "Əlavə edilərkən xəta.",
+      "removeDoctor": "Silinərkən xəta.",
+      "recommendUpdate": "Tövsiyə yenilənə bilmədi",
+      "recommendGeneric": "Tövsiyə yenilənərkən xəta"
+    },
+    "alerts": {
+      "added": "Həkim uğurla Mənim Həkimlərim siyahısına əlavə edildi!",
+      "removed": "Həkim Mənim Həkimlərim siyahısından silindi!"
+    },
+    "verification": {
+      "approved": "Təsdiqlənib",
+      "pending": "Gözləmədə",
+      "rejected": "Rədd edilib",
+      "notSubmitted": "Təsdiqlənməyib"
+    },
+    "hero": {
+      "photoAlt": "Profil şəkli",
+      "nameFallback": "Ad göstərilməyib",
+      "clinicFallback": "Klinika göstərilməyib",
+      "countryFallback": "Ölkə göstərilməyib"
+    },
+    "actions": {
+      "appointment": "Qəbula yazıl",
+      "message": "Mesaj yaz",
+      "removing": "Silinir...",
+      "remove": "Sil",
+      "adding": "Əlavə edilir...",
+      "add": "Siyahıma əlavə et",
+      "recommend": "Tövsiyə edirəm",
+      "recommendTitle": "Xəstə tövsiyəsi",
+      "recommendPending": "..."
+    },
+    "info": {
+      "specialty": "İxtisas",
+      "clinic": "Klinika",
+      "country": "Ölkə",
+      "notSpecified": "göstərilməyib"
+    },
+    "about": {
+      "title": "Haqqında",
+      "empty": "Məlumat yoxdur."
+    },
+    "comments": {
+      "title": "Şərhlər"
+    },
+    "articles": {
+      "title": "Həkimin məqalələri",
+      "empty": "Hələ məqalə yoxdur.",
+      "tooltips": {
+        "date": "Yayın tarixi",
+        "comments": "Şərhlər",
+        "likes": "Bəyənmələr"
+      }
+    }
+  },
+  "myDoctors": {
+    "loading": "Həkimlər yüklənir...",
+    "error": "Həkimlər yüklənə bilmədi",
+    "header": {
+      "eyebrow": "Şəxsi siyahı",
+      "title": "Mənim Həkimlərim",
+      "subtitle": "İzləmə siyahınıza əlavə etdiyiniz həkimlər — həmişə əlinizin altındadır",
+      "countLabel": "siyahıda"
+    },
+    "empty": {
+      "imgAlt": "Həkim yoxdur",
+      "title": "Hələ əlavə etdiyiniz həkim yoxdur",
+      "text": "Kataloqdan həkimlər əlavə edin ki, onları burada tez tapa biləsiniz və qarşılıqlı əlaqə tarixçəsini əlinizin altında saxlaya biləsiniz"
+    },
+    "card": {
+      "photoAlt": "Həkim {{name}}",
+      "addedBadge": "Siyahımda",
+      "specialtyFallback": "İxtisas göstərilməyib",
+      "button": "Profilə keç"
+    }
+  },
+  "patientAppointments": {
+    "header": {
+      "eyebrow": "Randevu yönetimi",
+      "title": "🩺 Tıbbi randevularınız",
+      "subtitle": "Randevuları yönetin, doktora randevu alın ve geçmişi görüntüleyin"
+    },
+    "tabs": {
+      "book": {
+        "label": "Randevu al",
+        "desc": "Bir doktor seçin ve online randevu alın."
+      },
+      "my": {
+        "label": "Randevularım",
+        "desc": "Yaklaşan randevularınızı görüntüleyin."
+      },
+      "history": {
+        "label": "Geçmiş",
+        "desc": "Tamamlanan ve iptal edilen randevuları görüntüleyin."
+      }
+    }
+  },
+  "patientAppointments": {
+    "header": {
+      "eyebrow": "Qəbulların idarə edilməsi",
+      "title": "🩺 Tibbi qəbullarınız",
+      "subtitle": "Qəbulları idarə edin, həkimə yazılın və tarixçəni izləyin"
+    },
+    "tabs": {
+      "book": {
+        "label": "Qəbula yazıl",
+        "desc": "Həkim seçin və onlayn qəbula yazılın."
+      },
+      "my": {
+        "label": "Qəbullarım",
+        "desc": "Gələcək qəbullarınıza baxın."
+      },
+      "history": {
+        "label": "Tarixçə",
+        "desc": "Tamamlanmış və ləğv edilmiş qəbulları görüntüləyin."
+      }
+    }
+  },
+  "page_title": "Qəbula yazıl",
+  "filters_title": "Filtrlər",
+  "clear_filters": "Təmizlə",
+  "all_countries": "Bütün ölkələr",
+  "all_specialties": "Bütün ixtisaslar",
+  "min_rating": "Min. reytinq",
+  "min_reviews": "Min. rəy sayı",
+  "sort": "Çeşidləmə",
+  "sort_price_asc": "Qiymət ↑",
+  "sort_price_desc": "Qiymət ↓",
+  "sort_rating": "Reytinqə görə",
+  "sort_reviews": "Rəylərə görə",
+  "select_doctor": "Həkim seçin",
+  "not_selected": "Seçilməyib",
+  "no_name": "Adsız",
+  "no_specialty": "İxtisas yoxdur",
+  "appointment_type": "Qəbul növü",
+  "offline": "Üzbəüz",
+  "online": "Onlayn (video)",
+  "online_disabled": "Bu həkim onlayn konsultasiya qəbul etmir",
+  "select_date": "Tarix seçin",
+  "show_slots": "Boş saatları göstər",
+  "whatsapp_label": "Video konsultasiya üçün WhatsApp",
+  "whatsapp_hint": "Format: ölkə kodu + nömrə, yalnız rəqəmlər (10–15 rəqəm)",
+  "available_slots": "Boş saatlar",
+  "book": "Yazıl",
+  "no_slots": "Seçilmiş tarixdə boş yer yoxdur",
+  "loading": "Yüklənir…",
+  "error_load_doctors": "Həkimlər siyahısı yüklənə bilmədi",
+  "error_load_slots": "Boş saatlar yüklənə bilmədi",
+  "error_whatsapp_required": "Zəhmət olmasa düzgün WhatsApp nömrəsi daxil edin (10–15 rəqəm)",
+  "error_select_doctor": "Əvvəlcə həkim seçin",
+  "success_created": "Qəbul uğurla yaradıldı!",
+  "error_create": "Qəbul yaradıla bilmədi",
+  "myAppointments": {
+    "loading": "Qəbullar yüklənir…",
+    "error": "Qəbullarınız yüklənə bilmədi.",
+    "header": {
+      "eyebrow": "Qəbul cədvəli",
+      "title": "Qəbullarım",
+      "subtitle": "Həkimə bütün qəbullarınız bir yerdə",
+      "countLabel": "ümumi"
+    },
+    "empty": {
+      "title": "Hələ qəbulunuz yoxdur",
+      "text": "Burada görmək üçün həkimdən qəbul yazdırın"
+    },
+    "status": {
+      "confirmed": "Təsdiqlənib",
+      "pending": "Gözləmədə",
+      "cancelled": "Ləğv edilib",
+      "completed": "Tamamlanıb",
+      "unknown": "Naməlum"
+    },
+    "card": {
+      "doctorAlt": "Həkim",
+      "doctorFallback": "Həkim",
+      "specialtyFallback": "İxtisas yoxdur",
+      "countryFallback": "Göstərilməyib",
+      "dateLabel": "Tarix:",
+      "timeLabel": "Saat:",
+      "typeLabel": "Qəbul növü:",
+      "typeOnline": "Onlayn",
+      "typeOffline": "Üzbəüz",
+      "videoCall": "Video zəng",
+      "cancel": "Ləğv et"
+    },
+    "cancelModal": {
+      "title": "Qəbulun ləğvi",
+      "closeLabel": "Bağla",
+      "confirmText": "{{doctor}} ilə qəbulunuzu ləğv etmək istədiyinizə əminsinizmi?",
+      "doctorFallback": "həkim",
+      "reasonLabel": "Ləğv səbəbi (istəyə bağlı)",
+      "reasonPlaceholder": "Məsələn: planlar dəyişdi, xəstələndim və s.",
+      "cancelBtn": "İmtina",
+      "confirmBtn": "Ləğvi təsdiqlə"
+    },
+    "alerts": {
+      "cancelError": "Qəbul ləğv edilə bilmədi. Zəhmət olmasa daha sonra yenidən cəhd edin."
+    }
+  },
+  "PatientAppointmentsHistory": {
+    "title": "Qəbul tarixçəsi",
+    "eyebrow": "Arxiv",
+    "countLabel": "ümumi",
+    "loading": "Yüklənir…",
+    "errors": {
+      "failedToLoad": "Qəbullar yüklənə bilmədi",
+      "loadError": "Məlumat yüklənərkən xəta baş verdi",
+      "noId": "Qəbul ID-si müəyyən edilə bilmədi",
+      "cannotCancel": "Qəbul ləğv edilə bilmədi"
+    },
+    "actions": {
+      "confirmCancel": "Bu qəbulu ləğv etmək istədiyinizə əminsinizmi?",
+      "cancel": "Ləğv et",
+      "cancelling": "Ləğv edilir…"
+    },
+    "labels": {
+      "noAppointments": "Hələ qəbul yoxdur",
+      "unknownDoctor": "Həkim göstərilməyib",
+      "type": "Növ"
+    },
+    "statuses": {
+      "confirmed": "Təsdiqlənib",
+      "pending": "Gözləmədə",
+      "cancelled": "Ləğv edilib",
+      "completed": "Tamamlanıb",
+      "unknown": "Naməlum"
+    }
+  }
+}

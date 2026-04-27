@@ -1,0 +1,145 @@
+{
+  "EKGScanerTemplateDiagnosis": {
+    "titlePage": "Добавить шаблон диагноза",
+    "placeholderTitle": "Заголовок",
+    "placeholderContent": "Текст диагноза",
+    "saveButton": "Сохранить",
+    "success": "✅ Шаблон диагноза успешно добавлен.",
+    "error": "Не удалось добавить шаблон диагноза.",
+    "networkError": "Ошибка сети"
+  },
+  "EKGScanerTemplateDiagnosisDetails": {
+    "titlePage": "Детали шаблона диагноза ЭКГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "doctorLabel": "Врач",
+    "editButton": "Редактировать",
+    "loading": "Загрузка...",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "EKGScanerTemplateDiagnosisEdit": {
+    "titlePage": "Редактировать шаблон диагноза ЭКГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "updateButton": "Обновить шаблон",
+    "success": "Шаблон диагноза успешно обновлён.",
+    "updateError": "Ошибка при обновлении шаблона.",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "EKGScanerTemplateDiagnosisList": {
+    "titlePage": "Шаблоны диагноза ЭКГ",
+    "deleteButton": "Удалить",
+    "editButton": "Редактировать",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteSuccess": "Шаблон успешно удалён.",
+    "deleteError": "Ошибка при удалении шаблона.",
+    "loadError": "Не удалось загрузить шаблоны диагнозов."
+  },
+  "EKGScanTemplateNameofexam": {
+    "titlePage": "Добавить шаблон названия исследования ЭКГ",
+    "placeholderTitle": "Заголовок",
+    "placeholderContent": "Содержание",
+    "saveButton": "Сохранить",
+    "success": "Шаблон названия исследования успешно добавлен.",
+    "error": "Ошибка при добавлении шаблона.",
+    "networkError": "Ошибка сети"
+  },
+  "EKGScanTemplateNameofexamDetail": {
+    "titlePage": "Детали шаблона названия исследования ЭКГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "editButton": "Редактировать",
+    "loading": "Загрузка...",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "EKGScanTemplateNameofexamEdit": {
+    "titlePage": "Редактировать шаблон названия исследования ЭКГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "updateButton": "Обновить шаблон",
+    "success": "Шаблон названия исследования успешно обновлён.",
+    "updateError": "Не удалось обновить шаблон.",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "EKGScanTemplateNameofexamList": {
+    "titlePage": "Шаблоны названия исследования ЭКГ",
+    "deleteButton": "Удалить",
+    "editButton": "Редактировать",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteSuccess": "Шаблон успешно удалён.",
+    "deleteError": "Не удалось удалить шаблон.",
+    "loadError": "Не удалось загрузить шаблоны названия исследования."
+  },
+  "EKGScanerTemplateRecomendation": {
+    "titlePage": "Добавить шаблон рекомендаций ЭКГ",
+    "placeholderTitle": "Заголовок",
+    "placeholderContent": "Текст рекомендаций",
+    "saveButton": "Сохранить",
+    "success": "Шаблон рекомендаций успешно добавлен.",
+    "error": "Ошибка при добавлении шаблона рекомендаций.",
+    "networkError": "Ошибка сети"
+  },
+  "EKGScanerTemplateRecomendationDetails": {
+    "titlePage": "Детали шаблона рекомендаций ЭКГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "doctorLabel": "Врач",
+    "editButton": "Редактировать",
+    "loading": "Загрузка...",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "EKGScanerTemplateRecomendationEdit": {
+    "titlePage": "Редактировать шаблон рекомендаций ЭКГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "updateButton": "Обновить шаблон",
+    "success": "Шаблон рекомендаций успешно обновлён.",
+    "updateError": "Ошибка при обновлении шаблона рекомендаций.",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "EKGScanerTemplateRecomendationList": {
+    "titlePage": "Шаблоны рекомендаций ЭКГ",
+    "deleteButton": "Удалить",
+    "editButton": "Редактировать",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteSuccess": "Шаблон успешно удалён.",
+    "deleteError": "Ошибка при удалении шаблона рекомендаций.",
+    "loadError": "Не удалось загрузить шаблоны рекомендаций."
+  },
+  "EKGScanTemplateReport": {
+    "titlePage": "Добавить шаблон отчёта ЭКГ",
+    "placeholderTitle": "Заголовок",
+    "placeholderContent": "Текст отчёта",
+    "saveButton": "Сохранить",
+    "success": "Шаблон отчёта успешно добавлен.",
+    "error": "Ошибка при добавлении шаблона отчёта.",
+    "networkError": "Ошибка сети"
+  },
+  "EKGScanerTemplateReportDetails": {
+    "titlePage": "Детали шаблона отчёта ЭКГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "doctorLabel": "Врач",
+    "editButton": "Редактировать",
+    "loading": "Загрузка...",
+    "loadError": "Не удалось загрузить шаблон отчёта."
+  },
+  "EKGScanerTemplateReportEdit": {
+    "titlePage": "Редактировать шаблон отчёта ЭКГ",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "updateButton": "Обновить шаблон",
+    "success": "Шаблон отчёта успешно обновлён.",
+    "updateError": "Ошибка при обновлении шаблона отчёта.",
+    "loadError": "Не удалось загрузить шаблон отчёта."
+  },
+  "EKGScanerTemplateReportList": {
+    "titlePage": "Шаблоны отчётов ЭКГ",
+    "deleteButton": "Удалить",
+    "editButton": "Редактировать",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteSuccess": "Шаблон отчёта успешно удалён.",
+    "deleteError": "Ошибка при удалении шаблона отчёта.",
+    "loadError": "Не удалось загрузить шаблоны отчётов."
+  }
+}

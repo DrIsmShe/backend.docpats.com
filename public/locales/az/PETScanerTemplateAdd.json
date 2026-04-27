@@ -1,0 +1,257 @@
+{
+  "PETScanerTemplateDiagnosis": {
+    "page": {
+      "title": "PET Diaqnoz Şablonu Əlavə Et"
+    },
+    "fields": {
+      "titlePlaceholder": "Diaqnoz başlığı",
+      "contentPlaceholder": "Diaqnoz mətni"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Diaqnoz şablonu uğurla əlavə olundu.",
+      "error": "Diaqnoz şablonu əlavə edilə bilmədi.",
+      "networkError": "Şəbəkə xətası"
+    }
+  },
+  "PETScanerTemplateDiagnosisDetails": {
+    "page": {
+      "title": "PET Diaqnoz Şablonunun Detalları",
+      "loading": "Şablon yüklənir...",
+      "errors": {
+        "fetchError": "Diaqnoz şablonu yüklənə bilmədi."
+      }
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    }
+  },
+  "PETScanerTemplateDiagnosisEdit": {
+    "page": {
+      "title": "PET Diaqnoz Şablonunu Redaktə Et"
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Diaqnoz şablonu uğurla yeniləndi!",
+      "updateError": "❌ Diaqnoz şablonunun yenilənməsi zamanı xəta baş verdi.",
+      "fetchError": "❌ Diaqnoz şablonu yüklənə bilmədi."
+    }
+  },
+  "PETScanerTemplateDiagnosisList": {
+    "page": {
+      "title": "🧾 PET Diaqnoz Şablonları"
+    },
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi"
+    }
+  },
+  "PETScanerTemplateRecomendation": {
+    "page": {
+      "title": "PET Tövsiyə Şablonu Əlavə Et"
+    },
+    "fields": {
+      "titlePlaceholder": "Tövsiyə başlığı",
+      "contentPlaceholder": "Tövsiyə mətni"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Tövsiyə şablonu uğurla əlavə olundu.",
+      "error": "Tövsiyə şablonu əlavə edilə bilmədi.",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "PETScanerTemplateRecomendationDetails": {
+    "page": {
+      "title": "PET Tövsiyə Şablonunun Detalları",
+      "loading": "Şablon yüklənir...",
+      "errors": {
+        "fetchError": "Tövsiyə şablonu yüklənə bilmədi."
+      }
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    }
+  },
+  "PETScanerTemplateRecomendationEdit": {
+    "page": {
+      "title": "PET Tövsiyə Şablonunu Redaktə Et"
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Tövsiyə şablonu uğurla yeniləndi!",
+      "updateError": "❌ Tövsiyə şablonunun yenilənməsi zamanı xəta baş verdi.",
+      "fetchError": "❌ Tövsiyə şablonu yüklənə bilmədi."
+    }
+  },
+  "PETScanerTemplateRecomendationList": {
+    "page": {
+      "title": "📋 PET Tövsiyə Şablonları"
+    },
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Tövsiyə şablonu silinərkən xəta baş verdi"
+    }
+  },
+  "PETScanerTemplateReport": {
+    "page": {
+      "title": "PET Hesabat Şablonu Əlavə Et"
+    },
+    "fields": {
+      "titlePlaceholder": "Hesabat başlığı",
+      "contentPlaceholder": "Hesabat mətni"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Hesabat şablonu uğurla əlavə olundu.",
+      "error": "Hesabat şablonu əlavə edilə bilmədi.",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "PETScanerTemplateReportDetails": {
+    "page": {
+      "title": "PET Hesabat Şablonunun Detalları",
+      "loading": "Şablon yüklənir...",
+      "errors": {
+        "fetchError": "Hesabat şablonu yüklənə bilmədi."
+      }
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    }
+  },
+  "PETScanerTemplateReportEdit": {
+    "page": {
+      "title": "PET Hesabat Şablonunu Redaktə Et"
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Hesabat şablonu uğurla yeniləndi!",
+      "updateError": "❌ Hesabat şablonunun yenilənməsi zamanı xəta baş verdi.",
+      "fetchError": "❌ Hesabat şablonu yüklənə bilmədi."
+    }
+  },
+  "PETScanerTemplateReportList": {
+    "page": {
+      "title": "📝 PET Hesabat Şablonları"
+    },
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "confirmDelete": "Bu hesabat şablonunu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Hesabat şablonu silinərkən xəta baş verdi"
+    }
+  },
+  "PETScanerTemplateNameofexam": {
+    "page": {
+      "title": "PET Müayinə Adı Şablonu Əlavə Et"
+    },
+    "fields": {
+      "titlePlaceholder": "Müayinə adı",
+      "contentPlaceholder": "Müayinə təsviri"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Müayinə adı şablonu uğurla əlavə olundu.",
+      "error": "Müayinə adı şablonu əlavə edilə bilmədi.",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "PETScanerTemplateNameofexamDetails": {
+    "page": {
+      "title": "PET Müayinə Adı Şablonunun Detalları",
+      "loading": "Şablon yüklənir...",
+      "errors": {
+        "fetchError": "Müayinə adı şablonu yüklənə bilmədi."
+      }
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    }
+  },
+  "PETScanerTemplateNameofexamEdit": {
+    "page": {
+      "title": "PET Müayinə Adı Şablonunu Redaktə Et"
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Müayinə adı şablonu uğurla yeniləndi!",
+      "updateError": "❌ Müayinə adı şablonunun yenilənməsi zamanı xəta baş verdi.",
+      "fetchError": "❌ Müayinə adı şablonu yüklənə bilmədi."
+    }
+  },
+  "PETScanerTemplateNameofexamList": {
+    "page": {
+      "title": "📌 PET Müayinə Adı Şablonları"
+    },
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "confirmDelete": "Bu müayinə adı şablonunu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Müayinə adı şablonu silinərkən xəta baş verdi"
+    }
+  }
+}

@@ -1,0 +1,889 @@
+{
+  "AngiographyScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص القسطرة",
+      "loading": "جاري التحميل...",
+      "error": "فشل في تحميل بيانات الفحص",
+      "nodata": "لا توجد بيانات"
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "تم استخدام المادة الظليلة",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "pdf": {
+      "download": "تحميل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+  "LabtestScanerDetails": {
+    "page": {
+      "title": "Lab Test — Examination Details",
+      "loading": "Loading...",
+      "noData": "No data found",
+      "errors": {
+        "fetchError": "Failed to load examination data"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uploaded successfully! Link:",
+        "uploadError": "PDF upload error. Please try again."
+      }
+    },
+    "sections": {
+      "general": "General Info",
+      "findings": "Findings"
+    },
+    "fields": {
+      "patient": "Patient",
+      "doctor": "Doctor",
+      "date": "Date",
+      "labName": "Laboratory",
+      "diagnosis": "Diagnosis",
+      "report": "Report",
+      "parameters": "Test Parameters",
+      "paramName": "Parameter",
+      "paramValue": "Value",
+      "unit": "Unit",
+      "reference": "Reference Range",
+      "files": "Attached Files",
+      "doctorComments": "Doctor Comments"
+    },
+    "buttons": {
+      "download": "Download PDF",
+      "upload": "Upload PDF",
+      "print": "Print"
+    }
+  },
+  "AngiographyScanerTemplateDiagnosis": {
+    "page": {
+      "title": "إضافة قالب التشخيص"
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التشخيص بنجاح.",
+      "fail": "فشل في إضافة القالب.",
+      "network": "خطأ في الشبكة"
+    }
+  },
+  "AngiographyScanerTemplateDiagnosisDetails": {
+    "page": {
+      "title": "تفاصيل قالب التشخيص",
+      "loading": "جارٍ التحميل...",
+      "error": "فشل تحميل القالب."
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    }
+  },
+  "AngiographyScanerTemplateDiagnosisEdit": {
+    "page": {
+      "title": "تعديل قالب تشخيص تصوير الأوعية",
+      "success": "✅ تم تحديث قالب التشخيص بنجاح!",
+      "error": "❌ حدث خطأ أثناء تحديث القالب"
+    },
+
+    "labels": {
+      "title": "العنوان",
+      "titlePlaceholder": "أدخل العنوان...",
+      "content": "المحتوى",
+      "contentPlaceholder": "أدخل المحتوى..."
+    },
+
+    "buttons": {
+      "update": "تحديث القالب"
+    }
+  },
+  "AngiographyScanerTemplateDiagnosisList": {
+    "title": "🧾 قوالب تشخيص تصوير الأوعية",
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "✏️ تعديل"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد أنك تريد حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "خطأ في تحميل قوالب التشخيص",
+      "deleteSuccess": "✅ تم حذف القالب بنجاح",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب"
+    }
+  },
+  "AngiographyScanerTemplateNameofexam": {
+    "title": "إضافة قالب اسم فحص تصوير الأوعية",
+    "fields": {
+      "title": {
+        "placeholder": "أدخل عنوان القالب..."
+      },
+      "content": {
+        "placeholder": "أدخل محتوى القالب..."
+      }
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "createSuccess": "✅ تم إضافة القالب بنجاح",
+      "createError": "❌ حدث خطأ أثناء إضافة القالب",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "AngiographyScanerTemplateNameofexamDetail": {
+    "title": "تفاصيل قالب اسم فحص تصوير الأوعية",
+    "page": {
+      "loading": "جارٍ التحميل..."
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القالب"
+    }
+  },
+  "AngiographyScanerTemplateNameofexamEdit": {
+    "title": "تعديل قالب اسم فحص تصوير الأوعية",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القالب",
+      "updateSuccess": "✅ تم تحديث القالب بنجاح",
+      "updateError": "❌ فشل في تحديث القالب"
+    }
+  },
+  "AngiographyScanerTemplateNameofexamList": {
+    "title": "قوالب أسماء فحوصات تصوير الأوعية",
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد أنك تريد حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل القوالب",
+      "deleteSuccess": "✅ تم حذف القالب بنجاح",
+      "deleteError": "❌ فشل في حذف القالب"
+    }
+  },
+  "AngiographyScanerTemplateRecomendation": {
+    "title": "إضافة قالب توصيات لتصوير الأوعية",
+    "fields": {
+      "title": {
+        "placeholder": "أدخل عنوان التوصية..."
+      },
+      "content": {
+        "placeholder": "أدخل نص التوصية..."
+      }
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "createSuccess": "✅ تم إضافة قالب التوصيات بنجاح",
+      "createError": "❌ فشل في إضافة قالب التوصيات",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "AngiographyScanerTemplateRecomendationList": {
+    "title": "قوالب توصيات تصوير الأوعية",
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد أنك تريد حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل قوالب التوصيات",
+      "deleteSuccess": "✅ تم حذف قالب التوصيات بنجاح",
+      "deleteError": "❌ فشل في حذف قالب التوصيات"
+    }
+  },
+  "AngiographyScanerTemplateRecomendationEdit": {
+    "title": "تعديل قالب توصيات تصوير الأوعية",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل قالب التوصيات",
+      "updateSuccess": "✅ تم تحديث قالب التوصيات بنجاح",
+      "updateError": "❌ فشل في تحديث قالب التوصيات"
+    }
+  },
+  "AngiographyScanerTemplateRecomendationDetails": {
+    "title": "تفاصيل قالب توصيات تصوير الأوعية",
+    "page": {
+      "loading": "جارٍ التحميل..."
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل قالب التوصيات"
+    }
+  },
+  "AngiographyScanerTemplateReport": {
+    "title": "إضافة قالب تقرير تصوير الأوعية",
+    "fields": {
+      "title": {
+        "placeholder": "أدخل عنوان التقرير..."
+      },
+      "content": {
+        "placeholder": "أدخل نص التقرير..."
+      }
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "createSuccess": "✅ تم إضافة قالب التقرير بنجاح",
+      "createError": "❌ فشل في إضافة قالب التقرير",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "AngiographyScanerTemplateReportList": {
+    "title": "قوالب تقارير تصوير الأوعية",
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "confirm": {
+      "delete": "هل أنت متأكد أنك تريد حذف هذا القالب؟"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل قوالب التقارير",
+      "deleteSuccess": "✅ تم حذف قالب التقرير بنجاح",
+      "deleteError": "❌ فشل في حذف قالب التقرير"
+    }
+  },
+  "AngiographyScanerTemplateReportEdit": {
+    "title": "تعديل قالب تقرير تصوير الأوعية",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل قالب التقرير",
+      "updateSuccess": "✅ تم تحديث قالب التقرير بنجاح",
+      "updateError": "❌ فشل في تحديث قالب التقرير"
+    }
+  },
+  "AngiographyScanerTemplateReportDetails": {
+    "title": "تفاصيل قالب تقرير تصوير الأوعية",
+    "page": {
+      "loading": "جارٍ التحميل..."
+    },
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loadError": "فشل في تحميل قالب التقرير"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateDiagnosis": {
+    "title": "إضافة قالب تشخيص التنظير بالكبسولة",
+    "fields": {
+      "title": {
+        "placeholder": "أدخل عنوان التشخيص..."
+      },
+      "content": {
+        "placeholder": "أدخل نص التشخيص..."
+      }
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "messages": {
+      "createSuccess": "✅ تم إضافة قالب التشخيص بنجاح",
+      "createError": "❌ فشل في إضافة قالب التشخيص",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "CapsuleEndoscopyScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص التنظير بالكبسولة",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الفحص"
+      },
+      "messages": {
+        "uploadSuccess": "تم رفع ملف PDF! الرابط:",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "هل تم استخدام الصبغة؟",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "buttons": {
+      "download": "تحميل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+  "CoronographyScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص القسطرة القلبية",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الفحص"
+      },
+      "messages": {
+        "uploadSuccess": "تم رفع ملف PDF! الرابط:",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "هل تم استخدام الصبغة؟",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "buttons": {
+      "download": "تحميل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+  "CTScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص الأشعة المقطعية",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الفحص"
+      },
+      "messages": {
+        "uploadSuccess": "تم رفع ملف PDF! الرابط:",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "هل تم استخدام الصبغة؟",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "buttons": {
+      "download": "تحميل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+  "DopleryScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص الدوبلر",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الفحص"
+      },
+      "messages": {
+        "uploadSuccess": "تم رفع ملف PDF! الرابط:",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "هل تم استخدام الصبغة؟",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "buttons": {
+      "download": "تحميل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+  "EchoEKGScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص الإيكو والـEKG",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الفحص"
+      },
+      "messages": {
+        "uploadSuccess": "تم رفع ملف PDF! الرابط:",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "هل تم استخدام الصبغة؟",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "buttons": {
+      "download": "تحميل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+  "EEGScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص EEG",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الفحص"
+      },
+      "messages": {
+        "uploadSuccess": "تم رفع ملف PDF! الرابط:",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "هل تم استخدام الصبغة؟",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "buttons": {
+      "download": "تحميل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+  "EKGScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص EKG",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الفحص"
+      },
+      "messages": {
+        "uploadSuccess": "تم رفع ملف PDF! الرابط:",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "هل تم استخدام الصبغة؟",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "buttons": {
+      "download": "تحميل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+  "GastroscopyScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص تنظير المعدة",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الفحص"
+      },
+      "messages": {
+        "uploadSuccess": "تم رفع ملف PDF! الرابط:",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "هل تم استخدام الصبغة؟",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "buttons": {
+      "download": "تحميل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+
+  "GinecologyDetails": {
+    "page": {
+      "title": "تفاصيل فحص أمراض النساء",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الفحص"
+      },
+      "messages": {
+        "uploadSuccess": "تم رفع ملف PDF! الرابط:",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "هل تم استخدام الصبغة؟",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "buttons": {
+      "download": "تحميل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+  "HOLTERScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص جهاز هولتر",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الفحص"
+      },
+      "messages": {
+        "uploadSuccess": "تم رفع ملف PDF بنجاح! الرابط:",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recomandation": "التوصيات",
+      "contrastUsed": "هل تم استخدام المادة الظليلة",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الطبيب"
+    },
+    "buttons": {
+      "download": "تنزيل PDF",
+      "upload": "رفع PDF",
+      "print": "طباعة"
+    }
+  },
+  "LabtestScanerDetails": {
+    "page": {
+      "title": "تحليل مخبري",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "تعذّر تحميل التحليل المخبري."
+      }
+    },
+    "files": {
+      "noFile": "لم يتم اختيار ملف",
+      "chooseFile": "اختر ملفًا"
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "labName": "المختبر",
+      "diagnosis": "التشخيص الأولي",
+      "report": "تقرير الطبيب",
+      "parameters": "🧪 مؤشرات التحليل:",
+      "paramName": "المؤشر",
+      "paramValue": "القيمة",
+      "unit": "الوحدة",
+      "reference": "المدى المرجعي",
+      "files": "📎 الملفات المرفقة",
+      "doctorComments": "💬 تعليقات الأطباء"
+    },
+    "buttons": {
+      "download": "تحميل PDF",
+      "print": "طباعة",
+      "upload": "رفع PDF"
+    }
+  },
+  "MRIScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص الرنين المغناطيسي",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات فحص الرنين."
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recommendations": "التوصيات",
+      "contrastUsed": "هل تم استخدام المادة الظليلة",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الأطباء"
+    },
+    "buttons": {
+      "download": "تنزيل PDF",
+      "upload": "تحميل PDF",
+      "print": "طباعة"
+    }
+  },
+  "PETScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص البوزيترون (PET)",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات فحص PET.",
+        "uploadError": "حدث خطأ أثناء رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recommendations": "التوصيات",
+      "contrastUsed": "هل تم استخدام المادة الظليلة",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الأطباء"
+    },
+    "buttons": {
+      "download": "تنزيل PDF",
+      "upload": "تحميل PDF",
+      "print": "طباعة"
+    }
+  },
+  "SPECTScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص SPECT",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات فحص SPECT.",
+        "uploadError": "خطأ في رفع ملف PDF"
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recommendations": "التوصيات",
+      "contrastUsed": "هل تم استخدام المادة الظليلة",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الأطباء"
+    },
+    "buttons": {
+      "download": "تنزيل PDF",
+      "upload": "تحميل PDF",
+      "print": "طباعة"
+    }
+  },
+  "SpirometryScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص قياس التنفس",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في تحميل بيانات فحص قياس التنفس."
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recommendations": "التوصيات",
+      "contrastUsed": "هل تم استخدام المادة الظليلة",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الأطباء"
+    },
+    "buttons": {
+      "download": "تنزيل PDF",
+      "upload": "تحميل PDF",
+      "print": "طباعة"
+    }
+  },
+  "USMScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص السونار (الألتراساوند)",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في تحميل بيانات فحص السونار."
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recommendations": "التوصيات",
+      "contrastUsed": "هل تم استخدام المادة الظليلة",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الأطباء"
+    },
+    "buttons": {
+      "download": "تنزيل PDF",
+      "upload": "تحميل PDF",
+      "print": "طباعة"
+    }
+  },
+  "XRAYScanerDetails": {
+    "page": {
+      "title": "تفاصيل فحص الأشعة السينية",
+      "loading": "جارٍ التحميل...",
+      "noData": "لا توجد بيانات",
+      "errors": {
+        "fetchError": "فشل في جلب بيانات الأشعة السينية."
+      }
+    },
+    "fields": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "date": "التاريخ",
+      "nameofexam": "اسم الفحص",
+      "diagnosis": "التشخيص",
+      "report": "التقرير",
+      "recommendations": "التوصيات",
+      "contrastUsed": "هل تم استخدام المادة الظليلة",
+      "yes": "نعم",
+      "no": "لا",
+      "images": "الصور",
+      "doctorComments": "تعليقات الأطباء"
+    },
+    "buttons": {
+      "download": "تنزيل PDF",
+      "upload": "تحميل PDF",
+      "print": "طباعة"
+    }
+  }
+}

@@ -1,0 +1,302 @@
+{
+  "moduleName": "Антропометрия",
+
+  "cases": {
+    "title": "Случаи пациентов",
+    "subtitle": "Антропометрические измерения",
+    "empty": "Пока нет ни одного случая",
+    "new": "Новый случай",
+    "create": "Создать случай",
+    "patient": "Пациент",
+    "procedure": "Процедура",
+    "status": "Статус",
+    "created": "Создан",
+    "archive": "Архивировать",
+    "archived": "Архивировано",
+    "unarchive": "Вернуть из архива",
+    "delete": "Удалить",
+    "deleteConfirm": "Удалить случай? Это действие удалит все сессии, фото и измерения.",
+    "deleteReasonPrompt": "Причина удаления (минимум 10 символов)",
+    "chiefComplaint": "Основные жалобы",
+    "medicalNotes": "Медицинские заметки",
+    "consent": "Согласие пациента",
+    "giveConsent": "Зафиксировать согласие",
+    "consentGiven": "Согласие получено",
+    "procedureTypes": {
+      "rhinoplasty": "Ринопластика",
+      "mammoplasty": "Маммопластика",
+      "facelift": "Подтяжка лица",
+      "blepharoplasty": "Блефаропластика",
+      "liposuction": "Липосакция",
+      "otoplasty": "Отопластика",
+      "other": "Другое"
+    },
+    "statuses": {
+      "consultation": "Консультация",
+      "planned": "Запланировано",
+      "operated": "Прооперировано",
+      "follow_up": "Контроль",
+      "closed": "Закрыто",
+      "cancelled": "Отменено"
+    },
+    "archivedBanner": "Случай архивирован"
+  },
+
+  "studies": {
+    "backToCase": "К случаю",
+    "title": "Сессии",
+    "empty": "В этом случае ещё нет сессий",
+    "new": "Новая сессия",
+    "create": "Создать сессию",
+    "date": "Дата сессии",
+    "type": "Тип",
+    "notes": "Заметки",
+    "complete": "Завершить",
+    "completed": "Завершена",
+    "types": {
+      "pre_op": "До операции",
+      "post_op_1w": "Через 1 неделю",
+      "post_op_1m": "Через 1 месяц",
+      "post_op_3m": "Через 3 месяца",
+      "post_op_6m": "Через 6 месяцев",
+      "post_op_1y": "Через 1 год",
+      "follow_up": "Контроль",
+      "simulation": "Симуляция",
+      "other": "Другое"
+    },
+    "label": "Метка (необязательно)",
+    "labelPlaceholder": "Например: до операции",
+    "calibrated": "Откалибровано",
+    "notCalibrated": "Не откалибровано",
+    "photosCount_one": "{{count}} фото",
+    "photosCount_few": "{{count}} фото",
+    "photosCount_many": "{{count}} фото",
+    "photosCount_other": "{{count}} фото"
+  },
+
+  "calibration": {
+    "title": "Калибровка",
+    "notCalibrated": "Не откалибровано",
+    "calibrated": "Откалибровано",
+    "recalibrate": "Пересчитать",
+    "uncalibrate": "Сбросить калибровку",
+    "ruler": {
+      "title": "По эталону",
+      "instruction": "Отметьте два конца эталонного объекта на фото",
+      "knownDistance": "Известное расстояние (мм)"
+    },
+    "interpupillary": {
+      "title": "По межзрачковому расстоянию",
+      "instruction": "Отметьте центр каждого зрачка пациента",
+      "leftPupil": "Левый зрачок",
+      "rightPupil": "Правый зрачок",
+      "patientGender": "Пол пациента",
+      "male": "Мужской",
+      "female": "Женский",
+      "other": "Другое",
+      "unknown": "Неизвестно"
+    },
+
+    "comingSoon": "🏗 F.6.3 — модалка калибровки (следующий этап)",
+
+    "notCalibratedHint": "Поставьте две точки на известном расстоянии, чтобы получить измерения в миллиметрах",
+    "start": "Откалибровать",
+    "change": "Изменить",
+    "save": "Сохранить калибровку",
+    "modalTitle": "Калибровка",
+    "step1Title": "Выберите фото для калибровки",
+    "step2Title": "Поставьте две точки на известном расстоянии",
+    "step3Title": "Реальное расстояние между точками",
+    "hint0": "Кликните первую точку",
+    "hint1": "Кликните вторую точку",
+    "hint2": "Две точки поставлены. Можно изменить расстояние или сбросить.",
+    "reset": "Сбросить",
+    "hintsTitle": "Популярные варианты",
+    "hints": {
+      "ruler50": "Линейка 50 мм",
+      "ruler100": "Линейка 100 мм",
+      "ipd": "Межзрачковое (63 мм)",
+      "creditCard": "Банк. карта (85.6 мм)"
+    },
+    "methods": {
+      "ruler": "Линейка",
+      "interpupillary": "Межзрачковое",
+      "generic": "Две точки"
+    }
+  },
+
+  "photos": {
+    "dropZoneActive": "Отпустите чтобы загрузить",
+    "deleteConfirm": "Удалить это фото?",
+    "uploadingQueue": "Загрузка {{current}} из {{total}}",
+    "errors": {
+      "invalidType": "{{name}}: недопустимый тип файла",
+      "tooBig": "{{name}}: слишком большой (макс. {{maxMb}} МБ)",
+      "uploadFailed": "{{name}}: не удалось загрузить"
+    },
+
+    "title": "Фото",
+
+    "upload": "Загрузить фото",
+    "uploading": "Загрузка...",
+    "viewType": "Ракурс",
+    "viewTypes": {
+      "frontal": "Фронт",
+      "three_quarter_left": "3/4 слева",
+      "three_quarter_right": "3/4 справа",
+      "superior": "Сверху",
+      "inferior": "Снизу",
+      "other": "Другое",
+      "lateral_left": "Левый профиль",
+      "lateral_right": "Правый профиль",
+      "oblique_left": "Левый 3/4",
+      "oblique_right": "Правый 3/4",
+      "basal": "Снизу",
+      "frontal_body": "Фронтальный (тело)",
+      "lateral_left_body": "Левый профиль (тело)",
+      "lateral_right_body": "Правый профиль (тело)",
+      "posterior": "Сзади"
+    },
+    "dragDropHint": "Перетащите файл или нажмите",
+    "maxSize": "Максимум 50 МБ",
+    "supportedFormats": "JPEG, PNG, WebP, HEIC",
+    "empty": "Пока нет фото. Загрузите первое фото чтобы начать.",
+    "dropZoneTitle": "Перетащите фото сюда или кликните для выбора",
+    "dropZoneHint": "JPG или PNG, до 20 МБ",
+    "comingSoon": "🏗 F.6.2 — загрузка фото (следующий этап)"
+  },
+
+  "annotations": {
+    "title": "Разметка",
+    "create": "Начать разметку",
+    "save": "Сохранить",
+    "saved": "Сохранено",
+    "saving": "Сохранение...",
+    "presets": {
+      "rhinoplasty_lateral": "Ринопластика (профиль)"
+    },
+    "landmarks": "Точки",
+    "measurements": "Измерения",
+    "version": "Версия",
+    "versions": "Версии",
+    "history": "История",
+    "current": "Текущая",
+    "lock": "Зафиксировать",
+    "locked": "Зафиксировано",
+    "unlock": "Разблокировать",
+    "unlockReasonPrompt": "Причина разблокировки (минимум 10 символов)",
+    "newVersion": "Новая версия",
+    "landmarkHint": "Кликните для расстановки точки",
+    "noMeasurements": "Пока нет измерений",
+    "skippedMeasurements": "Пропущенные измерения (недостаёт точек)"
+  },
+
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Изменить",
+    "close": "Закрыть",
+    "confirm": "Подтвердить",
+    "back": "Назад",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успешно",
+    "reason": "Причина",
+    "noData": "Нет данных",
+    "yes": "Да",
+    "no": "Нет"
+  },
+
+  "actions": {
+    "archive": "Архивировать",
+    "unarchive": "Восстановить",
+    "delete": "Удалить"
+  },
+  "confirm": {
+    "archiveTitle": "Архивировать случай?",
+    "archiveMessage": "Случай будет скрыт из активного списка. Вы сможете восстановить его позже.",
+    "deleteTitle": "Удалить случай?",
+    "deleteMessage": "Это действие удалит случай вместе со всеми сессиями, фотографиями и разметкой.",
+    "deleteWarning": "⚠ Данные будут удалены без возможности восстановления из интерфейса.",
+    "reasonLabel": "Причина",
+    "reasonRequired": "Требуется указать причину"
+  },
+  "filters": {
+    "active": "Активные",
+    "archived": "Архив"
+  },
+  "emptyArchived": "Нет архивированных случаев",
+  "annotation": {
+    "backToStudy": "К сессии",
+    "noCalibration": "⚡ Без калибровки — измерения в пикселях",
+    "undo": "Отменить",
+    "redo": "Повторить",
+    "save": "Сохранить",
+    "measurementsEmpty": "🏗 F.7.2 — добавление точек и измерения (следующий этап)",
+
+    "locked": "🔒 Зафиксировано",
+    "lock": "Зафиксировать",
+    "unlock": "Разблокировать",
+    "lockConfirmTitle": "Зафиксировать разметку?",
+    "lockConfirmMessage": "После фиксации разметка станет доступна только для просмотра. Это необходимо для юридической документации.",
+    "unlockConfirmTitle": "Разблокировать разметку?",
+    "unlockConfirmMessage": "Разблокировка требует обоснования. Это действие будет зафиксировано в журнале аудита.",
+
+    "measureDistanceHint": "Выберите 2 точки для измерения расстояния",
+    "measureAngleHint": "Выберите 3 точки (вторая — вершина угла)",
+
+    "measurementsCount_one": "{{count}} измерение",
+    "measurementsCount_few": "{{count}} измерения",
+    "measurementsCount_many": "{{count}} измерений",
+    "measurementsCount_other": "{{count}} измерений",
+    "tools": {
+      "select": "Выбор",
+      "landmark": "Точка",
+      "measure": "Измерение",
+      "fit": "По экрану (F)",
+      "actual": "Реальный размер (0)",
+      "zoomIn": "Приблизить",
+      "zoomOut": "Отдалить",
+
+      "delete": "Удалить (Del)",
+      "measureDist": "Расстояние (D)",
+      "measureAngle": "Угол (A)"
+    },
+    "clickToAddPoint": "Кликните на фото чтобы поставить точку",
+    "switchToLandmarkTool": "Выберите инструмент ● чтобы ставить точки",
+    "pointsCount_one": "{{count}} точка",
+    "pointsCount_few": "{{count}} точки",
+    "pointsCount_many": "{{count}} точек",
+    "pointsCount_other": "{{count}} точек",
+    "autosave": {
+      "saving": "Сохранение...",
+      "saved": "✓ Сохранено",
+      "error": "Ошибка сохранения"
+    }
+  },
+  "compare": {
+    "button": "Сравнить сессии",
+    "hint": "{{count}} сессии доступны",
+    "title": "Сравнение сессий",
+    "backToCase": "К случаю",
+    "before": "До",
+    "after": "После",
+    "needTwoStudies": "Для сравнения нужно минимум 2 сессии с фото",
+
+    "syncOn": "Синхронизация",
+    "syncOff": "Независимо",
+    "syncToggleHint": "Синхронизировать зум и движение в обеих панелях",
+
+    "tableTitle": "Сравнение измерений",
+    "tableMatched": "совпавших",
+    "tableEmpty": "Сделайте измерения на обеих сессиях чтобы сравнить",
+    "colLabel": "Метка",
+    "colType": "Тип",
+    "type_distance": "Расстояние",
+    "type_angle": "Угол",
+    "onlyBefore": "Только на «до»",
+    "onlyAfter": "Только на «после»",
+    "noMatchWarning": "Измерения есть с обеих сторон, но ни одно не совпадает по метке. Назовите одинаковые измерения одной меткой (напр. «d1») на обеих сессиях."
+  }
+}

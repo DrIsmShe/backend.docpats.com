@@ -1,0 +1,178 @@
+{
+  "EEGScanerTemplateAdd": {
+    "title": "Add Examination Name",
+    "form": {
+      "titlePlaceholder": "Title",
+      "contentPlaceholder": "Content",
+      "saveButton": "Save"
+    },
+    "messages": {
+      "success": "✅ Examination name template successfully added.",
+      "errorDefault": "❌ Failed to add template.",
+      "networkError": "❌ Network error"
+    }
+  },
+  "EEGScanerTemplateDiagnosisDetails": {
+    "loading": "Loading...",
+    "error": "Failed to load template.",
+    "title": "EEG Scan Diagnosis Template Details",
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "doctor": "Doctor"
+    },
+    "actions": {
+      "edit": "Edit"
+    }
+  },
+  "EEGScanerTemplateDiagnosisEdit": {
+    "title": "Edit EEG Scan Diagnosis Template",
+    "fields": {
+      "title": "Title",
+      "content": "Content"
+    },
+    "actions": {
+      "update": "Update Template"
+    },
+    "messages": {
+      "success": "✅ Diagnosis template successfully updated!",
+      "error": "❌ Error updating template.",
+      "loadError": "❌ Failed to load template."
+    }
+  },
+  "EEGScanerTemplateDiagnosisList": {
+    "title": "🧾 EEG Scan Diagnosis Templates",
+    "actions": {
+      "edit": "Edit",
+      "delete": "🗑️ Delete"
+    },
+    "messages": {
+      "confirmDelete": "Are you sure you want to delete this template?",
+      "deleteError": "❌ Error deleting template.",
+      "loadError": "❌ Failed to load diagnosis templates."
+    }
+  },
+  "EEGScanerTemplateRecomendationAdd": {
+    "title": "Add Recommendation",
+    "fields": {
+      "titlePlaceholder": "Title",
+      "contentPlaceholder": "Content"
+    },
+    "actions": {
+      "save": "Save"
+    },
+    "messages": {
+      "success": "✅ Recommendation template successfully added.",
+      "error": "❌ Error adding template.",
+      "networkError": "⚠️ Network error"
+    }
+  },
+  "EEGScanerTemplateRecomendationDetails": {
+    "loading": "Loading...",
+    "title": "EEG Scan Recommendation Template Details",
+    "fields": {
+      "title": "Title",
+      "content": "Content",
+      "doctor": "Doctor"
+    },
+    "actions": {
+      "edit": "Edit"
+    },
+    "messages": {
+      "loadError": "Failed to load template."
+    }
+  },
+  "EEGScanerTemplateRecomendationEdit": {
+    "title": "Edit EEG Scan Recommendation Template",
+    "fields": {
+      "title": "Title",
+      "content": "Content"
+    },
+    "actions": {
+      "update": "Update Template"
+    },
+    "messages": {
+      "success": "✅ Recommendation template successfully updated!",
+      "error": "❌ Error updating template.",
+      "loadError": "❌ Failed to load template."
+    }
+  },
+  "EEGScanerTemplateRecomendationList": {
+    "title": "📋 EEG Scan Recommendation Templates",
+    "confirmDelete": "Are you sure you want to delete this template?",
+    "deleteError": "❌ Error deleting template",
+    "loadingError": "Error loading recommendation templates",
+    "delete": "🗑️ Delete",
+    "edit": "Edit",
+    "successDelete": "✅ Template successfully deleted"
+  },
+  "EEGScanerTemplateReport": {
+    "titlePage": "Add EEG Scan Report Template",
+    "titlePlaceholder": "Title",
+    "contentPlaceholder": "Content",
+    "save": "Save",
+    "success": "✅ Report template successfully added",
+    "errorAdd": "❌ Error while adding template",
+    "networkError": "⚠️ Network error"
+  },
+  "EEGScanerTemplateReportDetails": {
+    "titlePage": "EEG Scan Report Template Details",
+    "titleLabel": "Title",
+    "contentLabel": "Content",
+    "doctorLabel": "Doctor",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "loadError": "Failed to load template."
+  },
+  "EEGScanerTemplateReportEdit": {
+    "titlePage": "Edit EEG Scan Report Template",
+    "titleLabel": "Title",
+    "contentLabel": "Content",
+    "update": "Update Template",
+    "success": "✅ Report template successfully updated!",
+    "errorUpdate": "❌ Failed to update the template",
+    "loadingError": "Error loading template"
+  },
+  "EEGScanerTemplateReportList": {
+    "titlePage": "📝 EEG Scan Report Templates",
+    "confirmDelete": "Are you sure you want to delete this template?",
+    "deleteError": "❌ Failed to delete the template",
+    "loadingError": "Error loading report templates",
+    "delete": "🗑️ Delete",
+    "edit": "Edit"
+  },
+  "EEGScanTemplateNameofexam": {
+    "titlePage": "Add EEG Scan Examination Name Template",
+    "titlePlaceholder": "Title",
+    "contentPlaceholder": "Content",
+    "save": "Save",
+    "success": "✅ Examination name template successfully added",
+    "errorAdd": "❌ Error adding template",
+    "networkError": "⚠️ Network error"
+  },
+  "EEGScanTemplateNameofexamDetail": {
+    "titlePage": "EEG Scan Examination Name Template Details",
+    "titleLabel": "Title",
+    "contentLabel": "Content",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "loadError": "Failed to load the template."
+  },
+  "EEGScanTemplateNameofexamEdit": {
+    "titlePage": "Edit EEG Scan Examination Name Template",
+    "titleLabel": "Title",
+    "contentLabel": "Content",
+    "update": "Update Template",
+    "success": "✅ Examination name template successfully updated!",
+    "errorUpdate": "❌ Failed to update the template",
+    "loadingError": "Error loading template"
+  },
+  "EEGScanTemplateNameofexamList": {
+    "titlePage": "📌 EEG Scan Examination Name Templates",
+    "confirmDelete": "Are you sure you want to delete this template?",
+    "deleteError": "❌ Failed to delete the template",
+    "loadingError": "Error loading examination name templates",
+    "delete": "🗑️ Delete",
+    "edit": "Edit"
+  }
+}

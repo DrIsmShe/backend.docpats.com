@@ -1,0 +1,123 @@
+{
+  "titles": {
+    "clinicalSummaryTitle": "الملخص السريري"
+  },
+  "buttons": {
+    "backToPatient": "العودة إلى المريض",
+    "openPatientCard": "فتح بطاقة المريض"
+  },
+  "sections": {
+    "mainComplaints": "الشكاوى الرئيسية",
+    "history": "تاريخ المرض الحالي",
+    "objective": "النتائج الموضوعية",
+    "cardiovascular": "الجهاز القلبي الوعائي",
+    "respiratory": "الجهاز التنفسي",
+    "nervous": "الجهاز العصبي",
+    "gastrointestinal": "الجهاز الهضمي",
+    "genitourinary": "الجهاز البولي التناسلي",
+    "ent": "الأنف والأذن والحنجرة",
+    "angiography": "تصوير الأوعية",
+    "imaging": "التصوير الطبي",
+    "laboratory": "التحاليل المخبرية",
+    "dynamics": "الديناميكية السريرية",
+    "riskFactors": "عوامل الخطورة",
+    "background": "الخلفية السريرية",
+    "recommendations": "توصيات المتابعة"
+  },
+  "clinicalAlerts": {
+    "title": "التنبيهات السريرية",
+    "defaultTitle": "تنبيه سريري",
+    "source": "المصدر"
+  },
+  "ai": {
+    "score": "مؤشر الذكاء الاصطناعي السريري"
+  },
+  "clinicalScore": {
+    "riskIndex": "مؤشر خطر المريض",
+    "severity": "شدة الحالة السريرية",
+    "confidence": "مستوى ثقة الذكاء الاصطناعي"
+  },
+  "deterioration": {
+    "title": "تم اكتشاف تدهور سريري",
+    "description": "تشير ديناميكيات المريض إلى احتمال تدهور الحالة."
+  },
+  "diseaseProbability": {
+    "title": "احتمالية المرض"
+  },
+  "timeline": {
+    "title": "التسلسل الزمني للمريض",
+    "noEvents": "لم يتم العثور على أحداث طبية"
+  },
+  "risk": {
+    "priorityTitle": "المخاطر السريرية ذات الأولوية",
+    "title": "تقييم المخاطر السريرية",
+    "confidence": "مستوى الثقة",
+    "levels": {
+      "low": "منخفض",
+      "moderate": "متوسط",
+      "high": "مرتفع"
+    },
+    "domains": {
+      "cardiology": "طب القلب",
+      "pulmonology": "طب الرئة",
+      "neurology": "طب الأعصاب",
+      "gastroenterology": "أمراض الجهاز الهضمي",
+      "hepatology": "طب الكبد",
+      "nephrology": "طب الكلى",
+      "endocrinology": "طب الغدد الصماء",
+      "hematology": "أمراض الدم",
+      "infectious": "الأمراض المعدية",
+      "rheumatology": "أمراض الروماتيزم",
+      "dermatology": "الأمراض الجلدية",
+      "urology": "طب المسالك البولية",
+      "gynecology": "طب النساء",
+      "ent": "الأنف والأذن والحنجرة",
+      "ophthalmology": "طب العيون",
+      "oncology": "طب الأورام"
+    }
+  },
+  "severity": {
+    "title": "شدة الحالة السريرية",
+    "level": {
+      "low": "خفيفة",
+      "moderate": "متوسطة",
+      "high": "شديدة"
+    },
+    "description": {
+      "low": "الحالة مستقرة دون اضطرابات مهمة.",
+      "moderate": "توجد تغيرات سريرية مهمة تتطلب المراقبة وتعديل العلاج.",
+      "high": "خطر مرتفع لحدوث مضاعفات ويتطلب تدخلاً نشطًا."
+    }
+  },
+  "errors": {
+    "insufficientData": "لا توجد بيانات كافية",
+    "failedToGenerate": "فشل في إنشاء الملخص السريري."
+  },
+  "auth": {
+    "checking": "جارٍ التحقق من المصادقة"
+  },
+  "diagnosticInventory": {
+    "title": "ملخص الفحوصات",
+    "examinations": "فحص",
+    "modalities": {
+      "ct": "تصوير مقطعي",
+      "mri": "رنين مغناطيسي",
+      "usm": "ألتراساوند",
+      "xray": "أشعة سينية",
+      "pet": "PET",
+      "spect": "SPECT",
+      "eeg": "تخطيط الدماغ",
+      "ekg": "تخطيط القلب",
+      "echoEkg": "إيكو القلب",
+      "holter": "هولتر",
+      "spirometry": "قياس التنفس",
+      "dopler": "دوبلر",
+      "gastroscopy": "تنظير المعدة",
+      "capsuleEndoscopy": "تنظير بالكبسولة",
+      "ginecology": "فحوصات نسائية",
+      "angiography": "تصوير الأوعية",
+      "coronography": "تصوير الشرايين التاجية",
+      "labTests": "تحاليل مخبرية"
+    }
+  }
+}

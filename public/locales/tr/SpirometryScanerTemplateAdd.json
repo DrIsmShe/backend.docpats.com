@@ -1,0 +1,141 @@
+{
+  "SpirometryScanerTemplateDiagnosis": {
+    "pageTitle": "Tanı Şablonu Ekle",
+    "titlePlaceholder": "Başlık",
+    "contentPlaceholder": "İçerik",
+    "saveButton": "Kaydet",
+    "successMessage": "✅ Tanı şablonu başarıyla eklendi.",
+    "errorDefault": "Şablon eklenemedi.",
+    "networkError": "Ağ hatası"
+  },
+  "SpirometryScanerTemplateDiagnosisDetails": {
+    "pageTitle": "Tanı Şablonu Detayları",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "doctorLabel": "Doktor",
+    "editButton": "Düzenle",
+    "loading": "Yükleniyor...",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "SpirometryScanerTemplateDiagnosisEdit": {
+    "pageTitle": "Tanı Şablonunu Düzenle",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "updateButton": "Şablonu Güncelle",
+    "successMessage": "✅ Tanı şablonu başarıyla güncellendi!",
+    "updateError": "❌ Şablon güncellenirken hata oluştu.",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "SpirometryScanerTemplateDiagnosisList": {
+    "pageTitle": "🧾 Tanı Şablonları",
+    "deleteButton": "🗑️ Sil",
+    "editButton": "Düzenle",
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "deleteError": "❌ Şablon silinirken hata oluştu.",
+    "loadError": "Tanı şablonları yüklenemedi."
+  },
+  "SpirometryScanerTemplateRecomendation": {
+    "pageTitle": "Öneri Şablonu Ekle",
+    "titlePlaceholder": "Başlık",
+    "contentPlaceholder": "İçerik",
+    "saveButton": "Kaydet",
+    "successMessage": "✅ Öneri şablonu başarıyla eklendi.",
+    "errorDefault": "Şablon eklenirken hata oluştu.",
+    "networkError": "⚠️ Ağ hatası"
+  },
+  "SpirometryScanerTemplateRecomendationDetails": {
+    "pageTitle": "Öneri Şablonu Detayları",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "doctorLabel": "Doktor",
+    "editButton": "Düzenle",
+    "loading": "Yükleniyor...",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "SpirometryScanerTemplateRecomendationEdit": {
+    "pageTitle": "Öneri Şablonunu Düzenle",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "updateButton": "Şablonu Güncelle",
+    "successMessage": "✅ Öneri şablonu başarıyla güncellendi!",
+    "updateError": "❌ Şablon güncellenirken hata oluştu.",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "SpirometryScanerTemplateRecomendationList": {
+    "pageTitle": "📋 Öneri Şablonları",
+    "deleteButton": "🗑️ Sil",
+    "editButton": "Düzenle",
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "deleteError": "❌ Şablon silinirken hata oluştu.",
+    "loadError": "Öneri şablonları yüklenemedi."
+  },
+  "SpirometryScanerTemplateReport": {
+    "pageTitle": "Rapor Şablonu Ekle",
+    "titlePlaceholder": "Başlık",
+    "contentPlaceholder": "İçerik",
+    "saveButton": "Kaydet",
+    "successMessage": "✅ Rapor şablonu başarıyla eklendi.",
+    "errorDefault": "Şablon eklenirken hata oluştu.",
+    "networkError": "⚠️ Ağ hatası"
+  },
+  "SpirometryScanerTemplateReportDetails": {
+    "pageTitle": "Rapor Şablonu Detayları",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "doctorLabel": "Doktor",
+    "editButton": "Düzenle",
+    "loading": "Yükleniyor...",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "SpirometryScanerTemplateReportEdit": {
+    "pageTitle": "Rapor Şablonunu Düzenle",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "updateButton": "Şablonu Güncelle",
+    "successMessage": "✅ Rapor şablonu başarıyla güncellendi!",
+    "updateError": "❌ Şablon güncellenemedi.",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "SpirometryScanerTemplateReportList": {
+    "pageTitle": "📝 Rapor Şablonları",
+    "deleteButton": "🗑️ Sil",
+    "editButton": "Düzenle",
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "deleteError": "❌ Şablon silinemedi.",
+    "loadError": "Rapor şablonları yüklenemedi."
+  },
+  "SpirometryScanTemplateNameofexam": {
+    "pageTitle": "Tetkik Adı Şablonu Ekle",
+    "titlePlaceholder": "Başlık",
+    "contentPlaceholder": "İçerik",
+    "saveButton": "Kaydet",
+    "successMessage": "✅ Tetkik adı şablonu başarıyla eklendi.",
+    "errorDefault": "Şablon eklenirken hata oluştu.",
+    "networkError": "⚠️ Ağ hatası"
+  },
+  "SpirometryScanTemplateNameofexamDetails": {
+    "pageTitle": "Tetkik Adı Şablonu Detayları",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "editButton": "Düzenle",
+    "loading": "Yükleniyor...",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "SpirometryScanTemplateNameofexamEdit": {
+    "pageTitle": "Tetkik Adı Şablonunu Düzenle",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "updateButton": "Şablonu Güncelle",
+    "successMessage": "✅ Tetkik adı şablonu başarıyla güncellendi!",
+    "updateError": "❌ Şablon güncellenemedi.",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "SpirometryScanTemplateNameofexamList": {
+    "pageTitle": "📌 Tetkik Adı Şablonları",
+    "deleteButton": "🗑️ Sil",
+    "editButton": "Düzenle",
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "deleteError": "❌ Şablon silinemedi.",
+    "loadError": "Tetkik adı şablonları yüklenemedi."
+  }
+}

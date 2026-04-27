@@ -1,0 +1,11 @@
+{
+  "AngiographyScanerTemplateDiagnosis": {
+    "titlePage": "Добавить шаблон диагноза (Ангиография)",
+    "titlePlaceholder": "Заголовок",
+    "contentPlaceholder": "Текст диагноза",
+    "saveButton": "Сохранить",
+    "success": "✅ Шаблон диагноза успешно добавлен.",
+    "error": "Не удалось добавить шаблон.",
+    "networkError": "Ошибка сети"
+  }
+}

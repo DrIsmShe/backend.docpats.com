@@ -1,0 +1,232 @@
+{
+  "CoronographyScanerTemplateDiagnosis": {
+    "title": "Koroner Anjiyografi Tanı Şablonu Ekle",
+    "fields": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik"
+    },
+    "messages": {
+      "createSuccess": "✅ Tanı şablonu başarıyla eklendi",
+      "createError": "❌ Şablon eklenemedi",
+      "networkError": "Ağ hatası"
+    },
+    "buttons": {
+      "save": "Kaydet",
+      "update": "Güncelle",
+      "delete": "Sil",
+      "edit": "Düzenle",
+      "cancel": "İptal",
+      "back": "Geri"
+    }
+  },
+  "CoronographyScanerTemplateDiagnosisDetails": {
+    "title": "Koroner Anjiyografi Tanı Şablonu Detayları",
+    "page": {
+      "loading": "Yükleniyor..."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenemedi"
+    },
+    "buttons": {
+      "save": "Kaydet",
+      "update": "Güncelle",
+      "delete": "Sil",
+      "edit": "Düzenle",
+      "cancel": "İptal",
+      "back": "Geri"
+    }
+  },
+  "CoronographyScanerTemplateDiagnosisEdit": {
+    "title": "Koroner Anjiyografi Tanı Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "messages": {
+      "updateSuccess": "✅ Tanı şablonu başarıyla güncellendi",
+      "updateError": "❌ Şablon güncellenemedi",
+      "loadError": "Şablon yüklenemedi"
+    },
+    "buttons": {
+      "save": "Kaydet",
+      "update": "Güncelle",
+      "delete": "Sil",
+      "edit": "Düzenle",
+      "cancel": "İptal",
+      "back": "Geri"
+    }
+  },
+  "CoronographyScanerTemplateDiagnosisList": {
+    "title": "🧾 Koroner Anjiyografi Tanı Şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Şablonlar yüklenemedi",
+      "deleteError": "❌ Şablon silinemedi"
+    },
+    "buttons": {
+      "save": "Kaydet",
+      "update": "Güncelle",
+      "delete": "Sil",
+      "edit": "Düzenle",
+      "cancel": "İptal",
+      "back": "Geri"
+    }
+  },
+  "CoronographyScanTemplateNameofexam": {
+    "title": "Koroner Anjiyografi Tetkik Adı Şablonu Ekle",
+    "fields": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik"
+    },
+    "messages": {
+      "createSuccess": "✅ Şablon başarıyla eklendi",
+      "createError": "❌ Şablon eklenemedi",
+      "networkError": "⚠️ Ağ hatası"
+    },
+    "buttons": {
+      "save": "Kaydet",
+      "update": "Güncelle",
+      "delete": "Sil",
+      "edit": "Düzenle",
+      "cancel": "İptal",
+      "back": "Geri"
+    }
+  },
+  "CoronographyScanTemplateNameofexamDetail": {
+    "title": "Koroner Anjiyografi Tetkik Adı Şablon Detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenemedi"
+    }
+  },
+  "buttons": {
+    "save": "Kaydet",
+    "update": "Güncelle",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "cancel": "İptal",
+    "back": "Geri"
+  },
+  "CoronographyScanTemplateNameofexamEdit": {
+    "title": "Koroner Anjiyografi Tetkik Adı Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenemedi",
+      "updateSuccess": "✅ Şablon başarıyla güncellendi",
+      "updateError": "❌ Şablon güncellenemedi"
+    }
+  },
+  "CoronographyScanTemplateNameofexamList": {
+    "title": "📌 Koroner Anjiyografi Tetkik Adı Şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Şablonlar yüklenemedi",
+      "deleteError": "❌ Şablon silinemedi"
+    }
+  },
+  "CoronographyScanerTemplateRecomendation": {
+    "title": "Koroner Anjiyografi Öneri Şablonu Ekle",
+    "fields": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik"
+    },
+    "messages": {
+      "createSuccess": "✅ Öneri şablonu başarıyla eklendi",
+      "createError": "❌ Şablon eklenemedi",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "CoronographyScanerTemplateRecomendationDetails": {
+    "title": "Koroner Anjiyografi Öneri Şablonu Detayları",
+    "page": {
+      "loading": "Yükleniyor..."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenemedi"
+    }
+  },
+  "CoronographyScanerTemplateRecomendationEdit": {
+    "title": "Koroner Anjiyografi Öneri Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenemedi",
+      "updateSuccess": "✅ Öneri şablonu başarıyla güncellendi",
+      "updateError": "❌ Şablon güncellenemedi"
+    }
+  },
+  "CoronographyScanerTemplateRecomendationList": {
+    "title": "Koroner Anjiyografi Öneri Şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Şablonlar yüklenemedi",
+      "deleteError": "❌ Şablon silinemedi"
+    }
+  },
+  "CoronographyScanTemplateReport": {
+    "title": "Koroner Anjiyografi Rapor Şablonu Ekle",
+    "fields": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik"
+    },
+    "messages": {
+      "createSuccess": "✅ Rapor şablonu başarıyla eklendi",
+      "createError": "Rapor şablonu eklenemedi",
+      "networkError": "Ağ hatası"
+    }
+  },
+  "CoronographyScanTemplateReportDetails": {
+    "title": "Koroner Anjiyografi Rapor Şablonu Detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenemedi"
+    }
+  },
+  "CoronographyScanTemplateReportEdit": {
+    "title": "Koroner Anjiyografi Rapor Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenemedi",
+      "updateSuccess": "✅ Rapor şablonu başarıyla güncellendi",
+      "updateError": "❌ Şablon güncellenemedi"
+    }
+  },
+  "CoronographyScanTemplateReportList": {
+    "title": "Koroner Anjiyografi Rapor Şablonları",
+    "messages": {
+      "loadError": "Rapor şablonları yüklenemedi",
+      "deleteError": "❌ Şablon silinemedi"
+    }
+  }
+}

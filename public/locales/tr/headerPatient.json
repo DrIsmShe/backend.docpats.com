@@ -1,0 +1,14 @@
+{
+  "search": "Ara...",
+  "logout_success": "Başarıyla çıkış yaptınız",
+  "logout_error": "Çıkış başarısız. Lütfen tekrar deneyin",
+  "you_have_notifications": "{{count}} okunmamış bildiriminiz var",
+  "no_notifications": "Yeni bildirim yok",
+  "view_all": "Tümünü gör",
+  "welcome": "Hoş geldiniz",
+  "nickname": "Kullanıcı adı",
+  "my_profile": "Profilim",
+  "sign_out": "Çıkış Yap",
+  "polyclinic": "Poliklinik",
+  "hospital": "Hastane"
+}

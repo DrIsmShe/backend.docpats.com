@@ -1,0 +1,289 @@
+{
+  "CapsuleEndoscopyScanerTemplateDiagnosis": {
+    "title": "Kapsül Endoskopi Tanı Şablonu Ekle",
+    "fields": {
+      "title": {
+        "placeholder": "Tanı başlığını girin..."
+      },
+      "content": {
+        "placeholder": "Tanı içeriğini girin..."
+      }
+    },
+    "buttons": {
+      "save": "Kaydet"
+    },
+    "messages": {
+      "createSuccess": "✅ Tanı şablonu başarıyla eklendi",
+      "createError": "❌ Tanı şablonu eklenemedi",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "CapsuleEndoscopyScanerDetails": {
+    "page": {
+      "title": "Kapsül Endoskopi — İnceleme Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri bulunamadı",
+      "errors": {
+        "fetchError": "İnceleme verileri yüklenemedi"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası. Lütfen tekrar deneyin."
+      }
+    },
+    "sections": {
+      "general": "Genel Bilgi",
+      "findings": "Bulgular"
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "İnceleme Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görüntüler",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateDiagnosisList": {
+    "title": "Kapsül Endoskopi Tanı Şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Tanı şablonları yüklenirken hata oluştu",
+      "deleteSuccess": "✅ Tanı şablonu başarıyla silindi",
+      "deleteError": "❌ Tanı şablonu silinemedi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateDiagnosisEdit": {
+    "title": "Kapsül Endoskopi Tanı Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "loadError": "Tanı şablonu yüklenemedi",
+      "updateSuccess": "✅ Tanı şablonu başarıyla güncellendi",
+      "updateError": "❌ Tanı şablonu güncellenemedi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateDiagnosisDetails": {
+    "title": "Kapsül Endoskopi Tanı Şablonu Detayları",
+    "page": {
+      "loading": "Yükleniyor..."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loadError": "Tanı şablonu yüklenemedi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendation": {
+    "title": "Kapsül Endoskopi Tavsiye Şablonu Ekle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "save": "Kaydet"
+    },
+    "messages": {
+      "addSuccess": "✅ Tavsiye şablonu başarıyla eklendi",
+      "addError": "❌ Tavsiye şablonu eklenemedi",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendationDetails": {
+    "title": "Kapsül Endoskopi Tavsiye Şablonu Detayları",
+    "page": {
+      "loading": "Yükleniyor..."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loadError": "Tavsiye şablonu yüklenemedi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendationEdit": {
+    "title": "Kapsül Endoskopi Tavsiye Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "loadError": "Tavsiye şablonu yüklenemedi",
+      "updateSuccess": "✅ Tavsiye şablonu başarıyla güncellendi",
+      "updateError": "❌ Tavsiye şablonu güncellenemedi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendationList": {
+    "title": "📋 Kapsül Endoskopi Tavsiye Şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Tavsiye şablonları yüklenemedi",
+      "deleteSuccess": "✅ Tavsiye şablonu başarıyla silindi",
+      "deleteError": "❌ Tavsiye şablonu silinemedi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReport": {
+    "title": "Kapsül Endoskopi Rapor Şablonu Ekle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "save": "Kaydet"
+    },
+    "messages": {
+      "addSuccess": "✅ Rapor şablonu başarıyla eklendi",
+      "addError": "❌ Rapor şablonu eklenemedi",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReportDetails": {
+    "title": "Kapsül Endoskopi Rapor Şablonu Detayları",
+    "page": {
+      "loading": "Yükleniyor..."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loadError": "Rapor şablonu yüklenemedi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReportEdit": {
+    "title": "Kapsül Endoskopi Rapor Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "loadError": "Rapor şablonu yüklenemedi",
+      "updateSuccess": "✅ Rapor şablonu başarıyla güncellendi",
+      "updateError": "❌ Rapor şablonu güncellenemedi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReportList": {
+    "title": "📝 Kapsül Endoskopi Rapor Şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Rapor şablonları yüklenemedi",
+      "deleteError": "❌ Şablon silinirken hata oluştu"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexam": {
+    "title": "Kapsül Endoskopi İnceleme Adı Şablonu Ekle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "save": "Kaydet"
+    },
+    "messages": {
+      "createSuccess": "✅ İnceleme adı şablonu başarıyla eklendi",
+      "createError": "Şablon eklenirken hata oluştu",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexamDetail": {
+    "title": "Kapsül Endoskopi İnceleme Adı Şablonu Detayları",
+    "page": {
+      "loading": "Yükleniyor..."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenirken hata oluştu"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexamEdit": {
+    "title": "Kapsül Endoskopi İnceleme Adı Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenemedi",
+      "updateSuccess": "✅ Şablon başarıyla güncellendi",
+      "updateError": "❌ Şablon güncellenemedi"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexamList": {
+    "title": "📌 Kapsül Endoskopi İnceleme Adı Şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "İnceleme adı şablonları yüklenemedi",
+      "deleteSuccess": "✅ Şablon başarıyla silindi",
+      "deleteError": "❌ Şablon silinemedi"
+    }
+  }
+}

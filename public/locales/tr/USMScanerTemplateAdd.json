@@ -1,0 +1,221 @@
+{
+  "USMScanerTemplateDiagnosis": {
+    "title": "Tanı Şablonu Ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Tanı şablonu başarıyla eklendi.",
+      "errorDefault": "Şablon eklenemedi.",
+      "networkError": "Ağ hatası"
+    }
+  },
+  "USMScanerTemplateDiagnosisDetails": {
+    "title": "USM Tanı Şablonu Detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "USMScanerTemplateDiagnosisEdit": {
+    "title": "USM Tanı Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "success": "✅ Tanı şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenirken hata oluştu.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "USMScanerTemplateDiagnosisList": {
+    "title": "🧾 USM Tanı Şablonları",
+    "actions": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmek istediğinizden emin misiniz?",
+      "deleteError": "❌ Şablon silinirken hata oluştu.",
+      "loadError": "❌ Tanı şablonları yüklenemedi."
+    }
+  },
+  "USMScanerTemplateNameofexam": {
+    "title": "USM Tetkik Adı Şablonu Ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Tetkik adı şablonu başarıyla eklendi.",
+      "errorDefault": "Şablon eklenirken hata oluştu.",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "USMScanerTemplateNameofexamDetail": {
+    "title": "USM Tetkik Adı Şablonu Detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "USMScanerTemplateNameofexamEdit": {
+    "title": "USM Tetkik Adı Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "success": "✅ Tetkik adı şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenemedi.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "USMScanerTemplateNameofexamList": {
+    "title": "📌 USM Tetkik Adı Şablonları",
+    "actions": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmek istediğinizden emin misiniz?",
+      "deleteError": "❌ Şablon silinemedi.",
+      "loadError": "❌ Şablonlar yüklenemedi."
+    }
+  },
+  "USMScanerTemplateRecomendation": {
+    "title": "USM Öneri Şablonu Ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Öneri şablonu başarıyla eklendi.",
+      "errorDefault": "Şablon eklenirken hata oluştu.",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "USMScanerTemplateRecomendationDetails": {
+    "title": "USM Öneri Şablonu Detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "USMScanerTemplateRecomendationEdit": {
+    "title": "USM Öneri Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "success": "✅ Öneri şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenirken hata oluştu.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "USMScanerTemplateRecomendationList": {
+    "title": "📋 USM Öneri Şablonları",
+    "actions": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmek istediğinizden emin misiniz?",
+      "deleteError": "❌ Şablon silinirken hata oluştu.",
+      "loadError": "❌ Öneri şablonları yüklenemedi."
+    }
+  },
+  "USMScanerTemplateReport": {
+    "title": "USM Rapor Şablonu Ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Rapor şablonu başarıyla eklendi.",
+      "errorDefault": "Şablon eklenirken hata oluştu.",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "USMScanerTemplateReportDetails": {
+    "title": "USM Rapor Şablonu Detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "USMScanerTemplateReportEdit": {
+    "title": "USM Rapor Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "success": "✅ Rapor şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenemedi.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "USMScanerTemplateReportList": {
+    "title": "📝 USM Rapor Şablonları",
+    "actions": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmek istediğinizden emin misiniz?",
+      "deleteError": "❌ Şablon silinemedi.",
+      "loadError": "❌ Rapor şablonları yüklenemedi."
+    }
+  }
+}

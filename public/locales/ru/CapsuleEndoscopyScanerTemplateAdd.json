@@ -1,0 +1,289 @@
+{
+  "CapsuleEndoscopyScanerTemplateDiagnosis": {
+    "title": "Добавить шаблон диагноза капсульной эндоскопии",
+    "fields": {
+      "title": {
+        "placeholder": "Введите заголовок диагноза..."
+      },
+      "content": {
+        "placeholder": "Введите текст диагноза..."
+      }
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "createSuccess": "✅ Шаблон диагноза успешно добавлен",
+      "createError": "❌ Ошибка при добавлении шаблона диагноза",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "CapsuleEndoscopyScanerDetails": {
+    "page": {
+      "title": "Капсульная эндоскопия — Детали обследования",
+      "loading": "Загрузка...",
+      "noData": "Данные не найдены",
+      "errors": {
+        "fetchError": "Не удалось загрузить данные обследования"
+      },
+      "messages": {
+        "uploadSuccess": "PDF успешно загружен! Ссылка:",
+        "uploadError": "Ошибка загрузки PDF. Попробуйте снова."
+      }
+    },
+    "sections": {
+      "general": "Общая информация",
+      "findings": "Результаты"
+    },
+    "fields": {
+      "patient": "Пациент",
+      "doctor": "Врач",
+      "date": "Дата",
+      "nameofexam": "Название обследования",
+      "diagnosis": "Диагноз",
+      "report": "Заключение",
+      "recomandation": "Рекомендации",
+      "contrastUsed": "Использован контраст",
+      "yes": "Да",
+      "no": "Нет",
+      "images": "Изображения",
+      "doctorComments": "Комментарии врача"
+    },
+    "buttons": {
+      "download": "Скачать PDF",
+      "upload": "Загрузить PDF",
+      "print": "Печать"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateDiagnosisList": {
+    "title": "Шаблоны диагнозов капсульной эндоскопии",
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблонов диагнозов",
+      "deleteSuccess": "✅ Шаблон диагноза успешно удалён",
+      "deleteError": "❌ Не удалось удалить шаблон диагноза"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateDiagnosisEdit": {
+    "title": "Редактировать шаблон диагноза капсульной эндоскопии",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблона диагноза",
+      "updateSuccess": "✅ Шаблон диагноза успешно обновлён",
+      "updateError": "❌ Не удалось обновить шаблон диагноза"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateDiagnosisDetails": {
+    "title": "Детали шаблона диагноза капсульной эндоскопии",
+    "page": {
+      "loading": "Загрузка..."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблона диагноза"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendation": {
+    "title": "Добавить шаблон рекомендаций капсульной эндоскопии",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "addSuccess": "✅ Шаблон рекомендаций успешно добавлен",
+      "addError": "❌ Не удалось добавить шаблон",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendationDetails": {
+    "title": "Детали шаблона рекомендаций капсульной эндоскопии",
+    "page": {
+      "loading": "Загрузка..."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблона рекомендаций"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendationEdit": {
+    "title": "Редактировать шаблон рекомендаций капсульной эндоскопии",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблона рекомендаций",
+      "updateSuccess": "✅ Шаблон рекомендаций успешно обновлён",
+      "updateError": "❌ Не удалось обновить шаблон рекомендаций"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendationList": {
+    "title": "📋 Шаблоны рекомендаций капсульной эндоскопии",
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблонов рекомендаций",
+      "deleteSuccess": "✅ Шаблон рекомендаций успешно удалён",
+      "deleteError": "❌ Не удалось удалить шаблон рекомендаций"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReport": {
+    "title": "Добавить шаблон отчёта капсульной эндоскопии",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "addSuccess": "✅ Шаблон отчёта успешно добавлен",
+      "addError": "❌ Не удалось добавить шаблон отчёта",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReportDetails": {
+    "title": "Детали шаблона отчёта капсульной эндоскопии",
+    "page": {
+      "loading": "Загрузка..."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблона отчёта"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReportEdit": {
+    "title": "Редактировать шаблон отчёта капсульной эндоскопии",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблона отчёта",
+      "updateSuccess": "✅ Шаблон отчёта успешно обновлён",
+      "updateError": "❌ Не удалось обновить шаблон отчёта"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReportList": {
+    "title": "📝 Шаблоны отчётов капсульной эндоскопии",
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблонов отчётов",
+      "deleteError": "❌ Ошибка при удалении шаблона"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexam": {
+    "title": "Добавить шаблон названия исследования (капсульная эндоскопия)",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "createSuccess": "✅ Шаблон названия исследования успешно добавлен",
+      "createError": "Ошибка при добавлении шаблона",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexamDetail": {
+    "title": "Детали шаблона названия исследования (капсульная эндоскопия)",
+    "page": {
+      "loading": "Загрузка..."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблона"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexamEdit": {
+    "title": "Редактировать шаблон названия исследования (капсульная эндоскопия)",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблона",
+      "updateSuccess": "✅ Шаблон успешно обновлён",
+      "updateError": "❌ Не удалось обновить шаблон"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexamList": {
+    "title": "📌 Шаблоны названия исследования (капсульная эндоскопия)",
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблонов названия исследования",
+      "deleteSuccess": "✅ Шаблон успешно удалён",
+      "deleteError": "❌ Не удалось удалить шаблон"
+    }
+  }
+}

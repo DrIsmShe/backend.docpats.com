@@ -1,0 +1,153 @@
+{
+  "titles": {
+    "moreAboutPatient": "More about {{firstName}} {{lastName}}"
+  },
+  "examAddedSuccess": "✅ Examination successfully added",
+  "tabs": {
+    "generalInfo": "General information",
+    "clinicalInfo": "Clinical information",
+    "caseHistories": "Case histories",
+    "conductedExaminations": "Conducted examinations",
+
+    "ctScan": "CT Scan",
+    "mri": "MRI",
+    "ultrasound": "Ultrasound",
+    "xray": "X-Ray",
+    "petScan": "PET Scan",
+    "spectScan": "SPECT Scan",
+    "eeg": "EEG",
+    "gynecology": "Gynecology",
+    "holterMonitor": "Holter monitor",
+    "spirometry": "Spirometry",
+    "dopplerScan": "Doppler scan",
+    "gastroscopy": "Gastroscopy",
+    "gastroscopyColonoscopy": "Gastroscopy & Colonoscopy",
+    "colonoscopy": "Colonoscopy",
+    "capsuleEndoscopy": "Capsule endoscopy",
+    "angiography": "Angiography",
+    "ekg": "EKG",
+    "echoEkg": "ECHO EKG",
+    "coronography": "Coronography",
+    "labTests": "Lab tests",
+    "overview": "Overview",
+    "details": "Details",
+    "edit": "Edit Profile",
+    "settings": "Settings",
+    "changePassword": "Change Password",
+    "changeEmail": "Change Email"
+  },
+
+  "generalInfo": {
+    "firstName": "First name",
+    "lastName": "Last name",
+    "gender": "Gender",
+    "age": "Date of birth",
+    "ageWithYears": "{{count}} years old",
+    "country": "Country",
+    "phone": "Phone number",
+    "dpMessengerNumber": "DP messenger number",
+    "email": "Email"
+  },
+
+  "clinicalInfo": {
+    "chronicDiseases": "Chronic diseases",
+    "operations": "Operations",
+    "familyHistory": "Family medical history",
+    "allergies": "Allergies",
+    "immunization": "Immunization",
+    "badHabits": "Bad habits"
+  },
+
+  "tables": {
+    "date": "Date",
+    "diagnosis": "Diagnosis",
+    "doctor": "Doctor",
+    "speciality": "Speciality",
+    "dateOfAdmission": "Date of admission",
+    "examName": "Name of examination",
+    "examResult": "Result of examination"
+  },
+
+  "scans": {
+    "unknownDoctor": "Unknown doctor"
+  },
+
+  "labTests": {
+    "bloodGeneral": "General blood test",
+    "bloodBiochemistry": "Blood biochemistry",
+    "urine": "Urine analysis",
+    "stool": "Stool analysis",
+    "hormones": "Hormonal panel",
+    "tumorMarkers": "Tumor markers",
+    "pcr": "PCR test",
+    "immunology": "Immunology",
+    "geneticScreening": "Genetic screening",
+    "other": "Other tests",
+    "labName": "Laboratory name"
+  },
+
+  "states": {
+    "loading": "Loading...",
+    "patientNotFound": "Patient not found"
+  },
+
+  "buttons": {
+    "choosePhoto": "Choose Photo",
+    "save": "Save Changes",
+    "sendCode": "Send Code",
+    "confirmEmail": "Confirm Email",
+    "changePassword": "Change Password",
+    "showPassword": "Show password characters",
+    "hidePassword": "Hide password characters",
+    "addMedicalHistory": "Add medical history",
+    "addMedicalExamination": "Add medical examination",
+    "loadingPatient": "Loading patient",
+    "patientNotFound": "Patient not found",
+    "loadingExaminations": "Loading examinations",
+    "addGenerateClinicalSummary": "Generate Clinical Summary",
+    "generating": "Generating",
+    "aiGeneratedSummaryDisclaimer": "AI-generated summary. For professional reference only."
+  },
+
+  "values": {
+    "notSpecified": "Not specified",
+    "unknown": "Unknown",
+    "choose": "Choose",
+    "man": "Man",
+    "woman": "Woman",
+    "chooseCountry": "Select country"
+  },
+
+  "messages": {
+    "loading": "Loading...",
+    "photoNotSelected": "No photo selected"
+  },
+
+  "avatar_choose": {
+    "chooseAvatar": "Choose Avatar"
+  },
+  "errors": {
+    "pageNotFoundText": "The page you are looking for doesn't exist.",
+    "backToHome": "Back to home",
+    "pageNotFoundAlt": "Page Not Found",
+    "failedToLoad": "Failed to load data",
+    "errorRetrievingPatientInfo": "Error retrieving patient information",
+    "errorLoadingData": "Error while loading data",
+    "notEnoughClinicalData": "Not enough clinical data to generate summary."
+  },
+
+  "gender": {
+    "man": "Man",
+    "woman": "Woman",
+    "unknown": "Unknown"
+  },
+
+  "exams": {
+    "date": "Date of admission",
+    "name": "Name of examination",
+    "result": "Result",
+    "labName": "Laboratory",
+    "unknownDoctor": "Unknown doctor",
+    "notSpecified": "Not specified"
+  }
+}

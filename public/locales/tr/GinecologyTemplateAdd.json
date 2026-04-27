@@ -1,0 +1,229 @@
+{
+  "GinecologyTemplateDiagnosis": {
+    "title": "Jinekoloji Tanı Şablonu Ekle",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Tanı içeriği"
+    },
+
+    "buttons": {
+      "save": "Kaydet"
+    },
+
+    "success": "✅ Tanı şablonu başarıyla eklendi.",
+    "error": "Şablon eklenemedi.",
+    "networkError": "Ağ hatası"
+  },
+  "GinecologyTemplateDiagnosisDetails": {
+    "title": "Jinekoloji Tanı Şablonu Detayları",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Tanı içeriği",
+      "doctor": "Doktor"
+    },
+
+    "buttons": {
+      "edit": "Düzenle"
+    },
+
+    "loading": "Yükleniyor...",
+    "erro,r": "Şablon yüklenemedi."
+  },
+  "GinecologyTemplateDiagnosisEdit": {
+    "title": "Jinekoloji Tanı Şablonunu Düzenle",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Tanı içeriği"
+    },
+
+    "buttons": {
+      "update": "Şablonu güncelle"
+    },
+
+    "success": "Tanı şablonu başarıyla güncellendi.",
+    "updateError": "Şablon güncellenirken hata oluştu.",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "GinecologyTemplateDiagnosisList": {
+    "title": "🧾 Jinekoloji Tanı Şablonları",
+
+    "buttons": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "deleteError": "Şablon silinirken hata oluştu.",
+    "loadError": "Şablon listesi yüklenemedi."
+  },
+  "GinecologyTemplateNameofexam": {
+    "title": "Jinekoloji Tetkik Adı Şablonu Ekle",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Tetkik açıklaması"
+    },
+
+    "buttons": {
+      "save": "Kaydet"
+    },
+
+    "success": "Tetkik adı şablonu başarıyla eklendi.",
+    "error": "Şablon eklenirken hata oluştu.",
+    "networkError": "Ağ hatası"
+  },
+  "GinecologyTemplateNameofexamDetail": {
+    "title": "Jinekoloji Tetkik Adı Şablonu Detayları",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Tetkik açıklaması"
+    },
+
+    "buttons": {
+      "edit": "Düzenle"
+    },
+
+    "loading": "Yükleniyor...",
+    "error": "Şablon yüklenemedi."
+  },
+  "GinecologyTemplateNameofexamEdit": {
+    "title": "Jinekoloji Tetkik Adı Şablonunu Düzenle",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Tetkik açıklaması"
+    },
+
+    "buttons": {
+      "update": "Şablonu güncelle"
+    },
+
+    "success": "Tetkik adı şablonu başarıyla güncellendi.",
+    "updateError": "Şablon güncellenirken hata oluştu.",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "GinecologyTemplateNameofexamList": {
+    "title": "📌 Jinekoloji Tetkik Adı Şablonları",
+
+    "buttons": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "deleteError": "Şablon silinirken hata oluştu.",
+    "loadError": "Şablon listesi yüklenemedi."
+  },
+  "GinecologyTemplateRecomendation": {
+    "title": "Jinekoloji Öneri Şablonu Ekle",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Öneri içeriği"
+    },
+
+    "buttons": {
+      "save": "Kaydet"
+    },
+
+    "success": "Öneri şablonu başarıyla eklendi.",
+    "error": "Şablon eklenirken hata oluştu.",
+    "networkError": "Ağ hatası"
+  },
+  "GinecologyTemplateRecomendationDetails": {
+    "title": "Jinekolojik Öneri Şablonu Detayları",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Öneri içeriği",
+      "doctor": "Doktor"
+    },
+
+    "buttons": {
+      "edit": "Düzenle"
+    },
+
+    "loading": "Yükleniyor...",
+    "error": "Şablon yüklenemedi."
+  },
+  "GinecologyTemplateRecomendationEdit": {
+    "title": "Jinekolojik Öneri Şablonunu Düzenle",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Öneri içeriği"
+    },
+
+    "buttons": {
+      "update": "Şablonu güncelle"
+    },
+
+    "success": "Öneri şablonu başarıyla güncellendi.",
+    "updateError": "Şablon güncellenirken hata oluştu.",
+    "loadError": "Şablon yüklenemedi."
+  },
+  "GinecologyTemplateRecomendationList": {
+    "title": "📋 Jinekolojik Öneri Şablonları",
+
+    "buttons": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "deleteError": "Şablon silinirken hata oluştu.",
+    "loadError": "Şablon listesi yüklenemedi."
+  },
+  "GinecologyTemplateReport": {
+    "title": "Jinekolojik Rapor Şablonu Ekle",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Rapor içeriği"
+    },
+
+    "buttons": {
+      "save": "Kaydet"
+    },
+
+    "success": "Rapor şablonu başarıyla eklendi.",
+    "error": "Şablon eklenirken hata oluştu.",
+    "networkError": "Ağ hatası"
+  },
+  "GinecologyTemplateReportDetails": {
+    "title": "Jinekolojik Rapor Şablonu Detayları",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Rapor içeriği",
+      "doctor": "Doktor"
+    },
+
+    "buttons": {
+      "edit": "Düzenle"
+    },
+
+    "loading": "Yükleniyor...",
+    "error": "Rapor şablonu yüklenemedi."
+  },
+  "GinecologyTemplateReportEdit": {
+    "title": "Jinekolojik Rapor Şablonunu Düzenle",
+
+    "fields": {
+      "title": "Başlık",
+      "content": "Rapor içeriği"
+    },
+
+    "buttons": {
+      "update": "Şablonu güncelle"
+    },
+
+    "success": "Rapor şablonu başarıyla güncellendi.",
+    "updateError": "Şablon güncellenirken hata oluştu.",
+    "loadError": "Rapor şablonu yüklenemedi."
+  }
+}

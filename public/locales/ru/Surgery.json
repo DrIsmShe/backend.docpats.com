@@ -1,0 +1,1524 @@
+{
+  "page": {
+    "loading": "Загрузка...",
+    "notFound": "Кейс не найден",
+    "allCases": "← Все кейсы",
+    "backToList": "← Назад к дневнику",
+    "breadcrumb": "DocPats · Хирургия · Кейс"
+  },
+  "procedures": {
+    "rhinoplasty": "Ринопластика",
+    "blepharoplasty": "Блефаропластика",
+    "facelift": "Подтяжка лица (SMAS/MACS)",
+    "brow_lift": "Подтяжка бровей",
+    "otoplasty": "Отопластика",
+    "chin_implant": "Имплант подбородка",
+    "cheek_implant": "Импланты скул",
+    "lip_augmentation": "Увеличение губ",
+    "lip_lift": "Подтяжка губы (lip lift)",
+    "neck_lift": "Подтяжка шеи",
+    "fat_grafting_face": "Липофилинг лица",
+    "ear_reconstruction": "Реконструкция ушной раковины",
+    "breast_augmentation": "Увеличение груди",
+    "breast_reduction": "Уменьшение груди",
+    "breast_lift": "Мастопексия (подтяжка груди)",
+    "breast_reconstruction": "Реконструкция молочной железы",
+    "abdominoplasty": "Абдоминопластика",
+    "liposuction": "Липосакция",
+    "bbl": "BBL (Brazilian Butt Lift)",
+    "body_contouring": "Контурная пластика тела",
+    "arm_lift": "Брахиопластика (подтяжка рук)",
+    "thigh_lift": "Подтяжка бёдер",
+    "lower_body_lift": "Подтяжка нижней части тела",
+    "gynecomastia": "Гинекомастия",
+    "labiaplasty": "Лабиопластика",
+    "vaginoplasty": "Вагинопластика",
+    "appendectomy": "Аппендэктомия",
+    "cholecystectomy": "Холецистэктомия",
+    "hernia_repair": "Грыжесечение",
+    "gastrectomy": "Гастрэктомия",
+    "colectomy": "Колэктомия",
+    "splenectomy": "Спленэктомия",
+    "bowel_resection": "Резекция кишечника",
+    "liver_resection": "Резекция печени",
+    "pancreatic_surgery": "Операции на поджелудочной железе",
+    "rectal_surgery": "Операции на прямой кишке",
+    "stoma_formation": "Формирование стомы",
+    "bariatric_sleeve": "Рукавная гастропластика (sleeve)",
+    "bariatric_bypass": "Желудочное шунтирование (bypass)",
+    "bariatric_band": "Бандажирование желудка",
+    "cabg": "АКШ (коронарное шунтирование)",
+    "valve_replacement": "Протезирование клапана",
+    "valve_repair": "Пластика клапана",
+    "aortic_surgery": "Операции на аорте",
+    "pacemaker": "Имплантация кардиостимулятора",
+    "icd_implant": "Имплантация ИКД",
+    "heart_transplant": "Трансплантация сердца",
+    "atrial_repair": "Аблация (коррекция аритмии)",
+    "vad_implant": "Имплантация LVAD",
+    "pericardectomy": "Перикардэктомия",
+    "aaa_repair": "Протезирование аорты (аневризма)",
+    "carotid_endarterectomy": "Каротидная эндартерэктомия",
+    "bypass_peripheral": "Периферическое шунтирование",
+    "varicose_veins": "Варикозные вены (флебэктомия)",
+    "av_fistula": "АВ-фистула (диализный доступ)",
+    "embolectomy": "Эмболэктомия",
+    "angioplasty": "Ангиопластика / стентирование",
+    "amputation": "Ампутация",
+    "craniotomy": "Краниотомия",
+    "brain_tumor": "Удаление опухоли мозга",
+    "spine_discectomy": "Дискэктомия",
+    "spine_fusion": "Спондилодез (fusion)",
+    "laminectomy": "Ламинэктомия",
+    "vp_shunt": "ВП-шунтирование (гидроцефалия)",
+    "dbs": "Глубокая стимуляция мозга (DBS)",
+    "aneurysm_clipping": "Клипирование аневризмы",
+    "carpal_tunnel": "Синдром карпального канала",
+    "peripheral_nerve": "Операции на периферических нервах",
+    "lobectomy": "Лобэктомия лёгкого",
+    "pneumonectomy": "Пневмонэктомия",
+    "wedge_resection": "Клиновидная резекция лёгкого",
+    "thymectomy": "Тимэктомия",
+    "esophagectomy": "Эзофагэктомия",
+    "pleurectomy": "Плеврэктомия",
+    "lung_transplant": "Трансплантация лёгкого",
+    "chest_wall_repair": "Пластика грудной стенки",
+    "hip_replacement": "Эндопротезирование тазобедренного сустава",
+    "knee_replacement": "Эндопротезирование коленного сустава",
+    "shoulder_replacement": "Эндопротезирование плечевого сустава",
+    "acl_repair": "Пластика ПКС",
+    "meniscus_repair": "Операция на мениске",
+    "fracture_fixation": "Остеосинтез (фиксация переломов)",
+    "arthroscopy": "Артроскопия",
+    "spinal_deformity": "Коррекция деформации позвоночника",
+    "bone_tumor": "Удаление опухоли кости",
+    "tendon_repair": "Пластика сухожилий",
+    "foot_surgery": "Операции на стопе (вальгус и др.)",
+    "hand_surgery": "Хирургия кисти",
+    "prostatectomy": "Простатэктомия",
+    "nephrectomy": "Нефрэктомия",
+    "kidney_transplant": "Трансплантация почки",
+    "ureteroscopy": "Уретероскопия (камни)",
+    "pcnl": "ЧНЛТ (перкутанная нефролитотрипсия)",
+    "bladder_surgery": "Операции на мочевом пузыре",
+    "cystectomy": "Цистэктомия",
+    "orchiectomy": "Орхиэктомия",
+    "varicocele": "Варикоцеле",
+    "circumcision": "Обрезание",
+    "penile_implant": "Имплантация пениса",
+    "sling_procedure": "Слинговая операция (недержание)",
+    "hysterectomy": "Гистерэктомия",
+    "myomectomy": "Миомэктомия",
+    "ovarian_cyst": "Удаление кисты яичника",
+    "oophorectomy": "Овариэктомия",
+    "laparoscopy_gyn": "Диагностическая лапароскопия",
+    "endometriosis": "Операция при эндометриозе",
+    "tubal_ligation": "Перевязка труб",
+    "cesarean": "Кесарево сечение",
+    "prolapse_repair": "Коррекция пролапса тазовых органов",
+    "cervical_conization": "Конизация шейки матки",
+    "cataract": "Катаракта (факоэмульсификация)",
+    "lasik": "LASIK / SMILE (коррекция зрения)",
+    "glaucoma_surgery": "Хирургия глаукомы",
+    "retinal_detachment": "Отслойка сетчатки",
+    "vitrectomy": "Витрэктомия",
+    "strabismus": "Операция при косоглазии",
+    "corneal_transplant": "Кератопластика (пересадка роговицы)",
+    "pterygium": "Птеригиум",
+    "tonsillectomy": "Тонзиллэктомия",
+    "adenoidectomy": "Аденоидэктомия",
+    "septoplasty": "Септопластика",
+    "sinus_surgery": "FESS (эндоскопия пазух)",
+    "tympanoplasty": "Тимпанопластика",
+    "cochlear_implant": "Кохлеарный имплант",
+    "laryngoscopy": "Ларингоскопия / микрохирургия гортани",
+    "parotidectomy": "Паротидэктомия",
+    "thyroidectomy": "Тиреоидэктомия",
+    "parathyroidectomy": "Паратиреоидэктомия",
+    "mastectomy": "Мастэктомия",
+    "sentinel_node": "Биопсия сторожевого узла",
+    "lymphadenectomy": "Лимфодиссекция",
+    "tumor_excision": "Иссечение опухоли (общее)",
+    "cytoreductive": "Циторедуктивная операция",
+    "hipec": "HIPEC (гипертермическая химиоперфузия)",
+    "exenteration": "Экзентерация таза",
+    "port_implant": "Имплантация порта (химиотерапия)",
+    "liver_transplant": "Трансплантация печени",
+    "pancreas_transplant": "Трансплантация поджелудочной железы",
+    "bone_marrow_transplant": "Трансплантация костного мозга",
+    "cornea_transplant": "Трансплантация роговицы",
+    "hand_transplant": "Трансплантация кисти",
+    "face_transplant": "Трансплантация лица",
+    "pyloric_stenosis": "Пилоростеноз",
+    "intussusception": "Инвагинация",
+    "hirschsprung": "Болезнь Гиршпрунга",
+    "cleft_lip_palate": "Расщелина губы / нёба",
+    "hypospadias": "Гипоспадия",
+    "undescended_testis": "Крипторхизм",
+    "vsd_asd_repair": "Коррекция ВПС (ДМЖП, ДМПП)",
+    "dialysis_access": "Диализный доступ",
+    "wound_debridement": "Хирургическая обработка раны",
+    "abscess_drainage": "Вскрытие абсцесса",
+    "circumcision_adult": "Взрослое обрезание",
+    "pilonidal_cyst": "Пилонидальная киста",
+    "hemorrhoidectomy": "Геморроидэктомия",
+    "fistula_repair": "Лечение свища",
+    "skin_graft": "Кожная пластика / пересадка",
+    "other": "Другое (не в списке)"
+  },
+  "photoLabels": {
+    "before": "До",
+    "after": "После",
+    "intra_op": "Интраоп",
+    "1week": "1 неделя",
+    "1month": "1 месяц",
+    "3months": "3 месяца",
+    "6months": "6 месяцев",
+    "simulation": "Симуляция"
+  },
+  "statuses": {
+    "planned": "Запланирована",
+    "completed": "Выполнена",
+    "follow_up": "Наблюдение",
+    "closed": "Закрыт"
+  },
+  "tabs": {
+    "info": "Информация",
+    "plan": "Планирование",
+    "photos": "Фото",
+    "simulator": "AI Симуляция",
+    "followup": "Наблюдение"
+  },
+  "header": {
+    "changeStatusTooltip": "Нажмите чтобы изменить",
+    "publish": "Опубликовать",
+    "unpublish": "Снять с публикации",
+    "publicCase": "Публичный кейс",
+    "privateCase": "Приватный кейс"
+  },
+  "stats": {
+    "date": "Дата",
+    "status": "Статус",
+    "score": "Оценка",
+    "photos": "Фото",
+    "followups": "Наблюдение",
+    "noScore": "—"
+  },
+  "info": {
+    "params": "Параметры операции",
+    "procedure": "Процедура",
+    "anesthesia": "Анестезия",
+    "technique": "Техника",
+    "implantType": "Имплант",
+    "implantSize": "Размер",
+    "volume": "Объём",
+    "duration": "Длительность",
+    "minutes": "мин",
+    "plan": "Операционный план",
+    "planNotFilled": "План не заполнен",
+    "fillPlan": "Заполнить план →",
+    "score": "Оценка результата",
+    "scoreHint": "Оцените результат по шкале от 1 до 10",
+    "save": "Сохранить",
+    "currentScore": "Текущая оценка: {{score}}/10",
+    "consent": "Согласие пациента",
+    "consentReceived": "✓ Согласие получено {{date}}",
+    "consentNotReceived": "Согласие на публикацию не получено",
+    "markConsent": "Отметить согласие"
+  },
+  "photos": {
+    "selectLabel": "Выберите метку",
+    "addPhoto": "+ Добавить фото",
+    "uploading": "Загрузка...",
+    "noPhotos": "Фото пока нет",
+    "noPhotosHint": "Загрузите фото до операции, после и в процессе наблюдения",
+    "public": "Публично",
+    "confirmDelete": "Удалить фото?"
+  },
+  "followup": {
+    "addRecord": "Добавить запись наблюдения",
+    "datePlaceholder": "Дата визита",
+    "notesPlaceholder": "Заметки хирурга...",
+    "complicationsPlaceholder": "Осложнения (если есть)",
+    "addEntry": "Добавить запись",
+    "noRecords": "Записей наблюдения пока нет",
+    "complications": "Осложнения",
+    "addedBy": "Добавил",
+    "surgeon": "хирург",
+    "patient": "пациент",
+    "totalVisits": "Всего визитов",
+    "lastVisit": "Последний визит"
+  },
+  "errors": {
+    "publishError": "Ошибка публикации"
+  },
+  "planForm": {
+    "back": "← Назад",
+    "next": "Далее →",
+    "save": "Сохранить",
+    "saving": "Сохранение...",
+    "saved": "✓ Сохранено",
+    "generating": "Генерация...",
+    "downloadPdf": "Скачать PDF",
+    "saveError": "Ошибка сохранения",
+    "pdfError": "Ошибка генерации PDF",
+    "selectPlaceholder": "— выберите —",
+    "yes": "Да"
+  },
+  "tab": {
+    "loadError": "Не удалось загрузить хирургические кейсы",
+    "noCases": "Хирургических кейсов нет",
+    "noCasesHint": "Создайте первый операционный кейс для этого пациента",
+    "newCase": "+ Новый кейс",
+    "createCase": "Создать кейс",
+    "dateNotSet": "Дата не указана",
+    "casesCount_one": "{{count}} кейс",
+    "casesCount_few": "{{count}} кейса",
+    "casesCount_many": "{{count}} кейсов",
+    "casesCount_other": "{{count}} кейсов",
+    "photosCount_one": "{{count}} фото",
+    "photosCount_few": "{{count}} фото",
+    "photosCount_many": "{{count}} фото",
+    "photosCount_other": "{{count}} фото"
+  },
+  "list": {
+    "breadcrumb": "DocPats · Хирургия",
+    "title": "Операционный дневник",
+    "newCase": "Новый кейс",
+    "totalCases": "Всего кейсов",
+    "proceduresTypes_one": "{{count}} тип операций",
+    "proceduresTypes_few": "{{count}} типа операций",
+    "proceduresTypes_many": "{{count}} типов операций",
+    "proceduresTypes_other": "{{count}} типов операций",
+    "averageScore": "ср. {{score}} / 10",
+    "allProcedures": "Все операции",
+    "noCases": "Кейсов пока нет",
+    "noCasesHint": "Создайте первый операционный кейс — сохраните план операции, фото и результат в одном месте.",
+    "createFirst": "Создать первый кейс",
+    "portfolioBadge": "Портфолио",
+    "noScore": "Без оценки",
+    "delete": "Удалить",
+    "confirmDelete": "Удалить кейс? Это действие нельзя отменить.",
+    "filterAll": "Все",
+    "filterPlanned": "Запланированы",
+    "filterCompleted": "Выполнены",
+    "filterFollowUp": "Наблюдение",
+    "filterClosed": "Закрыты"
+  },
+  "simulator": {
+    "sourcePhoto": "Исходное фото",
+    "uploadFirst": "Сначала загрузите фото в таб «Фото»",
+    "additionalWishes": "Дополнительные пожелания",
+    "optional": "необязательно",
+    "wishesPlaceholder": "Например: более узкий кончик носа, естественный результат...",
+    "disclaimer": "Я понимаю, что AI-симуляция является иллюстративной и <1>не гарантирует</1> реальный результат операции",
+    "generate": "Сгенерировать {{count}} варианта",
+    "generating": "Генерация...",
+    "generatingWithTime": "Генерация... (~{{sec}} сек)",
+    "history": "История симуляций",
+    "noHistory": "Симуляций ещё нет",
+    "noHistoryHint": "Нарисуйте маску и нажмите «Генерировать»",
+    "drawMaskArea": "Нарисуйте область для изменения",
+    "brushHint": "кисть закрашивает зону операции",
+    "clearMask": "Очистить",
+    "maskDrawn": "✓ Маска нарисована",
+    "falaiProcessing": "Fal.ai генерирует варианты...",
+    "variant": "Вариант {{n}}",
+    "selected": "✓ Выбран",
+    "download": "Скачать",
+    "close": "Закрыть",
+    "zoom": "Увеличить",
+    "delete": "Удалить",
+    "confirmDelete": "Удалить эту симуляцию?",
+    "unknownError": "Неизвестная ошибка",
+    "errorSelectPhoto": "Выберите фото",
+    "errorDrawMask": "Нарисуйте область для изменения",
+    "errorAcceptDisclaimer": "Примите дисклеймер",
+    "errorPrefix": "Ошибка",
+    "errorLaunch": "Ошибка запуска симуляции",
+    "simStatusPending": "Ожидание",
+    "simStatusProcessing": "Генерация...",
+    "simStatusDone": "Готово",
+    "simStatusFailed": "Ошибка"
+  },
+  "procedureGroups": {
+    "facial_plastic": "Пластическая хирургия лица",
+    "body_plastic": "Пластическая хирургия тела",
+    "abdominal": "Абдоминальная хирургия",
+    "cardiac": "Кардиохирургия",
+    "vascular": "Сосудистая хирургия",
+    "neuro": "Нейрохирургия",
+    "thoracic": "Торакальная хирургия",
+    "orthopedic": "Ортопедия и травматология",
+    "urology": "Урология",
+    "gynecology": "Гинекология",
+    "ophthalmology": "Офтальмология",
+    "ent": "ЛОР-хирургия",
+    "oncology": "Онкохирургия",
+    "transplant": "Трансплантология",
+    "pediatric": "Педиатрическая хирургия",
+    "other_group": "Другое"
+  },
+  "newCase": {
+    "breadcrumb": "DocPats · Хирургия · Новый кейс",
+    "title": "Новый кейс",
+    "patient": "Пациент",
+    "patientType": "Тип пациента",
+    "patientTypes": {
+      "registered": "Из базы пациентов",
+      "private": "Приватный пациент",
+      "anonymous": "Анонимный код"
+    },
+    "searchRegistered": "Поиск в базе пациентов",
+    "searchPrivate": "Поиск среди приватных пациентов",
+    "searchPlaceholder": "Имя, фамилия или email...",
+    "searching": "Поиск...",
+    "selected": "Выбран",
+    "notFoundInPatients": "Не найдено в вашем списке пациентов",
+    "anonymousCode": "Анонимный код",
+    "noPersonalData": "без личных данных",
+    "anonymousCodePlaceholder": "Например: PT-2024-001",
+    "consentText": "Пациент дал письменное согласие на анонимное использование фото",
+    "mainInfo": "Основная информация",
+    "procedureRequired": "Тип операции *",
+    "selectProcedurePlaceholder": "— выберите операцию —",
+    "operationDate": "Дата операции",
+    "technicalParams": "Технические параметры",
+    "notSpecified": "Не указана",
+    "anesthesia": {
+      "local": "Местная",
+      "sedation": "Седация",
+      "general": "Общая (эндотрахеальная)",
+      "spinal": "Спинальная",
+      "epidural": "Эпидуральная",
+      "regional": "Регионарная (блокада)"
+    },
+    "techniqueLabel": "Техника / доступ",
+    "techniquePlaceholder": "Например: лапароскопически, открытый доступ...",
+    "implantLabel": "Имплант / материал",
+    "implantPlaceholder": "Имплант, шовный материал, протез...",
+    "sizeLabel": "Размер / объём",
+    "sizePlaceholder": "325 мл, L, 3 см...",
+    "durationLabel": "Длительность (мин)",
+    "planHint": "Краткое описание — детальный план заполняется в отдельном разделе. Хранится зашифрованным.",
+    "planPlaceholder": "Опишите план операции, особенности пациента, противопоказания...",
+    "cancel": "Отмена",
+    "creating": "Создание...",
+    "errors": {
+      "selectProcedure": "Выберите тип операции",
+      "selectPatient": "Выберите пациента из списка",
+      "enterAnonymousCode": "Введите анонимный код пациента",
+      "createFailed": "Ошибка создания кейса",
+      "noUserId": "userId не определён",
+      "requestFailed": "Ошибка"
+    }
+  },
+  "planSchema": {
+    "common": {
+      "consultation": {
+        "title": "Первичная консультация",
+        "fields": {
+          "motivation": {
+            "label": "Мотивация пациента",
+            "placeholder": "Что беспокоит, какой результат ожидает..."
+          },
+          "complaints": {
+            "label": "Жалобы",
+            "placeholder": "Основные жалобы..."
+          },
+          "anamnesis": {
+            "label": "Анамнез заболеваний",
+            "placeholder": "Хронические заболевания, операции в прошлом..."
+          },
+          "medications": {
+            "label": "Принимаемые препараты",
+            "placeholder": "Антикоагулянты, гормоны, БАДы..."
+          },
+          "allergies": {
+            "label": "Аллергии",
+            "placeholder": "Аллергические реакции..."
+          },
+          "smoking": {
+            "label": "Курение",
+            "options": ["Нет", "Бросил(а) >3 мес", "Бросил(а) <3 мес", "Курит"]
+          },
+          "alcohol": {
+            "label": "Алкоголь",
+            "options": ["Нет", "Редко", "Умеренно", "Часто"]
+          },
+          "previousSurgeries": {
+            "label": "Предыдущие операции",
+            "placeholder": "Перечислите предыдущие операции..."
+          }
+        }
+      },
+      "preop_tests": {
+        "title": "Предоперационное обследование",
+        "fields": {
+          "tests": {
+            "label": "Назначенные анализы",
+            "options": [
+              "ОАК (общий анализ крови)",
+              "ОАМ (общий анализ мочи)",
+              "Коагулограмма",
+              "Биохимия крови",
+              "Группа крови и Rh-фактор",
+              "ВИЧ (HIV)",
+              "Гепатит B (HBsAg)",
+              "Гепатит C (anti-HCV)",
+              "Сифилис (RPR)",
+              "ЭКГ",
+              "Флюорография / Рентген грудной клетки",
+              "Консультация терапевта",
+              "Консультация анестезиолога"
+            ]
+          },
+          "contraindications": {
+            "label": "Противопоказания (если выявлены)",
+            "placeholder": "Укажите выявленные противопоказания..."
+          },
+          "anesthesia": {
+            "label": "Вид анестезии",
+            "options": [
+              "Местная",
+              "Седация",
+              "Общая (эндотрахеальная)",
+              "Спинальная"
+            ]
+          }
+        }
+      },
+      "risks_consent": {
+        "title": "Риски и информированное согласие",
+        "fields": {
+          "risks_discussed": {
+            "label": "Обсуждённые риски",
+            "options": [
+              "Инфекция / нагноение",
+              "Кровотечение / гематома",
+              "Серома",
+              "Расхождение швов",
+              "Гипертрофические / келоидные рубцы",
+              "Асимметрия",
+              "Изменение чувствительности",
+              "Тромбоз глубоких вен / ТЭЛА",
+              "Анестезиологические риски",
+              "Неудовлетворённость результатом",
+              "Необходимость повторной операции"
+            ]
+          },
+          "consent_given": {
+            "label": "Информированное согласие получено"
+          },
+          "consent_date": {
+            "label": "Дата подписания согласия",
+            "placeholder": "дд.мм.гггг"
+          },
+          "consent_notes": {
+            "label": "Особые пожелания пациента",
+            "placeholder": "Специфические пожелания, ограничения..."
+          }
+        }
+      },
+      "postop_plan": {
+        "title": "Послеоперационное ведение",
+        "fields": {
+          "compression": {
+            "label": "Компрессионное бельё / повязка",
+            "placeholder": "Тип, срок ношения..."
+          },
+          "activity": {
+            "label": "Ограничение активности",
+            "placeholder": "Физическая нагрузка, спорт, сроки..."
+          },
+          "antibiotics": {
+            "label": "Антибиотикопрофилактика",
+            "placeholder": "Препарат, доза, курс..."
+          },
+          "pain_management": {
+            "label": "Обезболивание",
+            "placeholder": "Препараты, схема..."
+          },
+          "followup_schedule": {
+            "label": "График наблюдений",
+            "placeholder": "1 день, 7 дней, 1 месяц, 3 месяца..."
+          },
+          "drain": {
+            "label": "Дренаж",
+            "options": [
+              "Не установлен",
+              "Активный (1)",
+              "Активный (2)",
+              "Пассивный"
+            ]
+          },
+          "special_instructions": {
+            "label": "Особые инструкции",
+            "placeholder": "Специфические рекомендации для данного пациента..."
+          }
+        }
+      }
+    },
+    "shared": {
+      "surgeon_notes": {
+        "label": "Хирургические заметки",
+        "placeholder": "Особенности техники, нюансы..."
+      },
+      "duration_min": {
+        "label": "Плановая длительность (мин)",
+        "placeholder": "минут"
+      }
+    },
+    "rhinoplasty": {
+      "examination": {
+        "title": "Осмотр и антропометрия",
+        "fields": {
+          "skin_type": {
+            "label": "Тип кожи",
+            "options": ["Тонкая", "Средняя", "Толстая / сальная"]
+          },
+          "nasal_tip": {
+            "label": "Кончик носа",
+            "options": [
+              "Нормальный",
+              "Широкий",
+              "Узкий",
+              "Свислый",
+              "Задранный",
+              "Раздвоенный"
+            ]
+          },
+          "nasal_bridge": {
+            "label": "Спинка носа",
+            "options": ["Прямая", "Горбинка", "Седловидная", "Асимметричная"]
+          },
+          "septum": {
+            "label": "Перегородка носа",
+            "options": [
+              "Прямая",
+              "Девиация лёгкая",
+              "Девиация умеренная",
+              "Девиация выраженная"
+            ]
+          },
+          "nasal_base_width": {
+            "label": "Ширина основания (мм)",
+            "placeholder": "мм"
+          },
+          "tip_projection": {
+            "label": "Проекция кончика",
+            "options": ["Нормальная", "Недостаточная", "Избыточная"]
+          },
+          "nasofrontal_angle": {
+            "label": "Носолобный угол (°)",
+            "placeholder": "градусов"
+          },
+          "nasolabial_angle": {
+            "label": "Носогубный угол (°)",
+            "placeholder": "градусов"
+          },
+          "asymmetry": {
+            "label": "Асимметрия",
+            "placeholder": "Описание асимметрии..."
+          },
+          "breathing": {
+            "label": "Носовое дыхание",
+            "options": [
+              "Не нарушено",
+              "Нарушено справа",
+              "Нарушено слева",
+              "Нарушено с обеих сторон"
+            ]
+          }
+        }
+      },
+      "plan": {
+        "title": "План операции",
+        "fields": {
+          "approach": {
+            "label": "Доступ",
+            "options": ["Открытый", "Закрытый"]
+          },
+          "osteotomy": {
+            "label": "Остеотомия",
+            "options": [
+              "Медиальная",
+              "Латеральная",
+              "Поперечная",
+              "Не планируется"
+            ]
+          },
+          "tip_technique": {
+            "label": "Техника коррекции кончика",
+            "options": [
+              "Delivery approach",
+              "Lateral crural overlay",
+              "Tongue-in-groove",
+              "Septoplasty с графтом",
+              "Columellar strut graft"
+            ]
+          },
+          "graft_material": {
+            "label": "Материал трансплантата",
+            "options": [
+              "Не требуется",
+              "Аутохрящ (перегородка)",
+              "Аутохрящ (ушной)",
+              "Аутохрящ (рёберный)",
+              "Аллохрящ"
+            ]
+          },
+          "septoplasty": {
+            "label": "Септопластика"
+          },
+          "turbinoplasty": {
+            "label": "Турбинопластика"
+          }
+        }
+      }
+    },
+    "breast_augmentation": {
+      "examination": {
+        "title": "Осмотр и антропометрия",
+        "fields": {
+          "current_size": {
+            "label": "Текущий размер груди",
+            "placeholder": "Например: 2A, 75B..."
+          },
+          "desired_size": {
+            "label": "Желаемый размер",
+            "placeholder": "Пожелания пациентки..."
+          },
+          "breast_base_width": {
+            "label": "Ширина основания (мм)",
+            "placeholder": "мм"
+          },
+          "skin_thickness": {
+            "label": "Толщина мягких тканей (мм)",
+            "placeholder": "мм"
+          },
+          "ptosis_degree": {
+            "label": "Степень птоза",
+            "options": [
+              "Нет птоза",
+              "I степень (лёгкий)",
+              "II степень (умеренный)",
+              "III степень (выраженный)",
+              "Псевдоптоз"
+            ]
+          },
+          "nipple_position": {
+            "label": "Положение соска",
+            "options": [
+              "Нормальное",
+              "Ниже субмаммарной складки",
+              "Выше субмаммарной складки"
+            ]
+          },
+          "asymmetry": {
+            "label": "Асимметрия",
+            "placeholder": "Разница в размере, форме, положении..."
+          },
+          "skin_quality": {
+            "label": "Качество кожи",
+            "options": [
+              "Хорошее",
+              "Умеренный стрии",
+              "Выраженные стрии",
+              "Сниженный тургор"
+            ]
+          },
+          "lactation_history": {
+            "label": "Лактация",
+            "options": [
+              "Не было",
+              "Завершена >6 мес",
+              "Завершена <6 мес",
+              "Продолжается"
+            ]
+          }
+        }
+      },
+      "implant": {
+        "title": "Выбор импланта",
+        "fields": {
+          "implant_shape": {
+            "label": "Форма импланта",
+            "options": ["Круглый", "Анатомический (каплевидный)"]
+          },
+          "implant_profile": {
+            "label": "Профиль",
+            "options": ["Low", "Moderate", "High", "Extra High"]
+          },
+          "implant_volume_l": {
+            "label": "Объём левый (cc)",
+            "placeholder": "cc"
+          },
+          "implant_volume_r": {
+            "label": "Объём правый (cc)",
+            "placeholder": "cc"
+          },
+          "implant_fill": {
+            "label": "Наполнение",
+            "options": [
+              "Силикон (когезивный гель)",
+              "Силикон (жидкий)",
+              "Физраствор (солевые)"
+            ]
+          },
+          "implant_surface": {
+            "label": "Поверхность",
+            "options": ["Гладкая", "Текстурированная", "Полиуретановая"]
+          },
+          "implant_brand": {
+            "label": "Производитель / артикул",
+            "placeholder": "Mentor, Allergan, Polytech..."
+          },
+          "sizer_used": {
+            "label": "Примерочный имплант"
+          }
+        }
+      },
+      "plan": {
+        "title": "Хирургический план",
+        "fields": {
+          "access": {
+            "label": "Доступ",
+            "options": [
+              "Инфрамаммарный",
+              "Периареолярный",
+              "Аксиллярный",
+              "Трансумбиликальный (TUBA)"
+            ]
+          },
+          "pocket": {
+            "label": "Положение импланта",
+            "options": [
+              "Субгландулярное",
+              "Субмускулярное (полное)",
+              "Dual plane I",
+              "Dual plane II",
+              "Dual plane III",
+              "Subfascial"
+            ]
+          },
+          "mastopexy_planned": {
+            "label": "Одномоментная мастопексия"
+          }
+        }
+      },
+      "specific_risks": {
+        "title": "Специфические риски",
+        "fields": {
+          "specific_risks": {
+            "label": "Риски маммопластики",
+            "options": [
+              "Капсулярная контрактура (I-IV ст.)",
+              "Смещение / ротация импланта",
+              "Разрыв импланта",
+              "Рябь (rippling)",
+              "Ухудшение / потеря чувствительности соска",
+              "Невозможность грудного вскармливания",
+              "BIA-ALCL (ассоциированная лимфома)",
+              "Необходимость замены импланта"
+            ]
+          }
+        }
+      }
+    },
+    "breast_reduction": {
+      "examination": {
+        "title": "Осмотр и антропометрия",
+        "fields": {
+          "current_size": {
+            "label": "Текущий размер",
+            "placeholder": "Размер бюстгальтера..."
+          },
+          "desired_size": {
+            "label": "Желаемый размер",
+            "placeholder": "Пожелания пациентки..."
+          },
+          "breast_weight_l": {
+            "label": "Расчётная масса тк. лев. (г)",
+            "placeholder": "г"
+          },
+          "breast_weight_r": {
+            "label": "Расчётная масса тк. пр. (г)",
+            "placeholder": "г"
+          },
+          "ptosis_degree": {
+            "label": "Степень птоза",
+            "options": [
+              "I степень",
+              "II степень",
+              "III степень",
+              "IV степень (тяжёлый)"
+            ]
+          },
+          "nipple_to_fold": {
+            "label": "Расстояние сосок–складка (мм)",
+            "placeholder": "мм"
+          },
+          "sternal_notch_nipple": {
+            "label": "Яремная вырезка–сосок (мм)",
+            "placeholder": "мм"
+          },
+          "symptoms": {
+            "label": "Симптомы",
+            "options": [
+              "Боли в шее / спине",
+              "Дерматит под грудью",
+              "Борозды от бретелей",
+              "Ограничение физической активности",
+              "Психологический дискомфорт"
+            ]
+          }
+        }
+      },
+      "plan": {
+        "title": "Хирургический план",
+        "fields": {
+          "technique": {
+            "label": "Техника",
+            "options": [
+              "Vertical (lollipop)",
+              "Wise pattern (якорь)",
+              "Superior pedicle",
+              "Inferior pedicle",
+              "Medial pedicle",
+              "Free nipple graft"
+            ]
+          },
+          "resection_volume_l": {
+            "label": "Объём резекции левый (г)",
+            "placeholder": "г"
+          },
+          "resection_volume_r": {
+            "label": "Объём резекции правый (г)",
+            "placeholder": "г"
+          },
+          "new_nipple_position": {
+            "label": "Новая позиция соска",
+            "placeholder": "Расстояние от яремной вырезки (мм)..."
+          },
+          "liposuction_planned": {
+            "label": "Дополнительная липосакция"
+          }
+        }
+      }
+    },
+    "blepharoplasty": {
+      "examination": {
+        "title": "Осмотр",
+        "fields": {
+          "type": {
+            "label": "Тип блефаропластики",
+            "options": ["Верхняя", "Нижняя", "Комбинированная (4 века)"]
+          },
+          "upper_excess_skin": {
+            "label": "Избыток кожи верх. (мм)",
+            "placeholder": "мм"
+          },
+          "ptosis_upper": {
+            "label": "Птоз верхнего века",
+            "options": ["Нет", "Лёгкий", "Умеренный", "Выраженный"]
+          },
+          "fat_herniation_upper": {
+            "label": "Грыжи жира верх. века",
+            "options": [
+              "Медиальный карман",
+              "Центральный карман",
+              "Латеральный карман"
+            ]
+          },
+          "fat_herniation_lower": {
+            "label": "Грыжи жира ниж. века",
+            "options": [
+              "Медиальный карман",
+              "Центральный карман",
+              "Латеральный карман"
+            ]
+          },
+          "tear_trough": {
+            "label": "Слёзная борозда",
+            "options": ["Нет", "Лёгкий", "Умеренный", "Выраженный"]
+          },
+          "lower_skin_excess": {
+            "label": "Избыток кожи ниж. (мм)",
+            "placeholder": "мм"
+          },
+          "canthal_laxity": {
+            "label": "Кантальная слабость",
+            "options": ["Нет", "Лёгкий", "Умеренный", "Выраженный"]
+          },
+          "dry_eye": {
+            "label": "Синдром сухого глаза",
+            "options": [
+              "Нет",
+              "Есть (компенсирован)",
+              "Есть (декомпенсирован — относит. противопоказание)"
+            ]
+          },
+          "schirmer_test": {
+            "label": "Тест Ширмера (мм/5 мин)",
+            "placeholder": "мм/5 мин..."
+          }
+        }
+      },
+      "plan": {
+        "title": "Хирургический план",
+        "fields": {
+          "upper_skin_resection": {
+            "label": "Резекция кожи верх. (мм)",
+            "placeholder": "мм"
+          },
+          "upper_fat_removal": {
+            "label": "Удаление жира верх. века",
+            "options": ["Медиальный карман", "Центральный карман", "Не удалять"]
+          },
+          "lower_approach": {
+            "label": "Доступ ниж. века",
+            "options": ["Транскожный", "Трансконъюнктивальный"]
+          },
+          "lower_fat_management": {
+            "label": "Нижнее веко — жир",
+            "options": ["Удаление", "Репозиция (transposition)", "Не трогать"]
+          },
+          "canthopexy": {
+            "label": "Кантопексия"
+          },
+          "asian_technique": {
+            "label": "Азиатская техника (2 века)"
+          }
+        }
+      }
+    },
+    "liposuction": {
+      "examination": {
+        "title": "Осмотр и зоны",
+        "fields": {
+          "bmi": {
+            "label": "ИМТ",
+            "placeholder": "кг/м²"
+          },
+          "weight": {
+            "label": "Вес (кг)",
+            "placeholder": "кг"
+          },
+          "target_zones": {
+            "label": "Зоны обработки",
+            "options": [
+              "Живот (верх)",
+              "Живот (низ)",
+              "Бока (flanks)",
+              "Спина (верх)",
+              "Спина (низ)",
+              "Внутренние бёдра",
+              "Внешние бёдра",
+              "Галифе (saddlebags)",
+              "Колени",
+              "Руки (внутренние)",
+              "Руки (внешние)",
+              "Подбородок / шея",
+              "Грудь (гинекомастия)",
+              "Лобок (mons pubis)"
+            ]
+          },
+          "skin_elasticity": {
+            "label": "Эластичность кожи",
+            "options": [
+              "Отличная",
+              "Хорошая",
+              "Удовлетворительная",
+              "Сниженная (риск неравномерности)"
+            ]
+          },
+          "cellulite": {
+            "label": "Целлюлит",
+            "options": ["Нет", "I степень", "II степень", "III степень"]
+          },
+          "stretch_marks": {
+            "label": "Стрии",
+            "options": ["Нет", "Незначительные", "Умеренные", "Выраженные"]
+          }
+        }
+      },
+      "plan": {
+        "title": "Хирургический план",
+        "fields": {
+          "technique": {
+            "label": "Техника",
+            "options": [
+              "Классическая (SAL)",
+              "Ультразвуковая (UAL/VASER)",
+              "Лазерная (LAL)",
+              "Power-assisted (PAL)",
+              "Водоструйная (WAL/Body-Jet)",
+              "Hi-Def (высокое разрешение)"
+            ]
+          },
+          "tumescent_volume": {
+            "label": "Объём тумесценции (мл)",
+            "placeholder": "мл"
+          },
+          "expected_aspirate": {
+            "label": "Ожидаемый объём аспирата (мл)",
+            "placeholder": "мл"
+          },
+          "cannula_size": {
+            "label": "Размер канюли (мм)",
+            "placeholder": "мм..."
+          },
+          "skin_excision": {
+            "label": "Иссечение кожи (если план.)"
+          }
+        }
+      }
+    },
+    "abdominoplasty": {
+      "examination": {
+        "title": "Осмотр",
+        "fields": {
+          "type": {
+            "label": "Тип абдоминопластики",
+            "options": [
+              "Полная (full)",
+              "Мини",
+              "Расширенная (extended)",
+              "Фигурная (fleur-de-lis)",
+              "Круговая (belt lipectomy)"
+            ]
+          },
+          "diastasis_width": {
+            "label": "Диастаз прямых мышц (мм)",
+            "placeholder": "мм"
+          },
+          "diastasis_length": {
+            "label": "Протяжённость диастаза",
+            "options": ["Нет", "Пупочный", "Надпупочный", "Тотальный"]
+          },
+          "skin_excess": {
+            "label": "Избыток кожи",
+            "options": ["Незначительный", "Умеренный", "Выраженный (передник)"]
+          },
+          "hernia": {
+            "label": "Грыжа передней брюшной стенки",
+            "options": ["Нет", "Пупочная", "Послеоперационная", "Другая"]
+          },
+          "previous_scars": {
+            "label": "Существующие рубцы",
+            "placeholder": "Лапаротомия, кесарево, аппендэктомия..."
+          },
+          "bmi": {
+            "label": "ИМТ",
+            "placeholder": "кг/м²"
+          }
+        }
+      },
+      "plan": {
+        "title": "Хирургический план",
+        "fields": {
+          "incision_level": {
+            "label": "Уровень разреза",
+            "placeholder": "см от лобкового симфиза..."
+          },
+          "neoumbilicoplasty": {
+            "label": "Неоумбиликопластика"
+          },
+          "diastasis_repair": {
+            "label": "Пластика диастаза"
+          },
+          "liposuction_zones": {
+            "label": "Сопутствующая липосакция",
+            "options": ["Бока", "Спина", "Ложная грудь", "Не планируется"]
+          },
+          "drain_count": {
+            "label": "Количество дренажей",
+            "options": ["0", "1", "2"]
+          }
+        }
+      },
+      "specific_risks": {
+        "title": "Специфические риски",
+        "fields": {
+          "specific_risks": {
+            "label": "Риски абдоминопластики",
+            "options": [
+              "Некроз пупка",
+              "Некроз кожи",
+              "Серома (часто)",
+              "Расхождение нижнего шва",
+              "ТГВ / ТЭЛА (высокий риск)",
+              "Повреждение чувствительных нервов"
+            ]
+          }
+        }
+      }
+    },
+    "facelift": {
+      "examination": {
+        "title": "Осмотр и оценка",
+        "fields": {
+          "age": {
+            "label": "Возраст",
+            "placeholder": "лет"
+          },
+          "skin_quality": {
+            "label": "Качество кожи",
+            "options": [
+              "Отличное",
+              "Хорошее",
+              "Удовлетворительное",
+              "Дряблая / фотоповреждённая"
+            ]
+          },
+          "jowls": {
+            "label": "Брыли (jowls)",
+            "options": ["Нет", "Лёгкий", "Умеренный", "Выраженный"]
+          },
+          "nasolabial_folds": {
+            "label": "Носогубные складки",
+            "options": ["Нет", "Лёгкие", "Умеренные", "Глубокие"]
+          },
+          "neck_laxity": {
+            "label": "Дряблость шеи",
+            "options": ["Нет", "Лёгкая", "Умеренная", "Выраженная (indole шеи)"]
+          },
+          "platysmal_bands": {
+            "label": "Тяжи платизмы",
+            "options": ["Нет", "Умеренные", "Выраженные"]
+          },
+          "fat_distribution": {
+            "label": "Распределение жира",
+            "placeholder": "Птоз жировых компартментов, дефицит объёма..."
+          },
+          "facial_asymmetry": {
+            "label": "Асимметрия",
+            "placeholder": "Описание асимметрии..."
+          },
+          "hair_line": {
+            "label": "Линия волос",
+            "options": [
+              "Нормальная",
+              "Высокая (учитывать при разрезе)",
+              "Редкие волосы"
+            ]
+          }
+        }
+      },
+      "plan": {
+        "title": "Хирургический план",
+        "fields": {
+          "technique": {
+            "label": "Техника",
+            "options": [
+              "MACS lift",
+              "SMAS plication",
+              "SMASectomy",
+              "Deep plane",
+              "Composite lift",
+              "Superficial plane (skin only)",
+              "Эндоскопический"
+            ]
+          },
+          "neck_lift": {
+            "label": "Пластика шеи (neck lift)"
+          },
+          "platysmaplasty": {
+            "label": "Пластика платизмы"
+          },
+          "brow_lift": {
+            "label": "Подтяжка бровей (brow lift)"
+          },
+          "fat_grafting": {
+            "label": "Липофилинг (fat grafting)"
+          },
+          "fat_grafting_zones": {
+            "label": "Зоны липофилинга",
+            "placeholder": "Щёки, носогубные складки, виски..."
+          },
+          "liposuction": {
+            "label": "Липосакция (подбородок / шея)"
+          },
+          "incision_type": {
+            "label": "Разрез",
+            "options": [
+              "Классический (пред- и позаушный)",
+              "Минимальный (preauricular only)",
+              "Temporal"
+            ]
+          }
+        }
+      }
+    },
+    "otoplasty": {
+      "examination": {
+        "title": "Осмотр",
+        "fields": {
+          "protrusion_l": {
+            "label": "Оттопыренность лев. (°)",
+            "placeholder": "градусов"
+          },
+          "protrusion_r": {
+            "label": "Оттопыренность прав. (°)",
+            "placeholder": "градусов"
+          },
+          "distance_scalp_l": {
+            "label": "Расст. от головы лев. (мм)",
+            "placeholder": "мм"
+          },
+          "distance_scalp_r": {
+            "label": "Расст. от головы прав. (мм)",
+            "placeholder": "мм"
+          },
+          "antihelix": {
+            "label": "Антигеликс",
+            "options": ["Нормальный", "Уплощён", "Отсутствует"]
+          },
+          "conchal_excess": {
+            "label": "Избыток ладьевидной ямки",
+            "options": ["Нет", "Умеренный", "Выраженный"]
+          },
+          "earlobe": {
+            "label": "Мочка уха",
+            "options": [
+              "Нормальная",
+              "Оттопыренная",
+              "Расщеплённая",
+              "Гипертрофированная"
+            ]
+          },
+          "asymmetry": {
+            "label": "Асимметрия",
+            "placeholder": "Описание..."
+          }
+        }
+      },
+      "plan": {
+        "title": "Хирургический план",
+        "fields": {
+          "technique": {
+            "label": "Техника",
+            "options": [
+              "Mustardé (матрасные швы)",
+              "Furnas (конхомастоидальные швы)",
+              "Комбинированная",
+              "Без иссечения хряща",
+              "С иссечением хряща"
+            ]
+          },
+          "conchal_setback": {
+            "label": "Конхомастоидальная фиксация"
+          },
+          "skin_excision": {
+            "label": "Иссечение кожи"
+          },
+          "earlobe_correction": {
+            "label": "Коррекция мочки"
+          },
+          "bilateral": {
+            "label": "Двусторонняя"
+          }
+        }
+      }
+    },
+    "chin_implant": {
+      "examination": {
+        "title": "Осмотр и антропометрия",
+        "fields": {
+          "chin_projection": {
+            "label": "Проекция подбородка",
+            "options": [
+              "Норма",
+              "Ретрогения (слабый подбородок)",
+              "Прогения (выступающий)"
+            ]
+          },
+          "chin_projection_mm": {
+            "label": "Дефицит проекции (мм)",
+            "placeholder": "мм"
+          },
+          "facial_thirds": {
+            "label": "Пропорции лица (трети)",
+            "placeholder": "Верхняя, средняя, нижняя треть..."
+          },
+          "occlusion": {
+            "label": "Прикус",
+            "options": [
+              "Нормальный",
+              "Дистальный",
+              "Мезиальный",
+              "Открытый",
+              "Перекрёстный"
+            ]
+          },
+          "orthodontics": {
+            "label": "Ортодонтическое лечение",
+            "options": ["Не проводилось", "Завершено", "В процессе"]
+          },
+          "neck_jaw_angle": {
+            "label": "Шейно-подбородочный угол",
+            "options": ["Хороший", "Сниженный", "Увеличенный"]
+          }
+        }
+      },
+      "plan": {
+        "title": "Хирургический план",
+        "fields": {
+          "implant_size": {
+            "label": "Размер импланта",
+            "placeholder": "Small / Medium / Large / XL..."
+          },
+          "implant_type": {
+            "label": "Тип импланта",
+            "options": [
+              "Стандартный анатомический",
+              "Расширенный (extended)",
+              "Вертикальный chin cup",
+              "Силиконовый гель",
+              "Полиэтилен (Medpor)"
+            ]
+          },
+          "access": {
+            "label": "Доступ",
+            "options": [
+              "Подподбородочный (submental)",
+              "Внутриротовой (intraoral)"
+            ]
+          },
+          "liposuction": {
+            "label": "Липосакция подбородка / шеи"
+          },
+          "platysmaplasty": {
+            "label": "Пластика платизмы"
+          }
+        }
+      }
+    },
+    "lip_augmentation": {
+      "examination": {
+        "title": "Осмотр",
+        "fields": {
+          "upper_lip_height": {
+            "label": "Высота верхней губы (мм)",
+            "placeholder": "мм"
+          },
+          "lower_lip_volume": {
+            "label": "Объём нижней губы",
+            "options": ["Нормальный", "Уменьшен", "Увеличен"]
+          },
+          "lip_ratio": {
+            "label": "Соотношение верх/низ",
+            "placeholder": "Например: 1/1.5..."
+          },
+          "cupid_bow": {
+            "label": "Лук Купидона",
+            "options": ["Чёткий", "Уплощённый", "Ассиметричный"]
+          },
+          "philtrum": {
+            "label": "Фильтрум (желобок)",
+            "options": ["Чёткий", "Сглаженный", "Нормальный"]
+          },
+          "previous_fillers": {
+            "label": "Предыдущие инъекции",
+            "placeholder": "Препарат, дата, объём, результат..."
+          },
+          "asymmetry": {
+            "label": "Асимметрия",
+            "placeholder": "Описание..."
+          }
+        }
+      },
+      "plan": {
+        "title": "План коррекции",
+        "fields": {
+          "technique": {
+            "label": "Техника",
+            "options": [
+              "Классическая инъекция",
+              "Русские губы",
+              "Lip flip (ботулотоксин)",
+              "Периоральная коррекция",
+              "Феатер touch"
+            ]
+          },
+          "filler_brand": {
+            "label": "Препарат",
+            "placeholder": "Juvederm, Restylane, Belotero..."
+          },
+          "volume_upper_ml": {
+            "label": "Объём верхняя губа (мл)",
+            "placeholder": "мл"
+          },
+          "volume_lower_ml": {
+            "label": "Объём нижняя губа (мл)",
+            "placeholder": "мл"
+          },
+          "volume_total_ml": {
+            "label": "Итого объём (мл)",
+            "placeholder": "мл"
+          },
+          "cannula_needle": {
+            "label": "Инструмент",
+            "options": ["Игла", "Канюля", "Комбинация"]
+          },
+          "zones": {
+            "label": "Зоны коррекции",
+            "options": [
+              "Тело верхней губы",
+              "Тело нижней губы",
+              "Лук Купидона",
+              "Углы рта",
+              "Фильтрум",
+              "Контур (vermilion border)",
+              "Периоральные морщины"
+            ]
+          }
+        }
+      },
+      "postop_specific": {
+        "title": "После процедуры",
+        "fields": {
+          "ice_application": {
+            "label": "Лёд / охлаждение"
+          },
+          "avoid_heat": {
+            "label": "Избегать тепла (48 ч)"
+          },
+          "followup_days": {
+            "label": "Контроль через (дней)",
+            "placeholder": "дней"
+          },
+          "special_instructions": {
+            "label": "Особые рекомендации",
+            "placeholder": "..."
+          }
+        }
+      }
+    },
+    "other": {
+      "examination": {
+        "title": "Осмотр",
+        "fields": {
+          "exam_notes": {
+            "label": "Данные осмотра",
+            "placeholder": "Описание результатов осмотра..."
+          },
+          "measurements": {
+            "label": "Измерения",
+            "placeholder": "Антропометрические данные..."
+          }
+        }
+      },
+      "plan": {
+        "title": "Хирургический план",
+        "fields": {
+          "technique": {
+            "label": "Техника / метод",
+            "placeholder": "Описание планируемой техники..."
+          }
+        }
+      }
+    }
+  }
+}

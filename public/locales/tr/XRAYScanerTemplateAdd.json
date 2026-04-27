@@ -1,0 +1,221 @@
+{
+  "XRAYScanerTemplateDiagnosis": {
+    "title": "Röntgen tanı şablonu ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Tanı şablonu başarıyla eklendi.",
+      "error": "❌ Şablon eklenemedi.",
+      "networkError": "❌ Ağ hatası."
+    }
+  },
+  "XRAYScanerTemplateDiagnosisDetails": {
+    "title": "Röntgen tanı şablonu detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "XRAYScanerTemplateDiagnosisEdit": {
+    "title": "Röntgen tanı şablonunu düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu güncelle"
+    },
+    "messages": {
+      "success": "✅ Tanı şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenirken hata oluştu.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "XRAYScanerTemplateDiagnosisList": {
+    "title": "🧾 Röntgen tanı şablonları",
+    "actions": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "messages": {
+      "loadError": "❌ Tanı şablonları yüklenemedi.",
+      "deleteError": "❌ Şablon silinirken hata oluştu."
+    }
+  },
+  "XRAYScanerTemplateRecomendation": {
+    "title": "Röntgen öneri şablonu ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Öneri şablonu başarıyla eklendi.",
+      "error": "❌ Şablon eklenirken hata oluştu.",
+      "networkError": "⚠️ Ağ hatası."
+    }
+  },
+  "XRAYScanerTemplateRecomendationDetails": {
+    "title": "Röntgen öneri şablonu detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "XRAYScanerTemplateRecomendationEdit": {
+    "title": "Röntgen öneri şablonunu düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu güncelle"
+    },
+    "messages": {
+      "success": "✅ Öneri şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenirken hata oluştu.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "XRAYScanerTemplateRecomendationList": {
+    "title": "📋 Röntgen öneri şablonları",
+    "actions": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "messages": {
+      "loadError": "❌ Öneri şablonları yüklenemedi.",
+      "deleteError": "❌ Şablon silinirken hata oluştu."
+    }
+  },
+  "XRAYScanerTemplateReport": {
+    "title": "Röntgen rapor şablonu ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Rapor şablonu başarıyla eklendi.",
+      "error": "❌ Şablon eklenirken hata oluştu.",
+      "networkError": "⚠️ Ağ hatası."
+    }
+  },
+  "XRAYScanerTemplateReportDetails": {
+    "title": "Röntgen rapor şablonu detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "XRAYScanerTemplateReportEdit": {
+    "title": "Röntgen rapor şablonunu düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "actions": {
+      "update": "Şablonu güncelle"
+    },
+    "messages": {
+      "success": "✅ Rapor şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenemedi.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "XRAYScanerTemplateReportList": {
+    "title": "📝 Röntgen rapor şablonları",
+    "actions": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "messages": {
+      "loadError": "❌ Rapor şablonları yüklenemedi.",
+      "deleteError": "❌ Şablon silinemedi."
+    }
+  },
+  "XRAYScanerTemplateNameofexam": {
+    "title": "Röntgen tetkik adı şablonu ekle",
+    "form": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "Açıklama",
+      "saveButton": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Tetkik adı şablonu başarıyla eklendi.",
+      "error": "❌ Şablon eklenirken hata oluştu.",
+      "networkError": "⚠️ Ağ hatası."
+    }
+  },
+  "XRAYScanerTemplateNameofexamDetails": {
+    "title": "Röntgen tetkik adı şablonu detayları",
+    "fields": {
+      "title": "Başlık",
+      "content": "Açıklama"
+    },
+    "actions": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loading": "Yükleniyor...",
+      "loadError": "Şablon yüklenemedi."
+    }
+  },
+  "XRAYScanerTemplateNameofexamEdit": {
+    "title": "Röntgen tetkik adı şablonunu düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "Açıklama"
+    },
+    "actions": {
+      "update": "Şablonu güncelle"
+    },
+    "messages": {
+      "success": "✅ Tetkik adı şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenemedi.",
+      "loadError": "❌ Şablon yüklenemedi."
+    }
+  },
+  "XRAYScanerTemplateNameofexamList": {
+    "title": "📌 Röntgen tetkik adı şablonları",
+    "actions": {
+      "edit": "Düzenle",
+      "delete": "Sil"
+    },
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "messages": {
+      "loadError": "❌ Tetkik adı şablonları yüklenemedi.",
+      "deleteError": "❌ Şablon silinemedi."
+    }
+  }
+}

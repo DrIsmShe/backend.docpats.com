@@ -1,0 +1,153 @@
+{
+  "titles": {
+    "moreAboutPatient": "{{firstName}} {{lastName}} hakkında daha fazla bilgi"
+  },
+
+  "buttons": {
+    "addMedicalHistory": "Tıbbi geçmiş ekle",
+    "addMedicalExamination": "Tıbbi muayene ekle",
+    "choosePhoto": "Fotoğraf seç",
+    "save": "Kaydet",
+    "sendCode": "Kod gönder",
+    "confirmEmail": "Emaili doğrula",
+    "changePassword": "Şifre değiştir",
+    "showPassword": "Şifreyi göster",
+    "hidePassword": "Şifreyi gizle",
+    "loadingPatient": "Hasta yükleniyor",
+    "patientNotFound": "Hasta bulunamadı",
+    "loadingExaminations": "Tetkikler yükleniyor",
+    "addGenerateClinicalSummary": "Klinik Özet Oluştur",
+    "generating": "Oluşturuluyor",
+    "aiGeneratedSummaryDisclaimer": "Bu özet yapay zeka tarafından oluşturulmuştur. Yalnızca profesyonel kullanım içindir."
+  },
+  "examAddedSuccess": "✅ Tetkik başarıyla eklendi",
+  "tabs": {
+    "generalInfo": "Genel bilgiler",
+    "clinicalInfo": "Klinik bilgiler",
+    "caseHistories": "Başvuru geçmişi",
+    "conductedExaminations": "Yapılan incelemeler",
+    "overview": "Genel bakış",
+    "details": "Detaylar",
+    "edit": "Profili düzenle",
+    "settings": "Ayarlar",
+    "changePassword": "Şifre değiştir",
+    "changeEmail": "Email değiştir",
+    "ctScan": "BT",
+    "mri": "MR",
+    "gastroscopyColonoscopy": "Gastroskopi ve kolonoskopi",
+    "ultrasound": "Ultrason",
+    "xray": "Röntgen",
+    "petScan": "PET",
+    "spectScan": "SPECT",
+    "eeg": "EEG",
+    "gynecology": "Jinekoloji",
+    "holterMonitor": "Holter monitörü",
+    "spirometry": "Spirometri",
+    "dopplerScan": "Doppler",
+    "gastroscopy": "Gastroskopi",
+    "colonoscopy": "Kolonoskopi",
+    "capsuleEndoscopy": "Kapsül endoskopi",
+    "angiography": "Anjiyografi",
+    "ekg": "EKG",
+    "echoEkg": "Eko-KG",
+    "coronography": "Koroner anjiografi",
+    "labTests": "Laboratuvar testleri"
+  },
+
+  "generalInfo": {
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "gender": "Cinsiyet",
+    "age": "Doğum tarihi",
+    "ageWithYears": "{{count}} yaş",
+    "country": "Ülke",
+    "phone": "Telefon",
+    "dpMessengerNumber": "DP mesaj numarası",
+    "email": "E-posta"
+  },
+
+  "clinicalInfo": {
+    "chronicDiseases": "Kronik hastalıklar",
+    "operations": "Ameliyatlar",
+    "familyHistory": "Aile hastalık geçmişi",
+    "allergies": "Alerjiler",
+    "immunization": "Aşılama",
+    "badHabits": "Kötü alışkanlıklar"
+  },
+
+  "tables": {
+    "date": "Tarih",
+    "diagnosis": "Tanı",
+    "doctor": "Doktor",
+    "speciality": "Uzmanlık",
+    "dateOfAdmission": "Kabul tarihi",
+    "examName": "Muayene adı",
+    "examResult": "Muayene sonucu"
+  },
+
+  "scans": {
+    "unknownDoctor": "Bilinmeyen doktor"
+  },
+
+  "labTests": {
+    "bloodGeneral": "Tam kan sayımı",
+    "bloodBiochemistry": "Biyokimya",
+    "urine": "İdrar testi",
+    "stool": "Gaita testi",
+    "hormones": "Hormon paneli",
+    "tumorMarkers": "Tümör belirteçleri",
+    "pcr": "PCR testi",
+    "immunology": "İmmünoloji",
+    "geneticScreening": "Genetik tarama",
+    "other": "Diğer testler",
+    "labName": "Laboratuvar adı"
+  },
+
+  "states": {
+    "loading": "Yükleniyor...",
+    "patientNotFound": "Hasta bulunamadı"
+  },
+
+  "errors": {
+    "failedToLoad": "Veriler yüklenemedi",
+    "errorRetrievingPatientInfo": "Hasta bilgisi alınırken hata oluştu",
+    "errorLoadingData": "Veri yükleme hatası",
+    "pageNotFoundText": "Aradığınız sayfa mevcut değil.",
+    "backToHome": "Ana sayfaya dön",
+    "pageNotFoundAlt": "Sayfa bulunamadı",
+    "notEnoughClinicalData": "Özet oluşturmak için yeterli klinik veri yok."
+  },
+
+  "gender": {
+    "man": "Erkek",
+    "woman": "Kadın",
+    "unknown": "Bilinmiyor"
+  },
+
+  "values": {
+    "unknown": "Bilinmiyor",
+    "notSpecified": "Belirtilmedi",
+    "choose": "Seçiniz",
+    "man": "Erkek",
+    "woman": "Kadın",
+    "chooseCountry": "Ülke seçiniz"
+  },
+
+  "exams": {
+    "date": "Kabul tarihi",
+    "name": "Muayene adı",
+    "result": "Sonuç",
+    "labName": "Laboratuvar",
+    "unknownDoctor": "Bilinmeyen doktor",
+    "notSpecified": "Belirtilmedi"
+  },
+
+  "messages": {
+    "loading": "Yükleniyor...",
+    "photoNotSelected": "Fotoğraf seçilmedi"
+  },
+
+  "avatar_choose": {
+    "chooseAvatar": "Avatar seç"
+  }
+}

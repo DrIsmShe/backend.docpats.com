@@ -1,0 +1,261 @@
+{
+  "DoplerScanerTemplateDiagnosis": {
+    "page": {
+      "title": "Doppler Tanı Şablonu Ekle"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "Tanı başlığı"
+      },
+      "content": {
+        "placeholder": "Tanı açıklaması"
+      }
+    },
+    "buttons": {
+      "save": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Doppler tanı şablonu başarıyla eklendi.",
+      "error": "Tanı şablonu eklenemedi.",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "DoplerScanerTemplateDiagnosisDetails": {
+    "page": {
+      "title": "Doppler Tanı Şablonu Detayları"
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loadError": "Tanı şablonu yüklenemedi."
+    }
+  },
+  "DoplerScanerTemplateDiagnosisEdit": {
+    "page": {
+      "title": "Doppler Tanı Şablonunu Düzenle"
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "loadError": "Tanı şablonu yüklenemedi.",
+      "updateSuccess": "✅ Tanı şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenirken hata oluştu."
+    }
+  },
+  "DoplerScanerTemplateDiagnosisList": {
+    "page": {
+      "title": "🧾 Doppler Tanı Şablonları",
+      "empty": "Tanı şablonu bulunamadı."
+    },
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinize emin misiniz?"
+    },
+    "messages": {
+      "loadError": "❌ Tanı şablonları yüklenemedi.",
+      "deleteError": "❌ Şablon silinirken hata oluştu."
+    }
+  },
+  "DoplerScanerTemplateRecomendation": {
+    "page": {
+      "title": "Doppler Öneri Şablonu Ekle"
+    },
+    "fields": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İçerik"
+    },
+    "buttons": {
+      "save": "Kaydet"
+    },
+    "messages": {
+      "addSuccess": "✅ Öneri şablonu başarıyla eklendi",
+      "addError": "Öneri şablonu eklenirken hata oluştu",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "DoplerScanerTemplateRecomendationDetails": {
+    "page": {
+      "title": "Doppler Öneri Şablonu Detayları"
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loadError": "Öneri şablonu yüklenemedi."
+    }
+  },
+  "DoplerScanerTemplateRecomendationEdit": {
+    "page": {
+      "title": "Doppler Öneri Şablonunu Düzenle"
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "loadError": "Öneri şablonu yüklenemedi.",
+      "updateSuccess": "✅ Öneri şablonu başarıyla güncellendi!",
+      "updateError": "❌ Şablon güncellenirken hata oluştu."
+    }
+  },
+  "DoplerScanerTemplateRecomendationList": {
+    "page": {
+      "title": "📋 Doppler Öneri Şablonları",
+      "empty": "Öneri şablonu bulunamadı."
+    },
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinize emin misiniz?"
+    },
+    "messages": {
+      "loadError": "❌ Öneri şablonları yüklenemedi.",
+      "deleteError": "❌ Şablon silinirken hata oluştu."
+    }
+  },
+  "DoplerScanerTemplateReport": {
+    "page": {
+      "title": "Doppler Rapor Şablonu Ekle"
+    },
+    "messages": {
+      "success": "✅ Rapor şablonu başarıyla eklendi",
+      "error": "Rapor şablonu eklenirken bir hata oluştu",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "common": {
+    "title": "Başlık",
+    "content": "İçerik",
+    "save": "Kaydet"
+  },
+  "DoplerScanerTemplateReportDetails": {
+    "page": {
+      "title": "Doppler Tarama Rapor Şablonu Detayları"
+    },
+    "messages": {
+      "loadError": "Rapor şablonu yüklenirken hata oluştu."
+    },
+    "common": {
+      "loading": "Yükleniyor...",
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor",
+      "edit": "Düzenle"
+    }
+  },
+  "DoplerScanerTemplateReportEdit": {
+    "page": {
+      "title": "Doppler Tarama Rapor Şablonunu Düzenle"
+    },
+    "messages": {
+      "success": "✅ Rapor şablonu başarıyla güncellendi!",
+      "error": "❌ Şablon güncellenirken hata oluştu"
+    },
+    "common": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "update": "Şablonu Güncelle"
+    }
+  },
+  "DoplerScanerTemplateReportList": {
+    "page": {
+      "title": "📝 Doppler Rapor Şablonları"
+    },
+    "buttons": {
+      "edit": "Düzenle",
+      "delete": "🗑️ Sil"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinize emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Rapor şablonları yüklenemedi",
+      "deleteSuccess": "✅ Şablon başarıyla silindi",
+      "deleteError": "❌ Şablon silinirken hata oluştu"
+    }
+  },
+  "DoplerScanTemplateNameofexam": {
+    "page": {
+      "title": "Doppler İnceleme Adı Şablonu Ekle"
+    },
+    "messages": {
+      "success": "✅ İnceleme adı şablonu başarıyla eklendi",
+      "error": "Şablon eklenirken hata oluştu",
+      "networkError": "⚠️ Ağ hatası"
+    },
+    "common": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "save": "Kaydet"
+    }
+  },
+  "DoplerScanTemplateNameofexamDetail": {
+    "page": {
+      "title": "İnceleme Adı Şablonu Detayları"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenemedi"
+    },
+    "common": {
+      "loading": "Yükleniyor...",
+      "title": "Başlık",
+      "content": "İçerik",
+      "edit": "Düzenle"
+    }
+  },
+  "DoplerScanTemplateNameofexamEdit": {
+    "page": {
+      "title": "İnceleme Adı Şablonunu Düzenle"
+    },
+    "messages": {
+      "success": "✅ İnceleme adı şablonu başarıyla güncellendi!",
+      "error": "❌ Şablon güncellenirken hata oluştu"
+    },
+    "common": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "update": "Şablonu Güncelle"
+    }
+  },
+  "DoplerScanTemplateNameofexamList": {
+    "page": {
+      "title": "📌 İnceleme Adı Şablonları"
+    },
+    "buttons": {
+      "edit": "Düzenle",
+      "delete": "🗑️ Sil"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinize emin misiniz?"
+    },
+    "messages": {
+      "loadError": "İnceleme adı şablonları yüklenemedi",
+      "deleteSuccess": "✅ Şablon başarıyla silindi",
+      "deleteError": "❌ Şablon silinirken hata oluştu"
+    }
+  }
+}

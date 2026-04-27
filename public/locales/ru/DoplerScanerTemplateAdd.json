@@ -1,0 +1,256 @@
+{
+  "DoplerScanerTemplateDiagnosis": {
+    "page": {
+      "title": "Добавить шаблон диагноза Допплер"
+    },
+    "fields": {
+      "title": {
+        "placeholder": "Название диагноза"
+      },
+      "content": {
+        "placeholder": "Описание диагноза"
+      }
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон диагноза Допплер успешно добавлен.",
+      "error": "Ошибка при добавлении шаблона диагноза.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "DoplerScanerTemplateDiagnosisDetails": {
+    "page": {
+      "title": "Детали шаблона диагноза Допплер"
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loadError": "Не удалось загрузить шаблон диагноза."
+    }
+  },
+  "DoplerScanerTemplateDiagnosisEdit": {
+    "page": {
+      "title": "Редактирование шаблона диагноза Допплер"
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "loadError": "Не удалось загрузить шаблон диагноза.",
+      "updateSuccess": "✅ Шаблон диагноза успешно обновлён!",
+      "updateError": "❌ Ошибка при обновлении шаблона."
+    }
+  },
+  "DoplerScanerTemplateDiagnosisList": {
+    "page": {
+      "title": "🧾 Шаблоны диагнозов Допплер",
+      "empty": "Шаблоны диагнозов отсутствуют."
+    },
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "❌ Не удалось загрузить шаблоны диагнозов.",
+      "deleteError": "❌ Ошибка при удалении шаблона."
+    }
+  },
+  "DoplerScanerTemplateRecomendation": {
+    "page": {
+      "title": "Добавить шаблон рекомендации Допплер"
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "addSuccess": "✅ Шаблон рекомендации успешно добавлен!",
+      "addError": "Ошибка при добавлении шаблона.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "DoplerScanerTemplateRecomendationDetails": {
+    "page": {
+      "title": "Детали шаблона рекомендаций Допплер"
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loadError": "Не удалось загрузить шаблон рекомендаций."
+    }
+  },
+  "DoplerScanerTemplateRecomendationEdit": {
+    "page": {
+      "title": "Редактирование шаблона рекомендаций Допплер"
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "loadError": "Не удалось загрузить шаблон рекомендаций.",
+      "updateSuccess": "✅ Шаблон рекомендаций успешно обновлён!",
+      "updateError": "❌ Ошибка при обновлении шаблона."
+    }
+  },
+  "DoplerScanerTemplateRecomendationList": {
+    "page": {
+      "title": "📋 Шаблоны рекомендаций Допплер",
+      "empty": "Шаблоны рекомендаций отсутствуют."
+    },
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "❌ Не удалось загрузить шаблоны рекомендаций.",
+      "deleteError": "❌ Ошибка при удалении шаблона."
+    }
+  },
+  "DoplerScanerTemplateReport": {
+    "page": {
+      "title": "Добавить шаблон отчёта Допплер"
+    },
+    "messages": {
+      "success": "✅ Шаблон отчёта успешно добавлен",
+      "error": "Ошибка при добавлении шаблона",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "DoplerScanerTemplateReportDetails": {
+    "page": {
+      "title": "Детали шаблона отчёта допплер-исследования"
+    },
+    "messages": {
+      "loadError": "Ошибка загрузки шаблона отчёта."
+    },
+    "common": {
+      "loading": "Загрузка...",
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач",
+      "edit": "Редактировать"
+    }
+  },
+  "DoplerScanerTemplateReportEdit": {
+    "page": {
+      "title": "Редактирование шаблона отчёта допплер-исследования"
+    },
+    "messages": {
+      "success": "✅ Шаблон отчёта успешно обновлён!",
+      "error": "❌ Не удалось обновить шаблон"
+    },
+    "common": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "update": "Обновить шаблон"
+    }
+  },
+  "DoplerScanerTemplateReportList": {
+    "page": {
+      "title": "📝 Шаблоны отчётов доплера"
+    },
+    "buttons": {
+      "edit": "Редактировать",
+      "delete": "🗑️ Удалить"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "Не удалось загрузить шаблоны отчётов",
+      "deleteSuccess": "✅ Шаблон успешно удалён",
+      "deleteError": "❌ Ошибка при удалении шаблона"
+    }
+  },
+  "DoplerScanTemplateNameofexam": {
+    "page": {
+      "title": "Добавить шаблон названия допплер-исследования"
+    },
+    "messages": {
+      "success": "✅ Шаблон названия исследования успешно добавлен",
+      "error": "Ошибка при добавлении шаблона",
+      "networkError": "⚠️ Ошибка сети"
+    },
+    "common": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "save": "Сохранить"
+    }
+  },
+  "DoplerScanTemplateNameofexamDetail": {
+    "page": {
+      "title": "Детали шаблона названия исследования"
+    },
+    "messages": {
+      "loadError": "Не удалось загрузить шаблон"
+    },
+    "common": {
+      "loading": "Загрузка...",
+      "title": "Заголовок",
+      "content": "Содержание",
+      "edit": "Редактировать"
+    }
+  },
+  "DoplerScanTemplateNameofexamEdit": {
+    "page": {
+      "title": "Редактировать шаблон названия исследования"
+    },
+    "messages": {
+      "success": "✅ Шаблон названия исследования успешно обновлён!",
+      "error": "❌ Не удалось обновить шаблон"
+    },
+    "common": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "update": "Обновить шаблон"
+    }
+  },
+  "DoplerScanTemplateNameofexamList": {
+    "page": {
+      "title": "📌 Шаблоны названий исследований"
+    },
+    "buttons": {
+      "edit": "Редактировать",
+      "delete": "🗑️ Удалить"
+    },
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "messages": {
+      "loadError": "Не удалось загрузить шаблоны названий",
+      "deleteSuccess": "✅ Шаблон успешно удалён",
+      "deleteError": "❌ Ошибка при удалении шаблона"
+    }
+  }
+}

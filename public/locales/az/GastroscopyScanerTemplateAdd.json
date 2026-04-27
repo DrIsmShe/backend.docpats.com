@@ -1,0 +1,249 @@
+{
+  "GastroscopyScanerTemplateDiagnosis": {
+    "title": "Qastroskopiya diaqnozu əlavə et",
+    "success": "✅ Diaqnoz şablonu uğurla əlavə edildi.",
+    "error": "Şablon əlavə edilə bilmədi.",
+    "networkError": "Şəbəkə xətası",
+    "fields": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Diaqnozun məzmunu"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    }
+  },
+  "GastroscopyScanerTemplateDiagnosisDetails": {
+    "title": "Qastroskopiya diaqnoz şablonunun detalları",
+    "loading": "Yüklənir...",
+    "error": {
+      "loadFailed": "Şablon yüklənə bilmədi."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    }
+  },
+  "GastroscopyScanerTemplateDiagnosisEdit": {
+    "title": "Qastroskopiya diaqnoz şablonunun redaktəsi",
+    "success": {
+      "updated": "✅ Diaqnoz şablonu uğurla yeniləndi."
+    },
+    "error": {
+      "loadFailed": "Şablon yüklənə bilmədi.",
+      "updateFailed": "Şablon yenilənərkən xəta baş verdi."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    }
+  },
+  "GastroscopyScanerTemplateDiagnosisList": {
+    "title": "🧾 Qastroskopiya diaqnoz şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "error": {
+      "loadFailed": "Şablonlar yüklənə bilmədi.",
+      "deleteFailed": "Şablon silinərkən xəta baş verdi."
+    },
+    "buttons": {
+      "delete": "Sil",
+      "edit": "Redaktə et"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendation": {
+    "title": "Qastroskopiya tövsiyələrini əlavə et",
+    "success": {
+      "added": "✅ Tövsiyə şablonu uğurla əlavə edildi."
+    },
+    "error": {
+      "addFailed": "Şablon əlavə edilərkən xəta baş verdi.",
+      "network": "⚠️ Şəbəkə xətası"
+    },
+    "fields": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Tövsiyələrin mətni"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendationDetails": {
+    "title": "Qastroskopiya tövsiyə şablonunun detalları",
+    "loading": "Yüklənir...",
+    "error": {
+      "loadFailed": "Şablon yüklənə bilmədi."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendationEdit": {
+    "title": "Qastroskopiya tövsiyə şablonunun redaktəsi",
+    "success": {
+      "updated": "✅ Tövsiyə şablonu uğurla yeniləndi."
+    },
+    "error": {
+      "loadFailed": "Şablon yüklənə bilmədi.",
+      "updateFailed": "Şablon yenilənərkən xəta baş verdi."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendationList": {
+    "title": "📋 Qastroskopiya tövsiyə şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "error": {
+      "loadFailed": "Şablonlar yüklənə bilmədi.",
+      "deleteFailed": "Şablon silinərkən xəta baş verdi."
+    },
+    "buttons": {
+      "delete": "Sil",
+      "edit": "Redaktə et"
+    }
+  },
+  "GastroscopyScanerTemplateReport": {
+    "title": "Qastroskopiya hesabat şablonunu əlavə et",
+    "success": {
+      "added": "✅ Hesabat şablonu uğurla əlavə edildi."
+    },
+    "error": {
+      "addFailed": "Şablon əlavə edilərkən xəta baş verdi.",
+      "network": "⚠️ Şəbəkə xətası"
+    },
+    "fields": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Hesabat mətni"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    }
+  },
+  "GastroscopyScanerTemplateReportDetails": {
+    "title": "Qastroskopiya hesabat şablonunun detalları",
+    "loading": "Yüklənir...",
+    "error": {
+      "loadFailed": "Şablon yüklənə bilmədi."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    }
+  },
+  "GastroscopyScanerTemplateReportEdit": {
+    "title": "Qastroskopiya hesabat şablonunun redaktəsi",
+    "success": {
+      "updated": "✅ Hesabat şablonu uğurla yeniləndi."
+    },
+    "error": {
+      "loadFailed": "Şablon yüklənə bilmədi.",
+      "updateFailed": "Şablon yenilənərkən xəta baş verdi."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    }
+  },
+  "GastroscopyScanerTemplateReportList": {
+    "title": "📝 Qastroskopiya hesabat şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "error": {
+      "loadFailed": "Şablonlar yüklənə bilmədi.",
+      "deleteFailed": "Şablon silinərkən xəta baş verdi."
+    },
+    "buttons": {
+      "delete": "Sil",
+      "edit": "Redaktə et"
+    }
+  },
+  "GastroscopyScanTemplateNameofexam": {
+    "title": "Qastroskopiya müayinəsinin adını əlavə et",
+    "success": {
+      "added": "✅ Müayinə adı şablonu uğurla əlavə edildi."
+    },
+    "error": {
+      "addFailed": "Şablon əlavə edilərkən xəta baş verdi.",
+      "network": "⚠️ Şəbəkə xətası"
+    },
+    "fields": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Müayinə təsviri"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    }
+  },
+  "GastroscopyScanTemplateNameofexamDetail": {
+    "title": "Müayinə adı şablonunun detalları",
+    "loading": "Yüklənir...",
+    "error": {
+      "loadFailed": "Şablon yüklənə bilmədi."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Təsvir"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    }
+  },
+  "GastroscopyScanTemplateNameofexamEdit": {
+    "title": "Müayinə adı şablonunun redaktəsi",
+    "success": {
+      "updated": "✅ Müayinə adı şablonu uğurla yeniləndi."
+    },
+    "error": {
+      "loadFailed": "Şablon yüklənə bilmədi.",
+      "updateFailed": "Şablon yenilənərkən xəta baş verdi."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Təsvir"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    }
+  },
+  "GastroscopyScanTemplateNameofexamList": {
+    "title": "📌 Müayinə adı şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "error": {
+      "loadFailed": "Şablonlar yüklənə bilmədi.",
+      "deleteFailed": "Şablon silinərkən xəta baş verdi."
+    },
+    "buttons": {
+      "delete": "Sil",
+      "edit": "Redaktə et"
+    }
+  }
+}

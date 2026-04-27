@@ -1,0 +1,49 @@
+{
+  "page": {
+    "title": "Hasta Arama (Email / Telefon / Belge / UUID)"
+  },
+  "alerts": {
+    "emptyQuery": "Lütfen Email, telefon numarası, belge numarası veya patientUUID girin.",
+    "searchError": "Hasta aranırken hata oluştu. Lütfen tekrar deneyin."
+  },
+  "input": {
+    "placeholder": "Email, telefon, belge numarası veya patientUUID girin"
+  },
+  "buttons": {
+    "search": "Ara",
+    "openDashboard": "Poliklinik Panelini Aç",
+    "addPatient": "Hasta ekle"
+  },
+  "statuses": {
+    "attached": {
+      "title": "Hasta bulundu ve eklendi!",
+      "message": "Hasta polikliniğinize başarıyla bağlandı."
+    },
+    "needsPatientActivation": {
+      "title": "Hasta sistemde mevcut",
+      "instruction": "Hastadan Docpats'e giriş yapıp etkinleştirmesini isteyin",
+      "highlight": "Poliklinik Hesabını"
+    },
+    "notFound": {
+      "title": "Hasta Docpats sisteminde kayıtlı değil.",
+      "instruction": "Hasta kendi hesabını oluşturmalıdır."
+    }
+  },
+  "patientInfo": {
+    "title": "Hasta Bilgileri",
+    "email": "Email",
+    "phone": "Telefon",
+    "uuid": "UUID",
+    "notSpecified": "Belirtilmemiş"
+  },
+  "searchPatient": {
+    "heroSub": "Hastayı ad, e-posta veya UUID ile ara",
+    "tag": "DocPats · Polyclinic",
+    "loadingSearch": "Aranıyor...",
+    "alert": {
+      "title": "Hasta zaten private listesinde mevcut",
+      "text": "Bu hasta daha önce sizin tarafınızdan eklenmiştir."
+    },
+    "openCard": "Hasta kartını aç"
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "SpirometryScanerTemplateDiagnosis": {
+    "pageTitle": "إضافة قالب التشخيص",
+    "titlePlaceholder": "العنوان",
+    "contentPlaceholder": "المحتوى",
+    "saveButton": "حفظ",
+    "successMessage": "✅ تم إضافة قالب التشخيص بنجاح.",
+    "errorDefault": "فشل في إضافة القالب.",
+    "networkError": "خطأ في الشبكة"
+  },
+  "SpirometryScanerTemplateDiagnosisDetails": {
+    "pageTitle": "تفاصيل قالب التشخيص",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "doctorLabel": "الطبيب",
+    "editButton": "تعديل",
+    "loading": "جارٍ التحميل...",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "SpirometryScanerTemplateDiagnosisEdit": {
+    "pageTitle": "تعديل قالب التشخيص",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "successMessage": "✅ تم تحديث قالب التشخيص بنجاح!",
+    "updateError": "❌ حدث خطأ أثناء تحديث القالب.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "SpirometryScanerTemplateDiagnosisList": {
+    "pageTitle": "🧾 قوالب التشخيص",
+    "deleteButton": "🗑️ حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "deleteError": "❌ حدث خطأ أثناء حذف القالب.",
+    "loadError": "فشل في تحميل قوالب التشخيص."
+  },
+  "SpirometryScanerTemplateRecomendationDetails": {
+    "pageTitle": "تفاصيل قالب التوصيات",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "doctorLabel": "الطبيب",
+    "editButton": "تعديل",
+    "loading": "جارٍ التحميل...",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "SpirometryScanerTemplateRecomendationEdit": {
+    "pageTitle": "تعديل قالب التوصيات",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "successMessage": "✅ تم تحديث قالب التوصيات بنجاح!",
+    "updateError": "❌ حدث خطأ أثناء تحديث القالب.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "SpirometryScanerTemplateRecomendationList": {
+    "pageTitle": "📋 قوالب التوصيات",
+    "deleteButton": "🗑️ حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "deleteError": "❌ حدث خطأ أثناء حذف القالب.",
+    "loadError": "فشل في تحميل قوالب التوصيات."
+  },
+  "SpirometryScanerTemplateReport": {
+    "pageTitle": "إضافة قالب التقرير",
+    "titlePlaceholder": "العنوان",
+    "contentPlaceholder": "المحتوى",
+    "saveButton": "حفظ",
+    "successMessage": "✅ تم إضافة قالب التقرير بنجاح.",
+    "errorDefault": "حدث خطأ أثناء إضافة القالب.",
+    "networkError": "⚠️ خطأ في الشبكة"
+  },
+  "SpirometryScanerTemplateReportDetails": {
+    "pageTitle": "تفاصيل قالب التقرير",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "doctorLabel": "الطبيب",
+    "editButton": "تعديل",
+    "loading": "جارٍ التحميل...",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "SpirometryScanerTemplateReportEdit": {
+    "pageTitle": "تعديل قالب التقرير",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "successMessage": "✅ تم تحديث قالب التقرير بنجاح!",
+    "updateError": "❌ فشل في تحديث القالب.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "SpirometryScanerTemplateReportList": {
+    "pageTitle": "📝 قوالب التقارير",
+    "deleteButton": "🗑️ حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "deleteError": "❌ فشل في حذف القالب.",
+    "loadError": "فشل في تحميل قوالب التقارير."
+  },
+  "SpirometryScanTemplateNameofexam": {
+    "pageTitle": "إضافة قالب اسم الفحص",
+    "titlePlaceholder": "العنوان",
+    "contentPlaceholder": "المحتوى",
+    "saveButton": "حفظ",
+    "successMessage": "✅ تم إضافة قالب اسم الفحص بنجاح.",
+    "errorDefault": "حدث خطأ أثناء إضافة القالب.",
+    "networkError": "⚠️ خطأ في الشبكة"
+  },
+  "SpirometryScanTemplateNameofexamDetails": {
+    "pageTitle": "تفاصيل قالب اسم الفحص",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "editButton": "تعديل",
+    "loading": "جارٍ التحميل...",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "SpirometryScanTemplateNameofexamEdit": {
+    "pageTitle": "تعديل قالب اسم الفحص",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "successMessage": "✅ تم تحديث قالب اسم الفحص بنجاح!",
+    "updateError": "❌ فشل في تحديث القالب.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "SpirometryScanTemplateNameofexamList": {
+    "pageTitle": "📌 قوالب أسماء الفحوصات",
+    "deleteButton": "🗑️ حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "deleteError": "❌ فشل في حذف القالب.",
+    "loadError": "فشل في تحميل قوالب أسماء الفحوصات."
+  }
+}

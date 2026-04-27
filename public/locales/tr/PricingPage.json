@@ -1,0 +1,61 @@
+{
+  "metaTitle": "Fiyatlandırma – DOCPATS MedConnect",
+  "metaDescription": "DOCPATS MedConnect için şeffaf fiyatlandırma — doktorlar, hastalar ve klinikler için dijital sağlık platformu.",
+
+  "back": "Ana sayfaya dön",
+
+  "title": "Fiyatlandırma",
+  "subtitle": "Doktorlar ve hastalar için adil fiyatlar",
+
+  "doctorsTitle": "Doktorlar için",
+  "patientsTitle": "Hastalar için",
+  "limitReachedTitle": "Tarif limitinize ulaştınız.",
+  "limitReachedSubtitle": "Daha fazla hasta eklemek için aboneliğinizi yükseltin.",
+  "mostPopular": "En popüler",
+  "choose": "Planı seç",
+
+  "doctorFree": {
+    "name": "Doctor Free",
+    "price": "Ücretsiz",
+    "desc": "10 hastaya kadar olan doktorlar için.",
+    "f1": "10 hastaya kadar",
+    "f2": "Temel tıbbi kayıtlar",
+    "f3": "Doktor–hasta sohbeti"
+  },
+
+  "doctorPro": {
+    "name": "Doctor Pro",
+    "price": "$7 / ay",
+    "desc": "10’dan fazla hastası olan doktorlar için.",
+    "f1": "Sınırsız hasta",
+    "f2": "Yapılandırılmış raporlar ve şablonlar",
+    "f3": "Öncelikli destek"
+  },
+
+  "patientFree": {
+    "name": "Patient Free",
+    "price": "Ücretsiz",
+    "desc": "Kişisel sağlık takibi için temel erişim.",
+    "f1": "Tıbbi geçmiş saklama",
+    "f2": "Doktorlarla iletişim",
+    "f3": "Rapor yükleme"
+  },
+
+  "patientPlus": {
+    "name": "Patient Plus",
+    "price": "$3 / ay",
+    "desc": "Aktif hastalar için gelişmiş araçlar.",
+    "f1": "Sınırsız kayıt",
+    "f2": "Yapay zekâ destekli analizler",
+    "f3": "Öncelikli destek"
+  },
+
+  "family": {
+    "name": "Aile",
+    "price": "$5 / ay",
+    "desc": "Tüm ailenizin sağlığını yönetin.",
+    "f1": "5 aile üyesine kadar",
+    "f2": "Paylaşılan tıbbi geçmiş",
+    "f3": "Ebeveyn kontrolü"
+  }
+}

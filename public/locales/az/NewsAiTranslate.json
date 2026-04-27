@@ -1,0 +1,305 @@
+{
+  "specialties": {
+    "therapist": "Terapiya",
+    "family_doctor": "Ailə həkimi",
+    "gastroenterologist": "Qastroenterologiya",
+    "cardiologist": "Kardiyoloji",
+    "interventional_cardiologist": "Intervensiyonel Kardiyoloji",
+    "pediatric_cardiologist": "Pediatrik Kardiyoloji",
+    "pulmonologist": "Pulmonologiya",
+    "nephrologist": "Nefrologiya",
+    "hematologist": "Hematologiya",
+    "endocrinologist": "Endokrinologiya",
+    "rheumatologist": "Romatologiya",
+    "allergist_immunologist": "Alerji və İmmunologiya",
+    "infectious_disease_specialist": "İnfeksion xəstəliklər",
+    "phthisiatrician": "Ftiziatriya",
+    "hepatologist": "Hepatologiya",
+    "dietitian": "Dietologiya",
+    "urologist": "Urologiya",
+    "dermatologist": "Dermatologiya",
+    "occupational_medicine_doctor": "Peşə xəstəlikləri",
+    "pain_management_specialist": "Ağrı müalicəsi",
+
+    "pediatrician": "Pediatriya",
+    "neonatologist": "Neonatologiya",
+    "child_psychiatrist": "Uşaq psixiatriyası",
+
+    "gynecologist": "Ginekologiya",
+    "obstetrician": "Akuşerlik",
+    "reproductive_endocrinologist": "Reproduktiv endokrinologiya",
+
+    "andrologist": "Andrologiya",
+
+    "neurosurgeon": "Neyrocərrahiyyə",
+    "orthopedic_trauma_surgeon": "Ortopediya və travmatologiya",
+    "maxillofacial_surgeon": "Çənə-üz cərrahiyyəsi",
+    "cardiac_surgeon": "Kardio cərrahiyyə",
+    "thoracic_surgeon": "Torakal cərrahiyyə",
+    "abdominal_surgeon": "Abdominal cərrahiyyə",
+    "coloproctologist": "Koloproktologiya",
+    "endocrine_surgeon": "Endokrin cərrahiyyə",
+    "plastic_surgeon": "Plastik cərrahiyyə",
+    "purulent_surgeon": "İrinli cərrahiyyə",
+    "vascular_surgeon": "Damar cərrahiyyəsi",
+    "transplant_surgeon": "Transplantologiya",
+    "oral_surgeon": "Ağız cərrahiyyəsi",
+
+    "ophthalmologist": "Oftalmologiya",
+    "otolaryngologist": "LOR",
+
+    "oncologist": "Onkoloji",
+    "oncologist_chemotherapist": "Onkoloji (Kimyaterapiya)",
+    "oncologist_radiotherapist": "Onkoloji (Radioterapiya)",
+
+    "psychiatrist": "Psixiatriya",
+    "psychologist": "Psixologiya",
+    "neurologist": "Nöroloji",
+
+    "geriatrician": "Geriatriya",
+    "sleep_medicine_specialist": "Yuxu tibbi",
+    "clinical_pharmacologist": "Klinik farmakologiya",
+    "internal_medicine_doctor": "Daxili xəstəliklər",
+    "medical_geneticist": "Genetika",
+    "toxicologist": "Toksikologiya",
+    "immunotherapist": "İmmunoterapiya",
+
+    "pediatric_neurologist": "Pediatrik nöroloji",
+    "pediatric_endocrinologist": "Pediatrik endokrinologiya",
+    "pediatric_oncologist": "Pediatrik onkoloji",
+
+    "gynecologic_oncologist": "Ginekoloji onkoloji",
+    "breast_specialist": "Mammologiya",
+    "menopause_specialist": "Menopauza",
+
+    "sexologist": "Seksologiya",
+
+    "psychotherapist": "Psixoterapiya",
+    "addiction_specialist": "Asılılıq müalicəsi",
+
+    "oculoplastic_surgeon": "Okuloplastik cərrahiyyə",
+    "robotic_surgeon": "Robotik cərrahiyyə",
+    "bariatric_surgeon": "Bariatrik cərrahiyyə",
+
+    "neuro_ophthalmologist": "Neyro-oftalmologiya",
+    "oculist": "Okulist",
+
+    "cytologist": "Sitologiya",
+    "biochemist": "Biokimya",
+    "molecular_diagnostics_specialist": "Molekulyar diaqnostika",
+    "medical_imaging_specialist": "Tibbi görüntüləmə",
+
+    "endodontist": "Endodontiya",
+    "dental_hygienist": "Stomatoloji gigiyena",
+    "oral_pathologist": "Ağız patologiyası",
+
+    "chiropractor": "Manual terapiya",
+    "osteopath": "Osteopatiya",
+    "acupuncturist": "Akupunktur",
+    "speech_therapist": "Loqopediya",
+    "occupational_therapist": "Erqoterapiya",
+    "rehabilitation_psychologist": "Reabilitasiya psixologiyası",
+
+    "kinesiologist": "Kineziologiya",
+    "athletic_trainer": "İdman məşqçisi",
+
+    "disaster_medicine_specialist": "Fəlakət tibbi",
+    "triage_specialist": "Triage",
+
+    "functional_diagnostics_specialist": "Funksional diaqnostika",
+    "radiologist": "Radiologiya",
+    "ultrasound_diagnostician": "Ultrasəs",
+    "pathologist": "Patologiya",
+    "forensic_medical_examiner": "Məhkəmə tibbi",
+    "geneticist": "Genetika",
+    "laboratory_diagnostics_specialist": "Laborator diaqnostika",
+
+    "dentist": "Stomatologiya",
+    "orthodontist": "Ortodontiya",
+    "periodontist": "Parodontologiya",
+    "prosthodontist": "Ortopedik stomatologiya",
+
+    "physiotherapist": "Fizioterapiya",
+    "exercise_therapy_doctor": "LFT",
+
+    "sports_doctor": "İdman tibbi",
+
+    "emergency_medicine_doctor": "Təcili tibbi yardım"
+  },
+  "topbar": {
+    "title": "DocPats · AI Sintez"
+  },
+  "nav_ai": {
+    "all_articles": "Bütün məqalələr",
+    "analytics": "AI · Analitika"
+  },
+  "loading_ai": {
+    "article": "Məqalə yüklənir…"
+  },
+  "meta_ai": {
+    "ai_synthesis": "AI Sintez",
+    "reading_time": "{{count}} dəq oxu",
+    "words": "{{count}} söz"
+  },
+  "author": {
+    "default": "Dr. İsmayıl tərəfindən redaktə edilib",
+    "label": "Müəllif: Dr. İsmayıl"
+  },
+  "badges": {
+    "our_analytics": "Bizim analitika"
+  },
+  "sources_ai": {
+    "title": "Mənbələr",
+    "materials": "{{count}} material"
+  },
+  "footer_ai": {
+    "platform": "Tibbi Analitika Platforması"
+  },
+  "body_ai": {
+    "translating": "Tərcümə edilir..."
+  },
+  "topbar_title": "DocPats · Tibbi İntellekt",
+  "nav_news": "Xəbərlər",
+  "nav_tag": "AI · Analitika",
+  "header_label": "DocPats Redaksiyası · AI Sintezi",
+  "headline": "Analitik Məqalələr",
+  "deck": "Tibbi və elmi mənbələrin dərin sintezi, hər gün yenilənir",
+  "materials_count": "{{count}} material",
+  "loading": "Materiallar yüklənir…",
+  "load_error": "Məqalələri yükləmək mümkün olmadı",
+  "empty_state": "Məqalələr hələ yaradılmayıb. İlk materiallar bu gün saat 04:00-da görünəcək.",
+  "author_name": "DocPats-ın Baş Redaktoru – Dr. İsmayıl",
+  "words": "{{count}} söz",
+  "sources": "{{count}} mənbə",
+  "other_materials": "Digər Materiallar",
+  "footer_tag": "Tibbi İntellekt Platforması",
+  "all_news": "← Bütün xəbərlər",
+  "news_ai_analitics": "Analitika",
+  "stats.doctors": "Həkimlər",
+  "doctors_ai_news": "Həkimlər",
+  "translateArticles": "Məqalələri tərcümə et",
+  "sort": {
+    "date_desc": "Əvvəl yenilər",
+    "date_asc": "Əvvəl köhnələr",
+    "likes_desc": "Populyarlığa görə",
+    "comments_desc": "Şərhlərə görə",
+    "title_asc": "Ada görə A–Z",
+    "author_asc": "Müəllifə görə A–Z"
+  },
+  "search": {
+    "placeholder": "Başlığa və ya mətnə görə axtar..."
+  },
+  "buttons": {
+    "filters": "Filtrlər",
+    "apply": "Tətbiq et",
+    "reset": "Hamısını sıfırla",
+    "loadMore": "Daha çox yüklə"
+  },
+  "labels": {
+    "category": "Kateqoriya / ixtisas",
+    "allCategories": "Bütün kateqoriyalar",
+    "sorting": "Sıralama"
+  },
+  "states": {
+    "empty": "Heç nə tapılmadı",
+    "loading": "Məqalə yüklənir…",
+    "notFound": "Məqalə tapılmadı",
+    "back": "← Xəbərlərə qayıt"
+  },
+  "stats": {
+    "materials": "material",
+    "news": "xəbər",
+    "scientific": "elmi",
+    "publications": "nəşr"
+  },
+  "tags": {
+    "search": "Axtarış",
+    "category": "Kateqoriya",
+    "sorting": "Sıralama"
+  },
+  "brand": "DocPats · Tibbi Kəşfiyyat",
+  "articles_plural": "məqalə",
+  "news_ai_news": "Tibbi icmal",
+  "research_ai_news": "Həkim məqalələri",
+  "publications_ai_news": "Həkim baxışı ",
+  "nav": {
+    "newsLink": "Tibbi xəbərlər və tədqiqatlar · son məlumatlar",
+    "back": "Xəbərlər",
+    "source": "Mənbə",
+    "dashboard": "Şəxsi kabinet",
+    "becomeMember": "Daxil ol",
+    "filters": {
+      "all": "Hamısı",
+      "news": "Xəbərlər",
+      "research": "Tədqiqat"
+    }
+  },
+  "types": {
+    "research": "Tədqiqat",
+    "news": "Xəbər",
+    "review": "İcmal",
+    "case": "Klinik Hal",
+    "researchFull": "Elmi Məqalə",
+    "newsFull": "Xəbər"
+  },
+  "meta": {
+    "readMin": "dəq. oxuma"
+  },
+  "byline": {
+    "readOriginal": "Orijinalı oxu →"
+  },
+  "hero": {
+    "breadcrumbHome": "Ana Səhifə",
+    "breadcrumbFeed": "Tibbi Xəbər Lenti",
+    "title": "Tibbi Xəbər Lenti",
+    "subtitle": "DocPats-dən tibbi tədqiqatlar, klinik xəbərlər və AI-analitika",
+    "searchTitle": "Axtarış:",
+    "searchPlaceholder": "Məqalə, xəstəlik, müalicə axtar…",
+    "searchBtn": "Axtar",
+    "searchHighlight": "Nəticələr:",
+    "searchClear": "✕ Sıfırla",
+    "searchBadgePrefix": "Uyğunluqlar göstərilir:"
+  },
+  "filters": {
+    "specialty": "İxtisas:",
+    "all": "Hamısı",
+    "news": "Xəbərlər",
+    "research": "Tədqiqatlar",
+    "publications": "Nəşrlər"
+  },
+  "list": {
+    "articles": "məqalə",
+    "articles_plural": "məqalə",
+    "for": "üçün",
+    "page": "səhifə",
+    "of": "/",
+    "loading": "Yüklənir…",
+    "empty": "Seçilmiş filtrlər üçün məqalə tapılmadı.",
+    "loadMore": "Daha çox yüklə",
+    "loadingMore": "Yüklənir…"
+  },
+  "body": {
+    "translating": "Məqalə tərcümə edilir…",
+    "noContent": "Məqalənin tam mətni mövcud deyil.",
+    "readFullAt": "Tam məqaləni oxuyun:",
+    "defaultSource": "orijinal mənbə"
+  },
+  "footer": {
+    "publishedIn": "Nəşr edən:",
+    "disclaimer": "Bu məqalə yalnız məlumat məqsədilə DocPats-də yerləşdirilmişdir. Tam giriş üçün orijinal nəşrə müraciət edin.",
+    "readOriginal": "Orijinalı oxu",
+    "tagline": "Tibbi Kəşfiyyat Platforması",
+    "allArticles": "Bütün Məqalələr",
+    "news": "Xəbərlər",
+    "research": "Tədqiqat",
+    "about": "DocPats redaksiyası haqqında",
+    "name": "Dr. İsmayıl İsmayılov",
+    "role": "DocPats baş redaktoru · Otolarinqoloq",
+    "description": "DocPats — praktik həkimin rəhbərliyi altında fəaliyyət göstərən tibbi redaksiyadır. Bütün analitik materiallar yalnız PubMed, The Lancet, PLOS Medicine, NEJM, CDC, WHO və digər nüfuzlu tibbi mənbələrə əsaslanır.",
+    "disclaimer_docpats": "⚕ Material yalnız məlumat xarakterlidir və həkim konsultasiyasını əvəz etmir. Tibbi yardım üçün mütləq həkimə müraciət edin."
+  },
+
+  "card": {
+    "readFull": "Tam versiyasını oxu"
+  }
+}

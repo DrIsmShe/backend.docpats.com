@@ -1,0 +1,152 @@
+{
+  "titles": {
+    "moreAboutPatient": "Подробнее о пациенте {{firstName}} {{lastName}}"
+  },
+
+  "buttons": {
+    "addMedicalHistory": "Добавить историю болезни",
+    "addMedicalExamination": "Добавить обследование",
+    "choosePhoto": "Выбрать фото",
+    "save": "Сохранить",
+    "sendCode": "Отправить код",
+    "confirmEmail": "Подтвердить email",
+    "changePassword": "Изменить пароль",
+    "showPassword": "Показать символы пароля",
+    "hidePassword": "Скрыть символы пароля",
+    "loadingPatient": "Загрузка пациента",
+    "patientNotFound": "Пациент не найден",
+    "loadingExaminations": "Загрузка обследований",
+    "addGenerateClinicalSummary": "Сформировать клиническое резюме",
+    "generating": "Генерация",
+    "aiGeneratedSummaryDisclaimer": "Сводка создана ИИ. Только для профессионального использования."
+  },
+  "examAddedSuccess": "✅ Исследование успешно добавлено",
+  "tabs": {
+    "generalInfo": "Общая информация",
+    "clinicalInfo": "Клинические данные",
+    "caseHistories": "Истории обращений",
+    "conductedExaminations": "Проведённые обследования",
+    "overview": "Обзор",
+    "details": "Подробнее",
+    "edit": "Редактировать профиль",
+    "settings": "Настройки",
+    "changePassword": "Изменить пароль",
+    "changeEmail": "Изменить email",
+    "ctScan": "КТ",
+    "mri": "МРТ",
+    "ultrasound": "УЗИ",
+    "gastroscopyColonoscopy": "Гастроскопия и колоноскопия",
+    "xray": "Рентген",
+    "petScan": "ПЭТ",
+    "spectScan": "SPECT",
+    "eeg": "ЭЭГ",
+    "gynecology": "Гинекология",
+    "holterMonitor": "Холтер",
+    "spirometry": "Спирометрия",
+    "dopplerScan": "Допплер",
+    "gastroscopy": "Гастроскопия",
+    "colonoscopy": "Колоноскопия",
+    "capsuleEndoscopy": "Капсульная эндоскопия",
+    "angiography": "Ангиография",
+    "ekg": "ЭКГ",
+    "echoEkg": "ЭхоКГ",
+    "coronography": "Коронарография",
+    "labTests": "Лабораторные анализы"
+  },
+
+  "generalInfo": {
+    "firstName": "Имя",
+    "lastName": "Фамилия",
+    "gender": "Пол",
+    "age": "Дата рождения",
+    "ageWithYears": "{{count}} лет",
+    "country": "Страна",
+    "phone": "Телефон",
+    "dpMessengerNumber": "DP messenger номер",
+    "email": "Электронная почта"
+  },
+
+  "clinicalInfo": {
+    "chronicDiseases": "Хронические заболевания",
+    "operations": "Операции",
+    "familyHistory": "Семейный анамнез",
+    "allergies": "Аллергии",
+    "immunization": "Иммунизация",
+    "badHabits": "Вредные привычки"
+  },
+
+  "tables": {
+    "date": "Дата",
+    "diagnosis": "Диагноз",
+    "doctor": "Врач",
+    "speciality": "Специализация",
+    "dateOfAdmission": "Дата поступления",
+    "examName": "Название обследования",
+    "examResult": "Результат обследования"
+  },
+
+  "scans": {
+    "unknownDoctor": "Неизвестный врач"
+  },
+
+  "labTests": {
+    "bloodGeneral": "Общий анализ крови",
+    "bloodBiochemistry": "Биохимия крови",
+    "urine": "Анализ мочи",
+    "stool": "Анализ кала",
+    "hormones": "Гормональный профиль",
+    "tumorMarkers": "Опухолевые маркеры",
+    "pcr": "ПЦР",
+    "immunology": "Иммунология",
+    "geneticScreening": "Генетический скрининг",
+    "other": "Другие анализы",
+    "labName": "Название лаборатории"
+  },
+
+  "states": {
+    "loading": "Загрузка...",
+    "patientNotFound": "Пациент не найден"
+  },
+
+  "gender": {
+    "man": "Мужчина",
+    "woman": "Женщина",
+    "unknown": "Неизвестно"
+  },
+
+  "exams": {
+    "date": "Дата приёма",
+    "name": "Название обследования",
+    "result": "Результат",
+    "labName": "Лаборатория",
+    "unknownDoctor": "Неизвестный врач",
+    "notSpecified": "Не указано"
+  },
+
+  "values": {
+    "notSpecified": "Не указано",
+    "unknown": "Неизвестно",
+    "choose": "Выберите",
+    "man": "Мужчина",
+    "woman": "Женщина",
+    "chooseCountry": "Выберите страну"
+  },
+
+  "messages": {
+    "loading": "Загрузка...",
+    "photoNotSelected": "Фотография не выбрана"
+  },
+
+  "avatar_choose": {
+    "chooseAvatar": "Выберите аватар"
+  },
+  "errors": {
+    "pageNotFoundText": "Страница, которую вы ищете, не существует.",
+    "backToHome": "Вернуться на главную",
+    "pageNotFoundAlt": "Страница не найдена",
+    "failedToLoad": "Не удалось загрузить данные",
+    "errorRetrievingPatientInfo": "Ошибка получения данных пациента",
+    "errorLoadingData": "Ошибка загрузки данных",
+    "notEnoughClinicalData": "Недостаточно клинических данных для генерации резюме."
+  }
+}

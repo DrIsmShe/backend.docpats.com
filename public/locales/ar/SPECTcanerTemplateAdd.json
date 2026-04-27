@@ -1,0 +1,221 @@
+{
+  "SPECTScanerTemplateDiagnosis": {
+    "title": "إضافة قالب التشخيص",
+    "form": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى",
+      "saveButton": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التشخيص بنجاح.",
+      "error": "❌ فشل في إضافة القالب.",
+      "networkError": "❌ خطأ في الشبكة"
+    }
+  },
+  "SPECTScanerTemplateDiagnosisDetails": {
+    "title": "تفاصيل قالب تشخيص SPECT",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "actions": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loading": "جارٍ التحميل...",
+      "loadError": "فشل في تحميل القالب."
+    }
+  },
+  "SPECTScanerTemplateDiagnosisEdit": {
+    "title": "تعديل قالب تشخيص SPECT",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "actions": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب التشخيص بنجاح!",
+      "updateError": "❌ حدث خطأ أثناء تحديث القالب.",
+      "loadError": "❌ فشل في تحميل القالب."
+    }
+  },
+  "SPECTScanerTemplateDiagnosisList": {
+    "title": "🧾 قوالب تشخيص SPECT",
+    "actions": {
+      "edit": "تعديل",
+      "delete": "حذف"
+    },
+    "messages": {
+      "confirmDelete": "هل أنت متأكد من حذف هذا القالب؟",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب.",
+      "loadError": "❌ فشل في تحميل قوالب التشخيص."
+    }
+  },
+  "SPECTScanerTemplateRecomendation": {
+    "title": "إضافة قالب التوصيات",
+    "form": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى",
+      "saveButton": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التوصيات بنجاح.",
+      "error": "حدث خطأ أثناء إضافة القالب.",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "SPECTScanerTemplateRecomendationDetails": {
+    "title": "تفاصيل قالب توصيات SPECT",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "actions": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loading": "جارٍ التحميل...",
+      "loadError": "فشل في تحميل القالب."
+    }
+  },
+  "SPECTScanerTemplateRecomendationEdit": {
+    "title": "تعديل قالب توصيات SPECT",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "actions": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب التوصيات بنجاح!",
+      "updateError": "❌ حدث خطأ أثناء تحديث القالب.",
+      "loadError": "❌ فشل في تحميل القالب."
+    }
+  },
+  "SPECTScanerTemplateRecomendationList": {
+    "title": "📋 قوالب توصيات SPECT",
+    "actions": {
+      "edit": "تعديل",
+      "delete": "حذف"
+    },
+    "messages": {
+      "confirmDelete": "هل أنت متأكد من حذف هذا القالب؟",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب.",
+      "loadError": "❌ فشل في تحميل قوالب التوصيات."
+    }
+  },
+  "SPECTScanerTemplateReport": {
+    "title": "إضافة قالب تقرير SPECT",
+    "form": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى",
+      "saveButton": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التقرير بنجاح.",
+      "error": "حدث خطأ أثناء إضافة القالب.",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "SPECTScanerTemplateReportDetails": {
+    "title": "تفاصيل قالب تقرير SPECT",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "actions": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loading": "جارٍ التحميل...",
+      "loadError": "فشل في تحميل القالب."
+    }
+  },
+  "SPECTScanerTemplateReportEdit": {
+    "title": "تعديل قالب تقرير SPECT",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "actions": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب التقرير بنجاح!",
+      "updateError": "❌ فشل في تحديث القالب.",
+      "loadError": "❌ فشل في تحميل القالب."
+    }
+  },
+  "SPECTScanerTemplateReportList": {
+    "title": "📝 قوالب تقارير SPECT",
+    "actions": {
+      "edit": "تعديل",
+      "delete": "حذف"
+    },
+    "messages": {
+      "confirmDelete": "هل أنت متأكد من حذف هذا القالب؟",
+      "deleteError": "❌ فشل في حذف القالب.",
+      "loadError": "❌ فشل في تحميل قوالب التقارير."
+    }
+  },
+  "SPECTScanTemplateNameofexam": {
+    "title": "إضافة قالب اسم فحص SPECT",
+    "form": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى",
+      "saveButton": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب اسم الفحص بنجاح.",
+      "error": "حدث خطأ أثناء إضافة القالب.",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "SPECTScanTemplateNameofexamDetails": {
+    "title": "تفاصيل قالب اسم فحص SPECT",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "actions": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loading": "جارٍ التحميل...",
+      "loadError": "فشل في تحميل القالب."
+    }
+  },
+  "SPECTScanTemplateNameofexamEdit": {
+    "title": "تعديل قالب اسم فحص SPECT",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "actions": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب اسم الفحص بنجاح!",
+      "updateError": "❌ فشل في تحديث القالب.",
+      "loadError": "❌ فشل في تحميل القالب."
+    }
+  },
+  "SPECTScanTemplateNameofexamList": {
+    "title": "📌 قوالب أسماء فحوصات SPECT",
+    "actions": {
+      "edit": "تعديل",
+      "delete": "حذف"
+    },
+    "messages": {
+      "confirmDelete": "هل أنت متأكد من حذف هذا القالب؟",
+      "deleteError": "❌ فشل في حذف القالب.",
+      "loadError": "❌ فشل في تحميل القوالب."
+    }
+  }
+}

@@ -1,0 +1,249 @@
+{
+  "GastroscopyScanerTemplateDiagnosis": {
+    "title": "Добавить диагноз гастроскопии",
+    "success": "✅ Шаблон диагноза успешно добавлен.",
+    "error": "Не удалось добавить шаблон.",
+    "networkError": "Ошибка сети",
+    "fields": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Содержание диагноза"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    }
+  },
+  "GastroscopyScanerTemplateDiagnosisDetails": {
+    "title": "Детали шаблона диагноза гастроскопии",
+    "loading": "Загрузка...",
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблон."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "GastroscopyScanerTemplateDiagnosisEdit": {
+    "title": "Редактирование шаблона диагноза гастроскопии",
+    "success": {
+      "updated": "✅ Шаблон диагноза успешно обновлён."
+    },
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблон.",
+      "updateFailed": "Ошибка при обновлении шаблона."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    }
+  },
+  "GastroscopyScanerTemplateDiagnosisList": {
+    "title": "🧾 Шаблоны диагнозов гастроскопии",
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблоны.",
+      "deleteFailed": "Ошибка при удалении шаблона."
+    },
+    "buttons": {
+      "delete": "Удалить",
+      "edit": "Редактировать"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendation": {
+    "title": "Добавить рекомендации гастроскопии",
+    "success": {
+      "added": "✅ Шаблон рекомендаций успешно добавлен."
+    },
+    "error": {
+      "addFailed": "Ошибка при добавлении шаблона.",
+      "network": "⚠️ Ошибка сети"
+    },
+    "fields": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Текст рекомендаций"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendationDetails": {
+    "title": "Детали шаблона рекомендаций гастроскопии",
+    "loading": "Загрузка...",
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблон."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendationEdit": {
+    "title": "Редактирование рекомендаций гастроскопии",
+    "success": {
+      "updated": "✅ Шаблон рекомендаций успешно обновлён."
+    },
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблон.",
+      "updateFailed": "Ошибка при обновлении шаблона."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendationList": {
+    "title": "📋 Шаблоны рекомендаций гастроскопии",
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблоны.",
+      "deleteFailed": "Ошибка при удалении шаблона."
+    },
+    "buttons": {
+      "delete": "Удалить",
+      "edit": "Редактировать"
+    }
+  },
+  "GastroscopyScanerTemplateReport": {
+    "title": "Добавить шаблон отчёта гастроскопии",
+    "success": {
+      "added": "✅ Шаблон отчёта успешно добавлен."
+    },
+    "error": {
+      "addFailed": "Ошибка при добавлении шаблона.",
+      "network": "⚠️ Ошибка сети"
+    },
+    "fields": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Текст отчёта"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    }
+  },
+  "GastroscopyScanerTemplateReportDetails": {
+    "title": "Детали шаблона отчёта гастроскопии",
+    "loading": "Загрузка...",
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблон."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "GastroscopyScanerTemplateReportEdit": {
+    "title": "Редактирование отчёта гастроскопии",
+    "success": {
+      "updated": "✅ Шаблон отчёта успешно обновлён."
+    },
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблон.",
+      "updateFailed": "Ошибка при обновлении шаблона."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    }
+  },
+  "GastroscopyScanerTemplateReportList": {
+    "title": "📝 Шаблоны отчётов гастроскопии",
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблоны.",
+      "deleteFailed": "Ошибка при удалении шаблона."
+    },
+    "buttons": {
+      "delete": "Удалить",
+      "edit": "Редактировать"
+    }
+  },
+  "GastroscopyScanTemplateNameofexam": {
+    "title": "Добавить название исследования (гастроскопия)",
+    "success": {
+      "added": "✅ Шаблон названия исследования успешно добавлен."
+    },
+    "error": {
+      "addFailed": "Ошибка при добавлении шаблона.",
+      "network": "⚠️ Ошибка сети"
+    },
+    "fields": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Описание исследования"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    }
+  },
+  "GastroscopyScanTemplateNameofexamDetail": {
+    "title": "Детали шаблона названия исследования",
+    "loading": "Загрузка...",
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблон."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Описание"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "GastroscopyScanTemplateNameofexamEdit": {
+    "title": "Редактирование названия исследования",
+    "success": {
+      "updated": "✅ Шаблон названия исследования успешно обновлён."
+    },
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблон.",
+      "updateFailed": "Ошибка при обновлении шаблона."
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Описание"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    }
+  },
+  "GastroscopyScanTemplateNameofexamList": {
+    "title": "📌 Шаблоны названия исследования",
+    "confirm": {
+      "delete": "Вы уверены, что хотите удалить этот шаблон?"
+    },
+    "error": {
+      "loadFailed": "Не удалось загрузить шаблоны.",
+      "deleteFailed": "Ошибка при удалении шаблона."
+    },
+    "buttons": {
+      "delete": "Удалить",
+      "edit": "Редактировать"
+    }
+  }
+}

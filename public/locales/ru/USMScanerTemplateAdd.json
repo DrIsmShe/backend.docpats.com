@@ -1,0 +1,221 @@
+{
+  "USMScanerTemplateDiagnosis": {
+    "title": "Добавить шаблон диагноза",
+    "form": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Содержание",
+      "saveButton": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон диагноза успешно добавлен.",
+      "errorDefault": "Не удалось добавить шаблон.",
+      "networkError": "Ошибка сети"
+    }
+  },
+  "USMScanerTemplateDiagnosisDetails": {
+    "title": "Детали шаблона диагноза УЗИ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "actions": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loading": "Загрузка...",
+      "loadError": "Не удалось загрузить шаблон."
+    }
+  },
+  "USMScanerTemplateDiagnosisEdit": {
+    "title": "Редактировать шаблон диагноза УЗИ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "actions": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон диагноза успешно обновлён!",
+      "updateError": "❌ Ошибка при обновлении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "USMScanerTemplateDiagnosisList": {
+    "title": "🧾 Шаблоны диагнозов УЗИ",
+    "actions": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+      "deleteError": "❌ Ошибка при удалении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблоны диагнозов."
+    }
+  },
+  "USMScanerTemplateNameofexam": {
+    "title": "Добавить шаблон названия исследования УЗИ",
+    "form": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Содержание",
+      "saveButton": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон названия исследования успешно добавлен.",
+      "errorDefault": "Ошибка при добавлении шаблона.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "USMScanerTemplateNameofexamDetail": {
+    "title": "Детали шаблона названия исследования УЗИ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "actions": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loading": "Загрузка...",
+      "loadError": "Не удалось загрузить шаблон."
+    }
+  },
+  "USMScanerTemplateNameofexamEdit": {
+    "title": "Редактировать шаблон названия исследования УЗИ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "actions": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон названия исследования успешно обновлён!",
+      "updateError": "❌ Не удалось обновить шаблон.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "USMScanerTemplateNameofexamList": {
+    "title": "📌 Шаблоны названий исследований УЗИ",
+    "actions": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+      "deleteError": "❌ Не удалось удалить шаблон.",
+      "loadError": "❌ Не удалось загрузить шаблоны."
+    }
+  },
+  "USMScanerTemplateRecomendation": {
+    "title": "Добавить шаблон рекомендаций УЗИ",
+    "form": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Содержание",
+      "saveButton": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон рекомендаций успешно добавлен.",
+      "errorDefault": "Ошибка при добавлении шаблона.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "USMScanerTemplateRecomendationDetails": {
+    "title": "Детали шаблона рекомендаций УЗИ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "actions": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loading": "Загрузка...",
+      "loadError": "Не удалось загрузить шаблон."
+    }
+  },
+  "USMScanerTemplateRecomendationEdit": {
+    "title": "Редактировать шаблон рекомендаций УЗИ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "actions": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон рекомендаций успешно обновлён!",
+      "updateError": "❌ Ошибка при обновлении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "USMScanerTemplateRecomendationList": {
+    "title": "📋 Шаблоны рекомендаций УЗИ",
+    "actions": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+      "deleteError": "❌ Ошибка при удалении шаблона.",
+      "loadError": "❌ Не удалось загрузить шаблоны рекомендаций."
+    }
+  },
+  "USMScanerTemplateReport": {
+    "title": "Добавить шаблон отчёта УЗИ",
+    "form": {
+      "titlePlaceholder": "Заголовок",
+      "contentPlaceholder": "Содержание",
+      "saveButton": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон отчёта успешно добавлен.",
+      "errorDefault": "Ошибка при добавлении шаблона.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "USMScanerTemplateReportDetails": {
+    "title": "Детали шаблона отчёта УЗИ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание",
+      "doctor": "Врач"
+    },
+    "actions": {
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "loading": "Загрузка...",
+      "loadError": "Не удалось загрузить шаблон."
+    }
+  },
+  "USMScanerTemplateReportEdit": {
+    "title": "Редактировать шаблон отчёта УЗИ",
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержание"
+    },
+    "actions": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон отчёта успешно обновлён!",
+      "updateError": "❌ Не удалось обновить шаблон.",
+      "loadError": "❌ Не удалось загрузить шаблон."
+    }
+  },
+  "USMScanerTemplateReportList": {
+    "title": "📝 Шаблоны отчётов УЗИ",
+    "actions": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+      "deleteError": "❌ Не удалось удалить шаблон.",
+      "loadError": "❌ Не удалось загрузить шаблоны отчётов."
+    }
+  }
+}

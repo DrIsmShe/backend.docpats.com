@@ -1,0 +1,306 @@
+{
+  "specialties": {
+    "therapist": "Therapy",
+    "family_doctor": "Family Medicine",
+    "gastroenterologist": "Gastroenterology",
+    "cardiologist": "Cardiology",
+    "interventional_cardiologist": "Interventional Cardiology",
+    "pediatric_cardiologist": "Pediatric Cardiology",
+    "pulmonologist": "Pulmonology",
+    "nephrologist": "Nephrology",
+    "hematologist": "Hematology",
+    "endocrinologist": "Endocrinology",
+    "rheumatologist": "Rheumatology",
+    "allergist_immunologist": "Allergy and Immunology",
+    "infectious_disease_specialist": "Infectious Diseases",
+    "phthisiatrician": "Phthisiology",
+    "hepatologist": "Hepatology",
+    "dietitian": "Dietetics",
+    "urologist": "Urology",
+    "dermatologist": "Dermatology",
+    "occupational_medicine_doctor": "Occupational Medicine",
+    "pain_management_specialist": "Pain Management",
+
+    "pediatrician": "Pediatrics",
+    "neonatologist": "Neonatology",
+    "child_psychiatrist": "Child Psychiatry",
+
+    "gynecologist": "Gynecology",
+    "obstetrician": "Obstetrics",
+    "reproductive_endocrinologist": "Reproductive Endocrinology",
+
+    "andrologist": "Andrology",
+
+    "neurosurgeon": "Neurosurgery",
+    "orthopedic_trauma_surgeon": "Orthopedics and Traumatology",
+    "maxillofacial_surgeon": "Maxillofacial Surgery",
+    "cardiac_surgeon": "Cardiac Surgery",
+    "thoracic_surgeon": "Thoracic Surgery",
+    "abdominal_surgeon": "Abdominal Surgery",
+    "coloproctologist": "Coloproctology",
+    "endocrine_surgeon": "Endocrine Surgery",
+    "plastic_surgeon": "Plastic Surgery",
+    "purulent_surgeon": "Purulent Surgery",
+    "vascular_surgeon": "Vascular Surgery",
+    "transplant_surgeon": "Transplantology",
+    "oral_surgeon": "Oral Surgery",
+
+    "ophthalmologist": "Ophthalmology",
+    "otolaryngologist": "ENT",
+
+    "oncologist": "Oncology",
+    "oncologist_chemotherapist": "Oncology (Chemotherapy)",
+    "oncologist_radiotherapist": "Oncology (Radiotherapy)",
+
+    "psychiatrist": "Psychiatry",
+    "psychologist": "Psychology",
+    "neurologist": "Neurology",
+
+    "geriatrician": "Geriatrics",
+    "sleep_medicine_specialist": "Sleep Medicine",
+    "clinical_pharmacologist": "Clinical Pharmacology",
+    "internal_medicine_doctor": "Internal Medicine",
+    "medical_geneticist": "Genetics",
+    "toxicologist": "Toxicology",
+    "immunotherapist": "Immunotherapy",
+
+    "pediatric_neurologist": "Pediatric Neurology",
+    "pediatric_endocrinologist": "Pediatric Endocrinology",
+    "pediatric_oncologist": "Pediatric Oncology",
+
+    "gynecologic_oncologist": "Gynecologic Oncology",
+    "breast_specialist": "Mammology",
+    "menopause_specialist": "Menopause",
+
+    "sexologist": "Sexology",
+
+    "psychotherapist": "Psychotherapy",
+    "addiction_specialist": "Addiction Medicine",
+
+    "oculoplastic_surgeon": "Oculoplastic Surgery",
+    "robotic_surgeon": "Robotic Surgery",
+    "bariatric_surgeon": "Bariatric Surgery",
+
+    "neuro_ophthalmologist": "Neuro-ophthalmology",
+    "oculist": "Oculist",
+
+    "cytologist": "Cytology",
+    "biochemist": "Biochemistry",
+    "molecular_diagnostics_specialist": "Molecular Diagnostics",
+    "medical_imaging_specialist": "Medical Imaging",
+
+    "endodontist": "Endodontics",
+    "dental_hygienist": "Dental Hygiene",
+    "oral_pathologist": "Oral Pathology",
+
+    "chiropractor": "Chiropractic",
+    "osteopath": "Osteopathy",
+    "acupuncturist": "Acupuncture",
+    "speech_therapist": "Speech Therapy",
+    "occupational_therapist": "Occupational Therapy",
+    "rehabilitation_psychologist": "Rehabilitation Psychology",
+
+    "kinesiologist": "Kinesiology",
+    "athletic_trainer": "Athletic Trainer",
+
+    "disaster_medicine_specialist": "Disaster Medicine",
+    "triage_specialist": "Triage",
+
+    "functional_diagnostics_specialist": "Functional Diagnostics",
+    "radiologist": "Radiology",
+    "ultrasound_diagnostician": "Ultrasound",
+    "pathologist": "Pathology",
+    "forensic_medical_examiner": "Forensic Medicine",
+    "geneticist": "Genetics",
+    "laboratory_diagnostics_specialist": "Laboratory Diagnostics",
+
+    "dentist": "Dentistry",
+    "orthodontist": "Orthodontics",
+    "periodontist": "Periodontology",
+    "prosthodontist": "Prosthodontics",
+
+    "physiotherapist": "Physiotherapy",
+    "exercise_therapy_doctor": "Exercise Therapy",
+
+    "sports_doctor": "Sports Medicine",
+
+    "emergency_medicine_doctor": "Emergency Medicine"
+  },
+  "topbar": {
+    "title": "DocPats · AI Synthesis"
+  },
+  "nav_ai": {
+    "all_articles": "All articles",
+    "analytics": "AI · Analytics"
+  },
+  "loading_ai": {
+    "article": "Loading article…"
+  },
+  "meta_ai": {
+    "ai_synthesis": "AI Synthesis",
+    "reading_time": "{{count}} min read",
+    "words": "{{count}} words"
+  },
+  "author": {
+    "default": "Edited by Dr. Ismail",
+    "label": "Author: Dr. Ismail"
+  },
+  "badges": {
+    "our_analytics": "Our analytics"
+  },
+  "sources_ai": {
+    "title": "Sources",
+    "materials": "{{count}} materials"
+  },
+  "footer_ai": {
+    "platform": "Medical Intelligence Platform"
+  },
+  "body_ai": {
+    "translating": "Translating..."
+  },
+  "topbar_title": "DocPats · Medical Intelligence",
+  "nav_news": "News",
+  "nav_tag": "AI · Analytics",
+  "header_label": "DocPats Editorial Team · AI Synthesis",
+  "headline": "Analytical Articles",
+  "deck": "Deep synthesis of medical and scientific sources, updated daily",
+  "materials_count": "{{count}} materials",
+  "loading": "Loading materials…",
+  "load_error": "Failed to load articles",
+  "empty_state": "Articles have not been generated yet. The first ones will appear today at 04:00.",
+  "author_name": "Editor-in-Chief of DocPats – Dr. Ismail",
+  "words": "{{count}} words",
+  "sources": "{{count}} sources",
+  "other_materials": "Other Materials",
+  "footer_tag": "Medical Intelligence Platform",
+  "all_news": "← All news",
+  "news_ai_analitics": "Analytics",
+  "stats.doctors": "Doctors",
+  "doctors_ai_news": "Doctors",
+  "translateArticles": "Translate articles",
+  "brand": "DocPats · Medical Intelligence",
+  "articles_plural": "articles",
+  "news_ai_news": "Medical Digest",
+  "research_ai_news": "Doctor Articles",
+  "publications_ai_news": "Doctor’s Insight",
+  "nav": {
+    "newsLink": "Medical news and research · latest data",
+    "back": "News",
+    "source": "Source",
+    "dashboard": "My Cabinet",
+    "becomeMember": "Login",
+    "filters": {
+      "all": "All",
+      "news": "News",
+      "research": "Research"
+    }
+  },
+  "types": {
+    "research": "Research",
+    "news": "News",
+    "review": "Review",
+    "case": "Clinical Case",
+    "researchFull": "Research Article",
+    "newsFull": "News"
+  },
+  "meta": {
+    "readMin": "min read"
+  },
+  "byline": {
+    "readOriginal": "Read original →"
+  },
+  "hero": {
+    "breadcrumbHome": "Home",
+    "breadcrumbFeed": "Medical News Feed",
+    "title": "Medical News Feed",
+    "subtitle": "Medical research, clinical news and AI-powered insights from DocPats",
+    "searchTitle": "Search:",
+    "searchPlaceholder": "Search articles, conditions, treatments…",
+    "searchBtn": "Search",
+    "searchHighlight": "Results for",
+    "searchClear": "✕ Clear search",
+    "searchBadgePrefix": "Highlighting matches for"
+  },
+  "filters": {
+    "specialty": "Specialty:",
+    "all": "All",
+    "news": "News",
+    "research": "Research",
+    "publications": "Publications"
+  },
+  "list": {
+    "articles": "article",
+    "articles_plural": "articles",
+    "for": "for",
+    "page": "page",
+    "of": "of",
+    "loading": "Loading …",
+    "empty": "No articles found for the selected filters.",
+    "loadMore": "Load more articles",
+    "loadingMore": "Loading…"
+  },
+  "body": {
+    "translating": "Translating article…",
+    "noContent": "Full article text is not available.",
+    "readFullAt": "Read full article at",
+    "defaultSource": "original source"
+  },
+  "footer": {
+    "publishedIn": "Published in",
+    "disclaimer": "This article is displayed on DocPats for informational purposes. For full access, visit the original publication.",
+    "readOriginal": "Read original",
+    "tagline": "Medical Intelligence Platform",
+    "allArticles": "All Articles",
+    "news": "News",
+    "research": "Research",
+    "about": "About DocPats Editorial Team",
+    "name": "Dr. Ismail Ismailov",
+    "role": "Editor-in-Chief of DocPats · Otolaryngologist",
+    "description": "DocPats is a medical editorial team led by a practicing physician. All analytical materials are based исключительно on peer-reviewed scientific sources such as PubMed, The Lancet, PLOS Medicine, NEJM, CDC, WHO, and other leading medical journals.",
+    "disclaimer_docpats": "⚕ This material is for informational purposes only and does not replace professional medical consultation. Please consult a doctor for medical assistance."
+  },
+  "states": {
+    "loading": "Loading article…",
+    "notFound": "Article not found",
+    "back": "← Back to news",
+    "empty": "Nothing found"
+  },
+  "card": {
+    "readFull": "Read the full version"
+  },
+
+  "sort": {
+    "date_desc": "Newest first",
+    "date_asc": "Oldest first",
+    "likes_desc": "Most popular",
+    "comments_desc": "Most commented",
+    "title_asc": "Title A–Z",
+    "author_asc": "Author A–Z"
+  },
+  "search": {
+    "placeholder": "Search by title or text..."
+  },
+  "buttons": {
+    "filters": "Filters",
+    "apply": "Apply",
+    "reset": "Reset all",
+    "loadMore": "Load more"
+  },
+  "labels": {
+    "category": "Category / specialization",
+    "allCategories": "All categories",
+    "sorting": "Sorting"
+  },
+
+  "stats": {
+    "materials": "materials",
+    "news": "news",
+    "scientific": "scientific",
+    "publications": "publications"
+  },
+  "tags": {
+    "search": "Search",
+    "category": "Category",
+    "sorting": "Sorting"
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "MRIScanerTemplateDiagnosis": {
+    "titlePage": "Diaqnoz şablonu əlavə et",
+    "inputTitlePlaceholder": "Başlıq",
+    "textareaContentPlaceholder": "Məzmun",
+    "buttonSave": "Yadda saxla",
+    "successMessage": "✅ Diaqnoz şablonu uğurla əlavə olundu.",
+    "errorDefault": "Şablon əlavə edilə bilmədi.",
+    "errorNetwork": "Şəbəkə xətası"
+  },
+  "MRIScanerTemplateDiagnosisDetails": {
+    "titlePage": "MRT Diaqnoz Şablonunun Detalları",
+    "labelTitle": "Başlıq",
+    "labelContent": "Məzmun",
+    "labelDoctor": "Həkim",
+    "buttonEdit": "Redaktə et",
+    "loading": "Yüklənir...",
+    "errorLoad": "Şablon yüklənə bilmədi."
+  },
+  "MRIScanerTemplateDiagnosisEdit": {
+    "titlePage": "MRT Diaqnoz Şablonunun Redaktəsi",
+    "labelTitle": "Başlıq",
+    "labelContent": "Məzmun",
+    "buttonUpdate": "Şablonu yenilə",
+    "successUpdate": "Diaqnoz şablonu uğurla yeniləndi!",
+    "errorUpdate": "Şablon yenilənərkən xəta baş verdi.",
+    "errorLoad": "Şablon yüklənə bilmədi."
+  },
+  "MRIScanerTemplateDiagnosisList": {
+    "titlePage": "🧾 MRT Diaqnoz Şablonları",
+    "buttonEdit": "Redaktə et",
+    "buttonDelete": "🗑️ Sil",
+    "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+    "errorLoad": "Diaqnoz şablonları yüklənə bilmədi.",
+    "errorDelete": "Şablon silinərkən xəta baş verdi."
+  },
+  "MRIScanerTemplateRecomendation": {
+    "titlePage": "MRT Tövsiyə Şablonu Əlavə Et",
+    "inputTitlePlaceholder": "Başlıq",
+    "textareaContentPlaceholder": "Məzmun",
+    "buttonSave": "Yadda saxla",
+    "successAdd": "Tövsiyə şablonu uğurla əlavə olundu.",
+    "errorAdd": "Şablon əlavə edilərkən xəta baş verdi.",
+    "errorNetwork": "Şəbəkə xətası"
+  },
+  "MRIScanerTemplateRecomendationDetails": {
+    "titlePage": "MRT Tövsiyə Şablonunun Detalları",
+    "labelTitle": "Başlıq",
+    "labelContent": "Məzmun",
+    "labelDoctor": "Həkim",
+    "buttonEdit": "Redaktə et",
+    "loading": "Yüklənir...",
+    "errorLoad": "Şablon yüklənə bilmədi."
+  },
+  "MRIScanerTemplateRecomendationEdit": {
+    "titlePage": "MRT Tövsiyə Şablonunun Redaktəsi",
+    "labelTitle": "Başlıq",
+    "labelContent": "Məzmun",
+    "buttonUpdate": "Şablonu yenilə",
+    "successUpdate": "Tövsiyə şablonu uğurla yeniləndi!",
+    "errorUpdate": "Şablon yenilənərkən xəta baş verdi.",
+    "errorLoad": "Şablon yüklənə bilmədi."
+  },
+  "MRIScanerTemplateRecomendationList": {
+    "titlePage": "📋 MRT Tövsiyə Şablonları",
+    "buttonEdit": "Redaktə et",
+    "buttonDelete": "🗑️ Sil",
+    "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+    "errorLoad": "Tövsiyə şablonları yüklənə bilmədi.",
+    "errorDelete": "Şablon silinərkən xəta baş verdi."
+  },
+  "MRIScanerTemplateReport": {
+    "titlePage": "MRT Hesabat Şablonu Əlavə Et",
+    "inputTitlePlaceholder": "Başlıq",
+    "textareaContentPlaceholder": "Məzmun",
+    "buttonSave": "Yadda saxla",
+    "successAdd": "Hesabat şablonu uğurla əlavə olundu.",
+    "errorAdd": "Şablon əlavə edilərkən xəta baş verdi.",
+    "errorNetwork": "Şəbəkə xətası"
+  },
+  "MRIScanerTemplateReportDetails": {
+    "titlePage": "MRT Hesabat Şablonunun Detalları",
+    "labelTitle": "Başlıq",
+    "labelContent": "Məzmun",
+    "labelDoctor": "Həkim",
+    "buttonEdit": "Redaktə et",
+    "loading": "Yüklənir...",
+    "errorLoad": "Şablon yüklənə bilmədi."
+  },
+  "MRIScanerTemplateReportEdit": {
+    "titlePage": "MRT Hesabat Şablonunun Redaktəsi",
+    "labelTitle": "Başlıq",
+    "labelContent": "Məzmun",
+    "buttonUpdate": "Şablonu yenilə",
+    "successUpdate": "Hesabat şablonu uğurla yeniləndi!",
+    "errorUpdate": "Şablon yenilənə bilmədi.",
+    "errorLoad": "Şablon yüklənə bilmədi."
+  },
+  "MRIScanerTemplateReportList": {
+    "titlePage": "📝 MRT Hesabat Şablonları",
+    "buttonEdit": "Redaktə et",
+    "buttonDelete": "🗑️ Sil",
+    "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+    "errorLoad": "Hesabat şablonları yüklənə bilmədi.",
+    "errorDelete": "Şablon silinə bilmədi."
+  },
+  "MRIScanTemplateNameofexam": {
+    "titlePage": "MRT Müayinə Adı Şablonu Əlavə Et",
+    "inputTitlePlaceholder": "Başlıq",
+    "textareaContentPlaceholder": "Məzmun",
+    "buttonSave": "Yadda saxla",
+    "successAdd": "Müayinə adı şablonu uğurla əlavə olundu.",
+    "errorAdd": "Şablon əlavə edilərkən xəta baş verdi.",
+    "errorNetwork": "Şəbəkə xətası"
+  },
+  "MRIScanTemplateNameofexamDetail": {
+    "titlePage": "MRT Müayinə Adı Şablonunun Detalları",
+    "labelTitle": "Başlıq",
+    "labelContent": "Məzmun",
+    "buttonEdit": "Redaktə et",
+    "loading": "Yüklənir...",
+    "errorLoad": "Şablon yüklənə bilmədi."
+  },
+  "MRIScanTemplateNameofexamEdit": {
+    "titlePage": "MRT Müayinə Adı Şablonunun Redaktəsi",
+    "labelTitle": "Başlıq",
+    "labelContent": "Məzmun",
+    "buttonUpdate": "Şablonu yenilə",
+    "successUpdate": "Müayinə adı şablonu uğurla yeniləndi!",
+    "errorUpdate": "Şablon yenilənə bilmədi.",
+    "errorLoad": "Şablon yüklənə bilmədi."
+  },
+  "MRIScanTemplateNameofexamList": {
+    "titlePage": "📌 MRT Müayinə Adı Şablonları",
+    "buttonEdit": "Redaktə et",
+    "buttonDelete": "🗑️ Sil",
+    "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+    "errorLoad": "Müayinə adı şablonları yüklənə bilmədi.",
+    "errorDelete": "Şablon silinə bilmədi."
+  }
+}

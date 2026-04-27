@@ -1,0 +1,49 @@
+{
+  "page": {
+    "title": "Поиск пациента (Email / Телефон / Документ / UUID)"
+  },
+  "alerts": {
+    "emptyQuery": "Пожалуйста, введите Email, номер телефона, номер документа или patientUUID.",
+    "searchError": "Ошибка при поиске пациента. Попробуйте ещё раз."
+  },
+  "input": {
+    "placeholder": "Введите Email, телефон, номер документа или patientUUID"
+  },
+  "buttons": {
+    "search": "Поиск",
+    "openDashboard": "Открыть поликлинический кабинет",
+    "addPatient": "Добавить пациента"
+  },
+  "statuses": {
+    "attached": {
+      "title": "Пациент найден и прикреплён!",
+      "message": "Пациент успешно прикреплён к вашей поликлинике."
+    },
+    "needsPatientActivation": {
+      "title": "Пациент найден в системе",
+      "instruction": "Попросите пациента войти в Docpats и активировать",
+      "highlight": "Поликлинический аккаунт"
+    },
+    "notFound": {
+      "title": "Пациент не зарегистрирован в Docpats.",
+      "instruction": "Он должен самостоятельно создать аккаунт."
+    }
+  },
+  "patientInfo": {
+    "title": "Информация о пациенте",
+    "email": "Email",
+    "phone": "Телефон",
+    "uuid": "UUID",
+    "notSpecified": "Не указано"
+  },
+  "searchPatient": {
+    "heroSub": "Поиск пациента по имени, email или UUID",
+    "tag": "DocPats · Polyclinic",
+    "loadingSearch": "Поиск...",
+    "alert": {
+      "title": "Пациент уже есть в private",
+      "text": "Этот пациент уже добавлен вами ранее."
+    },
+    "openCard": "Открыть карту пациента"
+  }
+}

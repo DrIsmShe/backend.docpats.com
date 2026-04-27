@@ -1,0 +1,24 @@
+{
+  "title": "Yorumlar",
+  "writeComment": "Yorum yazın...",
+  "send": "Gönder",
+  "reply": "Yanıtla",
+  "cancel": "İptal",
+  "save": "Kaydet",
+  "edit": "Düzenle",
+  "delete": "Sil",
+  "anonymous": "Anonim",
+  "replyTo": "Yanıt olarak",
+  "edited": "(düzenlendi)",
+  "loading": "Yorumlar yükleniyor...",
+  "confirmDelete": "Yorumu silmek istediğinizden emin misiniz?",
+  "loadCommentCount": "Yorum sayısı alınırken hata oluştu",
+  "errors": {
+    "load": "Yorumlar yüklenirken hata oluştu",
+    "create": "Yorum oluşturulurken hata oluştu",
+    "reply": "Yanıt verirken hata oluştu",
+    "delete": "Silinirken hata oluştu",
+    "edit": "Düzenleme sırasında hata oluştu",
+    "like": "Beğenirken hata oluştu"
+  }
+}

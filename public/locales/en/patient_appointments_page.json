@@ -1,0 +1,44 @@
+{
+  "page_title": "Book an appointment with a doctor",
+
+  "error_load_doctors": "Failed to load doctors list",
+  "error_load_slots": "Failed to load available slots",
+  "error_create": "Failed to create appointment",
+  "error_whatsapp_required": "Please enter a valid WhatsApp number for online appointment",
+  "error_select_doctor": "Please select a doctor before booking",
+
+  "success_created": "✅ Appointment successfully created!",
+
+  "filters_title": "Doctor search filters",
+  "all_countries": "All countries",
+  "all_specialties": "All specialties",
+  "min_rating": "Min. rating",
+  "min_reviews": "Min. reviews",
+
+  "sort_price_asc": "Price ↑",
+  "sort_price_desc": "Price ↓",
+  "sort_rating": "Rating ↓",
+  "sort_reviews": "Reviews ↓",
+
+  "clear_filters": "Clear filters",
+
+  "select_doctor": "Select a doctor:",
+  "not_selected": "— Not selected —",
+  "no_name": "No name",
+  "no_specialty": "No specialty",
+
+  "appointment_type": "Appointment type",
+  "offline": "Offline (in clinic)",
+  "online": "Online (video consultation)",
+  "online_disabled": "Online appointments are not available for this doctor",
+
+  "select_date": "Select date",
+  "show_slots": "Show available slots",
+
+  "whatsapp_label": "Contact number for online consultation (WhatsApp)",
+  "whatsapp_hint": "This number will be used by the doctor to contact you during the online appointment",
+
+  "available_slots": "Available slots",
+  "book": "Book",
+  "no_slots": "No available slots for the selected date."
+}

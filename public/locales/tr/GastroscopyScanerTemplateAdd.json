@@ -1,0 +1,249 @@
+{
+  "GastroscopyScanerTemplateDiagnosis": {
+    "title": "Gastroskopi Tanısı Ekle",
+    "success": "✅ Tanı şablonu başarıyla eklendi.",
+    "error": "Şablon eklenemedi.",
+    "networkError": "Ağ hatası",
+    "fields": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "Tanı içeriği"
+    },
+    "buttons": {
+      "save": "Kaydet"
+    }
+  },
+  "GastroscopyScanerTemplateDiagnosisDetails": {
+    "title": "Gastroskopi Tanı Şablonu Detayları",
+    "loading": "Yükleniyor...",
+    "error": {
+      "loadFailed": "Şablon yüklenemedi."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    }
+  },
+  "GastroscopyScanerTemplateDiagnosisEdit": {
+    "title": "Gastroskopi Tanı Şablonunu Düzenle",
+    "success": {
+      "updated": "✅ Tanı şablonu başarıyla güncellendi."
+    },
+    "error": {
+      "loadFailed": "Şablon yüklenemedi.",
+      "updateFailed": "Şablon güncellenirken hata oluştu."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    }
+  },
+  "GastroscopyScanerTemplateDiagnosisList": {
+    "title": "🧾 Gastroskopi Tanı Şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinize emin misiniz?"
+    },
+    "error": {
+      "loadFailed": "Şablonlar yüklenemedi.",
+      "deleteFailed": "Şablon silinirken hata oluştu."
+    },
+    "buttons": {
+      "delete": "Sil",
+      "edit": "Düzenle"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendation": {
+    "title": "Gastroskopi Önerilerini Ekle",
+    "success": {
+      "added": "✅ Öneri şablonu başarıyla eklendi."
+    },
+    "error": {
+      "addFailed": "Şablon eklenirken hata oluştu.",
+      "network": "⚠️ Ağ hatası"
+    },
+    "fields": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "Öneri içeriği"
+    },
+    "buttons": {
+      "save": "Kaydet"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendationDetails": {
+    "title": "Gastroskopi Öneri Şablonu Detayları",
+    "loading": "Yükleniyor...",
+    "error": {
+      "loadFailed": "Şablon yüklenemedi."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendationEdit": {
+    "title": "Gastroskopi Öneri Şablonunu Düzenle",
+    "success": {
+      "updated": "✅ Öneri şablonu başarıyla güncellendi."
+    },
+    "error": {
+      "loadFailed": "Şablon yüklenemedi.",
+      "updateFailed": "Şablon güncellenirken hata oluştu."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    }
+  },
+  "GastroscopyScanerTemplateRecomendationList": {
+    "title": "📋 Gastroskopi Öneri Şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinize emin misiniz?"
+    },
+    "error": {
+      "loadFailed": "Şablonlar yüklenemedi.",
+      "deleteFailed": "Şablon silinirken hata oluştu."
+    },
+    "buttons": {
+      "delete": "Sil",
+      "edit": "Düzenle"
+    }
+  },
+  "GastroscopyScanerTemplateReport": {
+    "title": "Gastroskopi Rapor Şablonu Ekle",
+    "success": {
+      "added": "✅ Rapor şablonu başarıyla eklendi."
+    },
+    "error": {
+      "addFailed": "Şablon eklenirken hata oluştu.",
+      "network": "⚠️ Ağ hatası"
+    },
+    "fields": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "Rapor içeriği"
+    },
+    "buttons": {
+      "save": "Kaydet"
+    }
+  },
+  "GastroscopyScanerTemplateReportDetails": {
+    "title": "Gastroskopi Rapor Şablonu Detayları",
+    "loading": "Yükleniyor...",
+    "error": {
+      "loadFailed": "Şablon yüklenemedi."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    }
+  },
+  "GastroscopyScanerTemplateReportEdit": {
+    "title": "Gastroskopi Rapor Şablonunu Düzenle",
+    "success": {
+      "updated": "✅ Rapor şablonu başarıyla güncellendi."
+    },
+    "error": {
+      "loadFailed": "Şablon yüklenemedi.",
+      "updateFailed": "Şablon güncellenemedi."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    }
+  },
+  "GastroscopyScanerTemplateReportList": {
+    "title": "📝 Gastroskopi Rapor Şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinize emin misiniz?"
+    },
+    "error": {
+      "loadFailed": "Şablonlar yüklenemedi.",
+      "deleteFailed": "Şablon silinemedi."
+    },
+    "buttons": {
+      "delete": "Sil",
+      "edit": "Düzenle"
+    }
+  },
+  "GastroscopyScanTemplateNameofexam": {
+    "title": "Gastroskopi İnceleme Adı Ekle",
+    "success": {
+      "added": "✅ İnceleme adı şablonu başarıyla eklendi."
+    },
+    "error": {
+      "addFailed": "Şablon eklenirken hata oluştu.",
+      "network": "⚠️ Ağ hatası"
+    },
+    "fields": {
+      "titlePlaceholder": "Başlık",
+      "contentPlaceholder": "İnceleme açıklaması"
+    },
+    "buttons": {
+      "save": "Kaydet"
+    }
+  },
+  "GastroscopyScanTemplateNameofexamDetail": {
+    "title": "İnceleme Adı Şablonu Detayları",
+    "loading": "Yükleniyor...",
+    "error": {
+      "loadFailed": "Şablon yüklenemedi."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "Açıklama"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    }
+  },
+  "GastroscopyScanTemplateNameofexamEdit": {
+    "title": "İnceleme Adı Şablonunu Düzenle",
+    "success": {
+      "updated": "✅ İnceleme adı şablonu başarıyla güncellendi."
+    },
+    "error": {
+      "loadFailed": "Şablon yüklenemedi.",
+      "updateFailed": "Şablon güncellenemedi."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "Açıklama"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    }
+  },
+  "GastroscopyScanTemplateNameofexamList": {
+    "title": "📌 İnceleme Adı Şablonları",
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinize emin misiniz?"
+    },
+    "error": {
+      "loadFailed": "Şablonlar yüklenemedi.",
+      "deleteFailed": "Şablon silinemedi."
+    },
+    "buttons": {
+      "delete": "Sil",
+      "edit": "Düzenle"
+    }
+  }
+}

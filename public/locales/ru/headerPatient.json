@@ -1,0 +1,14 @@
+{
+  "search": "Поиск...",
+  "logout_success": "Вы успешно вышли из системы",
+  "logout_error": "Ошибка при выходе. Попробуйте снова",
+  "you_have_notifications": "У вас {{count}} непрочитанных уведомлений",
+  "no_notifications": "Нет новых уведомлений",
+  "view_all": "Смотреть все",
+  "welcome": "Добро пожаловать",
+  "nickname": "Никнейм",
+  "my_profile": "Мой профиль",
+  "sign_out": "Выйти",
+  "polyclinic": "Поликлиника",
+  "hospital": "Больница"
+}

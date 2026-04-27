@@ -1,0 +1,44 @@
+{
+  "page_title": "Həkimə qəbul üçün yazılma",
+
+  "error_load_doctors": "Həkim siyahısı yüklənə bilmədi",
+  "error_load_slots": "Mövcud vaxt aralıqları yüklənə bilmədi",
+  "error_create": "Qəbul yaradılarkən xəta baş verdi",
+  "error_whatsapp_required": "Onlayn qəbul üçün düzgün WhatsApp nömrəsi daxil edin",
+  "error_select_doctor": "Qəbuldan əvvəl həkim seçin",
+
+  "success_created": "✅ Qəbul uğurla yaradıldı!",
+
+  "filters_title": "Həkim axtarış filtrləri",
+  "all_countries": "Bütün ölkələr",
+  "all_specialties": "Bütün ixtisaslar",
+  "min_rating": "Min. reytinq",
+  "min_reviews": "Min. rəy",
+
+  "sort_price_asc": "Qiymət ↑",
+  "sort_price_desc": "Qiymət ↓",
+  "sort_rating": "Reytinq ↓",
+  "sort_reviews": "Rəylər ↓",
+
+  "clear_filters": "Filtrləri təmizlə",
+
+  "select_doctor": "Həkimi seçin:",
+  "not_selected": "— Seçilməyib —",
+  "no_name": "Adsız",
+  "no_specialty": "İxtisas yoxdur",
+
+  "appointment_type": "Qəbul növü",
+  "offline": "Oflayn (klinikada)",
+  "online": "Onlayn (video qəbul)",
+  "online_disabled": "Bu həkim üçün onlayn qəbul mövcud deyil",
+
+  "select_date": "Tarixi seçin",
+  "show_slots": "Mövcud vaxtları göstər",
+
+  "whatsapp_label": "Onlayn qəbul üçün əlaqə nömrəsi (WhatsApp)",
+  "whatsapp_hint": "Bu nömrə onlayn qəbul zamanı həkim tərəfindən istifadə olunacaq",
+
+  "available_slots": "Mövcud vaxt aralıqları",
+  "book": "Yazıl",
+  "no_slots": "Seçilmiş tarix üçün boş vaxt yoxdur."
+}

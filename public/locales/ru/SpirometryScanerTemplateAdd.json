@@ -1,0 +1,141 @@
+{
+  "SpirometryScanerTemplateDiagnosis": {
+    "pageTitle": "Добавить шаблон диагноза",
+    "titlePlaceholder": "Заголовок",
+    "contentPlaceholder": "Содержание",
+    "saveButton": "Сохранить",
+    "successMessage": "✅ Шаблон диагноза успешно добавлен.",
+    "errorDefault": "Не удалось добавить шаблон.",
+    "networkError": "Ошибка сети"
+  },
+  "SpirometryScanerTemplateDiagnosisDetails": {
+    "pageTitle": "Детали шаблона диагноза",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "doctorLabel": "Врач",
+    "editButton": "Редактировать",
+    "loading": "Загрузка...",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "SpirometryScanerTemplateDiagnosisEdit": {
+    "pageTitle": "Редактировать шаблон диагноза",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "updateButton": "Обновить шаблон",
+    "successMessage": "✅ Шаблон диагноза успешно обновлён!",
+    "updateError": "❌ Ошибка при обновлении шаблона.",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "SpirometryScanerTemplateDiagnosisList": {
+    "pageTitle": "🧾 Шаблоны диагнозов",
+    "deleteButton": "🗑️ Удалить",
+    "editButton": "Редактировать",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteError": "❌ Ошибка при удалении шаблона.",
+    "loadError": "Не удалось загрузить шаблоны диагнозов."
+  },
+  "SpirometryScanerTemplateRecomendation": {
+    "pageTitle": "Добавить шаблон рекомендаций",
+    "titlePlaceholder": "Заголовок",
+    "contentPlaceholder": "Содержание",
+    "saveButton": "Сохранить",
+    "successMessage": "✅ Шаблон рекомендаций успешно добавлен.",
+    "errorDefault": "Ошибка при добавлении шаблона.",
+    "networkError": "⚠️ Ошибка сети"
+  },
+  "SpirometryScanerTemplateRecomendationDetails": {
+    "pageTitle": "Детали шаблона рекомендаций",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "doctorLabel": "Врач",
+    "editButton": "Редактировать",
+    "loading": "Загрузка...",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "SpirometryScanerTemplateRecomendationEdit": {
+    "pageTitle": "Редактировать шаблон рекомендаций",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "updateButton": "Обновить шаблон",
+    "successMessage": "✅ Шаблон рекомендаций успешно обновлён!",
+    "updateError": "❌ Ошибка при обновлении шаблона.",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "SpirometryScanerTemplateRecomendationList": {
+    "pageTitle": "📋 Шаблоны рекомендаций",
+    "deleteButton": "🗑️ Удалить",
+    "editButton": "Редактировать",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteError": "❌ Ошибка при удалении шаблона.",
+    "loadError": "Не удалось загрузить шаблоны рекомендаций."
+  },
+  "SpirometryScanerTemplateReport": {
+    "pageTitle": "Добавить шаблон отчёта",
+    "titlePlaceholder": "Заголовок",
+    "contentPlaceholder": "Содержание",
+    "saveButton": "Сохранить",
+    "successMessage": "✅ Шаблон отчёта успешно добавлен.",
+    "errorDefault": "Ошибка при добавлении шаблона.",
+    "networkError": "⚠️ Ошибка сети"
+  },
+  "SpirometryScanerTemplateReportDetails": {
+    "pageTitle": "Детали шаблона отчёта",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "doctorLabel": "Врач",
+    "editButton": "Редактировать",
+    "loading": "Загрузка...",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "SpirometryScanerTemplateReportEdit": {
+    "pageTitle": "Редактировать шаблон отчёта",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "updateButton": "Обновить шаблон",
+    "successMessage": "✅ Шаблон отчёта успешно обновлён!",
+    "updateError": "❌ Не удалось обновить шаблон.",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "SpirometryScanerTemplateReportList": {
+    "pageTitle": "📝 Шаблоны отчётов",
+    "deleteButton": "🗑️ Удалить",
+    "editButton": "Редактировать",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteError": "❌ Не удалось удалить шаблон.",
+    "loadError": "Не удалось загрузить шаблоны отчётов."
+  },
+  "SpirometryScanTemplateNameofexam": {
+    "pageTitle": "Добавить шаблон названия исследования",
+    "titlePlaceholder": "Заголовок",
+    "contentPlaceholder": "Содержание",
+    "saveButton": "Сохранить",
+    "successMessage": "✅ Шаблон названия исследования успешно добавлен.",
+    "errorDefault": "Ошибка при добавлении шаблона.",
+    "networkError": "⚠️ Ошибка сети"
+  },
+  "SpirometryScanTemplateNameofexamDetails": {
+    "pageTitle": "Детали шаблона названия исследования",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "editButton": "Редактировать",
+    "loading": "Загрузка...",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "SpirometryScanTemplateNameofexamEdit": {
+    "pageTitle": "Редактировать шаблон названия исследования",
+    "titleLabel": "Заголовок",
+    "contentLabel": "Содержание",
+    "updateButton": "Обновить шаблон",
+    "successMessage": "✅ Шаблон названия исследования успешно обновлён!",
+    "updateError": "❌ Не удалось обновить шаблон.",
+    "loadError": "Не удалось загрузить шаблон."
+  },
+  "SpirometryScanTemplateNameofexamList": {
+    "pageTitle": "📌 Шаблоны названий исследований",
+    "deleteButton": "🗑️ Удалить",
+    "editButton": "Редактировать",
+    "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+    "deleteError": "❌ Не удалось удалить шаблон.",
+    "loadError": "Не удалось загрузить шаблоны названий исследований."
+  }
+}

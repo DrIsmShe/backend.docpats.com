@@ -1,0 +1,145 @@
+{
+  "EKGScanerTemplateDiagnosis": {
+    "titlePage": "إضافة قالب التشخيص",
+    "placeholderTitle": "العنوان",
+    "placeholderContent": "محتوى التشخيص",
+    "saveButton": "حفظ",
+    "success": "✅ تم إضافة قالب التشخيص بنجاح.",
+    "error": "فشل في إضافة قالب التشخيص.",
+    "networkError": "خطأ في الشبكة"
+  },
+  "EKGScanerTemplateDiagnosisDetails": {
+    "titlePage": "تفاصيل قالب تشخيص تخطيط القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "doctorLabel": "الطبيب",
+    "editButton": "تعديل",
+    "loading": "جاري التحميل...",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "EKGScanerTemplateDiagnosisEdit": {
+    "titlePage": "تعديل قالب تشخيص تخطيط القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "success": "تم تحديث قالب التشخيص بنجاح.",
+    "updateError": "حدث خطأ أثناء تحديث القالب.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "EKGScanerTemplateDiagnosisList": {
+    "titlePage": "قوالب تشخيص تخطيط القلب",
+    "deleteButton": "حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "deleteSuccess": "تم حذف القالب بنجاح.",
+    "deleteError": "حدث خطأ أثناء حذف القالب.",
+    "loadError": "فشل في تحميل قوالب التشخيص."
+  },
+  "EKGScanTemplateNameofexam": {
+    "titlePage": "إضافة قالب اسم فحص تخطيط القلب",
+    "placeholderTitle": "العنوان",
+    "placeholderContent": "المحتوى",
+    "saveButton": "حفظ",
+    "success": "تمت إضافة قالب اسم الفحص بنجاح.",
+    "error": "حدث خطأ أثناء إضافة القالب.",
+    "networkError": "خطأ في الشبكة"
+  },
+  "EKGScanTemplateNameofexamDetail": {
+    "titlePage": "تفاصيل قالب اسم فحص تخطيط القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "editButton": "تعديل",
+    "loading": "جاري التحميل...",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "EKGScanTemplateNameofexamEdit": {
+    "titlePage": "تعديل قالب اسم فحص تخطيط القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "success": "تم تحديث قالب اسم الفحص بنجاح.",
+    "updateError": "فشل في تحديث القالب.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "EKGScanTemplateNameofexamList": {
+    "titlePage": "قوالب اسم فحص تخطيط القلب",
+    "deleteButton": "حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "deleteSuccess": "تم حذف القالب بنجاح.",
+    "deleteError": "فشل في حذف القالب.",
+    "loadError": "فشل في تحميل قوالب اسم الفحص."
+  },
+  "EKGScanerTemplateRecomendation": {
+    "titlePage": "إضافة قالب توصيات تخطيط القلب",
+    "placeholderTitle": "العنوان",
+    "placeholderContent": "محتوى التوصيات",
+    "saveButton": "حفظ",
+    "success": "تمت إضافة قالب التوصيات بنجاح.",
+    "error": "حدث خطأ أثناء إضافة قالب التوصيات.",
+    "networkError": "خطأ في الشبكة"
+  },
+  "EKGScanerTemplateRecomendationDetails": {
+    "titlePage": "تفاصيل قالب توصيات تخطيط القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "doctorLabel": "الطبيب",
+    "editButton": "تعديل",
+    "loading": "جاري التحميل...",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "EKGScanerTemplateRecomendationEdit": {
+    "titlePage": "تعديل قالب توصيات تخطيط القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "success": "تم تحديث قالب التوصيات بنجاح.",
+    "updateError": "حدث خطأ أثناء تحديث قالب التوصيات.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "EKGScanTemplateReport": {
+    "titlePage": "إضافة قالب تقرير تخطيط القلب",
+    "placeholderTitle": "العنوان",
+    "placeholderContent": "محتوى التقرير",
+    "saveButton": "حفظ",
+    "success": "تمت إضافة قالب التقرير بنجاح.",
+    "error": "حدث خطأ أثناء إضافة قالب التقرير.",
+    "networkError": "خطأ في الشبكة"
+  },
+  "EKGScanerTemplateRecomendationList": {
+    "titlePage": "قوالب توصيات تخطيط القلب",
+    "deleteButton": "حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "deleteSuccess": "تم حذف القالب بنجاح.",
+    "deleteError": "حدث خطأ أثناء حذف قالب التوصيات.",
+    "loadError": "فشل في تحميل قوالب التوصيات."
+  },
+  "EKGScanerTemplateReportDetails": {
+    "titlePage": "تفاصيل قالب تقرير تخطيط القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "doctorLabel": "الطبيب",
+    "editButton": "تعديل",
+    "loading": "جاري التحميل...",
+    "loadError": "فشل في تحميل قالب التقرير."
+  },
+  "EKGScanerTemplateReportEdit": {
+    "titlePage": "تعديل قالب تقرير تخطيط القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "success": "تم تحديث قالب التقرير بنجاح.",
+    "updateError": "حدث خطأ أثناء تحديث قالب التقرير.",
+    "loadError": "فشل في تحميل قالب التقرير."
+  },
+  "EKGScanerTemplateReportList": {
+    "titlePage": "قوالب تقارير تخطيط القلب",
+    "deleteButton": "حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "deleteSuccess": "تم حذف قالب التقرير بنجاح.",
+    "deleteError": "حدث خطأ أثناء حذف قالب التقرير.",
+    "loadError": "فشل في تحميل قوالب التقارير."
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "EchoEKGScanerTemplateDiagnosis": {
+    "pageTitle": "Tanı Şablonu Ekle (EKO EKG)",
+    "titlePlaceholder": "Başlık",
+    "contentPlaceholder": "İçerik",
+    "saveButton": "Kaydet",
+    "successMessage": "✅ Tanı şablonu başarıyla eklendi.",
+    "errorDefault": "Şablon eklenemedi.",
+    "networkError": "Ağ hatası"
+  },
+  "EchoEKGScanerTemplateDiagnosisDetails": {
+    "pageTitle": "EKO EKG Tanı Şablonu Detayları",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "doctorLabel": "Doktor",
+    "editButton": "Düzenle",
+    "loading": "Yükleniyor...",
+    "errorLoad": "Şablon yüklenemedi."
+  },
+  "EchoEKGScanerTemplateDiagnosisEdit": {
+    "pageTitle": "EKO EKG Tanı Şablonunu Düzenle",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "updateButton": "Şablonu Güncelle",
+    "successUpdate": "✅ Tanı şablonu başarıyla güncellendi.",
+    "errorUpdate": "❌ Şablon güncellenirken hata oluştu.",
+    "errorLoad": "Şablon yüklenemedi."
+  },
+  "EchoEKGScanerTemplateDiagnosisList": {
+    "pageTitle": "EKO EKG Tanı Şablonları",
+    "deleteButton": "Sil",
+    "editButton": "Düzenle",
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "successDelete": "✅ Şablon başarıyla silindi.",
+    "errorDelete": "❌ Şablon silinirken hata oluştu.",
+    "errorLoad": "Tanı şablonları yüklenemedi.",
+    "emptyList": "Tanı şablonu bulunamadı."
+  },
+  "EchoEKGScanerTemplateNameofexam": {
+    "pageTitle": "EKO EKG İnceleme Adı Şablonu Ekle",
+    "titlePlaceholder": "Başlık",
+    "contentPlaceholder": "İçerik",
+    "saveButton": "Kaydet",
+    "successAdd": "✅ İnceleme adı şablonu başarıyla eklendi.",
+    "errorAdd": "❌ Şablon eklenirken hata oluştu.",
+    "networkError": "⚠️ Ağ hatası"
+  },
+  "EchoEKGScanerTemplateNameofexamDetail": {
+    "pageTitle": "EKO EKG İnceleme Adı Şablonu Detayları",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "editButton": "Düzenle",
+    "loading": "Yükleniyor...",
+    "errorLoad": "Şablon yüklenemedi."
+  },
+  "EchoEKGScanerTemplateNameofexamEdit": {
+    "pageTitle": "EKO EKG İnceleme Adı Şablonunu Düzenle",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "updateButton": "Şablonu Güncelle",
+    "successUpdate": "✅ İnceleme adı şablonu başarıyla güncellendi.",
+    "errorUpdate": "❌ Şablon güncellenemedi.",
+    "errorLoad": "Şablon yüklenemedi."
+  },
+  "EchoEKGScanerTemplateNameofexamList": {
+    "pageTitle": "EKO EKG İnceleme Adı Şablonları",
+    "deleteButton": "Sil",
+    "editButton": "Düzenle",
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "successDelete": "✅ Şablon başarıyla silindi.",
+    "errorDelete": "❌ Şablon silinemedi.",
+    "errorLoad": "İnceleme adı şablonları yüklenemedi.",
+    "emptyList": "İnceleme adı şablonu bulunamadı."
+  },
+  "EchoEKGScanerTemplateRecomendation": {
+    "pageTitle": "EKO EKG Öneri Şablonu Ekle",
+    "titlePlaceholder": "Başlık",
+    "contentPlaceholder": "İçerik",
+    "saveButton": "Kaydet",
+    "successAdd": "✅ Öneri şablonu başarıyla eklendi.",
+    "errorAdd": "❌ Öneri şablonu eklenemedi.",
+    "networkError": "⚠️ Ağ hatası"
+  },
+  "EchoEKGScanerTemplateRecomendationDetails": {
+    "pageTitle": "EKO EKG Öneri Şablonu Detayları",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "doctorLabel": "Doktor",
+    "editButton": "Düzenle",
+    "loading": "Yükleniyor...",
+    "errorLoad": "Öneri şablonu yüklenemedi."
+  },
+  "EchoEKGScanerTemplateRecomendationEdit": {
+    "pageTitle": "EKO EKG Öneri Şablonunu Düzenle",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "updateButton": "Şablonu Güncelle",
+    "successUpdate": "✅ Öneri şablonu başarıyla güncellendi.",
+    "errorUpdate": "❌ Öneri şablonu güncellenemedi.",
+    "errorLoad": "Öneri şablonu yüklenemedi."
+  },
+  "EchoEKGScanerTemplateRecomendationList": {
+    "pageTitle": "EKO EKG Öneri Şablonları",
+    "deleteButton": "Sil",
+    "editButton": "Düzenle",
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "successDelete": "✅ Öneri şablonu başarıyla silindi.",
+    "errorDelete": "❌ Öneri şablonu silinemedi.",
+    "errorLoad": "Öneri şablonları yüklenemedi.",
+    "emptyList": "Öneri şablonu bulunamadı."
+  },
+  "EchoEKGScanTemplateReport": {
+    "pageTitle": "EKO EKG Rapor Şablonu Ekle",
+    "titlePlaceholder": "Başlık",
+    "contentPlaceholder": "İçerik",
+    "saveButton": "Kaydet",
+    "successAdd": "✅ Rapor şablonu başarıyla eklendi.",
+    "errorAdd": "❌ Rapor şablonu eklenemedi.",
+    "networkError": "⚠️ Ağ hatası"
+  },
+  "EchoEKGScanerTemplateReportDetails": {
+    "pageTitle": "EKO EKG Rapor Şablonu Detayları",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "doctorLabel": "Doktor",
+    "editButton": "Düzenle",
+    "loading": "Yükleniyor...",
+    "errorLoad": "Rapor şablonu yüklenemedi."
+  },
+  "EchoEKGScanerTemplateReportEdit": {
+    "pageTitle": "EKO EKG Rapor Şablonunu Düzenle",
+    "titleLabel": "Başlık",
+    "contentLabel": "İçerik",
+    "updateButton": "Şablonu Güncelle",
+    "successUpdate": "✅ Rapor şablonu başarıyla güncellendi.",
+    "errorUpdate": "❌ Rapor şablonu güncellenemedi.",
+    "errorLoad": "Rapor şablonu yüklenemedi."
+  },
+  "EchoEKGScanerTemplateReportList": {
+    "pageTitle": "EKO EKG Rapor Şablonları",
+    "deleteButton": "Sil",
+    "editButton": "Düzenle",
+    "confirmDelete": "Bu şablonu silmek istediğinize emin misiniz?",
+    "successDelete": "✅ Rapor şablonu başarıyla silindi.",
+    "errorDelete": "❌ Rapor şablonu silinemedi.",
+    "errorLoad": "Rapor şablonları yüklenemedi.",
+    "emptyList": "Rapor şablonu bulunamadı."
+  }
+}

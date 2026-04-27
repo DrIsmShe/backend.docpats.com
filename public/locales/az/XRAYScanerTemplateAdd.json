@@ -1,0 +1,221 @@
+{
+  "XRAYScanerTemplateDiagnosis": {
+    "title": "Rentgen diaqnozu üçün şablon əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Diaqnoz şablonu uğurla əlavə edildi.",
+      "error": "❌ Şablon əlavə edilə bilmədi.",
+      "networkError": "❌ Şəbəkə xətası."
+    }
+  },
+  "XRAYScanerTemplateDiagnosisDetails": {
+    "title": "Rentgen diaqnozu şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablon yüklənə bilmədi."
+    }
+  },
+  "XRAYScanerTemplateDiagnosisEdit": {
+    "title": "Rentgen diaqnoz şablonunun redaktəsi",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Diaqnoz şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənərkən xəta baş verdi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "XRAYScanerTemplateDiagnosisList": {
+    "title": "🧾 Rentgen diaqnozu şablonları",
+    "actions": {
+      "edit": "Redaktə et",
+      "delete": "Sil"
+    },
+    "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+    "messages": {
+      "loadError": "❌ Diaqnoz şablonları yüklənə bilmədi.",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi."
+    }
+  },
+  "XRAYScanerTemplateRecomendation": {
+    "title": "Rentgen tövsiyəsi üçün şablon əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Tövsiyə şablonu uğurla əlavə edildi.",
+      "error": "❌ Şablon əlavə edilərkən xəta baş verdi.",
+      "networkError": "⚠️ Şəbəkə xətası."
+    }
+  },
+  "XRAYScanerTemplateRecomendationDetails": {
+    "title": "Rentgen tövsiyə şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablon yüklənə bilmədi."
+    }
+  },
+  "XRAYScanerTemplateRecomendationEdit": {
+    "title": "Rentgen tövsiyə şablonunun redaktəsi",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Tövsiyə şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənərkən xəta baş verdi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "XRAYScanerTemplateRecomendationList": {
+    "title": "📋 Rentgen tövsiyə şablonları",
+    "actions": {
+      "edit": "Redaktə et",
+      "delete": "Sil"
+    },
+    "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+    "messages": {
+      "loadError": "❌ Tövsiyə şablonları yüklənə bilmədi.",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi."
+    }
+  },
+  "XRAYScanerTemplateReport": {
+    "title": "Rentgen hesabatı üçün şablon əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Hesabat şablonu uğurla əlavə edildi.",
+      "error": "❌ Şablon əlavə edilərkən xəta baş verdi.",
+      "networkError": "⚠️ Şəbəkə xətası."
+    }
+  },
+  "XRAYScanerTemplateReportDetails": {
+    "title": "Rentgen hesabatı şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablon yüklənə bilmədi."
+    }
+  },
+  "XRAYScanerTemplateReportEdit": {
+    "title": "Rentgen hesabatı şablonunun redaktəsi",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Hesabat şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənə bilmədi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "XRAYScanerTemplateReportList": {
+    "title": "📝 Rentgen hesabat şablonları",
+    "actions": {
+      "edit": "Redaktə et",
+      "delete": "Sil"
+    },
+    "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+    "messages": {
+      "loadError": "❌ Hesabat şablonları yüklənə bilmədi.",
+      "deleteError": "❌ Şablon silinə bilmədi."
+    }
+  },
+  "XRAYScanerTemplateNameofexam": {
+    "title": "Rentgen müayinəsinin adı üçün şablon əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Təsvir",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Müayinə adı şablonu uğurla əlavə edildi.",
+      "error": "❌ Şablon əlavə edilərkən xəta baş verdi.",
+      "networkError": "⚠️ Şəbəkə xətası."
+    }
+  },
+  "XRAYScanerTemplateNameofexamDetails": {
+    "title": "Rentgen müayinəsinin adı şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Təsvir"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablon yüklənə bilmədi."
+    }
+  },
+  "XRAYScanerTemplateNameofexamEdit": {
+    "title": "Rentgen müayinəsinin adı şablonunun redaktəsi",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Təsvir"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Müayinə adı şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənə bilmədi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "XRAYScanerTemplateNameofexamList": {
+    "title": "📌 Rentgen müayinələrinin ad şablonları",
+    "actions": {
+      "edit": "Redaktə et",
+      "delete": "Sil"
+    },
+    "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+    "messages": {
+      "loadError": "❌ Müayinə adları şablonları yüklənə bilmədi.",
+      "deleteError": "❌ Şablon silinə bilmədi."
+    }
+  }
+}

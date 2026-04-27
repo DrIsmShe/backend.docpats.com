@@ -1,0 +1,257 @@
+{
+  "PETScanerTemplateDiagnosis": {
+    "page": {
+      "title": "Добавить шаблон диагноза PET"
+    },
+    "fields": {
+      "titlePlaceholder": "Название диагноза",
+      "contentPlaceholder": "Текст диагноза"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон диагноза успешно добавлен.",
+      "error": "Не удалось добавить шаблон диагноза.",
+      "networkError": "Ошибка сети"
+    }
+  },
+  "PETScanerTemplateDiagnosisDetails": {
+    "page": {
+      "title": "Детали шаблона диагноза PET",
+      "loading": "Загрузка шаблона...",
+      "errors": {
+        "fetchError": "Не удалось загрузить шаблон диагноза."
+      }
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержимое",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "PETScanerTemplateDiagnosisEdit": {
+    "page": {
+      "title": "Редактировать шаблон диагноза PET"
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержимое"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон диагноза успешно обновлён!",
+      "updateError": "❌ Ошибка обновления шаблона диагноза.",
+      "fetchError": "❌ Не удалось загрузить шаблон диагноза."
+    }
+  },
+  "PETScanerTemplateDiagnosisList": {
+    "page": {
+      "title": "🧾 Шаблоны диагнозов PET"
+    },
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+      "deleteError": "❌ Ошибка удаления шаблона"
+    }
+  },
+  "PETScanerTemplateRecomendation": {
+    "page": {
+      "title": "Добавить шаблон рекомендаций PET"
+    },
+    "fields": {
+      "titlePlaceholder": "Заголовок рекомендации",
+      "contentPlaceholder": "Текст рекомендации"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон рекомендаций успешно добавлен.",
+      "error": "Ошибка добавления шаблона рекомендаций.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "PETScanerTemplateRecomendationDetails": {
+    "page": {
+      "title": "Детали шаблона рекомендаций PET",
+      "loading": "Загрузка шаблона...",
+      "errors": {
+        "fetchError": "Не удалось загрузить шаблон рекомендаций."
+      }
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержимое",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "PETScanerTemplateRecomendationEdit": {
+    "page": {
+      "title": "Редактировать шаблон рекомендаций PET"
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержимое"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон рекомендаций успешно обновлён!",
+      "updateError": "❌ Ошибка обновления шаблона рекомендаций.",
+      "fetchError": "❌ Не удалось загрузить шаблон рекомендаций."
+    }
+  },
+  "PETScanerTemplateRecomendationList": {
+    "page": {
+      "title": "📋 Шаблоны рекомендаций PET"
+    },
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "confirmDelete": "Вы уверены, что хотите удалить этот шаблон?",
+      "deleteError": "❌ Ошибка удаления шаблона рекомендаций"
+    }
+  },
+  "PETScanerTemplateReport": {
+    "page": {
+      "title": "Добавить шаблон отчёта PET"
+    },
+    "fields": {
+      "titlePlaceholder": "Заголовок отчёта",
+      "contentPlaceholder": "Текст отчёта"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон отчёта успешно добавлен.",
+      "error": "Ошибка добавления шаблона отчёта.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "PETScanerTemplateReportDetails": {
+    "page": {
+      "title": "Детали шаблона отчёта PET",
+      "loading": "Загрузка шаблона...",
+      "errors": {
+        "fetchError": "Не удалось загрузить шаблон отчёта."
+      }
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержимое",
+      "doctor": "Врач"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "PETScanerTemplateReportEdit": {
+    "page": {
+      "title": "Редактировать шаблон отчёта PET"
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержимое"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон отчёта успешно обновлён!",
+      "updateError": "❌ Ошибка обновления шаблона отчёта.",
+      "fetchError": "❌ Не удалось загрузить шаблон отчёта."
+    }
+  },
+  "PETScanerTemplateReportList": {
+    "page": {
+      "title": "📝 Шаблоны отчётов PET"
+    },
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "confirmDelete": "Вы уверены, что хотите удалить этот шаблон отчёта?",
+      "deleteError": "❌ Ошибка удаления шаблона отчёта"
+    }
+  },
+  "PETScanerTemplateNameofexam": {
+    "page": {
+      "title": "Добавить шаблон названия исследования PET"
+    },
+    "fields": {
+      "titlePlaceholder": "Название исследования",
+      "contentPlaceholder": "Описание исследования"
+    },
+    "buttons": {
+      "save": "Сохранить"
+    },
+    "messages": {
+      "success": "✅ Шаблон названия исследования успешно добавлен.",
+      "error": "Ошибка добавления шаблона названия исследования.",
+      "networkError": "⚠️ Ошибка сети"
+    }
+  },
+  "PETScanerTemplateNameofexamDetails": {
+    "page": {
+      "title": "Детали шаблона названия исследования PET",
+      "loading": "Загрузка шаблона...",
+      "errors": {
+        "fetchError": "Не удалось загрузить шаблон названия исследования."
+      }
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержимое"
+    },
+    "buttons": {
+      "edit": "Редактировать"
+    }
+  },
+  "PETScanerTemplateNameofexamEdit": {
+    "page": {
+      "title": "Редактировать шаблон названия исследования PET"
+    },
+    "fields": {
+      "title": "Заголовок",
+      "content": "Содержимое"
+    },
+    "buttons": {
+      "update": "Обновить шаблон"
+    },
+    "messages": {
+      "success": "✅ Шаблон названия исследования успешно обновлён!",
+      "updateError": "❌ Ошибка обновления шаблона названия исследования.",
+      "fetchError": "❌ Не удалось загрузить шаблон названия исследования."
+    }
+  },
+  "PETScanerTemplateNameofexamList": {
+    "page": {
+      "title": "📌 Шаблоны названий исследований PET"
+    },
+    "buttons": {
+      "delete": "🗑️ Удалить",
+      "edit": "Редактировать"
+    },
+    "messages": {
+      "confirmDelete": "Вы уверены, что хотите удалить этот шаблон названия исследования?",
+      "deleteError": "❌ Ошибка удаления шаблона названия исследования"
+    }
+  }
+}

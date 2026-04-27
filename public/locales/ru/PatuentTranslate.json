@@ -1,0 +1,532 @@
+{
+  "myMedicalHistories": {
+    "states": {
+      "loading": "Загрузка историй болезни…",
+      "error": "Ошибка загрузки данных. Попробуйте позже."
+    },
+    "header": {
+      "eyebrow": "Медицинский архив",
+      "title": "Мои истории болезни",
+      "subtitle": "Полная хронология ваших медицинских записей и приёмов",
+      "totalLabel": "всего записей"
+    },
+    "filters": {
+      "sectionTitle": "Фильтры и поиск",
+      "foundLabel": "Найдено",
+      "dateFrom": "Дата с",
+      "dateTo": "Дата по",
+      "doctor": "Врач (имя/фамилия)",
+      "doctorPlaceholder": "Например: Иванов",
+      "diagnosis": "Диагноз",
+      "diagnosisPlaceholder": "Поиск по диагнозу",
+      "sort": "Сортировка",
+      "reset": "Сбросить фильтры",
+      "sortOptions": {
+        "newest": "Сначала новые",
+        "oldest": "Сначала старые",
+        "doctorAsc": "Врач А→Я",
+        "doctorDesc": "Врач Я→А"
+      }
+    },
+    "empty": {
+      "title": "Ничего не найдено",
+      "description": "Под подходящие фильтры ничего не найдено. Попробуйте изменить критерии поиска."
+    },
+    "card": {
+      "diagnosisEmpty": "Диагноз не указан",
+      "doctorEmpty": "Врач не указан"
+    }
+  },
+  "myMedicalHistories": {
+    "states": {
+      "loading": "Загрузка историй болезни…",
+      "error": "Ошибка загрузки данных. Попробуйте позже."
+    },
+    "header": {
+      "eyebrow": "Медицинский архив",
+      "title": "Мои истории болезни",
+      "subtitle": "Полная хронология ваших медицинских записей и приёмов",
+      "totalLabel": "всего записей"
+    },
+    "filters": {
+      "sectionTitle": "Фильтры и поиск",
+      "foundLabel": "Найдено",
+      "dateFrom": "Дата с",
+      "dateTo": "Дата по",
+      "doctor": "Врач (имя/фамилия)",
+      "doctorPlaceholder": "Например: Иванов",
+      "diagnosis": "Диагноз",
+      "diagnosisPlaceholder": "Поиск по диагнозу",
+      "sort": "Сортировка",
+      "reset": "Сбросить фильтры",
+      "sortOptions": {
+        "newest": "Сначала новые",
+        "oldest": "Сначала старые",
+        "doctorAsc": "Врач А→Я",
+        "doctorDesc": "Врач Я→А"
+      }
+    },
+    "empty": {
+      "title": "Ничего не найдено",
+      "description": "Под подходящие фильтры ничего не найдено. Попробуйте изменить критерии поиска."
+    },
+    "card": {
+      "diagnosisEmpty": "Диагноз не указан",
+      "doctorEmpty": "Врач не указан"
+    }
+  },
+
+  "myMedicalHistoryDetail": {
+    "states": {
+      "loading": "Загрузка истории болезни…",
+      "notFound": "История не найдена."
+    },
+    "errors": {
+      "noId": "ID не передан",
+      "loadFailed": "Не удалось загрузить данные."
+    },
+    "brand": "DocPats · Medical Record",
+    "header": {
+      "title": "История болезни пациента",
+      "subtitle": "Полная клиническая запись, сформированная наблюдающим врачом"
+    },
+    "patient": {
+      "photoAlt": "Фото пациента"
+    },
+    "sections": {
+      "patientData": "Данные пациента",
+      "diagnosis": "Диагноз",
+      "clinicalPicture": "Клиническая картина",
+      "tests": "Результаты исследований",
+      "recommendations": "Рекомендации",
+      "attendingDoctor": "Лечащий врач"
+    },
+    "fields": {
+      "fullName": "ФИО",
+      "gender": "Пол",
+      "birthDate": "Дата рождения",
+      "citizenship": "Гражданство",
+      "badHabits": "Вредные привычки",
+      "immunization": "Иммунизация",
+      "familyHistory": "Наследственные заболевания",
+      "chronicDiseases": "Хронические заболевания",
+      "allergies": "Аллергии",
+      "mainDiagnosis": "Основной диагноз",
+      "additionalDiagnosis": "Дополнительный диагноз",
+      "complaints": "Жалобы",
+      "anamnesisMorbi": "Анамнез болезни",
+      "anamnesisVitae": "Анамнез жизни",
+      "statusPraesens": "Общий статус (Status praesens)",
+      "statusLocalis": "Локальный статус (Status localis)",
+      "ctScan": "Компьютерная томография (КТ)",
+      "mri": "Магнитно-резонансная томография (МРТ)",
+      "ultrasound": "Ультразвуковое исследование (УЗИ)",
+      "laboratoryTests": "Лабораторные исследования",
+      "doctorRecommendations": "Назначения и рекомендации врача"
+    },
+    "doctor": {
+      "label": "Наблюдающий специалист"
+    },
+    "empty": {
+      "notSpecified": "не указано"
+    },
+    "units": {
+      "years": "лет"
+    },
+    "actions": {
+      "downloadPdf": "Скачать PDF"
+    }
+  },
+  "myMedicalHistories": {
+    "states": {
+      "loading": "Загрузка историй болезни…",
+      "error": "Ошибка загрузки данных. Попробуйте позже."
+    },
+    "header": {
+      "eyebrow": "Медицинский архив",
+      "title": "Мои истории болезни",
+      "subtitle": "Полная хронология ваших медицинских записей и приёмов",
+      "totalLabel": "всего записей"
+    },
+    "filters": {
+      "sectionTitle": "Фильтры и поиск",
+      "foundLabel": "Найдено",
+      "dateFrom": "Дата с",
+      "dateTo": "Дата по",
+      "doctor": "Врач (имя/фамилия)",
+      "doctorPlaceholder": "Например: Иванов",
+      "diagnosis": "Диагноз",
+      "diagnosisPlaceholder": "Поиск по диагнозу",
+      "sort": "Сортировка",
+      "reset": "Сбросить фильтры",
+      "sortOptions": {
+        "newest": "Сначала новые",
+        "oldest": "Сначала старые",
+        "doctorAsc": "Врач А→Я",
+        "doctorDesc": "Врач Я→А"
+      }
+    },
+    "empty": {
+      "title": "Ничего не найдено",
+      "description": "Под подходящие фильтры ничего не найдено. Попробуйте изменить критерии поиска."
+    },
+    "card": {
+      "diagnosisEmpty": "Диагноз не указан",
+      "doctorEmpty": "Врач не указан"
+    }
+  },
+
+  "myMedicalHistoryDetail": {
+    "states": {
+      "loading": "Загрузка истории болезни…",
+      "notFound": "История не найдена."
+    },
+    "errors": {
+      "noId": "ID не передан",
+      "loadFailed": "Не удалось загрузить данные.",
+      "pdfFailed": "Не удалось сформировать PDF. Попробуйте ещё раз."
+    },
+    "brand": "DocPats · Medical Record",
+    "header": {
+      "title": "История болезни пациента",
+      "subtitle": "Полная клиническая запись, сформированная наблюдающим врачом"
+    },
+    "patient": {
+      "photoAlt": "Фото пациента"
+    },
+    "sections": {
+      "patientData": "Данные пациента",
+      "diagnosis": "Диагноз",
+      "clinicalPicture": "Клиническая картина",
+      "tests": "Результаты исследований",
+      "recommendations": "Рекомендации",
+      "attendingDoctor": "Лечащий врач"
+    },
+    "fields": {
+      "fullName": "ФИО",
+      "gender": "Пол",
+      "birthDate": "Дата рождения",
+      "citizenship": "Гражданство",
+      "badHabits": "Вредные привычки",
+      "immunization": "Иммунизация",
+      "familyHistory": "Наследственные заболевания",
+      "chronicDiseases": "Хронические заболевания",
+      "allergies": "Аллергии",
+      "mainDiagnosis": "Основной диагноз",
+      "additionalDiagnosis": "Дополнительный диагноз",
+      "complaints": "Жалобы",
+      "anamnesisMorbi": "Анамнез болезни",
+      "anamnesisVitae": "Анамнез жизни",
+      "statusPraesens": "Общий статус (Status praesens)",
+      "statusLocalis": "Локальный статус (Status localis)",
+      "ctScan": "Компьютерная томография (КТ)",
+      "mri": "Магнитно-резонансная томография (МРТ)",
+      "ultrasound": "Ультразвуковое исследование (УЗИ)",
+      "laboratoryTests": "Лабораторные исследования",
+      "doctorRecommendations": "Назначения и рекомендации врача"
+    },
+    "doctor": {
+      "label": "Наблюдающий специалист"
+    },
+    "empty": {
+      "notSpecified": "не указано"
+    },
+    "units": {
+      "years": "лет"
+    },
+    "actions": {
+      "downloadPdf": "Скачать PDF",
+      "preparingPdf": "Готовим PDF…"
+    }
+  },
+  "doctorsAll": {
+    "loading": "Загрузка докторов…",
+    "error": "Ошибка при загрузке докторов",
+    "header": {
+      "eyebrow": "Справочник специалистов",
+      "title": "Врачи платформы",
+      "subtitle": "Найдите специалиста по имени, специализации, стране или по количеству публикаций",
+      "totalLabel": "всего врачей"
+    },
+    "filters": {
+      "title": "Фильтры и поиск",
+      "found": "Найдено",
+      "reset": "Сбросить фильтры",
+      "fields": {
+        "name": {
+          "label": "Имя и фамилия",
+          "placeholder": "Например: Иван Иванов"
+        },
+        "clinic": {
+          "label": "Клиника или описание",
+          "placeholder": "Например: кардиология, клиника №1…"
+        },
+        "country": {
+          "label": "Страна",
+          "all": "Все страны"
+        },
+        "specialty": {
+          "label": "Специализация",
+          "all": "Все специализации"
+        },
+        "minArticles": {
+          "label": "Минимум статей"
+        },
+        "sort": {
+          "label": "Сортировка",
+          "dateDesc": "Сначала новые",
+          "dateAsc": "Сначала старые",
+          "reviewsDesc": "По отзывам (убывание)",
+          "articlesDesc": "По кол-ву статей (убывание)",
+          "likesDesc": "По лайкам (убывание)",
+          "nameAsc": "По имени (А→Я)",
+          "countryAsc": "По стране (А→Я)"
+        }
+      },
+      "toggles": {
+        "withPhoto": "Только с фото",
+        "withClinic": "Только с указанной клиникой"
+      }
+    },
+    "card": {
+      "specialtyFallback": "Специализация не указана",
+      "nameFallback": "Имя не указано",
+      "aboutFallback": "Нет описания.",
+      "clinicLabel": "Клиника:",
+      "clinicFallback": "не указана",
+      "countryLabel": "Страна:",
+      "countryFallback": "Не указана",
+      "altDoctor": "Доктор",
+      "stats": {
+        "dateTitle": "Дата регистрации",
+        "reviewsTitle": "Отзывы",
+        "likesTitle": "Лайки",
+        "articles": "Статей"
+      }
+    },
+    "empty": {
+      "title": "Доктора не найдены",
+      "text": "Попробуйте изменить параметры поиска или сбросить фильтры"
+    }
+  },
+  "doctorDetail": {
+    "loading": "Загрузка…",
+    "notFound": "Доктор не найден.",
+    "speciality": {
+      "unknown": "Неизвестно"
+    },
+    "errors": {
+      "noProfileId": "Ошибка: ID доктора не найден.",
+      "loadFailed": "Не удалось загрузить данные о докторе.",
+      "noDoctorId": "Не удалось определить ID доктора.",
+      "noUserId": "Не найден userId врача",
+      "noDialogId": "Сервер не вернул dialogId",
+      "dialogCreate": "Ошибка при создании диалога",
+      "addDoctor": "Ошибка при добавлении.",
+      "removeDoctor": "Ошибка при удалении.",
+      "recommendUpdate": "Не удалось обновить рекомендацию",
+      "recommendGeneric": "Ошибка при обновлении рекомендации"
+    },
+    "alerts": {
+      "added": "Доктор успешно добавлен в Мои Доктора!",
+      "removed": "Доктор удалён из Моих Докторов!"
+    },
+    "verification": {
+      "approved": "Подтверждён",
+      "pending": "На проверке",
+      "rejected": "Отклонён",
+      "notSubmitted": "Не подтверждён"
+    },
+    "hero": {
+      "photoAlt": "Фото профиля",
+      "nameFallback": "Имя не указано",
+      "clinicFallback": "Клиника не указана",
+      "countryFallback": "Страна не указана"
+    },
+    "actions": {
+      "appointment": "Записаться на приём",
+      "message": "Написать",
+      "removing": "Удаляем...",
+      "remove": "Удалить",
+      "adding": "Добавляем...",
+      "add": "В Мои",
+      "recommend": "Рекомендую",
+      "recommendTitle": "Пациентская рекомендация",
+      "recommendPending": "..."
+    },
+    "info": {
+      "specialty": "Специализация",
+      "clinic": "Клиника",
+      "country": "Страна",
+      "notSpecified": "не указана"
+    },
+    "about": {
+      "title": "О себе",
+      "empty": "Нет информации."
+    },
+    "comments": {
+      "title": "Комментарии"
+    },
+    "articles": {
+      "title": "Статьи доктора",
+      "empty": "Статей пока нет.",
+      "tooltips": {
+        "date": "Дата публикации",
+        "comments": "Комментарии",
+        "likes": "Лайки"
+      }
+    }
+  },
+  "myDoctors": {
+    "loading": "Загрузка докторов...",
+    "error": "Не удалось загрузить докторов",
+    "header": {
+      "eyebrow": "Персональный список",
+      "title": "Мои Доктора",
+      "subtitle": "Врачи, которых вы добавили в свой список наблюдения — всегда под рукой",
+      "countLabel": "в списке"
+    },
+    "empty": {
+      "imgAlt": "Нет докторов",
+      "title": "У вас пока нет добавленных докторов",
+      "text": "Добавьте врачей из справочника, чтобы быстро находить их здесь и держать под рукой историю взаимодействий"
+    },
+    "card": {
+      "photoAlt": "Доктор {{name}}",
+      "addedBadge": "В моих",
+      "specialtyFallback": "Специализация не указана",
+      "button": "Перейти к профилю"
+    }
+  },
+  "patientAppointments": {
+    "header": {
+      "eyebrow": "Управление приёмами",
+      "title": "🩺 Ваши медицинские записи",
+      "subtitle": "Управляйте приёмами, записывайтесь к врачу и просматривайте историю"
+    },
+    "tabs": {
+      "book": {
+        "label": "Записаться",
+        "desc": "Выберите врача и запишитесь на приём онлайн."
+      },
+      "my": {
+        "label": "Мои приёмы",
+        "desc": "Посмотрите свои предстоящие приёмы."
+      },
+      "history": {
+        "label": "История",
+        "desc": "Просмотр завершённых и отменённых приёмов."
+      }
+    }
+  },
+  "page_title": "Запись на приём",
+  "filters_title": "Фильтры",
+  "clear_filters": "Сбросить",
+  "all_countries": "Все страны",
+  "all_specialties": "Все специализации",
+  "min_rating": "Мин. рейтинг",
+  "min_reviews": "Мин. отзывов",
+  "sort": "Сортировка",
+  "sort_price_asc": "Цена ↑",
+  "sort_price_desc": "Цена ↓",
+  "sort_rating": "По рейтингу",
+  "sort_reviews": "По отзывам",
+  "select_doctor": "Выберите врача",
+  "not_selected": "Не выбран",
+  "no_name": "Без имени",
+  "no_specialty": "Без специализации",
+  "appointment_type": "Тип приёма",
+  "offline": "Очно",
+  "online": "Онлайн (видео)",
+  "online_disabled": "Врач не принимает онлайн",
+  "select_date": "Выберите дату",
+  "show_slots": "Показать слоты",
+  "whatsapp_label": "WhatsApp для видеоприёма",
+  "whatsapp_hint": "Формат: код страны + номер, только цифры (10–15 цифр)",
+  "available_slots": "Доступные слоты",
+  "book": "Записаться",
+  "no_slots": "На выбранную дату слотов нет",
+  "loading": "Загрузка…",
+  "error_load_doctors": "Не удалось загрузить список врачей",
+  "error_load_slots": "Не удалось загрузить слоты",
+  "error_whatsapp_required": "Укажите корректный номер WhatsApp (10–15 цифр)",
+  "error_select_doctor": "Сначала выберите врача",
+  "success_created": "Запись успешно создана!",
+  "error_create": "Не удалось создать запись",
+  "myAppointments": {
+    "loading": "Загрузка записей…",
+    "error": "Не удалось загрузить ваши записи.",
+    "header": {
+      "eyebrow": "Расписание приёмов",
+      "title": "Мои приёмы",
+      "subtitle": "Все ваши записи к врачам в одном месте",
+      "countLabel": "всего"
+    },
+    "empty": {
+      "title": "У вас пока нет записей",
+      "text": "Запишитесь к врачу, чтобы увидеть здесь свои приёмы"
+    },
+    "status": {
+      "confirmed": "Подтверждён",
+      "pending": "Ожидает",
+      "cancelled": "Отменён",
+      "completed": "Завершён",
+      "unknown": "Неизвестно"
+    },
+    "card": {
+      "doctorAlt": "Доктор",
+      "doctorFallback": "Доктор",
+      "specialtyFallback": "Без специализации",
+      "countryFallback": "Не указано",
+      "dateLabel": "Дата:",
+      "timeLabel": "Время:",
+      "typeLabel": "Тип приёма:",
+      "typeOnline": "Онлайн",
+      "typeOffline": "Офлайн",
+      "videoCall": "Видеочат",
+      "cancel": "Отменить"
+    },
+    "cancelModal": {
+      "title": "Отмена приёма",
+      "closeLabel": "Закрыть",
+      "confirmText": "Вы действительно хотите отменить приём с {{doctor}}?",
+      "doctorFallback": "доктором",
+      "reasonLabel": "Причина отмены (необязательно)",
+      "reasonPlaceholder": "Например: изменились планы, заболел, и т.д.",
+      "cancelBtn": "Отмена",
+      "confirmBtn": "Подтвердить отмену"
+    },
+    "alerts": {
+      "cancelError": "Не удалось отменить приём. Попробуйте позже."
+    }
+  },
+  "PatientAppointmentsHistory": {
+    "title": "История приёмов",
+    "eyebrow": "Архив",
+    "countLabel": "всего",
+    "loading": "Загрузка…",
+    "errors": {
+      "failedToLoad": "Не удалось загрузить приёмы",
+      "loadError": "Ошибка при загрузке данных",
+      "noId": "Не удалось определить ID приёма",
+      "cannotCancel": "Не удалось отменить приём"
+    },
+    "actions": {
+      "confirmCancel": "Вы действительно хотите отменить этот приём?",
+      "cancel": "Отменить",
+      "cancelling": "Отмена…"
+    },
+    "labels": {
+      "noAppointments": "Приёмов пока нет",
+      "unknownDoctor": "Врач не указан",
+      "type": "Тип"
+    },
+    "statuses": {
+      "confirmed": "Подтверждён",
+      "pending": "Ожидает",
+      "cancelled": "Отменён",
+      "completed": "Завершён",
+      "unknown": "Неизвестно"
+    }
+  }
+}

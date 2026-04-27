@@ -1,0 +1,2873 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DocPats · AI Консультация</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+      :root {
+        --bg: #060b12;
+        --bg2: #0d1520;
+        --bg3: #111d2b;
+        --border: #182335;
+        --border2: #1e2f45;
+        --accent: #00c4e0;
+        --accent-dim: rgba(0, 196, 224, 0.1);
+        --purple: #7c60f0;
+        --text: #dde5f0;
+        --text2: #7a96b5;
+        --text3: #3d5a7a;
+        --green: #0dd990;
+        --red: #f04060;
+        --gold: #f0b840;
+        --sans: "DM Sans", sans-serif;
+        --serif: "Cormorant Garamond", serif;
+        --mono: "JetBrains Mono", monospace;
+      }
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 196, 224, 0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 196, 224, 0.025) 1px, transparent 1px);
+        background-size: 48px 48px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .screen {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          opacity 0.35s ease,
+          transform 0.35s ease;
+      }
+      .screen.hidden {
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.98);
+      }
+
+      /* LANG SWITCHER */
+      .lang-bar {
+        position: fixed;
+        top: 14px;
+        right: 20px;
+        z-index: 300;
+        display: flex;
+        gap: 6px;
+      }
+      .lang-btn {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-family: var(--mono);
+        cursor: pointer;
+        border: 1px solid var(--border2);
+        background: var(--bg3);
+        color: var(--text2);
+        transition: all 0.15s;
+        letter-spacing: 0.05em;
+      }
+      .lang-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .lang-btn.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-dim);
+      }
+
+      /* WELCOME */
+      #welcome {
+        z-index: 10;
+        padding: 20px;
+        flex-direction: column;
+      }
+      .welcome-card {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 20px;
+        padding: 52px 60px;
+        max-width: 540px;
+        width: 100%;
+        text-align: center;
+        box-shadow:
+          0 32px 80px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(0, 196, 224, 0.08);
+      }
+      .logo-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 28px;
+      }
+      .logo-icon {
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--purple) 100%
+        );
+        border-radius: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+      .logo-name {
+        font-family: var(--serif);
+        font-size: 26px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .logo-name em {
+        color: var(--accent);
+        font-style: normal;
+      }
+      .welcome-title {
+        font-family: var(--serif);
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1.12;
+        letter-spacing: -0.01em;
+        margin-bottom: 14px;
+      }
+      .welcome-title span {
+        color: var(--accent);
+      }
+      .welcome-sub {
+        color: var(--text2);
+        font-size: 14px;
+        line-height: 1.65;
+        max-width: 380px;
+        margin: 0 auto 28px;
+      }
+      .pills-row {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 20px;
+        padding: 5px 13px;
+        font-size: 12px;
+        color: var(--text2);
+        font-family: var(--mono);
+      }
+      .pill-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .pill-dot.green {
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+      }
+      .pill-dot.gold {
+        background: var(--gold);
+      }
+      .pill-dot.dim {
+        background: var(--text3);
+      }
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, var(--accent) 0%, #0090ff 100%);
+        color: #000;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 14px 32px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        font-family: var(--sans);
+        letter-spacing: 0.01em;
+        transition: all 0.2s;
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 28px rgba(0, 196, 224, 0.4);
+      }
+      .btn-primary:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: transparent;
+        border: 1px solid var(--border2);
+        color: var(--text2);
+        font-size: 13px;
+        padding: 9px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: var(--sans);
+        transition: all 0.2s;
+        margin-top: 10px;
+      }
+      .btn-ghost:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-dim);
+      }
+      .btn-ghost.authed {
+        border-color: var(--green);
+        color: var(--green);
+      }
+      .welcome-disclaimer {
+        margin-top: 22px;
+        font-size: 11px;
+        color: var(--text3);
+        line-height: 1.55;
+        padding: 0 8px;
+      }
+
+      /* INFO */
+      #info-screen {
+        z-index: 10;
+        padding: 20px;
+      }
+      .info-card {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 16px;
+        padding: 40px 44px;
+        max-width: 460px;
+        width: 100%;
+      }
+      .info-title {
+        font-family: var(--serif);
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .info-sub {
+        font-size: 13px;
+        color: var(--text2);
+        margin-bottom: 26px;
+      }
+      .fg {
+        margin-bottom: 16px;
+      }
+      .fg label {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 6px;
+        font-family: var(--mono);
+      }
+      .fg input,
+      .fg select {
+        width: 100%;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        padding: 10px 13px;
+        color: var(--text);
+        font-size: 14px;
+        font-family: var(--sans);
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .fg input:focus,
+      .fg select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-dim);
+      }
+      .fg select option {
+        background: #0d1520;
+      }
+      .gender-row {
+        display: flex;
+        gap: 8px;
+      }
+      .g-btn {
+        flex: 1;
+        padding: 9px;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text2);
+        transition: all 0.15s;
+        user-select: none;
+      }
+      .g-btn.sel {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-dim);
+      }
+      .btn-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 24px;
+      }
+
+      /* CHAT */
+      #chat-screen {
+        z-index: 10;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+      }
+      .chat-top {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 13px 20px;
+        background: var(--bg2);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .chat-top-logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .chat-top-logo .logo-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 15px;
+        border-radius: 8px;
+      }
+      .chat-top-logo .logo-name {
+        font-size: 17px;
+      }
+      .chat-top-info {
+        flex: 1;
+      }
+      .chat-top-title {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .chat-top-sub {
+        font-size: 11px;
+        color: var(--text3);
+        font-family: var(--mono);
+      }
+      .session-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 11px;
+        color: var(--text2);
+        font-family: var(--mono);
+      }
+      .live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 5px var(--green);
+        animation: livepulse 2s infinite;
+      }
+      @keyframes livepulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+      .msgs {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border2) transparent;
+      }
+      .msgs::-webkit-scrollbar {
+        width: 3px;
+      }
+      .msgs::-webkit-scrollbar-thumb {
+        background: var(--border2);
+      }
+      .msg {
+        display: flex;
+        gap: 10px;
+        animation: msgIn 0.3s ease;
+      }
+      @keyframes msgIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .msg.user {
+        flex-direction: row-reverse;
+      }
+      .av {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-weight: 600;
+      }
+      .av.ai {
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--purple) 100%
+        );
+        color: #000;
+        font-size: 15px;
+      }
+      .av.usr {
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        color: var(--text2);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+      .bubble {
+        max-width: 72%;
+        padding: 12px 16px;
+        font-size: 14px;
+        line-height: 1.65;
+        border-radius: 12px;
+      }
+      .msg.ai .bubble {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px 12px 12px 3px;
+      }
+      .msg.user .bubble {
+        background: linear-gradient(135deg, #003d99 0%, #0060cc 100%);
+        border-radius: 12px 12px 3px 12px;
+        color: #fff;
+      }
+      .bmeta {
+        font-size: 10px;
+        color: var(--text3);
+        margin-top: 4px;
+        font-family: var(--mono);
+      }
+      .msg.user .bmeta {
+        text-align: right;
+        color: rgba(255, 255, 255, 0.4);
+      }
+      .typing-row {
+        display: flex;
+        gap: 10px;
+      }
+      .typing-bub {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px 12px 12px 3px;
+        padding: 12px 16px;
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+      .typing-bub span {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--text3);
+        animation: bonce 1.3s infinite;
+      }
+      .typing-bub span:nth-child(2) {
+        animation-delay: 0.18s;
+      }
+      .typing-bub span:nth-child(3) {
+        animation-delay: 0.36s;
+      }
+      @keyframes bonce {
+        0%,
+        80%,
+        100% {
+          transform: scale(1);
+          opacity: 0.5;
+        }
+        40% {
+          transform: scale(1.4);
+          opacity: 1;
+        }
+      }
+      .attach-bar {
+        display: flex;
+        gap: 6px;
+        padding: 8px 20px;
+        background: var(--bg2);
+        border-top: 1px solid var(--border);
+        flex-wrap: wrap;
+      }
+      .a-chip {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 5px;
+        padding: 3px 8px;
+        font-size: 11px;
+        color: var(--text2);
+        font-family: var(--mono);
+      }
+      .a-chip button {
+        background: none;
+        border: none;
+        color: var(--text3);
+        cursor: pointer;
+        padding: 0 0 0 3px;
+        font-size: 11px;
+        line-height: 1;
+      }
+      .a-chip button:hover {
+        color: var(--red);
+      }
+      .epic-bar {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 20px;
+        background: linear-gradient(
+          90deg,
+          rgba(0, 196, 224, 0.04) 0%,
+          transparent 100%
+        );
+        border-top: 1px solid rgba(0, 196, 224, 0.12);
+      }
+      .epic-bar.show {
+        display: flex;
+      }
+      .epic-note {
+        font-size: 12px;
+        color: var(--text3);
+      }
+      .btn-epic {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(0, 196, 224, 0.12);
+        border: 1px solid rgba(0, 196, 224, 0.25);
+        color: var(--accent);
+        padding: 6px 16px;
+        border-radius: 7px;
+        font-size: 13px;
+        cursor: pointer;
+        font-family: var(--sans);
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+      .btn-epic:hover {
+        background: rgba(0, 196, 224, 0.2);
+      }
+      .btn-epic:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .input-area {
+        padding: 12px 16px;
+        background: var(--bg2);
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .input-row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+      }
+      .file-btn {
+        width: 40px;
+        height: 40px;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--text2);
+        font-size: 16px;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .file-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-dim);
+      }
+      textarea {
+        flex: 1;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 9px;
+        padding: 10px 13px;
+        color: var(--text);
+        font-size: 14px;
+        font-family: var(--sans);
+        outline: none;
+        resize: none;
+        min-height: 42px;
+        max-height: 110px;
+        line-height: 1.5;
+        transition: border-color 0.2s;
+      }
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-dim);
+      }
+      .send-btn {
+        width: 42px;
+        height: 42px;
+        background: linear-gradient(135deg, var(--accent) 0%, #0090ff 100%);
+        border: none;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 17px;
+        color: #000;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .send-btn:hover {
+        box-shadow: 0 4px 14px rgba(0, 196, 224, 0.4);
+        transform: scale(1.04);
+      }
+      .send-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      /* OVERLAY */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.82);
+        backdrop-filter: blur(10px);
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+      .overlay.show {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .modal {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 16px;
+        max-width: 760px;
+        width: 100%;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transform: translateY(16px);
+        transition: transform 0.3s;
+      }
+      .overlay.show .modal {
+        transform: none;
+      }
+      .modal-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .modal-head h3 {
+        font-family: var(--serif);
+        font-size: 20px;
+        font-weight: 600;
+        flex: 1;
+      }
+      .btn-print {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, var(--accent) 0%, #0090ff 100%);
+        color: #000;
+        font-weight: 600;
+        font-size: 12px;
+        padding: 7px 16px;
+        border-radius: 7px;
+        border: none;
+        cursor: pointer;
+        font-family: var(--sans);
+        transition: all 0.2s;
+      }
+      .btn-print:hover {
+        box-shadow: 0 4px 12px rgba(0, 196, 224, 0.4);
+      }
+      .icon-close {
+        width: 34px;
+        height: 34px;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--text2);
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+      .icon-close:hover {
+        color: var(--red);
+        border-color: var(--red);
+      }
+      .modal-body {
+        overflow-y: auto;
+        flex: 1;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border2) transparent;
+      }
+      .modal-body::-webkit-scrollbar {
+        width: 3px;
+      }
+      .modal-body::-webkit-scrollbar-thumb {
+        background: var(--border2);
+      }
+
+      /* EPICRISIS */
+      .epic-doc {
+        padding: 34px 38px;
+      }
+      .epic-letterhead {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 18px;
+        border-bottom: 2px solid var(--border2);
+        margin-bottom: 22px;
+      }
+      .el-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .el-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--purple) 100%
+        );
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+      }
+      .el-name {
+        font-family: var(--serif);
+        font-size: 30px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .el-name em {
+        color: var(--accent);
+        font-style: normal;
+      }
+      .el-tagline {
+        font-size: 11px;
+        color: var(--text3);
+        font-family: var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+      .el-right {
+        text-align: right;
+      }
+      .el-ref {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text3);
+        letter-spacing: 0.05em;
+      }
+      .el-date {
+        font-size: 13px;
+        color: var(--text2);
+        margin-top: 3px;
+      }
+      .epic-headline {
+        font-family: var(--serif);
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 2px;
+      }
+      .epic-subline {
+        font-size: 11px;
+        color: var(--text3);
+        font-family: var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        margin-bottom: 16px;
+      }
+      .urgency-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: var(--mono);
+        margin-bottom: 18px;
+      }
+      .urgency-tag.routine {
+        background: rgba(13, 217, 144, 0.12);
+        color: var(--green);
+        border: 1px solid rgba(13, 217, 144, 0.25);
+      }
+      .urgency-tag.urgent {
+        background: rgba(240, 184, 64, 0.12);
+        color: var(--gold);
+        border: 1px solid rgba(240, 184, 64, 0.25);
+      }
+      .urgency-tag.emergency {
+        background: rgba(240, 64, 96, 0.12);
+        color: var(--red);
+        border: 1px solid rgba(240, 64, 96, 0.25);
+      }
+      .pt-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 22px;
+      }
+      .pt-cell {
+        background: var(--bg3);
+        padding: 11px 14px;
+      }
+      .pt-label {
+        font-size: 10px;
+        color: var(--text3);
+        font-family: var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 2px;
+      }
+      .pt-val {
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .soap {
+        margin-bottom: 18px;
+      }
+      .soap-hd {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .soap-letter {
+        width: 28px;
+        height: 28px;
+        background: var(--accent-dim);
+        border: 1px solid rgba(0, 196, 224, 0.25);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .soap-hd h4 {
+        font-family: var(--serif);
+        font-size: 17px;
+        font-weight: 600;
+      }
+      .soap-body {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 13px 16px;
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--text2);
+      }
+      .soap-body strong {
+        color: var(--text);
+      }
+      .soap-body ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 6px;
+      }
+      .soap-body li::before {
+        content: "→";
+        color: var(--accent);
+        margin-right: 7px;
+        font-size: 11px;
+      }
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 22px 0;
+      }
+      .doc-section-title {
+        font-family: var(--serif);
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 3px;
+      }
+      .doc-section-sub {
+        font-size: 11px;
+        color: var(--text3);
+        font-family: var(--mono);
+        margin-bottom: 14px;
+      }
+      .dr-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        padding: 13px 16px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .dr-card:hover {
+        border-color: var(--accent);
+        background: var(--accent-dim);
+      }
+      .dr-av {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .dr-info {
+        flex: 1;
+      }
+      .dr-name {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 1px;
+      }
+      .dr-detail {
+        font-size: 12px;
+        color: var(--text2);
+      }
+      .dr-right {
+        text-align: right;
+      }
+      .dr-rating {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--gold);
+      }
+      .dr-avail {
+        font-size: 11px;
+        color: var(--green);
+        font-family: var(--mono);
+        margin-top: 1px;
+      }
+      .dr-price {
+        font-size: 12px;
+        color: var(--text2);
+        margin-top: 1px;
+      }
+      .epic-disclaimer {
+        margin-top: 22px;
+        padding: 12px 15px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 11px;
+        color: var(--text3);
+        line-height: 1.6;
+      }
+
+      /* LOADING / TOAST */
+      .loading-view {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 40px;
+        gap: 14px;
+      }
+      .spinner {
+        width: 38px;
+        height: 38px;
+        border: 3px solid var(--border2);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .spin-label {
+        font-size: 12px;
+        color: var(--text2);
+        font-family: var(--mono);
+      }
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--bg2);
+        border: 1px solid rgba(240, 64, 96, 0.4);
+        color: var(--red);
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: var(--mono);
+        z-index: 999;
+        transition: transform 0.3s;
+        white-space: nowrap;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      /* LIMIT */
+      .limit-box {
+        padding: 44px 52px;
+        text-align: center;
+        max-width: 480px;
+      }
+      .limit-emo {
+        font-size: 42px;
+        margin-bottom: 14px;
+      }
+      .limit-title {
+        font-family: var(--serif);
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .limit-sub {
+        font-size: 14px;
+        color: var(--text2);
+        margin-bottom: 26px;
+        line-height: 1.6;
+      }
+      .price-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 22px;
+      }
+      .price-card {
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        padding: 16px 12px;
+        text-align: center;
+      }
+      .price-card.feat {
+        border-color: var(--accent);
+        background: var(--accent-dim);
+      }
+      .price-name {
+        font-size: 10px;
+        color: var(--text3);
+        font-family: var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 5px;
+      }
+      .price-val {
+        font-family: var(--serif);
+        font-size: 26px;
+        font-weight: 600;
+        margin-bottom: 3px;
+      }
+      .price-val sub {
+        font-family: var(--sans);
+        font-size: 12px;
+        color: var(--text3);
+      }
+      .price-note {
+        font-size: 11px;
+        color: var(--text3);
+      }
+
+      /* RTL для арабского */
+      html[lang="ar"] {
+        direction: rtl;
+      }
+      html[lang="ar"] .msg.user {
+        flex-direction: row;
+      }
+      html[lang="ar"] .msg.ai {
+        flex-direction: row-reverse;
+      }
+      html[lang="ar"] .msg.user .bubble {
+        border-radius: 12px 12px 12px 3px;
+      }
+      html[lang="ar"] .msg.ai .bubble {
+        border-radius: 12px 12px 3px 12px;
+      }
+      html[lang="ar"] .btn-epic {
+        margin-left: 0;
+        margin-right: auto;
+      }
+      html[lang="ar"] .soap-body li::before {
+        content: "←";
+      }
+
+      /* PRINT */
+      @media print {
+        html,
+        body {
+          overflow: visible !important;
+          height: auto !important;
+          background: white !important;
+          color: black !important;
+        }
+        body::before,
+        #welcome,
+        #info-screen,
+        #chat-screen,
+        #limit-overlay,
+        .toast,
+        .lang-bar {
+          display: none !important;
+        }
+        #epic-overlay {
+          position: static !important;
+          display: block !important;
+          opacity: 1 !important;
+          background: none !important;
+          backdrop-filter: none !important;
+          padding: 0 !important;
+          pointer-events: all !important;
+          inset: auto !important;
+        }
+        #epic-overlay .modal {
+          border: none !important;
+          border-radius: 0 !important;
+          max-height: none !important;
+          max-width: none !important;
+          width: 100% !important;
+          overflow: visible !important;
+          transform: none !important;
+          box-shadow: none !important;
+          background: white !important;
+          display: block !important;
+        }
+        .modal-head {
+          display: none !important;
+        }
+        .modal-body {
+          overflow: visible !important;
+          flex: none !important;
+          height: auto !important;
+        }
+        :root {
+          --bg: white;
+          --bg2: white;
+          --bg3: #f8f9fa;
+          --border: #dee2e6;
+          --border2: #dee2e6;
+          --text: #212529;
+          --text2: #495057;
+          --text3: #6c757d;
+          --accent: #0066cc;
+          --accent-dim: rgba(0, 102, 204, 0.06);
+          --green: #1a7a4a;
+          --gold: #8a5e00;
+          --purple: #5a3fbf;
+        }
+        .el-icon {
+          background: #0066cc !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .soap-letter {
+          background: #e8f0fe !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .urgency-tag {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .epic-doc {
+          padding: 16px !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- LANG SWITCHER -->
+    <div class="lang-bar">
+      <button class="lang-btn active" onclick="setLang('ru')">RU</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" onclick="setLang('az')">AZ</button>
+      <button class="lang-btn" onclick="setLang('tr')">TR</button>
+      <button class="lang-btn" onclick="setLang('ar')">AR</button>
+    </div>
+
+    <!-- WELCOME -->
+    <div class="screen" id="welcome">
+      <div class="welcome-card">
+        <div class="logo-row">
+          <div class="logo-icon">⚕</div>
+          <div class="logo-name">Doc<em>Pats</em></div>
+        </div>
+        <div class="welcome-title" id="wt-title"></div>
+        <div class="welcome-sub" id="wt-sub"></div>
+        <div class="pills-row" id="pills">
+          <div class="pill">
+            <span class="pill-dot dim"></span><span id="wt-loading"></span>
+          </div>
+        </div>
+        <button class="btn-primary" id="start-btn" disabled></button><br />
+        <button
+          class="btn-ghost"
+          id="auth-btn"
+          onclick="handleAuthClick()"
+        ></button>
+        <div class="welcome-disclaimer" id="wt-disclaimer"></div>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="screen hidden" id="info-screen">
+      <div class="info-card">
+        <div class="info-title" id="it-title"></div>
+        <div class="info-sub" id="it-sub"></div>
+        <div class="fg">
+          <label id="it-name-label"></label><input type="text" id="pt-name" />
+        </div>
+        <div class="fg">
+          <label id="it-age-label"></label
+          ><input type="number" id="pt-age" min="1" max="120" />
+        </div>
+        <div class="fg">
+          <label id="it-gender-label"></label>
+          <div class="gender-row">
+            <div
+              class="g-btn"
+              id="g-male"
+              onclick="pickGender('male', this)"
+            ></div>
+            <div
+              class="g-btn"
+              id="g-female"
+              onclick="pickGender('female', this)"
+            ></div>
+            <div
+              class="g-btn"
+              id="g-other"
+              onclick="pickGender('other', this)"
+            ></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button
+            class="btn-ghost"
+            id="it-back"
+            onclick="showScreen('welcome')"
+            style="margin-top: 0; flex: none"
+          ></button>
+          <button
+            class="btn-primary"
+            id="launch-btn"
+            onclick="launchChat()"
+            style="flex: 1; justify-content: center"
+          ></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="screen hidden" id="chat-screen">
+      <div class="chat-top">
+        <div class="chat-top-logo">
+          <div class="logo-icon">⚕</div>
+          <div class="logo-name">
+            Doc<em style="color: var(--accent)">Pats</em>
+          </div>
+        </div>
+        <div class="chat-top-info">
+          <div class="chat-top-title" id="ct-title"></div>
+          <div class="chat-top-sub" id="chat-sub"></div>
+        </div>
+        <div class="session-chip">
+          <div class="live-dot"></div>
+          <span id="chip-txt"></span>
+        </div>
+      </div>
+      <div class="msgs" id="msgs"></div>
+      <div class="epic-bar" id="epic-bar">
+        <span class="epic-note" id="epic-note"></span>
+        <button
+          class="btn-epic"
+          id="epic-btn"
+          onclick="genEpicrisis()"
+        ></button>
+      </div>
+      <div class="attach-bar" id="attach-bar" style="display: none"></div>
+      <div class="input-area">
+        <div class="input-row">
+          <label class="file-btn" id="file-label"
+            >📎
+            <input
+              type="file"
+              id="file-in"
+              style="display: none"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png,.txt,.doc,.docx"
+              onchange="onFile(event)"
+            />
+          </label>
+          <textarea
+            id="msg-in"
+            rows="1"
+            onkeydown="onKey(event)"
+            oninput="autoH(this)"
+          ></textarea>
+          <button class="send-btn" id="send-btn" onclick="send()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EPICRISIS MODAL -->
+    <div class="overlay" id="epic-overlay">
+      <div class="modal">
+        <div class="modal-head">
+          <h3 id="em-title">📄</h3>
+          <div style="display: flex; gap: 8px">
+            <button class="btn-print" id="em-print" onclick="printEpicrisis()">
+              🖨
+            </button>
+            <div class="icon-close" onclick="closeEpic()">✕</div>
+          </div>
+        </div>
+        <div class="modal-body" id="epic-body">
+          <div class="loading-view">
+            <div class="spinner"></div>
+            <div class="spin-label" id="em-loading"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIMIT MODAL -->
+    <div class="overlay" id="limit-overlay">
+      <div class="modal" style="max-width: 500px">
+        <div class="modal-body" style="overflow: visible">
+          <div class="limit-box">
+            <div class="limit-emo">🔒</div>
+            <div class="limit-title" id="lm-title"></div>
+            <div class="limit-sub" id="limit-txt"></div>
+            <button
+              class="btn-primary"
+              id="lm-register"
+              style="width: 100%; justify-content: center; margin-bottom: 10px"
+            ></button>
+            <!-- НОВАЯ КНОПКА — войти (только для гостей) -->
+            <button
+              class="btn-ghost"
+              id="lm-login"
+              style="
+                width: 100%;
+                justify-content: center;
+                margin-top: 0;
+                margin-bottom: 6px;
+                display: none;
+              "
+            ></button>
+            <button
+              class="btn-ghost"
+              id="lm-close"
+              onclick="closeLimit()"
+              style="width: 100%; justify-content: center; margin-top: 0"
+            ></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+      // ═══════════════════════════════════════════
+      // TRANSLATIONS
+      // ═══════════════════════════════════════════
+      const LANGS = {
+        ru: {
+          btn_pricing: "🔒 Выбрать тариф →",
+          pill_consultations: (r, m) => `Консультаций: ${r} из ${m}`,
+          dir: "ltr",
+          wt_title:
+            'AI Медицинская<br/><span style="color:var(--accent)">Консультация</span>',
+          wt_sub:
+            "Опишите симптомы — ИИ задаст уточняющие вопросы, проанализирует данные и сформирует эпикриз с рекомендацией врачей из сети DocPats.",
+          wt_loading: "Загрузка…",
+          wt_start: "Начать консультацию →",
+          wt_limit: "Лимит исчерпан",
+          wt_auth: "🔑 Войти в аккаунт",
+          wt_authed: "✓ Вы вошли",
+          wt_disclaimer:
+            "⚠ Не является заменой очной консультации врача. Информация носит ознакомительный характер.",
+          pill_consult: "Консультация доступна",
+          pill_epicrises: (r, m) => `Эпикризов: ${r} из ${m}`,
+          pill_epic_done: "Эпикризы исчерпаны",
+          it_title: "Данные пациента",
+          it_sub: "Для точной консультации укажите базовую информацию",
+          it_name: "Имя",
+          it_name_ph: "Необязательно",
+          it_age: "Возраст",
+          it_age_ph: "Лет",
+          it_gender: "Пол",
+          g_male: "♂ Мужской",
+          g_female: "♀ Женский",
+          g_other: "Другой",
+          it_back: "← Назад",
+          it_start: "Начать →",
+          it_launching: "Запуск…",
+          ct_title: "AI Медицинский Ассистент",
+          ct_consult: "Консультация",
+          ct_session: "Сессия активна",
+          ct_session_n: (u, m) => `Сессия ${u}/${m}`,
+          epic_note: "Достаточно данных для предварительной оценки",
+          epic_btn: "📄 Сгенерировать эпикриз",
+          msg_ph: "Опишите симптомы или ответьте на вопрос…",
+          file_tip: "Прикрепить анализы / снимки",
+          em_title: "📄 Медицинский Эпикриз",
+          em_print: "🖨 Скачать PDF",
+          em_loading: "Анализирую данные консультации…",
+          em_loading2: "Формирую эпикриз…",
+          em_error: "Ошибка генерации. Попробуйте ещё раз.",
+          em_close: "Закрыть",
+          lm_title: "Лимит эпикризов",
+          lm_auth:
+            "Вы использовали все бесплатные эпикризы. Перейдите на Premium для безлимитного доступа.",
+          lm_guest:
+            "Зарегистрируйтесь, чтобы получить ещё 5 бесплатных эпикризов в международном формате SOAP.",
+          lm_free_name: "После регистрации",
+          lm_sessions: "сессий",
+          lm_free_note: "Бесплатно",
+          lm_month: "/мес",
+          lm_prem_note: "PDF эпикриз + приоритет",
+          lm_register: "Зарегистрироваться →",
+          lm_close: "Закрыть",
+          err_server: "Ошибка соединения с сервером",
+          err_limit: "Достигнут лимит запросов. Попробуйте позже.",
+          err_tech: "Технический сбой. Повторите попытку.",
+          err_gen: "Ошибка генерации эпикриза",
+          file_note: (n) => `📎 Файл «${n}» получен и будет учтён при анализе.`,
+          greeting: (name, age, gender) =>
+            `Начало консультации. Пациент: ${name}, ${age} лет, ${gender}. Поприветствуй пациента и спроси о главной жалобе.`,
+          gender_map: { male: "Мужской", female: "Женский", other: "Другой" },
+          epic_headline: "Предварительный Эпикриз",
+          epic_subline: "AI-assisted · SOAP Format · ICD-compatible",
+          urgency: {
+            routine: "Плановое обращение",
+            urgent: "Требует внимания в ближайшие дни",
+            emergency: "⚠ Срочная медицинская помощь",
+          },
+          soap_s: "Жалобы · Subjective",
+          soap_o: "Обзор систем · Objective",
+          soap_a: "Предварительная оценка · Assessment",
+          soap_p: "План · Plan",
+          pt_patient: "Пациент",
+          pt_age: "Возраст",
+          pt_gender: "Пол",
+          pt_age_unit: "лет",
+          complaint: "Главная жалоба:",
+          anamnesis: "Анамнез:",
+          diff: "Дифференциальный ряд:",
+          recs: "Рекомендации:",
+          tests: "Обследования:",
+          lifestyle: "Образ жизни:",
+          docs_title: "Рекомендованные специалисты",
+          docs_sub: "Подобраны по результатам консультации · DocPats Network",
+          docs_none: "Нет доступных специалистов по данному направлению",
+          doc_slot: "По записи",
+          doc_price: (p) => `${p} AZN`,
+          doc_no_price: "По запросу",
+          disclaimer: (date, ref) =>
+            `<strong>Важно:</strong> Данный документ является предварительной клинической оценкой AI-системы на основе описанных симптомов и <strong>не является медицинским диагнозом</strong>. Необходима очная консультация лицензированного врача. При угрожающих жизни симптомах — звоните <strong>103</strong>.<br><br><strong>DocPats Medical Platform</strong> · docpats.az · ${date} · Ref: ${ref}`,
+        },
+
+        en: {
+          btn_pricing: "🔒 Choose a plan →",
+          pill_consultations: (r, m) => `Consultations: ${r} of ${m}`,
+          dir: "ltr",
+          wt_title:
+            'AI Medical<br/><span style="color:var(--accent)">Consultation</span>',
+          wt_sub:
+            "Describe your symptoms — AI will ask clarifying questions, analyze the data and generate an epicrisis with doctor recommendations from the DocPats network.",
+          wt_loading: "Loading…",
+          wt_start: "Start consultation →",
+          wt_limit: "Limit reached",
+          wt_auth: "🔑 Sign in",
+          wt_authed: "✓ Signed in",
+          wt_disclaimer:
+            "⚠ Not a substitute for in-person medical consultation. For informational purposes only.",
+          pill_consult: "Consultation available",
+          pill_epicrises: (r, m) => `Epicrises: ${r} of ${m}`,
+          pill_epic_done: "Epicrises exhausted",
+          it_title: "Patient Information",
+          it_sub:
+            "Please provide basic information for an accurate consultation",
+          it_name: "Name",
+          it_name_ph: "Optional",
+          it_age: "Age",
+          it_age_ph: "Years",
+          it_gender: "Gender",
+          g_male: "♂ Male",
+          g_female: "♀ Female",
+          g_other: "Other",
+          it_back: "← Back",
+          it_start: "Start →",
+          it_launching: "Starting…",
+          ct_title: "AI Medical Assistant",
+          ct_consult: "Consultation",
+          ct_session: "Session active",
+          ct_session_n: (u, m) => `Session ${u}/${m}`,
+          epic_note: "Enough data for a preliminary assessment",
+          epic_btn: "📄 Generate epicrisis",
+          msg_ph: "Describe your symptoms or answer the question…",
+          file_tip: "Attach test results / scans",
+          em_title: "📄 Medical Epicrisis",
+          em_print: "🖨 Download PDF",
+          em_loading: "Analyzing consultation data…",
+          em_loading2: "Generating epicrisis…",
+          em_error: "Generation error. Please try again.",
+          em_close: "Close",
+          lm_title: "Epicrisis limit",
+          lm_auth:
+            "You have used all your free epicrises. Upgrade to Premium for unlimited access.",
+          lm_guest:
+            "Register to get 5 more free epicrises in international SOAP format.",
+          lm_free_name: "After registration",
+          lm_sessions: "sessions",
+          lm_free_note: "Free",
+          lm_month: "/mo",
+          lm_prem_note: "PDF epicrisis + priority",
+          lm_register: "Register →",
+          lm_close: "Close",
+          err_server: "Server connection error",
+          err_limit: "Request limit reached. Try again later.",
+          err_tech: "Technical error. Please try again.",
+          err_gen: "Epicrisis generation error",
+          file_note: (n) =>
+            `📎 File "${n}" received and will be considered in the analysis.`,
+          greeting: (name, age, gender) =>
+            `Start of consultation. Patient: ${name}, ${age} years old, ${gender}. Greet the patient and ask about the chief complaint.`,
+          gender_map: { male: "Male", female: "Female", other: "Other" },
+          epic_headline: "Preliminary Epicrisis",
+          epic_subline: "AI-assisted · SOAP Format · ICD-compatible",
+          urgency: {
+            routine: "Routine visit",
+            urgent: "Needs attention within a few days",
+            emergency: "⚠ Urgent medical care required",
+          },
+          soap_s: "Complaints · Subjective",
+          soap_o: "Systems Review · Objective",
+          soap_a: "Preliminary Assessment",
+          soap_p: "Plan",
+          pt_patient: "Patient",
+          pt_age: "Age",
+          pt_gender: "Gender",
+          pt_age_unit: "years",
+          complaint: "Chief complaint:",
+          anamnesis: "History:",
+          diff: "Differential diagnoses:",
+          recs: "Recommendations:",
+          tests: "Additional tests:",
+          lifestyle: "Lifestyle advice:",
+          docs_title: "Recommended specialists",
+          docs_sub: "Selected based on consultation results · DocPats Network",
+          docs_none: "No specialists available for this specialty",
+          doc_slot: "By appointment",
+          doc_price: (p) => `${p} AZN`,
+          doc_no_price: "On request",
+          disclaimer: (date, ref) =>
+            `<strong>Important:</strong> This document is a preliminary AI-based clinical assessment and <strong>is not a medical diagnosis</strong>. An in-person consultation with a licensed physician is required. For life-threatening symptoms, call <strong>103</strong>.<br><br><strong>DocPats Medical Platform</strong> · docpats.az · ${date} · Ref: ${ref}`,
+        },
+
+        az: {
+          btn_pricing: "🔒 Tarif seç →",
+          pill_consultations: (r, m) => `Konsultasiyalar: ${r} / ${m}`,
+          dir: "ltr",
+          wt_title:
+            'AI Tibbi<br/><span style="color:var(--accent)">Konsultasiya</span>',
+          wt_sub:
+            "Simptomlarınızı təsvir edin — AI dəqiqləşdirici suallar verəcək, məlumatları təhlil edəcək və DocPats şəbəkəsindən həkim tövsiyələri ilə epikriz hazırlayacaq.",
+          wt_loading: "Yüklənir…",
+          wt_start: "Konsultasiyanı başlat →",
+          wt_limit: "Limit tükənib",
+          wt_auth: "🔑 Daxil ol",
+          wt_authed: "✓ Daxil oldunuz",
+          wt_disclaimer:
+            "⚠ Həkim konsultasiyasının əvəzi deyil. Yalnız məlumat xarakteri daşıyır.",
+          pill_consult: "Konsultasiya mövcuddur",
+          pill_epicrises: (r, m) => `Epikrizlər: ${r} / ${m}`,
+          pill_epic_done: "Epikrizlər tükənib",
+          it_title: "Xəstə məlumatları",
+          it_sub: "Dəqiq konsultasiya üçün əsas məlumatları daxil edin",
+          it_name: "Ad",
+          it_name_ph: "İstəyə görə",
+          it_age: "Yaş",
+          it_age_ph: "İl",
+          it_gender: "Cins",
+          g_male: "♂ Kişi",
+          g_female: "♀ Qadın",
+          g_other: "Digər",
+          it_back: "← Geri",
+          it_start: "Başla →",
+          it_launching: "Başlanır…",
+          ct_title: "AI Tibb Assistenti",
+          ct_consult: "Konsultasiya",
+          ct_session: "Sessiya aktivdir",
+          ct_session_n: (u, m) => `Sessiya ${u}/${m}`,
+          epic_note: "Ön qiymətləndirmə üçün kifayət qədər məlumat var",
+          epic_btn: "📄 Epikriz yarat",
+          msg_ph: "Simptomlarınızı təsvir edin…",
+          file_tip: "Analizlər / şəkillər əlavə edin",
+          em_title: "📄 Tibbi Epikriz",
+          em_print: "🖨 PDF yüklə",
+          em_loading: "Konsultasiya məlumatları təhlil edilir…",
+          em_loading2: "Epikriz hazırlanır…",
+          em_error: "Xəta. Yenidən cəhd edin.",
+          em_close: "Bağla",
+          lm_title: "Epikriz limiti",
+          lm_auth:
+            "Bütün pulsuz epikrizlərinizi istifadə etdiniz. Limitsiz giriş üçün Premiuma keçin.",
+          lm_guest:
+            "SOAP formatında 5 pulsuz epikriz əldə etmək üçün qeydiyyatdan keçin.",
+          lm_free_name: "Qeydiyyatdan sonra",
+          lm_sessions: "sessiya",
+          lm_free_note: "Pulsuz",
+          lm_month: "/ay",
+          lm_prem_note: "PDF epikriz + prioritet",
+          lm_register: "Qeydiyyat →",
+          lm_close: "Bağla",
+          err_server: "Server bağlantı xətası",
+          err_limit: "Limit aşıldı. Sonra yenidən cəhd edin.",
+          err_tech: "Texniki xəta. Yenidən cəhd edin.",
+          err_gen: "Epikriz yaratma xətası",
+          file_note: (n) => `📎 "${n}" faylı qəbul edildi.`,
+          greeting: (name, age, gender) =>
+            `Konsultasiyanın başlanğıcı. Xəstə: ${name}, ${age} yaş, ${gender}. Xəstəni salamla və əsas şikayəti soruş.`,
+          gender_map: { male: "Kişi", female: "Qadın", other: "Digər" },
+          epic_headline: "Ön Epikriz",
+          epic_subline: "AI-dəstəkli · SOAP Format · ICD-uyğun",
+          urgency: {
+            routine: "Planlı müraciət",
+            urgent: "Bir neçə gün ərzində diqqət tələb edir",
+            emergency: "⚠ Təcili tibbi yardım",
+          },
+          soap_s: "Şikayətlər · Subjektiv",
+          soap_o: "Sistemlər baxışı · Obyektiv",
+          soap_a: "Ön Qiymətləndirmə",
+          soap_p: "Plan",
+          pt_patient: "Xəstə",
+          pt_age: "Yaş",
+          pt_gender: "Cins",
+          pt_age_unit: "yaş",
+          complaint: "Əsas şikayət:",
+          anamnesis: "Anamnez:",
+          diff: "Diferensial diaqnozlar:",
+          recs: "Tövsiyələr:",
+          tests: "Əlavə müayinələr:",
+          lifestyle: "Həyat tərzi:",
+          docs_title: "Tövsiyə olunan mütəxəssislər",
+          docs_sub: "Konsultasiya nəticələrinə görə seçildi · DocPats Network",
+          docs_none: "Bu ixtisas üzrə mütəxəssis yoxdur",
+          doc_slot: "Qeydlə",
+          doc_price: (p) => `${p} AZN`,
+          doc_no_price: "Sorğu ilə",
+          disclaimer: (date, ref) =>
+            `<strong>Vacib:</strong> Bu sənəd AI sisteminin ön klinik qiymətləndirməsidir və <strong>tibbi diaqnoz deyil</strong>. Lisenziyalı həkim konsultasiyası tələb olunur. Həyatı təhlükə altına alan simptomlar üçün <strong>103</strong>-ü zəng edin.<br><br><strong>DocPats Medical Platform</strong> · docpats.az · ${date} · Ref: ${ref}`,
+        },
+
+        tr: {
+          btn_pricing: "🔒 Plan seç →",
+          pill_consultations: (r, m) => `Danışmalar: ${r} / ${m}`,
+          dir: "ltr",
+          wt_title:
+            'AI Tıbbi<br/><span style="color:var(--accent)">Danışma</span>',
+          wt_sub:
+            "Semptomlarınızı anlatın — AI açıklayıcı sorular soracak, verileri analiz edecek ve DocPats ağından doktor önerileriyle epikriz oluşturacak.",
+          wt_loading: "Yükleniyor…",
+          wt_start: "Danışmayı başlat →",
+          wt_limit: "Limit doldu",
+          wt_auth: "🔑 Giriş yap",
+          wt_authed: "✓ Giriş yapıldı",
+          wt_disclaimer:
+            "⚠ Yüz yüze tıbbi danışmanın yerini tutmaz. Yalnızca bilgilendirme amaçlıdır.",
+          pill_consult: "Danışma mevcut",
+          pill_epicrises: (r, m) => `Epikriz: ${r} / ${m}`,
+          pill_epic_done: "Epikrizler tükendi",
+          it_title: "Hasta Bilgileri",
+          it_sub: "Doğru bir danışma için temel bilgileri girin",
+          it_name: "Ad",
+          it_name_ph: "İsteğe bağlı",
+          it_age: "Yaş",
+          it_age_ph: "Yıl",
+          it_gender: "Cinsiyet",
+          g_male: "♂ Erkek",
+          g_female: "♀ Kadın",
+          g_other: "Diğer",
+          it_back: "← Geri",
+          it_start: "Başla →",
+          it_launching: "Başlanıyor…",
+          ct_title: "AI Tıbbi Asistan",
+          ct_consult: "Danışma",
+          ct_session: "Oturum aktif",
+          ct_session_n: (u, m) => `Oturum ${u}/${m}`,
+          epic_note: "Ön değerlendirme için yeterli veri mevcut",
+          epic_btn: "📄 Epikriz oluştur",
+          msg_ph: "Semptomlarınızı anlatın veya soruyu yanıtlayın…",
+          file_tip: "Tahlil / görüntü ekle",
+          em_title: "📄 Tıbbi Epikriz",
+          em_print: "🖨 PDF indir",
+          em_loading: "Danışma verileri analiz ediliyor…",
+          em_loading2: "Epikriz oluşturuluyor…",
+          em_error: "Oluşturma hatası. Lütfen tekrar deneyin.",
+          em_close: "Kapat",
+          lm_title: "Epikriz limiti",
+          lm_auth:
+            "Ücretsiz epikrizlerinizi kullandınız. Sınırsız erişim için Premium'a geçin.",
+          lm_guest: "SOAP formatında 5 ücretsiz epikriz için kayıt olun.",
+          lm_free_name: "Kayıt sonrası",
+          lm_sessions: "oturum",
+          lm_free_note: "Ücretsiz",
+          lm_month: "/ay",
+          lm_prem_note: "PDF epikriz + öncelik",
+          lm_register: "Kayıt ol →",
+          lm_close: "Kapat",
+          err_server: "Sunucu bağlantı hatası",
+          err_limit: "İstek sınırına ulaşıldı. Daha sonra tekrar deneyin.",
+          err_tech: "Teknik hata. Lütfen tekrar deneyin.",
+          err_gen: "Epikriz oluşturma hatası",
+          file_note: (n) =>
+            `📎 "${n}" dosyası alındı ve analizde dikkate alınacak.`,
+          greeting: (name, age, gender) =>
+            `Danışma başlangıcı. Hasta: ${name}, ${age} yaşında, ${gender}. Hastayı selamlayın ve ana şikayeti sorun.`,
+          gender_map: { male: "Erkek", female: "Kadın", other: "Diğer" },
+          epic_headline: "Ön Epikriz",
+          epic_subline: "AI destekli · SOAP Format · ICD uyumlu",
+          urgency: {
+            routine: "Rutin başvuru",
+            urgent: "Birkaç gün içinde dikkat gerektirir",
+            emergency: "⚠ Acil tıbbi yardım gerekli",
+          },
+          soap_s: "Şikayetler · Subjektif",
+          soap_o: "Sistem İncelemesi · Objektif",
+          soap_a: "Ön Değerlendirme",
+          soap_p: "Plan",
+          pt_patient: "Hasta",
+          pt_age: "Yaş",
+          pt_gender: "Cinsiyet",
+          pt_age_unit: "yaş",
+          complaint: "Ana şikayet:",
+          anamnesis: "Anamnez:",
+          diff: "Ayırıcı tanılar:",
+          recs: "Öneriler:",
+          tests: "Ek tetkikler:",
+          lifestyle: "Yaşam tarzı:",
+          docs_title: "Önerilen uzmanlar",
+          docs_sub: "Danışma sonuçlarına göre seçildi · DocPats Network",
+          docs_none: "Bu uzmanlık alanında mevcut uzman yok",
+          doc_slot: "Randevu ile",
+          doc_price: (p) => `${p} AZN`,
+          doc_no_price: "Talep üzerine",
+          disclaimer: (date, ref) =>
+            `<strong>Önemli:</strong> Bu belge, AI sisteminin ön klinik değerlendirmesidir ve <strong>tıbbi tanı değildir</strong>. Lisanslı bir hekimle yüz yüze konsültasyon gereklidir. Hayatı tehdit eden semptomlar için <strong>103</strong>'ü arayın.<br><br><strong>DocPats Medical Platform</strong> · docpats.az · ${date} · Ref: ${ref}`,
+        },
+
+        ar: {
+          btn_pricing: "← 🔒 اختر الخطة",
+          pill_consultations: (r, m) => `الاستشارات: ${r} من ${m}`,
+          dir: "rtl",
+          wt_title:
+            'استشارة طبية<br/><span style="color:var(--accent)">بالذكاء الاصطناعي</span>',
+          wt_sub:
+            "صِف أعراضك — سيطرح الذكاء الاصطناعي أسئلة توضيحية ويحلل البيانات ويُنشئ ملخصاً طبياً مع توصيات بأطباء من شبكة DocPats.",
+          wt_loading: "جارٍ التحميل…",
+          wt_start: "ابدأ الاستشارة ←",
+          wt_limit: "استنفدت الحد",
+          wt_auth: "🔑 تسجيل الدخول",
+          wt_authed: "✓ تم الدخول",
+          wt_disclaimer:
+            "⚠ لا يُغني عن الاستشارة الطبية المباشرة. للأغراض المعلوماتية فقط.",
+          pill_consult: "الاستشارة متاحة",
+          pill_epicrises: (r, m) => `الملخصات: ${r} من ${m}`,
+          pill_epic_done: "نفدت الملخصات",
+          it_title: "بيانات المريض",
+          it_sub: "أدخل المعلومات الأساسية للحصول على استشارة دقيقة",
+          it_name: "الاسم",
+          it_name_ph: "اختياري",
+          it_age: "العمر",
+          it_age_ph: "سنة",
+          it_gender: "الجنس",
+          g_male: "♂ ذكر",
+          g_female: "♀ أنثى",
+          g_other: "آخر",
+          it_back: "→ رجوع",
+          it_start: "← ابدأ",
+          it_launching: "جارٍ البدء…",
+          ct_title: "مساعد طبي بالذكاء الاصطناعي",
+          ct_consult: "استشارة",
+          ct_session: "الجلسة نشطة",
+          ct_session_n: (u, m) => `جلسة ${u}/${m}`,
+          epic_note: "بيانات كافية للتقييم الأولي",
+          epic_btn: "📄 إنشاء الملخص الطبي",
+          msg_ph: "صِف الأعراض أو أجب على السؤال…",
+          file_tip: "إرفاق نتائج / صور",
+          em_title: "📄 الملخص الطبي",
+          em_print: "🖨 تحميل PDF",
+          em_loading: "جارٍ تحليل بيانات الاستشارة…",
+          em_loading2: "جارٍ إنشاء الملخص…",
+          em_error: "خطأ في الإنشاء. يرجى المحاولة مجدداً.",
+          em_close: "إغلاق",
+          lm_title: "حد الملخصات",
+          lm_auth:
+            "لقد استخدمت جميع ملخصاتك المجانية. انتقل إلى Premium للوصول غير المحدود.",
+          lm_guest: "سجّل للحصول على 5 ملخصات مجانية بتنسيق SOAP الدولي.",
+          lm_free_name: "بعد التسجيل",
+          lm_sessions: "جلسات",
+          lm_free_note: "مجاناً",
+          lm_month: "/شهر",
+          lm_prem_note: "ملخص PDF + أولوية",
+          lm_register: "← التسجيل",
+          lm_close: "إغلاق",
+          err_server: "خطأ في الاتصال بالخادم",
+          err_limit: "تم الوصول إلى حد الطلبات. أعد المحاولة لاحقاً.",
+          err_tech: "خطأ تقني. يرجى المحاولة مجدداً.",
+          err_gen: "خطأ في إنشاء الملخص",
+          file_note: (n) => `📎 تم استلام الملف "${n}" وسيُؤخذ بعين الاعتبار.`,
+          greeting: (name, age, gender) =>
+            `بداية الاستشارة. المريض: ${name}، ${age} سنة، ${gender}. رحّب بالمريض واسأله عن الشكوى الرئيسية.`,
+          gender_map: { male: "ذكر", female: "أنثى", other: "آخر" },
+          epic_headline: "الملخص الطبي الأولي",
+          epic_subline: "بمساعدة الذكاء الاصطناعي · SOAP · متوافق مع ICD",
+          urgency: {
+            routine: "مراجعة اعتيادية",
+            urgent: "يتطلب الانتباه خلال أيام",
+            emergency: "⚠ رعاية طبية عاجلة",
+          },
+          soap_s: "الشكاوى · ذاتي",
+          soap_o: "مراجعة الأجهزة · موضوعي",
+          soap_a: "التقييم الأولي",
+          soap_p: "الخطة",
+          pt_patient: "المريض",
+          pt_age: "العمر",
+          pt_gender: "الجنس",
+          pt_age_unit: "سنة",
+          complaint: "الشكوى الرئيسية:",
+          anamnesis: "السيرة المرضية:",
+          diff: "التشخيص التفريقي:",
+          recs: "التوصيات:",
+          tests: "الفحوصات الإضافية:",
+          lifestyle: "نصائح نمط الحياة:",
+          docs_title: "المتخصصون الموصى بهم",
+          docs_sub: "تم الاختيار بناءً على نتائج الاستشارة · DocPats Network",
+          docs_none: "لا يوجد متخصصون متاحون في هذا التخصص",
+          doc_slot: "بموعد مسبق",
+          doc_price: (p) => `${p} AZN`,
+          doc_no_price: "عند الطلب",
+          disclaimer: (date, ref) =>
+            `<strong>هام:</strong> هذه الوثيقة تقييم سريري أولي من نظام الذكاء الاصطناعي و<strong>ليست تشخيصاً طبياً</strong>. يلزم استشارة طبيب مرخص. للأعراض المهددة للحياة، اتصل بـ <strong>103</strong>.<br><br><strong>DocPats Medical Platform</strong> · docpats.az · ${date} · Ref: ${ref}`,
+        },
+      };
+
+      // ═══════════════════════════════════════════
+      // CONFIG & STATE
+      // ═══════════════════════════════════════════
+      // const BASE = window.__API_BASE__ || "http://localhost:11000";
+      let BASE =
+        window.__API_BASE__ ||
+        (location.hostname === "localhost" || location.hostname === "127.0.0.1"
+          ? "http://localhost:11000"
+          : "https://backend.docpats.com");
+      let LANG = localStorage.getItem("dp_lang") || "ru";
+
+      const S = {
+        auth: false,
+        guestId: guestId(),
+        status: null, // ← null пока init() не отработал
+        epicrisisStatus: null,
+        gender: null,
+        patient: {},
+        msgs: [],
+        files: [],
+        exchanges: 0,
+        busy: false,
+      };
+      // ─── GUEST LOCAL STATS (ГЛОБАЛЬНО) ───
+      function getGuestStats() {
+        try {
+          return JSON.parse(localStorage.getItem("dp_guest_stats") || "{}");
+        } catch {
+          return {};
+        }
+      }
+      function saveGuestStats(stats) {
+        localStorage.setItem("dp_guest_stats", JSON.stringify(stats));
+      }
+      function incrementGuestStat(key) {
+        const stats = getGuestStats();
+        stats[key] = (stats[key] || 0) + 1;
+        saveGuestStats(stats);
+        return stats[key];
+      }
+      function applyLocalStats() {
+        if (S.auth) return;
+        const local = getGuestStats();
+        const localCons = local.consultations || 0;
+        const localEpic = local.epicrises || 0;
+
+        if (S.epicrisisStatus && localEpic > 0) {
+          S.epicrisisStatus.used = Math.max(S.epicrisisStatus.used, localEpic);
+          S.epicrisisStatus.remaining = Math.max(
+            0,
+            S.epicrisisStatus.max - S.epicrisisStatus.used,
+          );
+        }
+      }
+
+      function guestId() {
+        let id = localStorage.getItem("dp_gid");
+        if (!id) {
+          id =
+            "g_" +
+            Date.now().toString(36) +
+            Math.random().toString(36).slice(2);
+          localStorage.setItem("dp_gid", id);
+        }
+        return id;
+      }
+      // ═══════════════════════════════════════════
+      // LANGUAGE
+      // ═══════════════════════════════════════════
+      function t() {
+        return LANGS[LANG];
+      }
+
+      function setLang(lang) {
+        LANG = lang;
+        localStorage.setItem("dp_lang", lang);
+        document.documentElement.lang = lang;
+        document.documentElement.dir = LANGS[lang].dir;
+        document
+          .querySelectorAll(".lang-btn")
+          .forEach((b) =>
+            b.classList.toggle("active", b.textContent === lang.toUpperCase()),
+          );
+        applyTranslations();
+      }
+
+      function applyTranslations() {
+        const L = t();
+        // Welcome
+        document.getElementById("wt-title").innerHTML = L.wt_title;
+        document.getElementById("wt-sub").textContent = L.wt_sub;
+        const loadingEl = document.getElementById("wt-loading");
+        if (loadingEl) loadingEl.textContent = L.wt_loading;
+        document.getElementById("wt-disclaimer").textContent = L.wt_disclaimer;
+        document.getElementById("auth-btn").textContent = S.auth
+          ? L.wt_authed
+          : L.wt_auth;
+        // Info
+        document.getElementById("it-title").textContent = L.it_title;
+        document.getElementById("it-sub").textContent = L.it_sub;
+        document.getElementById("it-name-label").textContent = L.it_name;
+        document.getElementById("pt-name").placeholder = L.it_name_ph;
+        document.getElementById("it-age-label").textContent = L.it_age;
+        document.getElementById("pt-age").placeholder = L.it_age_ph;
+        document.getElementById("it-gender-label").textContent = L.it_gender;
+        document.getElementById("g-male").textContent = L.g_male;
+        document.getElementById("g-female").textContent = L.g_female;
+        document.getElementById("g-other").textContent = L.g_other;
+        document.getElementById("it-back").textContent = L.it_back;
+        document.getElementById("launch-btn").textContent = L.it_start;
+        // Chat
+        document.getElementById("ct-title").textContent = L.ct_title;
+        document.getElementById("epic-note").textContent = L.epic_note;
+        document.getElementById("epic-btn").textContent = L.epic_btn;
+        document.getElementById("msg-in").placeholder = L.msg_ph;
+        document.getElementById("file-label").title = L.file_tip;
+        // Epicrisis modal
+        document.getElementById("em-title").textContent = L.em_title;
+        document.getElementById("em-print").textContent = L.em_print;
+        document.getElementById("em-loading").textContent = L.em_loading2;
+        // Limit modal
+
+        [
+          ["lm-title", L.lm_title],
+          ["lm-free-name", L.lm_free_name],
+          ["lm-sessions", L.lm_sessions],
+          ["lm-free-note", L.lm_free_note],
+          ["lm-month", L.lm_month],
+          ["lm-prem-note", L.lm_prem_note],
+          ["lm-register", L.lm_register],
+          ["lm-close", L.lm_close],
+        ].forEach(([id, val]) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = val;
+        });
+
+        // Pills
+        renderPills();
+      }
+      // ═══════════════════════════════════════════
+      // HTTP
+      // ═══════════════════════════════════════════
+      async function api(method, path, body) {
+        const opts = {
+          method,
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "x-guest-id": S.guestId,
+          },
+        };
+        if (body) opts.body = JSON.stringify(body);
+        const res = await fetch(BASE + path, opts);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw { status: res.status, ...data };
+        return data;
+      }
+
+      // ═══════════════════════════════════════════
+      // INIT
+      // ═══════════════════════════════════════════
+      async function init(preloadedStatus = null) {
+        try {
+          const data =
+            preloadedStatus ||
+            (await api("GET", "/api/consultation/session-status"));
+
+          // ── Дебаг: смотрим что реально возвращает сервер ──
+          console.log(
+            "[DocPats] session-status response:",
+            JSON.stringify(data, null, 2),
+          );
+
+          // ── Читаем лимиты — пробуем все возможные ключи ──
+          const guestConsLimit =
+            data.limits?.consultationGuest ||
+            data.limits?.consultationGuestLimit ||
+            data.limits?.guest?.consultations ||
+            data.consultations?.max ||
+            2; // ← фолбэк = 2 (по .env)
+
+          const guestEpicLimit =
+            data.limits?.epicrisisGuest ||
+            data.limits?.epicrisisGuestLimit ||
+            data.limits?.guest?.epicrises ||
+            data.epicrises?.max ||
+            2; // ← фолбэк = 2 (по .env)
+
+          // ── Консультации ──
+          if (
+            data.consultations &&
+            typeof data.consultations.remaining === "number"
+          ) {
+            S.status = data.consultations;
+          } else {
+            S.status = {
+              used: 0,
+              remaining: guestConsLimit,
+              max: guestConsLimit,
+            };
+          }
+
+          // ── Эпикризы ──
+          if (data.epicrises && typeof data.epicrises.remaining === "number") {
+            S.epicrisisStatus = data.epicrises;
+          } else {
+            S.epicrisisStatus = {
+              used: 0,
+              remaining: guestEpicLimit,
+              max: guestEpicLimit,
+            };
+          }
+
+          // ── Для гостя: мержим с localStorage (защита от потери cookie в iframe) ──
+          if (!S.auth) {
+            const local = getGuestStats();
+            const localConsUsed = local.consultations || 0;
+            const localEpicUsed = local.epicrises || 0;
+
+            if (localEpicUsed > S.epicrisisStatus.used) {
+              S.epicrisisStatus.used = localEpicUsed;
+              S.epicrisisStatus.remaining = Math.max(
+                0,
+                S.epicrisisStatus.max - localEpicUsed,
+              );
+            }
+          }
+
+          // ── Авторизация ──
+          if (data.isAuthenticated && !S.auth) {
+            S.auth = true;
+            IS_AUTH = true;
+            const authBtn = document.getElementById("auth-btn");
+            if (authBtn) {
+              authBtn.classList.add("authed");
+              authBtn.textContent = t().wt_authed;
+            }
+          }
+        } catch (err) {
+          console.error("[DocPats] init error:", err);
+          if (err instanceof TypeError && err.message === "Failed to fetch") {
+            // Сервер недоступен — не трогаем S.status если уже установлен
+            if (!S.status) S.status = { used: 0, remaining: 2, max: 2 };
+            if (!S.epicrisisStatus)
+              S.epicrisisStatus = { used: 0, remaining: 2, max: 2 };
+            // НЕ вызываем applyLocalStats — localStorage может быть устаревшим
+          } else {
+            S.status = { used: 0, remaining: 2, max: 2 };
+            S.epicrisisStatus = { used: 0, remaining: 2, max: 2 };
+            applyLocalStats();
+          }
+        }
+        renderPills();
+      }
+      function renderPills() {
+        const L = t();
+        const hint = document.getElementById("limit-hint");
+        const btn = document.getElementById("start-btn");
+
+        if (!S.epicrisisStatus || !S.status) {
+          document.getElementById("pills").innerHTML =
+            `<div class="pill"><span class="pill-dot dim"></span>${L.wt_loading}</div>`;
+          btn.disabled = true;
+          return;
+        }
+
+        const { remaining, max } = S.epicrisisStatus;
+        const cls = remaining > 1 ? "green" : remaining === 1 ? "gold" : "dim";
+        const lbl =
+          remaining > 0 ? L.pill_epicrises(remaining, max) : L.pill_epic_done;
+
+        const cRem = S.status?.remaining ?? 0;
+        const cMax = S.status?.max ?? 0;
+        const cCls = cRem > cMax * 0.5 ? "green" : cRem > 0 ? "gold" : "dim";
+
+        document.getElementById("pills").innerHTML =
+          `<div class="pill"><span class="pill-dot ${cCls}"></span>${L.pill_consultations(cRem, cMax)}</div>` +
+          `<div class="pill"><span class="pill-dot ${cls}"></span>${lbl}</div>`;
+
+        if (S.status.remaining <= 0 && !S.auth) {
+          // Гость + лимит исчерпан — кнопка неактивна
+          btn.disabled = true;
+          btn.textContent = "Лимит исчерпан — войдите для продолжения";
+          btn.style.opacity = "0.5";
+          btn.style.cursor = "not-allowed";
+          btn.onclick = null;
+          if (!hint) {
+            const h = document.createElement("div");
+            h.id = "limit-hint";
+            h.style.cssText =
+              "font-size:12px;color:var(--text3);margin-top:10px;line-height:1.5;";
+            h.textContent =
+              "Лимит исчерпан. Для увеличения лимита авторизуйтесь.";
+            btn.parentNode.insertBefore(h, btn.nextSibling);
+          }
+        } else if (S.status.remaining <= 0 && S.auth) {
+          // Авторизованный + лимит исчерпан — кнопка ведёт на тарифы
+          btn.disabled = false;
+          btn.style.opacity = "";
+          btn.style.cursor = "";
+          btn.textContent = L.btn_pricing;
+          btn.onclick = function () {
+            window.top.location.href = "/pricing";
+          };
+          if (hint) hint.remove();
+        } else {
+          // Лимит есть — обычная кнопка
+          btn.disabled = false;
+          btn.style.opacity = "";
+          btn.style.cursor = "";
+          btn.textContent = L.wt_start;
+          btn.onclick = function () {
+            goStart();
+          };
+          if (hint) hint.remove();
+        }
+      }
+
+      function toggleAuth() {
+        S.auth = !!localStorage.getItem("token");
+        const btn = document.getElementById("auth-btn");
+        btn.textContent = S.auth ? t().wt_authed : t().wt_auth;
+        btn.classList.toggle("authed", S.auth);
+        init();
+      }
+
+      // ═══════════════════════════════════════════
+      // NAVIGATION
+      // ═══════════════════════════════════════════
+      function showScreen(id) {
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.add("hidden"));
+        document.getElementById(id).classList.remove("hidden");
+      }
+
+      function goStart() {
+        if (S.status.remaining <= 0) {
+          showLimit();
+          return;
+        }
+        showScreen("info-screen");
+      }
+
+      function pickGender(g, el) {
+        document
+          .querySelectorAll(".g-btn")
+          .forEach((b) => b.classList.remove("sel"));
+        el.classList.add("sel");
+        S.gender = g;
+      }
+
+      // ═══════════════════════════════════════════
+      // LAUNCH CHATinit()
+      // ═══════════════════════════════════════════
+      async function launchChat() {
+        const L = t();
+        const btn = document.getElementById("launch-btn");
+        init();
+
+        // Защита: если лимиты ещё не init()
+        if (!S.status) {
+          showToast(L.err_server);
+          return;
+        }
+        // Проверка лимита перед стартом
+        if (S.status.remaining <= 0) {
+          showLimit();
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = L.it_launching;
+
+        try {
+          const r = await api("POST", "/api/consultation/start");
+          console.log("[DocPats] /start response:", r);
+        } catch (e) {
+          btn.disabled = false;
+          btn.textContent = L.it_start;
+          if (e.status === 429) {
+            showLimit();
+            return;
+          }
+          showToast(L.err_server);
+          return;
+        }
+
+        S.patient = {
+          name:
+            document.getElementById("pt-name").value.trim() ||
+            (LANG === "ar"
+              ? "المريض"
+              : LANG === "az"
+                ? "Xəstə"
+                : LANG === "tr"
+                  ? "Hasta"
+                  : LANG === "en"
+                    ? "Patient"
+                    : "Пациент"),
+          age: document.getElementById("pt-age").value || "—",
+          gender: L.gender_map[S.gender] || "—",
+        };
+
+        S.msgs = [];
+        S.files = [];
+        S.exchanges = 0;
+
+        showScreen("chat-screen");
+        document.getElementById("chat-sub").textContent =
+          `${S.patient.name}${S.patient.age !== "—" ? ", " + S.patient.age + " " + L.pt_age_unit : ""} · ${S.patient.gender}`;
+        document.getElementById("chip-txt").textContent = L.ct_session_n(
+          S.status.used,
+          S.status.max,
+        );
+        document.getElementById("msgs").innerHTML = "";
+        document.getElementById("epic-bar").classList.remove("show");
+        document.getElementById("attach-bar").style.display = "none";
+        btn.disabled = false;
+        btn.textContent = L.it_start;
+
+        await backendChat(
+          [
+            {
+              role: "user",
+              content: L.greeting(
+                S.patient.name,
+                S.patient.age,
+                S.patient.gender,
+              ),
+            },
+          ],
+          true,
+        );
+      }
+      // ═══════════════════════════════════════════
+      // CHAT
+      // ═══════════════════════════════════════════
+      function appendMsg(role, text) {
+        const area = document.getElementById("msgs");
+        const ini = role === "ai" ? "⚕" : S.patient.name[0].toUpperCase();
+        const time = new Date().toLocaleTimeString(
+          LANG === "ar" ? "ar" : "ru",
+          { hour: "2-digit", minute: "2-digit" },
+        );
+        const d = document.createElement("div");
+        d.className = `msg ${role}`;
+        d.innerHTML = `<div class="av ${role === "ai" ? "ai" : "usr"}">${ini}</div><div><div class="bubble">${text.replace(/\n/g, "<br>")}</div><div class="bmeta">${time}</div></div>`;
+        area.appendChild(d);
+        area.scrollTop = area.scrollHeight;
+      }
+
+      function showTyping() {
+        const area = document.getElementById("msgs");
+        const d = document.createElement("div");
+        d.id = "typing";
+        d.className = "typing-row";
+        d.innerHTML = `<div class="av ai">⚕</div><div class="typing-bub"><span></span><span></span><span></span></div>`;
+        area.appendChild(d);
+        area.scrollTop = area.scrollHeight;
+      }
+      function hideTyping() {
+        const t = document.getElementById("typing");
+        if (t) t.remove();
+      }
+
+      function onKey(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          send();
+        }
+      }
+      function autoH(el) {
+        el.style.height = "auto";
+        el.style.height = Math.min(el.scrollHeight, 110) + "px";
+      }
+
+      async function send() {
+        const inp = document.getElementById("msg-in");
+        const txt = inp.value.trim();
+        if (!txt || S.busy) return;
+        appendMsg("user", txt);
+        S.msgs.push({ role: "user", content: txt });
+        inp.value = "";
+        inp.style.height = "auto";
+        S.exchanges++;
+        await backendChat(S.msgs);
+      }
+
+      async function backendChat(messages, isGreeting = false) {
+        const L = t();
+        S.busy = true;
+        document.getElementById("send-btn").disabled = true;
+        showTyping();
+        try {
+          const data = await api("POST", "/api/consultation/message", {
+            messages,
+            patientInfo: S.patient,
+            isGreeting,
+          });
+
+          // Синхронизируем счётчик с сервером (приходит только после первого сообщения)
+          if (typeof data.remaining === "number") {
+            S.status.remaining = data.remaining;
+            S.status.max = data.max || S.status.max;
+            S.status.used = S.status.max - data.remaining;
+            renderPills();
+          }
+          hideTyping();
+          const reply = data.reply;
+          appendMsg("ai", reply);
+          if (isGreeting) {
+            S.msgs = [
+              { role: "user", content: messages[0].content },
+              { role: "assistant", content: reply },
+            ];
+          } else {
+            S.msgs.push({ role: "assistant", content: reply });
+          }
+          if (S.exchanges >= 4)
+            document.getElementById("epic-bar").classList.add("show");
+        } catch (e) {
+          hideTyping();
+          if (e.status === 503 && e.error === "AI_UNAVAILABLE") {
+            appendMsg(
+              "ai",
+              "🛠 Сервис временно недоступен. Мы уже работаем над восстановлением.",
+            );
+          } else if (e.status === 429 && e.error === "DAILY_MESSAGE_LIMIT") {
+            appendMsg("ai", "Вы достигли дневного лимита сообщений...");
+          } else {
+            appendMsg("ai", e.status === 429 ? L.err_limit : L.err_tech);
+          }
+          showToast(e.error || L.err_tech);
+        }
+        S.busy = false;
+        document.getElementById("send-btn").disabled = false;
+      }
+
+      // ═══════════════════════════════════════════
+      // FILES
+      // ═══════════════════════════════════════════
+      function onFile(e) {
+        const L = t();
+        Array.from(e.target.files).forEach((f) => {
+          if (S.files.length >= 5) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            S.files.push({
+              name: f.name,
+              data: ev.target.result,
+              type: f.type,
+            });
+            renderFiles();
+            const note = L.file_note(f.name);
+            appendMsg("ai", note);
+            S.msgs.push({ role: "assistant", content: note });
+          };
+          reader.readAsDataURL(f);
+        });
+        e.target.value = "";
+      }
+
+      function renderFiles() {
+        const bar = document.getElementById("attach-bar");
+        if (!S.files.length) {
+          bar.style.display = "none";
+          return;
+        }
+        bar.style.display = "flex";
+        bar.innerHTML = S.files
+          .map(
+            (f, i) =>
+              `<div class="a-chip">📎 ${f.name.length > 18 ? f.name.slice(0, 16) + "…" : f.name}<button onclick="rmFile(${i})">✕</button></div>`,
+          )
+          .join("");
+      }
+      function rmFile(i) {
+        S.files.splice(i, 1);
+        renderFiles();
+      }
+
+      // ═══════════════════════════════════════════
+      // EPICRISIS
+      // ═══════════════════════════════════════════
+      async function genEpicrisis() {
+        const L = t();
+        document.getElementById("epic-btn").disabled = true;
+        document.getElementById("epic-overlay").classList.add("show");
+        document.getElementById("epic-body").innerHTML =
+          `<div class="loading-view"><div class="spinner"></div><div class="spin-label">${L.em_loading}</div></div>`;
+        try {
+          const data = await api("POST", "/api/consultation/epicrisis", {
+            messages: S.msgs,
+            patientInfo: S.patient,
+          });
+
+          // Обновляем счётчик эпикризов
+          if (data.epicrisesRemaining !== undefined) {
+            S.epicrisisStatus.remaining = data.epicrisesRemaining;
+            S.epicrisisStatus.used =
+              S.epicrisisStatus.max - data.epicrisesRemaining;
+          } else {
+            S.epicrisisStatus.remaining = Math.max(
+              0,
+              S.epicrisisStatus.remaining - 1,
+            );
+            S.epicrisisStatus.used += 1;
+          }
+
+          // Для гостя — сохраняем локально
+          if (!S.auth) {
+            incrementGuestStat("epicrises");
+          }
+
+          renderPills(); // ← обновляем пиллы
+          renderEpicrisis(data.epicrisis, data.doctors || []);
+        } catch (e) {
+          closeEpic();
+          if (e.status === 429) {
+            showLimit();
+            return;
+          }
+          document.getElementById("epic-body").innerHTML =
+            `<div class="loading-view"><div style="font-size:30px">⚠</div><div class="spin-label">${L.em_error}</div><button class="btn-ghost" onclick="closeEpic()" style="margin-top:8px">${L.em_close}</button></div>`;
+          showToast(e.error || L.err_gen);
+        }
+        document.getElementById("epic-btn").disabled = false;
+      }
+
+      function renderEpicrisis(d, doctors) {
+        const L = t();
+        const info = S.patient;
+        const now = new Date();
+        const locale =
+          LANG === "ar"
+            ? "ar"
+            : LANG === "tr"
+              ? "tr"
+              : LANG === "az"
+                ? "az"
+                : LANG === "en"
+                  ? "en"
+                  : "ru";
+        const date = now.toLocaleDateString(locale, {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        });
+        const ref =
+          "DP-" +
+          now.getFullYear() +
+          "-" +
+          String(now.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          Math.floor(Math.random() * 9000 + 1000);
+        const urgMap = {
+          routine: { cls: "routine", lbl: L.urgency.routine },
+          urgent: { cls: "urgent", lbl: L.urgency.urgent },
+          emergency: { cls: "emergency", lbl: L.urgency.emergency },
+        };
+        const urg = urgMap[d.urgencyLevel] || urgMap.routine;
+
+        const drHtml = doctors.length
+          ? doctors
+              .map((dr) => {
+                const initials =
+                  [dr.firstName, dr.lastName]
+                    .filter(Boolean)
+                    .map((n) => n[0])
+                    .join("") || "DR";
+                const color = dr.avatarColor || "#0077b6";
+                const slot = dr.availableSlots?.[0]
+                  ? new Date(dr.availableSlots[0]).toLocaleString(locale, {
+                      day: "2-digit",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : L.doc_slot;
+                return `<div class="dr-card">
+                <div class="dr-av" style="background:${color}">${initials}</div>
+                <div class="dr-info">
+                  <div class="dr-name">${dr.firstName || ""} ${dr.lastName || ""}</div>
+                  <div class="dr-detail">${dr.specialty || ""} · ${dr.title || ""} · ${dr.experience || "—"} ${L.pt_age_unit}</div>
+                </div>
+                <div class="dr-right">
+                  <div class="dr-rating">★ ${dr.rating || "—"}</div>
+                  <div class="dr-avail">${slot}</div>
+                  <div class="dr-price">${dr.consultationPrice ? L.doc_price(dr.consultationPrice) : L.doc_no_price}</div>
+                </div>
+              </div>`;
+              })
+              .join("")
+          : `<div style="font-size:13px;color:var(--text3);padding:12px 0">${L.docs_none}</div>`;
+
+        document.getElementById("epic-body").innerHTML = `
+<div class="epic-doc">
+  <div class="epic-letterhead">
+    <div class="el-brand">
+      <div class="el-icon">⚕</div>
+      <div><div class="el-name">Doc<em>Pats</em></div><div class="el-tagline">AI Medical Platform · Azerbaijan</div></div>
+    </div>
+    <div class="el-right"><div class="el-ref">Ref: ${ref}</div><div class="el-date">${date}</div></div>
+  </div>
+  <div class="epic-headline">${L.epic_headline}</div>
+  <div class="epic-subline">${L.epic_subline}</div>
+  <span class="urgency-tag ${urg.cls}">${urg.lbl}</span>
+  <div class="pt-grid">
+    <div class="pt-cell"><div class="pt-label">${L.pt_patient}</div><div class="pt-val">${info.name}</div></div>
+    <div class="pt-cell"><div class="pt-label">${L.pt_age}</div><div class="pt-val">${info.age} ${L.pt_age_unit}</div></div>
+    <div class="pt-cell"><div class="pt-label">${L.pt_gender}</div><div class="pt-val">${info.gender}</div></div>
+  </div>
+  <div class="soap"><div class="soap-hd"><div class="soap-letter">S</div><h4>${L.soap_s}</h4></div>
+    <div class="soap-body"><strong>${L.complaint}</strong><p style="margin:5px 0 10px">${d.chiefComplaint || "—"}</p><strong>${L.anamnesis}</strong><p style="margin:5px 0">${d.historyOfPresentIllness || "—"}</p></div>
+  </div>
+  <div class="soap"><div class="soap-hd"><div class="soap-letter">O</div><h4>${L.soap_o}</h4></div>
+    <div class="soap-body">${d.systemsReview || "—"}</div>
+  </div>
+  <div class="soap"><div class="soap-hd"><div class="soap-letter">A</div><h4>${L.soap_a}</h4></div>
+    <div class="soap-body">
+      <p style="margin-bottom:10px">${d.preliminaryAssessment || "—"}</p>
+      ${d.differentialDiagnoses?.length ? `<strong>${L.diff}</strong><ul>${d.differentialDiagnoses.map((x) => `<li>${x}</li>`).join("")}</ul>` : ""}
+    </div>
+  </div>
+  <div class="soap"><div class="soap-hd"><div class="soap-letter">P</div><h4>${L.soap_p}</h4></div>
+    <div class="soap-body">
+      ${d.recommendations?.length ? `<strong>${L.recs}</strong><ul style="margin-bottom:12px">${d.recommendations.map((r) => `<li>${r}</li>`).join("")}</ul>` : ""}
+      ${d.additionalTests?.length ? `<strong>${L.tests}</strong><ul style="margin-bottom:12px">${d.additionalTests.map((t) => `<li>${t}</li>`).join("")}</ul>` : ""}
+      ${d.lifestyleAdvice ? `<strong>${L.lifestyle}</strong><p style="margin-top:5px">${d.lifestyleAdvice}</p>` : ""}
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="doc-section-title">${L.docs_title}</div>
+  <div class="doc-section-sub">${L.docs_sub}</div>
+  ${drHtml}
+  <div class="epic-disclaimer">${L.disclaimer(date, ref)}</div>
+</div>`;
+      }
+
+      // ═══════════════════════════════════════════
+      // HELPERS
+      // ═══════════════════════════════════════════
+      function closeEpic() {
+        document.getElementById("epic-overlay").classList.remove("show");
+      }
+      function closeLimit() {
+        document.getElementById("limit-overlay").classList.remove("show");
+      }
+      function printEpicrisis() {
+        setTimeout(() => window.print(), 100);
+      }
+
+      function showLimit() {
+        const L = t();
+        const regBtn = document.getElementById("lm-register");
+        const loginBtn = document.getElementById("lm-login");
+
+        if (S.auth) {
+          // Авторизован + лимит исчерпан → тарифы
+          document.getElementById("lm-title").textContent = L.lm_title;
+          document.getElementById("limit-txt").textContent = L.lm_auth;
+          regBtn.textContent =
+            LANG === "ar"
+              ? "← اختر الخطة"
+              : LANG === "az"
+                ? "Tarif seç →"
+                : LANG === "tr"
+                  ? "Plan seç →"
+                  : LANG === "en"
+                    ? "Choose a plan →"
+                    : "Выбрать тариф →";
+          regBtn.onclick = () => {
+            window.top.location.href = "/pricing";
+          };
+          if (loginBtn) loginBtn.style.display = "none";
+        } else {
+          // Гость → регистрация / вход
+          document.getElementById("lm-title").textContent =
+            LANG === "ar"
+              ? "سجّل أو سجّل دخولك"
+              : LANG === "az"
+                ? "Qeydiyyat / Giriş"
+                : LANG === "tr"
+                  ? "Kayıt / Giriş"
+                  : LANG === "en"
+                    ? "Sign up or Log in"
+                    : "Нужна авторизация";
+          document.getElementById("limit-txt").textContent =
+            LANG === "ar"
+              ? "سجّل للحصول على 5 استشارات مجانية، أو سجّل دخولك إذا كان لديك حساب."
+              : LANG === "az"
+                ? "5 pulsuz konsultasiya üçün qeydiyyatdan keçin və ya hesabınıza daxil olun."
+                : LANG === "tr"
+                  ? "5 ücretsiz danışma için kayıt olun veya hesabınıza giriş yapın."
+                  : LANG === "en"
+                    ? "Register to get 5 free consultations, or log in to your account."
+                    : "Зарегистрируйтесь, чтобы получить 5 бесплатных консультаций, или войдите в аккаунт.";
+          regBtn.textContent =
+            LANG === "ar"
+              ? "← التسجيل"
+              : LANG === "az"
+                ? "Qeydiyyat →"
+                : LANG === "tr"
+                  ? "Kayıt ol →"
+                  : LANG === "en"
+                    ? "Register →"
+                    : "Зарегистрироваться →";
+          regBtn.onclick = () => {
+            window.top.location.href = "/registration";
+          };
+          if (loginBtn) {
+            loginBtn.style.display = "flex";
+            loginBtn.textContent =
+              LANG === "ar"
+                ? "تسجيل الدخول"
+                : LANG === "az"
+                  ? "Daxil ol"
+                  : LANG === "tr"
+                    ? "Giriş yap"
+                    : LANG === "en"
+                      ? "Log in"
+                      : "Войти в аккаунт";
+            loginBtn.onclick = () => {
+              window.top.location.href = "/login";
+            };
+          }
+        }
+
+        document.getElementById("limit-overlay").classList.add("show");
+      }
+
+      let toastT;
+      function showToast(msg) {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        clearTimeout(toastT);
+        toastT = setTimeout(() => el.classList.remove("show"), 4000);
+      }
+
+      // ═══════════════════════════════════════════
+      // BOOT
+      // ═══════════════════════════════════════════
+      // ═══════════════════════════════════════════
+      // BOOT
+      function boot() {
+        BASE = window.__API_BASE__ || BASE;
+        setLang(LANG);
+        setTimeout(() => {
+          if (!_baseReceived && !S.status) {
+            // ← добавь !S.status
+            init();
+          }
+        }, 500);
+      }
+
+      let IS_AUTH = false;
+      let _baseReceived = false;
+      let _lastAuthState = null;
+
+      window.addEventListener("message", function (event) {
+        if (!event.data || event.data.apiBase === undefined) return;
+
+        if (event.data.apiBase) {
+          BASE = event.data.apiBase;
+        }
+
+        const newAuthState = !!event.data.isAuth;
+
+        if (newAuthState !== _lastAuthState) {
+          _lastAuthState = newAuthState;
+          IS_AUTH = newAuthState;
+          S.auth = newAuthState;
+
+          const btn = document.getElementById("auth-btn");
+          if (btn) {
+            if (newAuthState) {
+              btn.classList.add("authed");
+              btn.textContent = t().wt_authed;
+            } else {
+              btn.classList.remove("authed");
+              btn.textContent = t().wt_auth;
+            }
+          }
+          applyTranslations();
+
+          // Передаём готовый статус из React-компонента (fetched через прокси)
+          init(event.data.sessionStatus || null);
+        } else if (!_baseReceived) {
+          init(event.data.sessionStatus || null);
+        }
+
+        _baseReceived = true;
+      });
+
+      function handleAuthClick() {
+        if (IS_AUTH) {
+          // Уже авторизован — показываем лимит/тарифы
+          showLimit();
+          return;
+        }
+        window.top.location.href = "/login";
+      }
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", boot);
+      } else {
+        boot();
+      }
+    </script>
+  </body>
+</html>

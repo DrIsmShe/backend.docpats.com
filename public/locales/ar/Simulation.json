@@ -1,0 +1,219 @@
+{
+  "menuItem": "المحاكاة",
+  "pageTitle": "محاكاة العملية الجراحية",
+
+  "list": {
+    "title": "خطط المحاكاة الخاصة بي",
+    "empty": "لا توجد لديك أي خطة محاكاة بعد",
+    "emptyHint": "أنشئ أول خطة لإطلاع المريض على معاينة نتيجة العملية",
+    "newButton": "خطة جديدة",
+    "loadMore": "تحميل المزيد",
+    "loading": "جارٍ التحميل…",
+    "controlPointsCount_zero": "لا توجد نقاط تشويه",
+    "controlPointsCount_one": "نقطة تشويه واحدة",
+    "controlPointsCount_two": "نقطتا تشويه",
+    "controlPointsCount_few": "{{count}} نقاط تشويه",
+    "controlPointsCount_many": "{{count}} نقطة تشويه",
+    "controlPointsCount_other": "{{count}} نقطة تشويه",
+    "createdAt": "أُنشئت في {{date}}",
+    "updatedAt": "حُدّثت في {{date}}",
+    "searchPlaceholder": "البحث بالاسم أو المريض…",
+    "noMatch": "لم يُعثر على شيء مطابق لـ «{{query}}»",
+    "sort": {
+      "newest": "الأحدث أولاً",
+      "oldest": "الأقدم أولاً",
+      "label": "حسب الاسم"
+    }
+  },
+
+  "editor": {
+    "title": "محرّر الخطة",
+    "placeholderTitle": "المحرّر قيد التطوير",
+    "placeholderBody": "ستظهر هنا لوحة الرسم مع الصورة ونقاط التحكم ومعاينة التشويه. حالياً تتوفر فقط معالجة بيانات الخطة عبر واجهة API.",
+    "backToList": "العودة إلى قائمة الخطط",
+    "saveStatus": {
+      "idle": "جميع التغييرات محفوظة",
+      "saving": "جارٍ الحفظ…",
+      "saved": "تم الحفظ",
+      "error": "خطأ في الحفظ"
+    },
+
+    "loadingImage": "جارٍ تحميل الصورة…",
+    "imageLoadError": "تعذّر تحميل الصورة"
+  },
+
+  "newPlanModal": {
+    "title": "خطة محاكاة جديدة",
+    "stepUpload": "الخطوة 1 من 2 — حمّل صورة المريض",
+    "stepDetails": "الخطوة 2 من 2 — أدخل تفاصيل الخطة",
+    "dropZoneHint": "اسحب الصورة إلى هنا أو انقر للاختيار",
+    "dropZoneFormats": "JPG، PNG، WebP · حتى 20 ميغابايت",
+    "uploading": "جارٍ تحميل الصورة: {{progress}}%",
+    "uploadSuccess": "تم تحميل الصورة",
+    "labelField": "اسم الخطة",
+    "labelPlaceholder": "مثال: تجميل الأنف — الخيار 1",
+    "patientRefField": "مرجع المريض (اختياري)",
+    "patientRefPlaceholder": "مثال: محمد ع. أو رقم الملف",
+    "cancel": "إلغاء",
+    "back": "رجوع",
+    "create": "إنشاء الخطة",
+    "creating": "جارٍ الإنشاء…"
+  },
+
+  "deleteModal": {
+    "title": "حذف الخطة؟",
+    "body": "ستُنقل الخطة إلى الأرشيف، وستُحذف الصورة نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+    "cancel": "إلغاء",
+    "confirm": "حذف",
+    "deleting": "جارٍ الحذف…"
+  },
+
+  "itemMenu": {
+    "open": "فتح",
+    "duplicate": "تكرار",
+    "delete": "حذف"
+  },
+
+  "errors": {
+    "network_error": "خطأ في الشبكة. تحقّق من الاتصال.",
+    "validation_error": "تحقّق من البيانات المُدخَلة",
+    "unauthorized": "يلزم تسجيل الدخول",
+    "not_found": "الخطة غير موجودة",
+    "file_too_large": "الملف كبير جداً (الحد الأقصى 20 ميغابايت)",
+    "invalid_mime": "صيغة غير مدعومة. استخدم JPG أو PNG أو WebP",
+    "invalid_image": "تعذّرت قراءة الصورة",
+    "mime_mismatch": "نوع الملف لا يطابق محتواه",
+    "unknown": "حدث خطأ ما"
+  },
+
+  "toolbar": {
+    "zoomIn": "تكبير",
+    "zoomOut": "تصغير",
+    "zoomLevel": "مستوى التكبير الحالي",
+    "fit": "ملاءمة النافذة",
+    "fitShort": "ملاءمة",
+    "reset": "إعادة الضبط (100%)",
+    "modeSelect": "وضع التحديد (Esc)",
+    "modeAdd": "وضع إضافة نقطة",
+    "undo": "تراجع (Ctrl+Z)",
+    "redo": "إعادة (Ctrl+Shift+Z)"
+  },
+
+  "saveStatus": {
+    "idle": "محفوظ",
+    "dirty": "توجد تغييرات غير محفوظة",
+    "saving": "جارٍ الحفظ…",
+    "saved": "تم الحفظ",
+    "error": "خطأ في الحفظ"
+  },
+
+  "points": {
+    "propsTitle": "نقطة تشويه",
+    "radius": "نصف قطر التأثير",
+    "strength": "القوة",
+    "delete": "حذف النقطة",
+    "hint": "Alt + سحب المربع — لتحريك المركز. Del — للحذف."
+  },
+
+  "dates": {
+    "todayAt": "اليوم في {{time}}",
+    "yesterdayAt": "أمس في {{time}}",
+    "daysAgo_zero": "اليوم",
+    "daysAgo_one": "منذ يوم واحد",
+    "daysAgo_two": "منذ يومين",
+    "daysAgo_few": "منذ {{count}} أيام",
+    "daysAgo_many": "منذ {{count}} يوماً",
+    "daysAgo_other": "منذ {{count}} يوماً"
+  },
+
+  "tabs": {
+    "editor": "المحرّر",
+    "viewer": "قبل / بعد"
+  },
+
+  "viewer": {
+    "labelBefore": "قبل",
+    "labelAfter": "بعد",
+    "preparing": "جارٍ تجهيز الدقة الكاملة…",
+    "preparingHint": "نُحمّل الصورة الأصلية ونطبّق التشويه. تستغرق العملية بضع ثوانٍ.",
+    "exportError": "تعذّر تجهيز التصدير",
+    "retry": "إعادة المحاولة"
+  },
+
+  "export": {
+    "title": "التصدير",
+    "mode": "ما الذي تريد تصديره",
+    "modes": {
+      "before": "قبل العملية (الأصلية)",
+      "after": "بعد العملية (مع التشويه)",
+      "sideBySide": "جنباً إلى جنب: قبل وبعد"
+    },
+    "format": "الصيغة",
+    "quality": "جودة JPG",
+    "download": "تنزيل",
+    "downloading": "جارٍ التوليد…"
+  },
+
+  "help": {
+    "pageTitle": "المساعدة",
+    "backToList": "العودة إلى قائمة الخطط",
+    "toc": "الفهرس",
+    "loading": "جارٍ تحميل المساعدة...",
+    "loadError": "خطأ في تحميل المساعدة",
+    "headerLink": "المساعدة"
+  },
+
+  "landmarks": {
+    "title": "النقاط التشريحية",
+    "status": {
+      "idle": "لم يتم التحديد",
+      "detecting": "جارٍ التحديد",
+      "detected": "تم التحديد",
+      "failed": "خطأ"
+    },
+    "count_zero": "لا توجد نقاط",
+    "count_one": "نقطة واحدة",
+    "count_two": "نقطتان",
+    "count_few": "{{count}} نقاط",
+    "count_many": "{{count}} نقطة",
+    "count_other": "{{count}} نقطة",
+    "detectedAt": "حُدِّث في {{time}}",
+    "loaderLoading": "جارٍ تحميل النموذج…",
+    "detecting": "جارٍ التحديد…",
+    "redetect": "إعادة التحديد",
+    "groups": {
+      "title": "مجموعات النقاط",
+      "face_oval": "محيط الوجه",
+      "nose": "الأنف",
+      "lips": "الشفتان",
+      "left_eye": "العين اليسرى",
+      "right_eye": "العين اليمنى",
+      "left_eyebrow": "الحاجب الأيسر",
+      "right_eyebrow": "الحاجب الأيمن"
+    }
+  },
+  "workflowHint": "لتغيير الشكل: انتقل إلى وضع الإضافة (+•)، انقر على نقطة تشريحية، ثم اسحبها.",
+  "measurements": {
+    "title": "القياسات",
+    "noLandmarks": "ابدأ بتحديد النقاط التشريحية أولاً",
+    "normal": "طبيعي",
+    "show": "إظهار القياس",
+    "hide": "إخفاء القياس",
+    "calibrationHint": "تتطلب القياسات بالمليمتر معايرةً بناءً على مسافة معروفة (متاحة في إعدادات الخطة).",
+    "nasofrontalAngle": {
+      "label": "الزاوية الأنفية الجبهية",
+      "description": "الزاوية بين خط الجبهة وظهر الأنف"
+    },
+    "goodeProjection": {
+      "label": "إسقاط طرف الأنف (Goode)",
+      "description": "نسبة طول طرف الأنف إلى ارتفاع الأنف"
+    },
+    "alarBaseWidth": {
+      "label": "عرض قاعدة الجناحين",
+      "description": "المسافة بين أبعد نقطتين من جناحَي الأنف"
+    }
+  },
+  "toggleSidePanel": "فتح/إغلاق اللوحة الجانبية",
+  "loadingImageRetry": "تحميل الصورة… (محاولة {{attempt}} من {{max}})",
+  "loadingImageRetryHint": "قد تستغرق الصور المحملة حديثًا بضع ثوانٍ لتصبح متاحة"
+}

@@ -1,0 +1,267 @@
+{
+  "menuItem": "Симуляция",
+  "pageTitle": "Симуляция операции",
+
+  "list": {
+    "title": "Мои планы симуляции",
+    "empty": "У вас пока нет ни одного плана симуляции",
+    "emptyHint": "Создайте первый план, чтобы показать пациенту превью результата операции",
+    "newButton": "Новый план",
+    "loadMore": "Загрузить ещё",
+    "loading": "Загрузка…",
+    "controlPointsCount_zero": "Нет точек деформации",
+    "controlPointsCount_one": "{{count}} точка деформации",
+    "controlPointsCount_few": "{{count}} точки деформации",
+    "controlPointsCount_many": "{{count}} точек деформации",
+    "controlPointsCount_other": "{{count}} точек деформации",
+    "createdAt": "Создан {{date}}",
+    "updatedAt": "Обновлён {{date}}",
+    "searchPlaceholder": "Поиск по названию или пациенту…",
+    "noMatch": "Ничего не найдено по запросу «{{query}}»",
+    "sort": {
+      "newest": "Сначала новые",
+      "oldest": "Сначала старые",
+      "label": "По названию"
+    }
+  },
+
+  "editor": {
+    "title": "Редактор плана",
+    "placeholderTitle": "Редактор в разработке",
+    "placeholderBody": "Здесь будет canvas с фото, control points и предпросмотром деформации. Сейчас доступна только работа с метаданными плана через API.",
+    "backToList": "К списку планов",
+    "saveStatus": {
+      "idle": "Все изменения сохранены",
+      "saving": "Сохранение…",
+      "saved": "Сохранено",
+      "error": "Ошибка сохранения"
+    },
+
+    "loadingImage": "Загрузка фото…",
+    "imageLoadError": "Не удалось загрузить фото"
+  },
+
+  "newPlanModal": {
+    "title": "Новый план симуляции",
+    "stepUpload": "Шаг 1 из 2 — загрузите фото пациента",
+    "stepDetails": "Шаг 2 из 2 — введите детали плана",
+    "dropZoneHint": "Перетащите фото сюда или нажмите для выбора",
+    "dropZoneFormats": "JPG, PNG, WebP · до 20 МБ",
+    "uploading": "Загрузка фото: {{progress}}%",
+    "uploadSuccess": "Фото загружено",
+    "labelField": "Название плана",
+    "labelPlaceholder": "Например: Ринопластика — вариант 1",
+    "patientRefField": "Метка пациента (необязательно)",
+    "patientRefPlaceholder": "Например: Иванов И. И. или № карты",
+    "cancel": "Отмена",
+    "back": "Назад",
+    "create": "Создать план",
+    "creating": "Создание…"
+  },
+
+  "deleteModal": {
+    "title": "Удалить план?",
+    "body": "План будет перемещён в архив, фото удалено навсегда. Это действие нельзя отменить.",
+    "cancel": "Отмена",
+    "confirm": "Удалить",
+    "deleting": "Удаление…"
+  },
+
+  "itemMenu": {
+    "open": "Открыть",
+    "duplicate": "Дублировать",
+    "delete": "Удалить"
+  },
+
+  "errors": {
+    "network_error": "Ошибка сети. Проверьте подключение.",
+    "validation_error": "Проверьте введённые данные",
+    "unauthorized": "Требуется авторизация",
+    "not_found": "План не найден",
+    "file_too_large": "Файл слишком большой (максимум 20 МБ)",
+    "invalid_mime": "Неподдерживаемый формат. Используйте JPG, PNG или WebP",
+    "invalid_image": "Не удалось прочитать изображение",
+    "mime_mismatch": "Тип файла не соответствует содержимому",
+    "unknown": "Что-то пошло не так"
+  },
+
+  "toolbar": {
+    "zoomIn": "Увеличить",
+    "zoomOut": "Уменьшить",
+    "zoomLevel": "Текущий масштаб",
+    "fit": "Вписать в окно",
+    "fitShort": "Fit",
+    "reset": "Сбросить (100%)",
+    "modeSelect": "Режим выбора (Esc)",
+    "modeAdd": "Режим добавления точки",
+    "undo": "Отменить (Ctrl+Z)",
+    "redo": "Повторить (Ctrl+Shift+Z)"
+  },
+  "saveStatus": {
+    "idle": "Сохранено",
+    "dirty": "Есть несохранённые изменения",
+    "saving": "Сохранение…",
+    "saved": "Сохранено",
+    "error": "Ошибка сохранения"
+  },
+  "points": {
+    "propsTitle": "Точка деформации",
+    "radius": "Радиус влияния",
+    "strength": "Сила",
+    "delete": "Удалить точку",
+    "hint": "Alt+перетаскивание квадрата — сдвиг центра. Del — удалить."
+  },
+
+  "dates": {
+    "todayAt": "Сегодня в {{time}}",
+    "yesterdayAt": "Вчера в {{time}}",
+    "daysAgo_one": "{{count}} день назад",
+    "daysAgo_few": "{{count}} дня назад",
+    "daysAgo_many": "{{count}} дней назад",
+    "daysAgo_other": "{{count}} дней назад"
+  },
+  "tabs": {
+    "editor": "Редактор",
+    "viewer": "До / После"
+  },
+
+  "viewer": {
+    "labelBefore": "До",
+    "labelAfter": "После",
+    "preparing": "Готовим полное разрешение…",
+    "preparingHint": "Загружаем оригинал и применяем деформацию. Занимает несколько секунд.",
+    "exportError": "Не удалось подготовить экспорт",
+    "retry": "Попробовать снова"
+  },
+
+  "export": {
+    "title": "Экспорт",
+    "mode": "Что экспортировать",
+    "modes": {
+      "before": "До операции (оригинал)",
+      "after": "После операции (с деформацией)",
+      "sideBySide": "Рядом: До и После"
+    },
+    "format": "Формат",
+    "quality": "Качество JPG",
+    "download": "Скачать",
+    "downloading": "Генерация…"
+  },
+  "help": {
+    "pageTitle": "Справка",
+    "backToList": "К списку планов",
+    "toc": "Оглавление",
+    "loading": "Загрузка справки...",
+    "loadError": "Ошибка загрузки справки",
+    "headerLink": "Помощь"
+  },
+  "simulation": {
+    "landmarks": {
+      "title": "Анатомические точки",
+      "status": {
+        "idle": "Не определены",
+        "detecting": "Определение…",
+        "detected": "Определены",
+        "failed": "Ошибка"
+      },
+      "count_one": "{{count}} точка",
+      "count_few": "{{count}} точки",
+      "count_many": "{{count}} точек",
+      "count_other": "{{count}} точек",
+      "detectedAt": "обновлено {{time}}",
+      "detecting": "Идёт определение…",
+      "redetect": "Перерасчитать",
+      "groups": {
+        "title": "Группы точек",
+        "face_oval": "Контур лица",
+        "nose": "Нос",
+        "lips": "Губы",
+        "left_eye": "Левый глаз",
+        "right_eye": "Правый глаз",
+        "left_eyebrow": "Левая бровь",
+        "right_eyebrow": "Правая бровь"
+      }
+    }
+  },
+  "landmarks": {
+    "count_one": "{{count}} точка",
+    "count_few": "{{count}} точки",
+    "count_many": "{{count}} точек",
+    "count_other": "{{count}} точек",
+    "detectedAt": "обновлено {{time}}",
+    "loaderLoading": "Загрузка модели…",
+    "detecting": "Идёт определение…",
+    "redetect": "Перерасчитать",
+    "groups": {
+      "title": "Группы точек",
+      "face_oval": "Контур лица",
+      "nose": "Нос",
+      "lips": "Губы",
+      "left_eye": "Левый глаз",
+      "right_eye": "Правый глаз",
+      "left_eyebrow": "Левая бровь",
+      "right_eyebrow": "Правая бровь",
+      "forehead": "Лоб",
+
+      "left_cheek": "Левая щека",
+      "right_cheek": "Правая щека",
+      "left_jaw": "Левая челюсть",
+      "right_jaw": "Правая челюсть",
+      "chin": "Подбородок",
+      "manual": "Ручные",
+      "other": "Другие"
+    },
+    "countSummary": "{{visible}} из {{total}}",
+    "manualCount_one": "{{count}} ручная",
+    "manualCount_few": "{{count}} ручные",
+    "manualCount_many": "{{count}} ручных",
+    "manualCount_other": "{{count}} ручных",
+
+    "workflowHint": "Чтобы изменить форму: переключитесь в режим добавления (+•), кликните на нужную точку лица, затем перетащите её.",
+    "editTools": "Редактирование точек",
+    "tools": {
+      "addManual": "Добавить",
+      "addManualHint": "Кликните по фото чтобы добавить ручную точку",
+      "hide": "Скрыть",
+      "hideHint": "Кликните по точке чтобы её скрыть"
+    },
+    "reset": "Сбросить правки",
+    "resetHint": "Вернуть все скрытые точки и удалить ручные",
+    "confirmReset": "Сбросить все правки точек? Это вернёт скрытые и удалит ручные.",
+
+    "title": "Анатомические точки",
+    "status": {
+      "idle": "Не определены",
+      "detecting": "Определение",
+      "detected": "Определены",
+      "failed": "Ошибка"
+    },
+    "statsVisible": "Видимых",
+    "statsHidden": "Скрытых",
+    "statsManual": "Ручных"
+  },
+  "workflowHint": "Чтобы изменить форму: переключитесь в режим добавления (+•), кликните на нужную точку лица, затем перетащите её.",
+  "measurements": {
+    "title": "Измерения",
+    "noLandmarks": "Сначала запустите определение анатомических точек",
+    "normal": "норма",
+    "show": "Показать измерение",
+    "hide": "Скрыть измерение",
+    "calibrationHint": "Для измерений в миллиметрах требуется калибровка по известному расстоянию (доступно в настройках плана).",
+    "nasofrontalAngle": {
+      "label": "Носо-лобный угол",
+      "description": "Угол между линией лба и спинкой носа"
+    },
+    "goodeProjection": {
+      "label": "Проекция кончика носа (Goode)",
+      "description": "Соотношение длины кончика к высоте носа"
+    },
+    "alarBaseWidth": {
+      "label": "Ширина основания крыльев",
+      "description": "Расстояние между крайними точками крыльев носа"
+    }
+  },
+  "toggleSidePanel": "Открыть/закрыть панель",
+  "loadingImageRetry": "Загрузка фото… (попытка {{attempt}} из {{max}})",
+  "loadingImageRetryHint": "Только что загруженное фото может быть недоступно несколько секунд"
+}

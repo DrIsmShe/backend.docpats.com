@@ -1,0 +1,274 @@
+{
+  "CapsuleEndoscopyScanerTemplateDiagnosis": {
+    "title": "Kapsul endoskopiya üçün diaqnoz şablonu əlavə et",
+    "fields": {
+      "title": {
+        "placeholder": "Diaqnoz başlığını daxil edin..."
+      },
+      "content": {
+        "placeholder": "Diaqnoz mətnini daxil edin..."
+      }
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "createSuccess": "✅ Diaqnoz şablonu uğurla əlavə edildi",
+      "createError": "❌ Diaqnoz şablonu əlavə edilərkən xəta baş verdi",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "CapsuleEndoscopyScanerDetails": {
+    "page": {
+      "title": "Kapsul Endoskopiya — Müayinə Təfərrüatları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat tapılmadı",
+      "errors": {
+        "fetchError": "Müayinə məlumatları yüklənə bilmədi"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Keçid:",
+        "uploadError": "PDF yükləmə xətası. Yenidən cəhd edin."
+      }
+    },
+    "sections": {
+      "general": "Ümumi Məlumat",
+      "findings": "Nəticələr"
+    },
+    "fields": {
+      "patient": "Xəstə",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinənin Adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast İstifadə Edildi",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim Şərhləri"
+    },
+    "buttons": {
+      "download": "PDF Yüklə",
+      "upload": "PDF Göndər",
+      "print": "Çap et"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateDiagnosisEdit": {
+    "title": "Kapsul endoskopiya diaqnoz şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "loadError": "Diaqnoz şablonu yüklənə bilmədi",
+      "updateSuccess": "✅ Diaqnoz şablonu uğurla yeniləndi",
+      "updateError": "❌ Diaqnoz şablonunu yeniləmək olmadı"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateDiagnosisDetails": {
+    "title": "Kapsul endoskopiya diaqnoz şablonunun detalları",
+    "page": {
+      "loading": "Yüklənir..."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loadError": "Diaqnoz şablonu yüklənə bilmədi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendation": {
+    "title": "Kapsul endoskopiya tövsiyə şablonu əlavə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "addSuccess": "✅ Tövsiyə şablonu uğurla əlavə edildi",
+      "addError": "❌ Tövsiyə şablonu əlavə edilə bilmədi",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendationDetails": {
+    "title": "Kapsul endoskopiya tövsiyə şablonunun detalları",
+    "page": {
+      "loading": "Yüklənir..."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loadError": "Tövsiyə şablonu yüklənə bilmədi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendationEdit": {
+    "title": "Kapsul endoskopiya tövsiyə şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "loadError": "Tövsiyə şablonu yüklənə bilmədi",
+      "updateSuccess": "✅ Tövsiyə şablonu uğurla yeniləndi",
+      "updateError": "❌ Tövsiyə şablonu yenilənə bilmədi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateRecomendationList": {
+    "title": "📋 Kapsul endoskopiya tövsiyə şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "messages": {
+      "loadError": "Tövsiyə şablonları yüklənə bilmədi",
+      "deleteSuccess": "✅ Tövsiyə şablonu uğurla silindi",
+      "deleteError": "❌ Tövsiyə şablonu silinə bilmədi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReport": {
+    "title": "Kapsul endoskopiya hesabat şablonu əlavə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "addSuccess": "✅ Hesabat şablonu uğurla əlavə edildi",
+      "addError": "❌ Hesabat şablonu əlavə edilə bilmədi",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReportDetails": {
+    "title": "Kapsul endoskopiya hesabat şablonunun detalları",
+    "page": {
+      "loading": "Yüklənir..."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loadError": "Hesabat şablonu yüklənə bilmədi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReportEdit": {
+    "title": "Kapsul endoskopiya hesabat şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "loadError": "Hesabat şablonu yüklənə bilmədi",
+      "updateSuccess": "✅ Hesabat şablonu uğurla yeniləndi",
+      "updateError": "❌ Hesabat şablonu yenilənə bilmədi"
+    }
+  },
+  "CapsuleEndoscopyScanerTemplateReportList": {
+    "title": "📝 Kapsul endoskopiya hesabat şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "messages": {
+      "loadError": "Hesabat şablonları yüklənə bilmədi",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexam": {
+    "title": "Kapsul endoskopiya müayinəsinin ad şablonunu əlavə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "createSuccess": "✅ Müayinə adı şablonu uğurla əlavə edildi",
+      "createError": "Şablon əlavə edilərkən xəta baş verdi",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexamDetail": {
+    "title": "Kapsul endoskopiya müayinəsinin ad şablonunun detalları",
+    "page": {
+      "loading": "Yüklənir..."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loadError": "Şablon yüklənərkən xəta baş verdi"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexamEdit": {
+    "title": "Kapsul endoskopiya müayinəsinin ad şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "loadError": "Şablon yüklənərkən xəta baş verdi",
+      "updateSuccess": "✅ Şablon uğurla yeniləndi",
+      "updateError": "❌ Şablon yenilənmədi"
+    }
+  },
+  "CapsuleEndoscopyScanTemplateNameofexamList": {
+    "title": "📌 Kapsul endoskopiya müayinəsinin ad şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "messages": {
+      "loadError": "Müayinə adı şablonları yüklənmədi",
+      "deleteSuccess": "✅ Şablon uğurla silindi",
+      "deleteError": "❌ Şablon silinmədi"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Comments",
+  "writeComment": "Write a comment...",
+  "send": "Send",
+  "reply": "Reply",
+  "cancel": "Cancel",
+  "save": "Save",
+  "edit": "Edit",
+  "delete": "Delete",
+  "anonymous": "Anonymous",
+  "replyTo": "Reply to",
+  "edited": "(edited)",
+  "loading": "Loading comments...",
+  "confirmDelete": "Are you sure you want to delete this comment?",
+  "loadCommentCount": "Error fetching comment count",
+  "errors": {
+    "load": "Error loading comments",
+    "create": "Error creating comment",
+    "reply": "Error replying",
+    "delete": "Error deleting",
+    "edit": "Error editing",
+    "like": "Error liking"
+  }
+}

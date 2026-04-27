@@ -1,0 +1,221 @@
+{
+  "USMScanerTemplateDiagnosis": {
+    "title": "إضافة قالب التشخيص",
+    "form": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى",
+      "saveButton": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التشخيص بنجاح.",
+      "errorDefault": "فشل في إضافة القالب.",
+      "networkError": "خطأ في الشبكة"
+    }
+  },
+  "USMScanerTemplateDiagnosisDetails": {
+    "title": "تفاصيل قالب تشخيص USM",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "actions": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loading": "جارٍ التحميل...",
+      "loadError": "فشل في تحميل القالب."
+    }
+  },
+  "USMScanerTemplateDiagnosisEdit": {
+    "title": "تعديل قالب تشخيص USM",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "actions": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب التشخيص بنجاح!",
+      "updateError": "❌ حدث خطأ أثناء تحديث القالب.",
+      "loadError": "❌ فشل في تحميل القالب."
+    }
+  },
+  "USMScanerTemplateDiagnosisList": {
+    "title": "🧾 قوالب تشخيص USM",
+    "actions": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "messages": {
+      "confirmDelete": "هل أنت متأكد من حذف هذا القالب؟",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب.",
+      "loadError": "❌ فشل في تحميل قوالب التشخيص."
+    }
+  },
+  "USMScanerTemplateNameofexam": {
+    "title": "إضافة قالب اسم فحص USM",
+    "form": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى",
+      "saveButton": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب اسم الفحص بنجاح.",
+      "errorDefault": "حدث خطأ أثناء إضافة القالب.",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "USMScanerTemplateNameofexamDetail": {
+    "title": "تفاصيل قالب اسم فحص USM",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "actions": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loading": "جارٍ التحميل...",
+      "loadError": "فشل في تحميل القالب."
+    }
+  },
+  "USMScanerTemplateNameofexamEdit": {
+    "title": "تعديل قالب اسم فحص USM",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "actions": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب اسم الفحص بنجاح!",
+      "updateError": "❌ فشل في تحديث القالب.",
+      "loadError": "❌ فشل في تحميل القالب."
+    }
+  },
+  "USMScanerTemplateNameofexamList": {
+    "title": "📌 قوالب أسماء فحوصات USM",
+    "actions": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "messages": {
+      "confirmDelete": "هل أنت متأكد من حذف هذا القالب؟",
+      "deleteError": "❌ فشل في حذف القالب.",
+      "loadError": "❌ فشل في تحميل القوالب."
+    }
+  },
+  "USMScanerTemplateRecomendation": {
+    "title": "إضافة قالب توصيات USM",
+    "form": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى",
+      "saveButton": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التوصيات بنجاح.",
+      "errorDefault": "حدث خطأ أثناء إضافة القالب.",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "USMScanerTemplateRecomendationDetails": {
+    "title": "تفاصيل قالب توصيات USM",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "actions": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loading": "جارٍ التحميل...",
+      "loadError": "فشل في تحميل القالب."
+    }
+  },
+  "USMScanerTemplateRecomendationEdit": {
+    "title": "تعديل قالب توصيات USM",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "actions": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب التوصيات بنجاح!",
+      "updateError": "❌ حدث خطأ أثناء تحديث القالب.",
+      "loadError": "❌ فشل في تحميل القالب."
+    }
+  },
+  "USMScanerTemplateRecomendationList": {
+    "title": "📋 قوالب توصيات USM",
+    "actions": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "messages": {
+      "confirmDelete": "هل أنت متأكد من حذف هذا القالب؟",
+      "deleteError": "❌ حدث خطأ أثناء حذف القالب.",
+      "loadError": "❌ فشل في تحميل قوالب التوصيات."
+    }
+  },
+  "USMScanerTemplateReport": {
+    "title": "إضافة قالب تقرير USM",
+    "form": {
+      "titlePlaceholder": "العنوان",
+      "contentPlaceholder": "المحتوى",
+      "saveButton": "حفظ"
+    },
+    "messages": {
+      "success": "✅ تم إضافة قالب التقرير بنجاح.",
+      "errorDefault": "حدث خطأ أثناء إضافة القالب.",
+      "networkError": "⚠️ خطأ في الشبكة"
+    }
+  },
+  "USMScanerTemplateReportDetails": {
+    "title": "تفاصيل قالب تقرير USM",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "actions": {
+      "edit": "تعديل"
+    },
+    "messages": {
+      "loading": "جارٍ التحميل...",
+      "loadError": "فشل في تحميل القالب."
+    }
+  },
+  "USMScanerTemplateReportEdit": {
+    "title": "تعديل قالب تقرير USM",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "actions": {
+      "update": "تحديث القالب"
+    },
+    "messages": {
+      "success": "✅ تم تحديث قالب التقرير بنجاح!",
+      "updateError": "❌ فشل في تحديث القالب.",
+      "loadError": "❌ فشل في تحميل القالب."
+    }
+  },
+  "USMScanerTemplateReportList": {
+    "title": "📝 قوالب تقارير USM",
+    "actions": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    },
+    "messages": {
+      "confirmDelete": "هل أنت متأكد من حذف هذا القالب؟",
+      "deleteError": "❌ فشل في حذف القالب.",
+      "loadError": "❌ فشل في تحميل قوالب التقارير."
+    }
+  }
+}

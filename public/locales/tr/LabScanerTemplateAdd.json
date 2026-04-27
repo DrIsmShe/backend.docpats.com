@@ -1,0 +1,11 @@
+{
+  "AngiographyScanerTemplateDiagnosis": {
+    "titlePage": "Anjiyografi Tanı Şablonu Ekle",
+    "titlePlaceholder": "Başlık",
+    "contentPlaceholder": "Tanı içeriği",
+    "saveButton": "Kaydet",
+    "success": "✅ Tanı şablonu başarıyla eklendi.",
+    "error": "Şablon eklenemedi.",
+    "networkError": "Ağ hatası"
+  }
+}

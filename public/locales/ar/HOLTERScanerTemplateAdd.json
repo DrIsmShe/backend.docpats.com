@@ -1,0 +1,201 @@
+{
+  "HOLTERScanerTemplateDiagnosis": {
+    "title": "إضافة قالب تشخيص هولتر",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "success": "✅ تم إضافة قالب التشخيص بنجاح.",
+    "error": "فشل في إضافة القالب.",
+    "networkError": "خطأ في الشبكة"
+  },
+  "HOLTERScanerTemplateDiagnosisDetails": {
+    "title": "تفاصيل قالب تشخيص هولتر",
+    "loading": "جارٍ التحميل...",
+    "error": "فشل في تحميل القالب.",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    }
+  },
+  "HOLTERScanerTemplateDiagnosisEdit": {
+    "title": "تعديل قالب تشخيص هولتر",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "update": "تحديث"
+    },
+    "success": "✅ تم تحديث قالب التشخيص بنجاح.",
+    "updateError": "حدث خطأ أثناء تحديث القالب.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "HOLTERScanerTemplateDiagnosisList": {
+    "title": "🧾 قوالب تشخيص هولتر",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "loadError": "فشل في تحميل قوالب التشخيص.",
+    "deleteError": "حدث خطأ أثناء حذف القالب.",
+    "successDelete": "✅ تم حذف القالب بنجاح.",
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    }
+  },
+  "HOLTERScanTemplateNameofexam": {
+    "title": "إضافة قالب اسم فحص هولتر",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "success": "✅ تم إضافة قالب اسم الفحص بنجاح.",
+    "error": "حدث خطأ أثناء إضافة القالب.",
+    "networkError": "خطأ في الشبكة"
+  },
+  "HOLTERScanTemplateNameofexamDetail": {
+    "title": "تفاصيل قالب اسم فحص هولتر",
+    "loading": "جارٍ التحميل...",
+    "error": "فشل في تحميل القالب.",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    }
+  },
+  "HOLTERScanTemplateNameofexamEdit": {
+    "title": "تعديل قالب اسم فحص هولتر",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "update": "تحديث"
+    },
+    "success": "✅ تم تحديث قالب اسم الفحص بنجاح.",
+    "updateError": "فشل في تحديث القالب.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "HOLTERScanTemplateNameofexamList": {
+    "title": "📌 قوالب اسم فحص هولتر",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "loadError": "فشل في تحميل قوالب اسم الفحص.",
+    "deleteError": "فشل في حذف القالب.",
+    "successDelete": "✅ تم حذف القالب بنجاح.",
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    }
+  },
+  "HOLTERScanerTemplateRecomendation": {
+    "title": "إضافة قالب توصيات فحص هولتر",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "success": "✅ تم إضافة قالب التوصيات بنجاح.",
+    "error": "حدث خطأ أثناء إضافة قالب التوصيات.",
+    "networkError": "خطأ في الشبكة"
+  },
+  "HOLTERScanerTemplateRecomendationDetails": {
+    "title": "تفاصيل قالب توصيات فحص هولتر",
+    "loading": "جارٍ التحميل...",
+    "error": "فشل في تحميل القالب.",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    }
+  },
+  "HOLTERScanerTemplateRecomendationEdit": {
+    "title": "تعديل قالب توصيات فحص هولتر",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "update": "تحديث"
+    },
+    "success": "✅ تم تحديث قالب التوصيات بنجاح.",
+    "updateError": "حدث خطأ أثناء تحديث قالب التوصيات.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "HOLTERScanerTemplateRecomendationList": {
+    "title": "📋 قوالب توصيات فحص هولتر",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "loadError": "فشل في تحميل قوالب التوصيات.",
+    "deleteError": "حدث خطأ أثناء حذف قالب التوصيات.",
+    "successDelete": "✅ تم حذف قالب التوصيات بنجاح.",
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    }
+  },
+  "HOLTERScanTemplateReport": {
+    "title": "إضافة قالب تقرير فحص هولتر",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "save": "حفظ"
+    },
+    "success": "✅ تم إضافة قالب التقرير بنجاح.",
+    "error": "حدث خطأ أثناء إضافة قالب التقرير.",
+    "networkError": "خطأ في الشبكة"
+  },
+  "HOLTERScanerTemplateReportDetails": {
+    "title": "تفاصيل قالب تقرير فحص هولتر",
+    "loading": "جارٍ التحميل...",
+    "error": "فشل في تحميل القالب.",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى",
+      "doctor": "الطبيب"
+    },
+    "buttons": {
+      "edit": "تعديل"
+    }
+  },
+  "HOLTERScanerTemplateReportEdit": {
+    "title": "تعديل قالب تقرير فحص هولتر",
+    "fields": {
+      "title": "العنوان",
+      "content": "المحتوى"
+    },
+    "buttons": {
+      "update": "تحديث"
+    },
+    "success": "✅ تم تحديث قالب التقرير بنجاح.",
+    "updateError": "حدث خطأ أثناء تحديث قالب التقرير.",
+    "loadError": "فشل في تحميل القالب."
+  },
+  "HOLTERScanerTemplateReportList": {
+    "title": "📝 قوالب تقارير فحص هولتر",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "loadError": "فشل في تحميل قوالب التقارير.",
+    "deleteError": "حدث خطأ أثناء حذف قالب التقرير.",
+    "successDelete": "✅ تم حذف قالب التقرير بنجاح.",
+    "buttons": {
+      "delete": "🗑️ حذف",
+      "edit": "تعديل"
+    }
+  }
+}

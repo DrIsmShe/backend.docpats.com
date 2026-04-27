@@ -1,0 +1,228 @@
+{
+  "menuItem": "Simulation",
+  "pageTitle": "Surgical simulation",
+
+  "list": {
+    "title": "My simulation plans",
+    "empty": "You don't have any simulation plans yet",
+    "emptyHint": "Create your first plan to preview the surgical result for your patient",
+    "newButton": "New plan",
+    "loadMore": "Load more",
+    "loading": "Loading…",
+    "controlPointsCount_zero": "No control points",
+    "controlPointsCount_one": "{{count}} control point",
+    "controlPointsCount_other": "{{count}} control points",
+    "createdAt": "Created {{date}}",
+    "updatedAt": "Updated {{date}}",
+    "searchPlaceholder": "Search by name or patient…",
+    "noMatch": "Nothing matches \"{{query}}\"",
+    "sort": {
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "label": "By name"
+    }
+  },
+
+  "dates": {
+    "todayAt": "Today at {{time}}",
+    "yesterdayAt": "Yesterday at {{time}}",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago"
+  },
+  "editor": {
+    "title": "Plan editor",
+    "placeholderTitle": "Editor in development",
+    "placeholderBody": "The canvas with photo, control points, and live warp preview will appear here. For now, only metadata is editable via the API.",
+    "backToList": "Back to plans",
+    "saveStatus": {
+      "idle": "All changes saved",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "error": "Save failed"
+    },
+    "loadingImage": "Loading photo…",
+    "imageLoadError": "Failed to load photo"
+  },
+
+  "toolbar": {
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomLevel": "Current zoom",
+    "fit": "Fit to view",
+    "fitShort": "Fit",
+    "reset": "Reset (100%)",
+    "modeSelect": "Select mode (Esc)",
+    "modeAdd": "Add point mode",
+    "undo": "Undo (Ctrl+Z)",
+    "redo": "Redo (Ctrl+Shift+Z)"
+  },
+
+  "points": {
+    "propsTitle": "Deformation point",
+    "radius": "Influence radius",
+    "strength": "Strength",
+    "delete": "Delete point",
+    "hint": "Alt+drag the square to move the anchor. Del to remove."
+  },
+  "editor.saveStatus.dirty": "Unsaved changes",
+  "newPlanModal": {
+    "title": "New simulation plan",
+    "stepUpload": "Step 1 of 2 — upload patient photo",
+    "stepDetails": "Step 2 of 2 — plan details",
+    "dropZoneHint": "Drag a photo here or click to select",
+    "dropZoneFormats": "JPG, PNG, WebP · up to 20 MB",
+    "uploading": "Uploading: {{progress}}%",
+    "uploadSuccess": "Photo uploaded",
+    "labelField": "Plan name",
+    "labelPlaceholder": "e.g., Rhinoplasty — variant 1",
+    "patientRefField": "Patient reference (optional)",
+    "patientRefPlaceholder": "e.g., J. Smith or chart #",
+    "cancel": "Cancel",
+    "back": "Back",
+    "create": "Create plan",
+    "creating": "Creating…"
+  },
+
+  "deleteModal": {
+    "title": "Delete plan?",
+    "body": "The plan will be archived and the photo deleted permanently. This action cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Delete",
+    "deleting": "Deleting…"
+  },
+
+  "itemMenu": {
+    "open": "Open",
+    "duplicate": "Duplicate",
+    "delete": "Delete"
+  },
+
+  "errors": {
+    "network_error": "Network error. Please check your connection.",
+    "validation_error": "Please check the form fields",
+    "unauthorized": "Authentication required",
+    "not_found": "Plan not found",
+    "file_too_large": "File too large (max 20 MB)",
+    "invalid_mime": "Unsupported format. Use JPG, PNG or WebP",
+    "invalid_image": "Could not read the image",
+    "mime_mismatch": "File type does not match its content",
+    "unknown": "Something went wrong"
+  },
+  "saveStatus": {
+    "idle": "Saved",
+    "dirty": "Unsaved changes",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "error": "Save failed"
+  },
+  "tabs": {
+    "editor": "Editor",
+    "viewer": "Before / After"
+  },
+
+  "viewer": {
+    "labelBefore": "Before",
+    "labelAfter": "After",
+    "preparing": "Preparing full resolution…",
+    "preparingHint": "Loading the original and applying the warp. Takes a few seconds.",
+    "exportError": "Failed to prepare export",
+    "retry": "Try again"
+  },
+
+  "export": {
+    "title": "Export",
+    "mode": "What to export",
+    "modes": {
+      "before": "Before (original)",
+      "after": "After (warped)",
+      "sideBySide": "Side by side: Before and After"
+    },
+    "format": "Format",
+    "quality": "JPG quality",
+    "download": "Download",
+    "downloading": "Generating…"
+  },
+  "help": {
+    "pageTitle": "User Guide",
+    "backToList": "Back to plans",
+    "toc": "Contents",
+    "loading": "Loading guide...",
+    "loadError": "Failed to load guide",
+    "headerLink": "Help"
+  },
+  "simulation": {
+    "landmarks": {
+      "title": "Anatomical landmarks",
+      "status": {
+        "idle": "Not detected",
+        "detecting": "Detecting…",
+        "detected": "Detected",
+        "failed": "Failed"
+      },
+      "count_one": "{{count}} point",
+      "count_other": "{{count}} points",
+      "detectedAt": "updated {{time}}",
+      "detecting": "Detecting…",
+      "redetect": "Re-detect",
+      "groups": {
+        "title": "Point groups",
+        "face_oval": "Face oval",
+        "nose": "Nose",
+        "lips": "Lips",
+        "left_eye": "Left eye",
+        "right_eye": "Right eye",
+        "left_eyebrow": "Left eyebrow",
+        "right_eyebrow": "Right eyebrow"
+      }
+    }
+  },
+  "landmarks": {
+    "title": "Anatomical landmarks",
+    "status": {
+      "idle": "Not detected",
+      "detecting": "Detecting",
+      "detected": "Detected",
+      "failed": "Failed"
+    },
+    "count_one": "{{count}} point",
+    "count_other": "{{count}} points",
+    "detectedAt": "updated at {{time}}",
+    "loaderLoading": "Loading model…",
+    "detecting": "Detecting…",
+    "redetect": "Re-detect",
+    "groups": {
+      "title": "Point groups",
+      "face_oval": "Face oval",
+      "nose": "Nose",
+      "lips": "Lips",
+      "left_eye": "Left eye",
+      "right_eye": "Right eye",
+      "left_eyebrow": "Left eyebrow",
+      "right_eyebrow": "Right eyebrow"
+    }
+  },
+  "workflowHint": "To change shape: switch to add mode (+•), click an anatomical point, then drag it.",
+  "measurements": {
+    "title": "Measurements",
+    "noLandmarks": "Run anatomical landmark detection first",
+    "normal": "normal",
+    "show": "Show measurement",
+    "hide": "Hide measurement",
+    "calibrationHint": "Measurements in millimeters require calibration against a known distance (available in plan settings).",
+    "nasofrontalAngle": {
+      "label": "Nasofrontal angle",
+      "description": "Angle between the forehead line and the nasal bridge"
+    },
+    "goodeProjection": {
+      "label": "Goode's tip projection",
+      "description": "Ratio of nasal tip length to nasal height"
+    },
+    "alarBaseWidth": {
+      "label": "Alar base width",
+      "description": "Distance between the outermost points of the nostrils"
+    }
+  },
+  "toggleSidePanel": "Toggle side panel",
+  "loadingImageRetry": "Loading photo… (attempt {{attempt}} of {{max}})",
+  "loadingImageRetryHint": "Recently uploaded photos may take a few seconds to become available"
+}

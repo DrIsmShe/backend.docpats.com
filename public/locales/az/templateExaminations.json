@@ -1,0 +1,801 @@
+{
+  "AngiographyScanerDetails": {
+    "page": {
+      "title": "Angioqrafiya Detalları",
+      "loading": "Yüklənir...",
+      "error": "Məlumat yüklənmədi",
+      "nodata": "Məlumat tapılmadı"
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim qeydləri"
+    },
+    "pdf": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "AngiographyScanerTemplateDiagnosis": {
+    "page": {
+      "title": "Diaqnoz Şablonu Əlavə Et"
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Diaqnoz şablonu uğurla əlavə edildi.",
+      "fail": "Şablon əlavə olunmadı.",
+      "network": "Şəbəkə xətası"
+    }
+  },
+  "AngiographyScanerTemplateDiagnosisDetails": {
+    "page": {
+      "title": "Diaqnoz Şablonunun Detalları",
+      "loading": "Yüklənir...",
+      "error": "Şablon yüklənmədi."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    }
+  },
+  "AngiographyScanerTemplateDiagnosisEdit": {
+    "page": {
+      "title": "Angioqrafiya diaqnoz şablonunu redaktə et",
+      "success": "✅ Diaqnoz şablonu uğurla yeniləndi!",
+      "error": "❌ Şablon yenilənərkən xəta baş verdi"
+    },
+
+    "labels": {
+      "title": "Başlıq",
+      "titlePlaceholder": "Başlıq daxil edin...",
+      "content": "Mətn",
+      "contentPlaceholder": "Mətn daxil edin..."
+    },
+
+    "buttons": {
+      "update": "Şablonu yenilə"
+    }
+  },
+  "AngiographyScanerTemplateDiagnosisList": {
+    "title": "🧾 Angioqrafiya üzrə diaqnoz şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "✏️ Redaktə et"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "messages": {
+      "loadError": "Diaqnoz şablonlarının yüklənməsi xətası",
+      "deleteSuccess": "✅ Şablon uğurla silindi",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi"
+    }
+  },
+  "AngiographyScanerTemplateNameofexam": {
+    "title": "Anjioqrafiya müayinəsi üçün ad şablonu əlavə et",
+    "fields": {
+      "title": {
+        "placeholder": "Şablon başlığını daxil edin..."
+      },
+      "content": {
+        "placeholder": "Şablon məzmununu daxil edin..."
+      }
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "createSuccess": "✅ Şablon uğurla əlavə edildi",
+      "createError": "❌ Şablon əlavə edilərkən xəta baş verdi",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "AngiographyScanerTemplateNameofexamDetail": {
+    "title": "Anjioqrafiya müayinəsinin ad şablonu detalları",
+    "page": {
+      "loading": "Yüklənir..."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loadError": "Şablon yüklənərkən xəta baş verdi"
+    }
+  },
+  "AngiographyScanerTemplateNameofexamEdit": {
+    "title": "Anjioqrafiya müayinəsinin ad şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "loadError": "Şablon yüklənərkən xəta baş verdi",
+      "updateSuccess": "✅ Şablon uğurla yeniləndi",
+      "updateError": "❌ Şablonu yeniləmək mümkün olmadı"
+    }
+  },
+  "AngiographyScanerTemplateNameofexamList": {
+    "title": "Anjioqrafiya müayinəsinin ad şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "messages": {
+      "loadError": "Şablonlar yüklənərkən xəta baş verdi",
+      "deleteSuccess": "✅ Şablon uğurla silindi",
+      "deleteError": "❌ Şablonu silmək mümkün olmadı"
+    }
+  },
+  "AngiographyScanerTemplateRecomendation": {
+    "title": "Anjioqrafiya üçün tövsiyə şablonu əlavə et",
+    "fields": {
+      "title": {
+        "placeholder": "Tövsiyə başlığını daxil edin..."
+      },
+      "content": {
+        "placeholder": "Tövsiyə mətnini daxil edin..."
+      }
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "createSuccess": "✅ Tövsiyə şablonu uğurla əlavə edildi",
+      "createError": "❌ Tövsiyə şablonu əlavə edilərkən xəta baş verdi",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "AngiographyScanerTemplateRecomendationList": {
+    "title": "Anjioqrafiya üçün tövsiyə şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "messages": {
+      "loadError": "Tövsiyə şablonları yüklənərkən xəta baş verdi",
+      "deleteSuccess": "✅ Tövsiyə şablonu uğurla silindi",
+      "deleteError": "❌ Tövsiyə şablonunu silmək mümkün olmadı"
+    }
+  },
+  "AngiographyScanerTemplateRecomendationEdit": {
+    "title": "Anjioqrafiya üçün tövsiyə şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "loadError": "Tövsiyə şablonu yüklənərkən xəta baş verdi",
+      "updateSuccess": "✅ Tövsiyə şablonu uğurla yeniləndi",
+      "updateError": "❌ Tövsiyə şablonunu yeniləmək mümkün olmadı"
+    }
+  },
+  "AngiographyScanerTemplateRecomendationDetails": {
+    "title": "Anjioqrafiya üçün tövsiyə şablonunun detalları",
+    "page": {
+      "loading": "Yüklənir..."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loadError": "Tövsiyə şablonu yüklənərkən xəta baş verdi"
+    }
+  },
+  "AngiographyScanerTemplateReport": {
+    "title": "Anjioqrafiya üçün hesabat şablonu əlavə et",
+    "fields": {
+      "title": {
+        "placeholder": "Hesabat başlığını daxil edin..."
+      },
+      "content": {
+        "placeholder": "Hesabat mətnini daxil edin..."
+      }
+    },
+    "buttons": {
+      "save": "Yadda saxla"
+    },
+    "messages": {
+      "createSuccess": "✅ Hesabat şablonu uğurla əlavə edildi",
+      "createError": "❌ Hesabat şablonu əlavə edilərkən xəta baş verdi",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "AngiographyScanerTemplateReportList": {
+    "title": "Anjioqrafiya üçün hesabat şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmək istədiyinizə əminsiniz?"
+    },
+    "messages": {
+      "loadError": "Hesabat şablonları yüklənərkən xəta baş verdi",
+      "deleteSuccess": "✅ Hesabat şablonu uğurla silindi",
+      "deleteError": "❌ Hesabat şablonunu silmək mümkün olmadı"
+    }
+  },
+  "AngiographyScanerTemplateReportEdit": {
+    "title": "Anjioqrafiya üçün hesabat şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "buttons": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "loadError": "Hesabat şablonu yüklənərkən xəta baş verdi",
+      "updateSuccess": "✅ Hesabat şablonu uğurla yeniləndi",
+      "updateError": "❌ Hesabat şablonunu yeniləmək mümkün olmadı"
+    }
+  },
+  "AngiographyScanerTemplateReportDetails": {
+    "title": "Anjioqrafiya üçün hesabat şablonunun detalları",
+    "page": {
+      "loading": "Yüklənir..."
+    },
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "buttons": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loadError": "Hesabat şablonu yüklənərkən xəta baş verdi"
+    }
+  },
+  "CapsuleEndoscopyScanerDetails": {
+    "page": {
+      "title": "Kapsul Endoskopiya Müayinəsinin Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Müayinə məlumatlarını yükləmək mümkün olmadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Link:",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "CoronographyScanerDetails": {
+    "page": {
+      "title": "Koronoqrafiya Müayinəsinin Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Müayinə məlumatlarını yükləmək mümkün olmadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Link:",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "CTScanerDetails": {
+    "page": {
+      "title": "KT Müayinəsinin Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Müayinə məlumatlarını yükləmək mümkün olmadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Link:",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "DopleryScanerDetails": {
+    "page": {
+      "title": "Doppler Müayinəsinin Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Müayinə məlumatlarını yükləmək mümkün olmadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Link:",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "EchoEKGScanerDetails": {
+    "page": {
+      "title": "Eko EKG Müayinəsinin Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Müayinə məlumatlarını yükləmək mümkün olmadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Link:",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkим rəyləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "EEGScanerDetails": {
+    "page": {
+      "title": "EEQ Müayinəsinin Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Məlumatları yükləmək mümkün olmadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Link:",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "EKGScanerDetails": {
+    "page": {
+      "title": "EKQ Müayinəsinin Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Məlumatları yükləmək mümkün olmadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Link:",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkим rəyləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "GastroscopyScanerDetails": {
+    "page": {
+      "title": "Qastroskopiya Müayinəsinin Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Məlumatları yükləmək mümkün olmadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Link:",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkим rəyləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "GinecologyDetails": {
+    "page": {
+      "title": "Ginekologiya Testinin Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Məlumatları yükləmək mümkün olmadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Link:",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyр",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "HOLTERScanerDetails": {
+    "page": {
+      "title": "Holter Monitorinqi Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat tapılmadı",
+      "errors": {
+        "fetchError": "Tədqiqat məlumatlarını yükləmək mümkün olmadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF uğurla yükləndi! Keçid:",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recomandation": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF Yüklə",
+      "upload": "PDF Göndər",
+      "print": "Çap et"
+    }
+  },
+  "LabtestScanerDetails": {
+    "page": {
+      "title": "Laboratoriya Analizi",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Laboratoriya analizinin yüklənməsi mümkün olmadı."
+      }
+    },
+    "files": {
+      "noFile": "Fayl seçilməyib",
+      "chooseFile": "Fayl seç"
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "labName": "Laboratoriya",
+      "diagnosis": "İlkin diaqnoz",
+      "report": "Həkim qərarı",
+      "parameters": "🧪 Analiz göstəriciləri:",
+      "paramName": "Parametr",
+      "paramValue": "Dəyər",
+      "unit": "Vahid",
+      "reference": "Norma",
+      "files": "📎 Yüklənmiş fayllar",
+      "doctorComments": "💬 Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF Yüklə",
+      "upload": "PDF Göndər",
+      "print": "Çap et"
+    }
+  },
+  "MRIScanerDetails": {
+    "page": {
+      "title": "MRT Müayinə Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "MRT məlumatlarını yükləmək mümkün olmadı."
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recommendations": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF Yüklə",
+      "upload": "PDF Göndər",
+      "print": "Çap et"
+    }
+  },
+  "PETScanerDetails": {
+    "page": {
+      "title": "PET Müayinə Detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "PET müayinəsi məlumatlarını yükləmək mümkün olmadı.",
+        "uploadError": "PDF yükləmə xətası"
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recommendations": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF Yüklə",
+      "upload": "PDF Göndər",
+      "print": "Çap et"
+    }
+  },
+  "SPECTScanerDetails": {
+    "page": {
+      "title": "Spirometriya Məlumatları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Spirometriya məlumatlarını yükləmək mümkün olmadı."
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recommendations": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim şərhləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "USMScanerDetails": {
+    "page": {
+      "title": "USM Müayinəsinin Təfərrüatları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "USM məlumatlarını yükləmək mümkün olmadı."
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recommendations": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim şərhləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  },
+  "XRAYScanerDetails": {
+    "page": {
+      "title": "Rentgen müayinəsinin detalları",
+      "loading": "Yüklənir...",
+      "noData": "Məlumat yoxdur",
+      "errors": {
+        "fetchError": "Rentgen məlumatları yüklənə bilmədi."
+      }
+    },
+    "fields": {
+      "patient": "Pasiyent",
+      "doctor": "Həkim",
+      "date": "Tarix",
+      "nameofexam": "Müayinə adı",
+      "diagnosis": "Diaqnoz",
+      "report": "Hesabat",
+      "recommendations": "Tövsiyələr",
+      "contrastUsed": "Kontrast istifadə olunub",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "images": "Şəkillər",
+      "doctorComments": "Həkim rəyləri"
+    },
+    "buttons": {
+      "download": "PDF yüklə",
+      "upload": "PDF göndər",
+      "print": "Çap et"
+    }
+  }
+}

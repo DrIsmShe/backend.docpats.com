@@ -1,0 +1,14 @@
+{
+  "search": "بحث...",
+  "logout_success": "تم تسجيل الخروج بنجاح",
+  "logout_error": "فشل تسجيل الخروج. يرجى المحاولة مرة أخرى",
+  "you_have_notifications": "لديك {{count}} إشعارات غير مقروءة",
+  "no_notifications": "لا توجد إشعارات جديدة",
+  "view_all": "عرض الكل",
+  "welcome": "مرحباً",
+  "nickname": "اسم المستخدم",
+  "my_profile": "ملفي الشخصي",
+  "sign_out": "تسجيل الخروج",
+  "polyclinic": "عيادة متعددة التخصصات",
+  "hospital": "مستشفى"
+}

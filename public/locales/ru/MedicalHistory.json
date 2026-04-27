@@ -1,0 +1,41 @@
+{
+  "page": {
+    "loading": "Загрузка...",
+    "error": "Ошибка при загрузке истории болезни.",
+    "extractFrom": "Выписка из амбулаторной карты пациента от"
+  },
+  "labels": {
+    "country": "Страна пациента",
+    "badHabits": "Вредные привычки пациента",
+    "immunization": "Прививки пациента",
+    "familyHistory": "Семейный анамнез заболеваний",
+    "chronicDiseases": "Хронические заболевания пациента",
+    "age": "Возраст пациента",
+    "allergies": "Аллергии пациента",
+    "complaints": "Жалобы",
+    "anamnesisMorbi": "Анамнез заболевания (Anamnesis morbi)",
+    "anamnesisVitae": "Анамнез жизни (Anamnesis vitae)",
+    "statusPreasens": "Общее состояние пациента (Status praesens)",
+    "statusLocalis": "Локальный статус (Status localis)",
+
+    "ctScanResults": "Результаты КТ",
+    "mriResults": "Результаты МРТ",
+    "ultrasoundResults": "Результаты УЗИ",
+    "labResults": "Результаты лабораторных исследований",
+    "diagnosis": "Диагноз",
+    "additionalDiagnosis": "Сопутствующий диагноз",
+    "recommendations": "Рекомендации",
+    "doctor": "Врач",
+    "unknownDoctor": "Неизвестно",
+    "printDate": "Дата печати"
+  },
+  "buttons": {
+    "downloadPdf": "Скачать PDF",
+    "uploadPdf": "Загрузить PDF"
+  },
+  "pdf": {
+    "uploadSuccess": "PDF успешно загружен! Ссылка: {{link}}",
+    "uploadError": "Ошибка при загрузке PDF."
+  },
+  "ageText": "{{age}} лет"
+}

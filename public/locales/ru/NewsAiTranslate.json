@@ -1,0 +1,308 @@
+{
+  "specialties": {
+    "therapist": "Терапия",
+    "family_doctor": "Семейная медицина",
+    "gastroenterologist": "Гастроэнтерология",
+    "cardiologist": "Кардиология",
+    "interventional_cardiologist": "Интервенционная кардиология",
+    "pediatric_cardiologist": "Детская кардиология",
+    "pulmonologist": "Пульмонология",
+    "nephrologist": "Нефрология",
+    "hematologist": "Гематология",
+    "endocrinologist": "Эндокринология",
+    "rheumatologist": "Ревматология",
+    "allergist_immunologist": "Аллергология и иммунология",
+    "infectious_disease_specialist": "Инфекционные болезни",
+    "phthisiatrician": "Фтизиатрия",
+    "hepatologist": "Гепатология",
+    "dietitian": "Диетология",
+    "urologist": "Урология",
+    "dermatologist": "Дерматология",
+    "occupational_medicine_doctor": "Профессиональная медицина",
+    "pain_management_specialist": "Лечение боли",
+
+    "pediatrician": "Педиатрия",
+    "neonatologist": "Неонатология",
+    "child_psychiatrist": "Детская психиатрия",
+
+    "gynecologist": "Гинекология",
+    "obstetrician": "Акушерство",
+    "reproductive_endocrinologist": "Репродуктивная эндокринология",
+
+    "andrologist": "Андрология",
+
+    "neurosurgeon": "Нейрохирургия",
+    "orthopedic_trauma_surgeon": "Ортопедия и травматология",
+    "maxillofacial_surgeon": "Челюстно-лицевая хирургия",
+    "cardiac_surgeon": "Кардиохирургия",
+    "thoracic_surgeon": "Торакальная хирургия",
+    "abdominal_surgeon": "Абдоминальная хирургия",
+    "coloproctologist": "Колопроктология",
+    "endocrine_surgeon": "Эндокринная хирургия",
+    "plastic_surgeon": "Пластическая хирургия",
+    "purulent_surgeon": "Гнойная хирургия",
+    "vascular_surgeon": "Сосудистая хирургия",
+    "transplant_surgeon": "Трансплантология",
+    "oral_surgeon": "Оральная хирургия",
+
+    "ophthalmologist": "Офтальмология",
+    "otolaryngologist": "ЛОР",
+
+    "oncologist": "Онкология",
+    "oncologist_chemotherapist": "Онкология (Химиотерапия)",
+    "oncologist_radiotherapist": "Онкология (Радиотерапия)",
+
+    "psychiatrist": "Психиатрия",
+    "psychologist": "Психология",
+    "neurologist": "Неврология",
+
+    "geriatrician": "Гериатрия",
+    "sleep_medicine_specialist": "Медицина сна",
+    "clinical_pharmacologist": "Клиническая фармакология",
+    "internal_medicine_doctor": "Внутренняя медицина",
+    "medical_geneticist": "Генетика",
+    "toxicologist": "Токсикология",
+    "immunotherapist": "Иммунотерапия",
+
+    "pediatric_neurologist": "Детская неврология",
+    "pediatric_endocrinologist": "Детская эндокринология",
+    "pediatric_oncologist": "Детская онкология",
+
+    "gynecologic_oncologist": "Гинекологическая онкология",
+    "breast_specialist": "Маммология",
+    "menopause_specialist": "Менопауза",
+
+    "sexologist": "Сексология",
+
+    "psychotherapist": "Психотерапия",
+    "addiction_specialist": "Лечение зависимостей",
+
+    "oculoplastic_surgeon": "Окулопластическая хирургия",
+    "robotic_surgeon": "Роботическая хирургия",
+    "bariatric_surgeon": "Бариатрическая хирургия",
+
+    "neuro_ophthalmologist": "Нейроофтальмология",
+    "oculist": "Окулист",
+
+    "cytologist": "Цитология",
+    "biochemist": "Биохимия",
+    "molecular_diagnostics_specialist": "Молекулярная диагностика",
+    "medical_imaging_specialist": "Медицинская визуализация",
+
+    "endodontist": "Эндодонтия",
+    "dental_hygienist": "Гигиена полости рта",
+    "oral_pathologist": "Оральная патология",
+
+    "chiropractor": "Хиропрактика",
+    "osteopath": "Остеопатия",
+    "acupuncturist": "Акупунктура",
+    "speech_therapist": "Логопедия",
+    "occupational_therapist": "Эрготерапия",
+    "rehabilitation_psychologist": "Реабилитационная психология",
+
+    "kinesiologist": "Кинезиология",
+    "athletic_trainer": "Спортивный тренер",
+
+    "disaster_medicine_specialist": "Медицина катастроф",
+    "triage_specialist": "Триаж",
+
+    "functional_diagnostics_specialist": "Функциональная диагностика",
+    "radiologist": "Радиология",
+    "ultrasound_diagnostician": "УЗИ",
+    "pathologist": "Патология",
+    "forensic_medical_examiner": "Судебная медицина",
+    "geneticist": "Генетика",
+    "laboratory_diagnostics_specialist": "Лабораторная диагностика",
+
+    "dentist": "Стоматология",
+    "orthodontist": "Ортодонтия",
+    "periodontist": "Пародонтология",
+    "prosthodontist": "Ортопедическая стоматология",
+
+    "physiotherapist": "Физиотерапия",
+    "exercise_therapy_doctor": "ЛФК",
+
+    "sports_doctor": "Спортивная медицина",
+
+    "emergency_medicine_doctor": "Скорая помощь"
+  },
+  "topbar": {
+    "title": "DocPats · AI Синтез"
+  },
+  "nav_ai": {
+    "all_articles": "Все статьи",
+    "analytics": "AI · Аналитика"
+  },
+  "loading_ai": {
+    "article": "Загрузка статьи…"
+  },
+  "meta_ai": {
+    "ai_synthesis": "AI Синтез",
+    "reading_time": "{{count}} мин чтения",
+    "words": "{{count}} слов"
+  },
+  "author": {
+    "default": "Под редакцией доктора Исмаила",
+    "label": "Автор: доктор Исмаил"
+  },
+  "badges": {
+    "our_analytics": "Наша аналитика"
+  },
+  "sources_ai": {
+    "title": "Источники",
+    "materials": "{{count}} материалов"
+  },
+  "footer_ai": {
+    "platform": "Платформа медицинской аналитики"
+  },
+  "body_ai": {
+    "translating": "Переводим...",
+    "translating_hint": "Первый перевод занимает ~30 сек"
+  },
+  "topbar_title": "DocPats · Медицинский интеллект",
+  "nav_news": "Новости",
+  "nav_tag": "AI · Аналитика",
+  "header_label": "Редакция DocPats · AI Synthesis",
+  "headline": "Аналитические статьи",
+  "deck": "Глубокий синтез медицинских и научных источников, обновляется ежедневно",
+  "materials_count": "{{count}} публикаций",
+  "loading": "Загрузка материалов…",
+  "load_error": "Не удалось загрузить статьи",
+  "empty_state": "Статьи ещё не сгенерированы. Первые появятся сегодня в 04:00.",
+  "author_name": "Главный редактор DocPats - Д-р Исмаил",
+  "words": "{{count}} слов",
+  "sources": "{{count}} источников",
+  "other_materials": "Другие материалы",
+  "footer_tag": "Платформа медицинского интеллекта",
+  "all_news": "← Все новости",
+  "news_ai_analitics": "Аналитика",
+  "stats.doctors": "Врачей",
+  "doctors_ai_news": "Доктора",
+  "translateArticles": "Переведи статьи",
+  "sort": {
+    "date_desc": "Сначала новые",
+    "date_asc": "Сначала старые",
+    "likes_desc": "По популярности",
+    "comments_desc": "По комментариям",
+    "title_asc": "По названию А–Я",
+    "author_asc": "По автору А–Я"
+  },
+  "search": {
+    "placeholder": "Поиск по названию или тексту..."
+  },
+  "buttons": {
+    "filters": "Фильтры",
+    "apply": "Применить",
+    "reset": "Сбросить всё",
+    "loadMore": "Загрузить ещё",
+    "all": "Все",
+    "news": "Новости",
+    "research": "Исследования",
+    "publications": "Публикации"
+  },
+  "labels": {
+    "category": "Категория / специализация",
+    "allCategories": "Все категории",
+    "sorting": "Сортировка"
+  },
+  "states": {
+    "empty": "Ничего не найдено",
+    "loading": "Загрузка статьи…",
+    "notFound": "Статья не найдена",
+    "back": "← Назад к новостям"
+  },
+  "stats": {
+    "materials": "материалов",
+    "news": "новостей",
+    "scientific": "научных",
+    "publications": "публикаций"
+  },
+  "tags": {
+    "search": "Поиск",
+    "category": "Категория",
+    "sorting": "Сортировка"
+  },
+  "brand": "DocPats · Medical Intelligence",
+  "news_ai_news": "Медицинский дайджест",
+  "research_ai_news": "Статьи врачей",
+  "publications_ai_news": "Взгляд врача",
+  "nav": {
+    "newsLink": "Медицинские новости и исследования · актуальные данные",
+    "back": "Новости",
+    "source": "Источник",
+    "becomeMember": "Войти",
+    "dashboard": "Личный кабинет",
+    "filters": {
+      "all": "Все",
+      "news": "Новости",
+      "research": "Исследования"
+    }
+  },
+  "types": {
+    "research": "Исследование",
+    "news": "Новость",
+    "review": "Обзор",
+    "case": "Клинический случай",
+    "researchFull": "Научная статья",
+    "newsFull": "Новость"
+  },
+  "meta": {
+    "readMin": "мин. чтения"
+  },
+  "byline": {
+    "readOriginal": "Читать оригинал →"
+  },
+  "hero": {
+    "breadcrumbHome": "Главная",
+    "breadcrumbFeed": "Лента медицинских новостей",
+    "title": "Лента медицинских новостей",
+    "subtitle": "Медицинские исследования, клинические новости и AI-аналитика от DocPats",
+    "searchTitle": "Поиск:",
+    "searchPlaceholder": "Статьи, заболевания, методы лечения…",
+    "searchBtn": "Найти",
+    "searchHighlight": "Результаты по",
+    "searchClear": "✕ Сбросить",
+    "searchBadgePrefix": "Показаны совпадения для"
+  },
+  "filters": {
+    "specialty": "Специальность:",
+    "all": "Все"
+  },
+  "list": {
+    "articles": "статья",
+    "articles_few": "статьи",
+    "articles_many": "статей",
+    "articles_plural": "статей",
+    "for": "по запросу",
+    "page": "страница",
+    "of": "из",
+    "loading": "Загрузка …",
+    "empty": "Статьи по выбранным фильтрам не найдены.",
+    "loadMore": "Загрузить ещё",
+    "loadingMore": "Загрузка…"
+  },
+  "body": {
+    "translating": "Перевод статьи…",
+    "noContent": "Полный текст статьи недоступен.",
+    "readFullAt": "Читать полную статью на",
+    "defaultSource": "источнике"
+  },
+  "footer": {
+    "publishedIn": "Опубликовано в",
+    "disclaimer": "Статья размещена на DocPats в информационных целях. Для полного доступа посетите оригинальную публикацию.",
+    "readOriginal": "Читать оригинал",
+    "tagline": "Платформа медицинской аналитики",
+    "allArticles": "Все статьи",
+    "news": "Новости",
+    "research": "Исследования",
+    "about": "О редакции DocPats",
+    "name": "Д-р Исмаил Исмаилов",
+    "role": "Главный редактор DocPats · Оториноларинголог",
+    "description": "DocPats — медицинская редакция под руководством практикующего врача. Все аналитические материалы основаны исключительно на рецензируемых научных источниках: PubMed, The Lancet, PLOS Medicine, NEJM, CDC, WHO и других ведущих медицинских изданиях.",
+    "disclaimer_docpats": "⚕ Материал носит исключительно информационный характер и не заменяет очную консультацию специалиста. Для получения медицинской помощи обратитесь к врачу."
+  },
+
+  "card": {
+    "readFull": "Читать полностью"
+  }
+}

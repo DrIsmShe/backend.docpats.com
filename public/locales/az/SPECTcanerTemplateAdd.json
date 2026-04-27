@@ -1,0 +1,221 @@
+{
+  "SPECTScanerTemplateDiagnosis": {
+    "title": "Diaqnoz şablonu əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Diaqnoz şablonu uğurla əlavə olundu.",
+      "error": "❌ Şablon əlavə edilə bilmədi.",
+      "networkError": "❌ Şəbəkə xətası"
+    }
+  },
+  "SPECTScanerTemplateDiagnosisDetails": {
+    "title": "SPECT diaqnoz şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablon yüklənə bilmədi."
+    }
+  },
+  "SPECTScanerTemplateDiagnosisEdit": {
+    "title": "SPECT diaqnoz şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Diaqnoz şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənərkən xəta baş verdi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "SPECTScanerTemplateDiagnosisList": {
+    "title": "🧾 SPECT diaqnoz şablonları",
+    "actions": {
+      "edit": "Redaktə et",
+      "delete": "Sil"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi.",
+      "loadError": "❌ Diaqnoz şablonları yüklənə bilmədi."
+    }
+  },
+  "SPECTScanerTemplateRecomendation": {
+    "title": "Tövsiyə şablonu əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Tövsiyə şablonu uğurla əlavə olundu.",
+      "error": "Şablon əlavə edilərkən xəta baş verdi.",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "SPECTScanerTemplateRecomendationDetails": {
+    "title": "SPECT tövsiyə şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablon yüklənə bilmədi."
+    }
+  },
+  "SPECTScanerTemplateRecomendationEdit": {
+    "title": "SPECT tövsiyə şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Tövsiyə şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənərkən xəta baş verdi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "SPECTScanerTemplateRecomendationList": {
+    "title": "📋 SPECT tövsiyə şablonları",
+    "actions": {
+      "edit": "Redaktə et",
+      "delete": "Sil"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi.",
+      "loadError": "❌ Tövsiyə şablonları yüklənə bilmədi."
+    }
+  },
+  "SPECTScanerTemplateReport": {
+    "title": "SPECT hesabat şablonu əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Hesabat şablonu uğurla əlavə olundu.",
+      "error": "Şablon əlavə edilərkən xəta baş verdi.",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "SPECTScanerTemplateReportDetails": {
+    "title": "SPECT hesabat şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablon yüklənə bilmədi."
+    }
+  },
+  "SPECTScanerTemplateReportEdit": {
+    "title": "SPECT hesabat şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Hesabat şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənərkən xəta baş verdi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "SPECTScanerTemplateReportList": {
+    "title": "📝 SPECT hesabat şablonları",
+    "actions": {
+      "edit": "Redaktə et",
+      "delete": "Sil"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi.",
+      "loadError": "❌ Hesabat şablonları yüklənə bilmədi."
+    }
+  },
+  "SPECTScanTemplateNameofexam": {
+    "title": "SPECT müayinə adı şablonu əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Müayinə adı şablonu uğurla əlavə olundu.",
+      "error": "Şablon əlavə edilərkən xəta baş verdi.",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "SPECTScanTemplateNameofexamDetails": {
+    "title": "SPECT müayinə adı şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablon yüklənə bilmədi."
+    }
+  },
+  "SPECTScanTemplateNameofexamEdit": {
+    "title": "SPECT müayinə adı şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Müayinə adı şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənərkən xəta baş verdi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "SPECTScanTemplateNameofexamList": {
+    "title": "📌 SPECT müayinə adı şablonları",
+    "actions": {
+      "edit": "Redaktə et",
+      "delete": "Sil"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi.",
+      "loadError": "❌ Şablonlar yüklənə bilmədi."
+    }
+  }
+}

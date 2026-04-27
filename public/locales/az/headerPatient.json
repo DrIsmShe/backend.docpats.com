@@ -1,0 +1,14 @@
+{
+  "search": "Axtarış...",
+  "logout_success": "Sistemdən uğurla çıxdınız",
+  "logout_error": "Çıxış xətası. Yenidən cəhd edin",
+  "you_have_notifications": "{{count}} oxunmamış bildirişiniz var",
+  "no_notifications": "Yeni bildiriş yoxdur",
+  "view_all": "Hamısına bax",
+  "welcome": "Xoş gəldiniz",
+  "nickname": "Ləqəb",
+  "my_profile": "Profilim",
+  "sign_out": "Çıxış",
+  "polyclinic": "Poliklinika",
+  "hospital": "Xəstəxana"
+}

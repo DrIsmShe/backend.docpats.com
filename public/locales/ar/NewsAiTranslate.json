@@ -1,0 +1,306 @@
+{
+  "specialties": {
+    "therapist": "الطب العام",
+    "family_doctor": "طب الأسرة",
+    "gastroenterologist": "أمراض الجهاز الهضمي",
+    "cardiologist": "أمراض القلب",
+    "interventional_cardiologist": "أمراض القلب التداخلية",
+    "pediatric_cardiologist": "أمراض قلب الأطفال",
+    "pulmonologist": "أمراض الرئة",
+    "nephrologist": "أمراض الكلى",
+    "hematologist": "أمراض الدم",
+    "endocrinologist": "أمراض الغدد الصماء",
+    "rheumatologist": "أمراض الروماتيزم",
+    "allergist_immunologist": "الحساسية والمناعة",
+    "infectious_disease_specialist": "الأمراض المعدية",
+    "phthisiatrician": "السل والأمراض الصدرية",
+    "hepatologist": "أمراض الكبد",
+    "dietitian": "التغذية العلاجية",
+    "urologist": "المسالك البولية",
+    "dermatologist": "الأمراض الجلدية",
+    "occupational_medicine_doctor": "طب العمل",
+    "pain_management_specialist": "علاج الألم",
+
+    "pediatrician": "طب الأطفال",
+    "neonatologist": "حديثي الولادة",
+    "child_psychiatrist": "الطب النفسي للأطفال",
+
+    "gynecologist": "أمراض النساء",
+    "obstetrician": "التوليد",
+    "reproductive_endocrinologist": "الغدد الصماء التناسلية",
+
+    "andrologist": "طب الذكورة",
+
+    "neurosurgeon": "جراحة الأعصاب",
+    "orthopedic_trauma_surgeon": "جراحة العظام",
+    "maxillofacial_surgeon": "جراحة الفم والفكين",
+    "cardiac_surgeon": "جراحة القلب",
+    "thoracic_surgeon": "جراحة الصدر",
+    "abdominal_surgeon": "الجراحة العامة",
+    "coloproctologist": "جراحة القولون والمستقيم",
+    "endocrine_surgeon": "جراحة الغدد الصماء",
+    "plastic_surgeon": "جراحة التجميل",
+    "purulent_surgeon": "الجراحة الالتهابية",
+    "vascular_surgeon": "جراحة الأوعية الدموية",
+    "transplant_surgeon": "زراعة الأعضاء",
+    "oral_surgeon": "جراحة الفم",
+
+    "ophthalmologist": "طب العيون",
+    "otolaryngologist": "أنف وأذن وحنجرة",
+
+    "oncologist": "الأورام",
+    "oncologist_chemotherapist": "الأورام (العلاج الكيميائي)",
+    "oncologist_radiotherapist": "الأورام (العلاج الإشعاعي)",
+
+    "psychiatrist": "الطب النفسي",
+    "psychologist": "علم النفس",
+    "neurologist": "الأعصاب",
+
+    "geriatrician": "طب الشيخوخة",
+    "sleep_medicine_specialist": "طب النوم",
+    "clinical_pharmacologist": "علم الأدوية السريري",
+    "internal_medicine_doctor": "الطب الباطني",
+    "medical_geneticist": "الوراثة",
+    "toxicologist": "علم السموم",
+    "immunotherapist": "العلاج المناعي",
+
+    "pediatric_neurologist": "أعصاب الأطفال",
+    "pediatric_endocrinologist": "غدد صماء للأطفال",
+    "pediatric_oncologist": "أورام الأطفال",
+
+    "gynecologic_oncologist": "أورام النساء",
+    "breast_specialist": "أمراض الثدي",
+    "menopause_specialist": "سن اليأس",
+
+    "sexologist": "علم الجنس",
+
+    "psychotherapist": "العلاج النفسي",
+    "addiction_specialist": "علاج الإدمان",
+
+    "oculoplastic_surgeon": "جراحة تجميل العين",
+    "robotic_surgeon": "الجراحة الروبوتية",
+    "bariatric_surgeon": "جراحة السمنة",
+
+    "neuro_ophthalmologist": "أعصاب العيون",
+    "oculist": "طبيب عيون",
+
+    "cytologist": "علم الخلايا",
+    "biochemist": "الكيمياء الحيوية",
+    "molecular_diagnostics_specialist": "التشخيص الجزيئي",
+    "medical_imaging_specialist": "التصوير الطبي",
+
+    "endodontist": "علاج الجذور",
+    "dental_hygienist": "نظافة الأسنان",
+    "oral_pathologist": "أمراض الفم",
+
+    "chiropractor": "العلاج اليدوي",
+    "osteopath": "العلاج العظمي",
+    "acupuncturist": "الوخز بالإبر",
+    "speech_therapist": "علاج النطق",
+    "occupational_therapist": "العلاج الوظيفي",
+    "rehabilitation_psychologist": "علم نفس التأهيل",
+
+    "kinesiologist": "علم الحركة",
+    "athletic_trainer": "مدرب رياضي",
+
+    "disaster_medicine_specialist": "طب الكوارث",
+    "triage_specialist": "الفرز الطبي",
+
+    "functional_diagnostics_specialist": "التشخيص الوظيفي",
+    "radiologist": "الأشعة",
+    "ultrasound_diagnostician": "الموجات فوق الصوتية",
+    "pathologist": "علم الأمراض",
+    "forensic_medical_examiner": "الطب الشرعي",
+    "geneticist": "علم الوراثة",
+    "laboratory_diagnostics_specialist": "التشخيص المخبري",
+
+    "dentist": "طب الأسنان",
+    "orthodontist": "تقويم الأسنان",
+    "periodontist": "أمراض اللثة",
+    "prosthodontist": "تركيبات الأسنان",
+
+    "physiotherapist": "العلاج الطبيعي",
+    "exercise_therapy_doctor": "العلاج بالتمارين",
+
+    "sports_doctor": "الطب الرياضي",
+
+    "emergency_medicine_doctor": "الطب الطارئ"
+  },
+  "topbar": {
+    "title": "DocPats · التحليل الذكي"
+  },
+  "nav_ai": {
+    "all_articles": "جميع المقالات",
+    "analytics": "AI · التحليلات"
+  },
+  "loading_ai": {
+    "article": "جارٍ تحميل المقال…"
+  },
+  "meta_ai": {
+    "ai_synthesis": "التحليل الذكي",
+    "reading_time": "{{count}} دقيقة قراءة",
+    "words": "{{count}} كلمة"
+  },
+  "author": {
+    "default": "تمت المراجعة بواسطة الدكتور إسماعيل",
+    "label": "المؤلف: الدكتور إسماعيل"
+  },
+  "badges": {
+    "our_analytics": "تحليلاتنا"
+  },
+  "sources_ai": {
+    "title": "المصادر",
+    "materials": "{{count}} مصدر"
+  },
+  "footer_ai": {
+    "platform": "منصة الذكاء الطبي"
+  },
+  "body_ai": {
+    "translating": "جارٍ الترجمة..."
+  },
+  "topbar_title": "DocPats · الذكاء الطبي",
+  "nav_news": "الأخبار",
+  "nav_tag": "الذكاء الاصطناعي · التحليلات",
+  "header_label": "هيئة تحرير DocPats · توليف الذكاء الاصطناعي",
+  "headline": "مقالات تحليلية",
+  "deck": "دمج عميق للمصادر الطبية والعلمية، يتم تحديثه يوميًا",
+  "materials_count": "{{count}} مادة",
+  "loading": "جارٍ تحميل المواد…",
+  "load_error": "تعذر تحميل المقالات",
+  "empty_state": "لم يتم إنشاء المقالات بعد. ستظهر أولى المواد اليوم الساعة 04:00.",
+  "author_name": "رئيس تحرير DocPats – د. إسماعيل",
+  "words": "{{count}} كلمة",
+  "sources": "{{count}} مصدر",
+  "other_materials": "مواد أخرى",
+  "footer_tag": "منصة الذكاء الطبي",
+  "all_news": "← جميع الأخبار",
+  "news_ai_analitics": "تحليلات",
+  "stats.doctors": "الأطباء",
+  "doctors_ai_news": "أطباء",
+  "translateArticles": "العربية",
+  "sort": {
+    "date_desc": "الأحدث أولاً",
+    "date_asc": "الأقدم أولاً",
+    "likes_desc": "الأكثر شعبية",
+    "comments_desc": "حسب التعليقات",
+    "title_asc": "العنوان A–Z",
+    "author_asc": "المؤلف A–Z"
+  },
+  "search": {
+    "placeholder": "ابحث بالعنوان أو النص..."
+  },
+  "buttons": {
+    "filters": "فلاتر",
+    "apply": "تطبيق",
+    "reset": "إعادة ضبط",
+    "loadMore": "تحميل المزيد"
+  },
+  "labels": {
+    "category": "الفئة / التخصص",
+    "allCategories": "كل الفئات",
+    "sorting": "الترتيب"
+  },
+  "states": {
+    "empty": "لا توجد نتائج",
+    "loading": "جارٍ تحميل المقال…",
+    "notFound": "المقال غير موجود",
+    "back": "→ العودة إلى الأخبار"
+  },
+  "stats": {
+    "materials": "مواد",
+    "news": "أخبار",
+    "scientific": "علمي",
+    "publications": "منشورات"
+  },
+  "tags": {
+    "search": "بحث",
+    "category": "فئة",
+    "sorting": "ترتيب"
+  },
+  "brand": "DocPats · الذكاء الطبي",
+  "articles_plural": "مقالات",
+  "news_ai_news": "ملخص طبي",
+  "research_ai_news": "مقالات الأطباء",
+  "publications_ai_news": "نظرة الطبيب",
+  "nav": {
+    "newsLink": "الأخبار الطبية والأبحاث · أحدث البيانات",
+    "back": "الأخبار",
+    "source": "المصدر",
+    "dashboard": "لوحة التحكم",
+    "becomeMember": "تسجيل الدخول",
+    "filters": {
+      "all": "الكل",
+      "news": "أخبار",
+      "research": "بحوث"
+    }
+  },
+
+  "types": {
+    "research": "بحث علمي",
+    "news": "خبر",
+    "review": "مراجعة",
+    "case": "حالة سريرية",
+    "researchFull": "مقالة بحثية",
+    "newsFull": "خبر"
+  },
+  "meta": {
+    "readMin": "د قراءة"
+  },
+  "byline": {
+    "readOriginal": "قراءة الأصل ←"
+  },
+  "hero": {
+    "breadcrumbHome": "الرئيسية",
+    "breadcrumbFeed": "موجز الأخبار الطبية",
+    "title": "موجز الأخبار الطبية",
+    "subtitle": "أبحاث طبية وأخبار سريرية وتحليلات بالذكاء الاصطناعي من DocPats",
+    "searchTitle": "بحث:",
+    "searchPlaceholder": "ابحث عن مقالات، حالات، علاجات…",
+    "searchBtn": "بحث",
+    "searchHighlight": "نتائج بحث:",
+    "searchClear": "✕ مسح",
+    "searchBadgePrefix": "عرض التطابقات لـ"
+  },
+  "filters": {
+    "specialty": "التخصص:",
+    "all": "الكل",
+    "news": "أخبار",
+    "research": "أبحاث",
+    "publications": "منشورات"
+  },
+  "list": {
+    "articles": "مقال",
+    "articles_plural": "مقالات",
+    "for": "لـ",
+    "page": "صفحة",
+    "of": "من",
+    "loading": "جاري التحميل",
+    "empty": "لم يُعثر على مقالات بالفلاتر المحددة.",
+    "loadMore": "تحميل المزيد",
+    "loadingMore": "جارٍ التحميل…"
+  },
+  "body": {
+    "translating": "جارٍ ترجمة المقال…",
+    "noContent": "النص الكامل للمقال غير متاح.",
+    "readFullAt": "اقرأ المقال كاملاً في",
+    "defaultSource": "المصدر الأصلي"
+  },
+  "footer": {
+    "publishedIn": "نُشر في",
+    "disclaimer": "يُعرض هذا المقال على DocPats لأغراض إعلامية فحسب. للاطلاع الكامل، يُرجى زيارة المنشور الأصلي.",
+    "readOriginal": "قراءة المقال الأصلي",
+    "tagline": "منصة الذكاء الطبي",
+    "allArticles": "جميع المقالات",
+    "news": "أخبار",
+    "research": "بحوث",
+    "about": "حول هيئة تحرير DocPats",
+    "name": "د. إسماعيل إسماعيلوف",
+    "role": "رئيس تحرير DocPats · اختصاصي أنف وأذن وحنجرة",
+    "description": "DocPats هي هيئة تحرير طبية يقودها طبيب ممارس. جميع المواد التحليلية تعتمد حصريًا على مصادر علمية محكمة مثل PubMed وThe Lancet وPLOS Medicine وNEJM وCDC وWHO وغيرها من المجلات الطبية الرائدة.",
+    "disclaimer_docpats": "⚕ هذه المادة لأغراض معلوماتية فقط ولا تغني عن الاستشارة الطبية المباشرة. يرجى مراجعة الطبيب للحصول على الرعاية الصحية."
+  },
+
+  "card": {
+    "readFull": "قراءة النسخة الكاملة"
+  }
+}

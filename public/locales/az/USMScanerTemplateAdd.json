@@ -1,0 +1,221 @@
+{
+  "USMScanerTemplateDiagnosis": {
+    "title": "Diaqnoz şablonunu əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Diaqnoz şablonu uğurla əlavə edildi.",
+      "errorDefault": "Şablon əlavə edilə bilmədi.",
+      "networkError": "Şəbəkə xətası"
+    }
+  },
+  "USMScanerTemplateDiagnosisDetails": {
+    "title": "USM diaqnoz şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablonu yükləmək mümkün olmadı."
+    }
+  },
+  "USMScanerTemplateDiagnosisEdit": {
+    "title": "USM diaqnoz şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Diaqnoz şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənərkən xəta baş verdi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "USMScanerTemplateDiagnosisList": {
+    "title": "🧾 USM diaqnoz şablonları",
+    "actions": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi.",
+      "loadError": "❌ Diaqnoz şablonlarını yükləmək mümkün olmadı."
+    }
+  },
+  "USMScanerTemplateNameofexam": {
+    "title": "USM müayinə adının şablonunu əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Müayinə adı şablonu uğurla əlavə edildi.",
+      "errorDefault": "Şablon əlavə edilərkən xəta baş verdi.",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "USMScanerTemplateNameofexamDetail": {
+    "title": "USM müayinə adı şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablonu yükləmək mümkün olmadı."
+    }
+  },
+  "USMScanerTemplateNameofexamEdit": {
+    "title": "USM müayinə adı şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Müayinə adı şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənə bilmədi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "USMScanerTemplateNameofexamList": {
+    "title": "📌 USM müayinə adları şablonları",
+    "actions": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Şablon silinə bilmədi.",
+      "loadError": "❌ Şablonları yükləmək mümkün olmadı."
+    }
+  },
+  "USMScanerTemplateRecomendation": {
+    "title": "USM tövsiyə şablonunu əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Tövsiyə şablonu uğurla əlavə edildi.",
+      "errorDefault": "Şablon əlavə edilərkən xəta baş verdi.",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "USMScanerTemplateRecomendationDetails": {
+    "title": "USM tövsiyə şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablonu yükləmək mümkün olmadı."
+    }
+  },
+  "USMScanerTemplateRecomendationEdit": {
+    "title": "USM tövsiyə şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Tövsiyə şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənərkən xəta baş verdi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "USMScanerTemplateRecomendationList": {
+    "title": "📋 USM tövsiyə şablonları",
+    "actions": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi.",
+      "loadError": "❌ Tövsiyə şablonlarını yükləmək mümkün olmadı."
+    }
+  },
+  "USMScanerTemplateReport": {
+    "title": "USM hesabat şablonunu əlavə et",
+    "form": {
+      "titlePlaceholder": "Başlıq",
+      "contentPlaceholder": "Məzmun",
+      "saveButton": "Yadda saxla"
+    },
+    "messages": {
+      "success": "✅ Hesabat şablonu uğurla əlavə edildi.",
+      "errorDefault": "Şablon əlavə edilərkən xəta baş verdi.",
+      "networkError": "⚠️ Şəbəkə xətası"
+    }
+  },
+  "USMScanerTemplateReportDetails": {
+    "title": "USM hesabat şablonunun detalları",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun",
+      "doctor": "Həkim"
+    },
+    "actions": {
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "loading": "Yüklənir...",
+      "loadError": "Şablonu yükləmək mümkün olmadı."
+    }
+  },
+  "USMScanerTemplateReportEdit": {
+    "title": "USM hesabat şablonunu redaktə et",
+    "fields": {
+      "title": "Başlıq",
+      "content": "Məzmun"
+    },
+    "actions": {
+      "update": "Şablonu yenilə"
+    },
+    "messages": {
+      "success": "✅ Hesabat şablonu uğurla yeniləndi!",
+      "updateError": "❌ Şablon yenilənərkən xəta baş verdi.",
+      "loadError": "❌ Şablon yüklənə bilmədi."
+    }
+  },
+  "USMScanerTemplateReportList": {
+    "title": "📝 USM hesabat şablonları",
+    "actions": {
+      "delete": "🗑️ Sil",
+      "edit": "Redaktə et"
+    },
+    "messages": {
+      "confirmDelete": "Bu şablonu silmək istədiyinizə əminsiniz?",
+      "deleteError": "❌ Şablon silinərkən xəta baş verdi.",
+      "loadError": "❌ Hesabat şablonlarını yükləmək mümkün olmadı."
+    }
+  }
+}

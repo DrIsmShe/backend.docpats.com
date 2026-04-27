@@ -1,0 +1,149 @@
+{
+  "EchoEKGScanerTemplateDiagnosis": {
+    "pageTitle": "إضافة قالب التشخيص (إيكو تخطيط القلب)",
+    "titlePlaceholder": "العنوان",
+    "contentPlaceholder": "المحتوى",
+    "saveButton": "حفظ",
+    "successMessage": "✅ تم إضافة قالب التشخيص بنجاح.",
+    "errorDefault": "فشل في إضافة القالب.",
+    "networkError": "خطأ في الشبكة"
+  },
+  "EchoEKGScanerTemplateDiagnosisDetails": {
+    "pageTitle": "تفاصيل قالب تشخيص تخطيط صدى القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "doctorLabel": "الطبيب",
+    "editButton": "تعديل",
+    "loading": "جارٍ التحميل...",
+    "errorLoad": "فشل في تحميل القالب."
+  },
+  "EchoEKGScanerTemplateDiagnosisEdit": {
+    "pageTitle": "تعديل قالب تشخيص تخطيط صدى القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "successUpdate": "✅ تم تحديث قالب التشخيص بنجاح.",
+    "errorUpdate": "❌ حدث خطأ أثناء تحديث القالب.",
+    "errorLoad": "فشل في تحميل القالب."
+  },
+  "EchoEKGScanerTemplateDiagnosisList": {
+    "pageTitle": "قوالب تشخيص تخطيط صدى القلب",
+    "deleteButton": "حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "successDelete": "✅ تم حذف القالب بنجاح.",
+    "errorDelete": "❌ حدث خطأ أثناء حذف القالب.",
+    "errorLoad": "فشل في تحميل قوالب التشخيص.",
+    "emptyList": "لا توجد قوالب تشخيص."
+  },
+  "EchoEKGScanerTemplateNameofexam": {
+    "pageTitle": "إضافة قالب اسم فحص تخطيط صدى القلب",
+    "titlePlaceholder": "العنوان",
+    "contentPlaceholder": "المحتوى",
+    "saveButton": "حفظ",
+    "successAdd": "✅ تم إضافة قالب اسم الفحص بنجاح.",
+    "errorAdd": "❌ حدث خطأ أثناء إضافة القالب.",
+    "networkError": "⚠️ خطأ في الشبكة"
+  },
+  "EchoEKGScanerTemplateNameofexamDetail": {
+    "pageTitle": "تفاصيل قالب اسم فحص تخطيط صدى القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "editButton": "تعديل",
+    "loading": "جارٍ التحميل...",
+    "errorLoad": "فشل في تحميل القالب."
+  },
+  "EchoEKGScanerTemplateNameofexamEdit": {
+    "pageTitle": "تعديل قالب اسم فحص تخطيط صدى القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "successUpdate": "✅ تم تحديث قالب اسم الفحص بنجاح.",
+    "errorUpdate": "❌ فشل في تحديث القالب.",
+    "errorLoad": "فشل في تحميل القالب."
+  },
+  "EchoEKGScanerTemplateNameofexamList": {
+    "pageTitle": "قوالب اسم فحص تخطيط صدى القلب",
+    "deleteButton": "حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "successDelete": "✅ تم حذف القالب بنجاح.",
+    "errorDelete": "❌ فشل في حذف القالب.",
+    "errorLoad": "فشل في تحميل قوالب اسم الفحص.",
+    "emptyList": "لا توجد قوالب لاسم الفحص."
+  },
+  "EchoEKGScanerTemplateRecomendation": {
+    "pageTitle": "إضافة قالب التوصيات لتخطيط صدى القلب",
+    "titlePlaceholder": "العنوان",
+    "contentPlaceholder": "المحتوى",
+    "saveButton": "حفظ",
+    "successAdd": "✅ تم إضافة قالب التوصيات بنجاح.",
+    "errorAdd": "❌ حدث خطأ أثناء إضافة قالب التوصيات.",
+    "networkError": "⚠️ خطأ في الشبكة"
+  },
+  "EchoEKGScanerTemplateRecomendationDetails": {
+    "pageTitle": "تفاصيل قالب التوصيات لتخطيط صدى القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "doctorLabel": "الطبيب",
+    "editButton": "تعديل",
+    "loading": "جارٍ التحميل...",
+    "errorLoad": "فشل في تحميل قالب التوصيات."
+  },
+  "EchoEKGScanerTemplateRecomendationEdit": {
+    "pageTitle": "تعديل قالب التوصيات لتخطيط صدى القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "successUpdate": "✅ تم تحديث قالب التوصيات بنجاح.",
+    "errorUpdate": "❌ حدث خطأ أثناء تحديث قالب التوصيات.",
+    "errorLoad": "فشل في تحميل قالب التوصيات."
+  },
+  "EchoEKGScanerTemplateRecomendationList": {
+    "pageTitle": "قوالب التوصيات لتخطيط صدى القلب",
+    "deleteButton": "حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "successDelete": "✅ تم حذف قالب التوصيات بنجاح.",
+    "errorDelete": "❌ حدث خطأ أثناء حذف قالب التوصيات.",
+    "errorLoad": "فشل في تحميل قوالب التوصيات.",
+    "emptyList": "لا توجد قوالب توصيات."
+  },
+  "EchoEKGScanTemplateReport": {
+    "pageTitle": "إضافة قالب تقرير تخطيط صدى القلب",
+    "titlePlaceholder": "العنوان",
+    "contentPlaceholder": "المحتوى",
+    "saveButton": "حفظ",
+    "successAdd": "✅ تم إضافة قالب التقرير بنجاح.",
+    "errorAdd": "❌ حدث خطأ أثناء إضافة قالب التقرير.",
+    "networkError": "⚠️ خطأ في الشبكة"
+  },
+  "EchoEKGScanerTemplateReportDetails": {
+    "pageTitle": "تفاصيل قالب تقرير تخطيط صدى القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "doctorLabel": "الطبيب",
+    "editButton": "تعديل",
+    "loading": "جارٍ التحميل...",
+    "errorLoad": "فشل في تحميل قالب التقرير."
+  },
+  "EchoEKGScanerTemplateReportEdit": {
+    "pageTitle": "تعديل قالب تقرير تخطيط صدى القلب",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "updateButton": "تحديث القالب",
+    "successUpdate": "✅ تم تحديث قالب التقرير بنجاح.",
+    "errorUpdate": "❌ حدث خطأ أثناء تحديث قالب التقرير.",
+    "errorLoad": "فشل في تحميل قالب التقرير."
+  },
+  "EchoEKGScanerTemplateReportList": {
+    "pageTitle": "قوالب تقارير تخطيط صدى القلب",
+    "deleteButton": "حذف",
+    "editButton": "تعديل",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا القالب؟",
+    "successDelete": "✅ تم حذف قالب التقرير بنجاح.",
+    "errorDelete": "❌ حدث خطأ أثناء حذف قالب التقرير.",
+    "errorLoad": "فشل في تحميل قوالب التقارير.",
+    "emptyList": "لا توجد قوالب تقارير."
+  }
+}

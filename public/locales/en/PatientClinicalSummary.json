@@ -1,0 +1,123 @@
+{
+  "titles": {
+    "clinicalSummaryTitle": "Clinical Summary"
+  },
+  "buttons": {
+    "backToPatient": "Back to Patient",
+    "openPatientCard": "Open Patient Card"
+  },
+  "sections": {
+    "mainComplaints": "Main Complaints",
+    "history": "History of Present Illness",
+    "objective": "Objective Findings",
+    "cardiovascular": "Cardiovascular System",
+    "respiratory": "Respiratory System",
+    "nervous": "Nervous System",
+    "gastrointestinal": "Gastrointestinal System",
+    "genitourinary": "Genitourinary System",
+    "ent": "ENT",
+    "angiography": "Angiography",
+    "imaging": "Imaging",
+    "laboratory": "Laboratory Findings",
+    "dynamics": "Clinical Dynamics",
+    "riskFactors": "Risk Factors",
+    "background": "Clinical Background",
+    "recommendations": "Follow-up Recommendations"
+  },
+  "clinicalAlerts": {
+    "title": "Clinical Alerts",
+    "defaultTitle": "Clinical Alert",
+    "source": "Source"
+  },
+  "ai": {
+    "score": "AI Clinical Score"
+  },
+  "clinicalScore": {
+    "riskIndex": "Patient Risk Index",
+    "severity": "Clinical Severity",
+    "confidence": "AI Confidence"
+  },
+  "deterioration": {
+    "title": "Clinical deterioration detected",
+    "description": "Patient dynamics indicate possible worsening condition."
+  },
+  "diseaseProbability": {
+    "title": "Disease Probability"
+  },
+  "timeline": {
+    "title": "Patient Timeline",
+    "noEvents": "No medical events found"
+  },
+  "risk": {
+    "priorityTitle": "Priority Clinical Risks",
+    "title": "Clinical Risk Assessment",
+    "confidence": "Confidence",
+    "levels": {
+      "low": "Low",
+      "moderate": "Moderate",
+      "high": "High"
+    },
+    "domains": {
+      "cardiology": "Cardiology",
+      "pulmonology": "Pulmonology",
+      "neurology": "Neurology",
+      "gastroenterology": "Gastroenterology",
+      "hepatology": "Hepatology",
+      "nephrology": "Nephrology",
+      "endocrinology": "Endocrinology",
+      "hematology": "Hematology",
+      "infectious": "Infectious Diseases",
+      "rheumatology": "Rheumatology",
+      "dermatology": "Dermatology",
+      "urology": "Urology",
+      "gynecology": "Gynecology",
+      "ent": "ENT",
+      "ophthalmology": "Ophthalmology",
+      "oncology": "Oncology"
+    }
+  },
+  "severity": {
+    "title": "Clinical Severity",
+    "level": {
+      "low": "Mild",
+      "moderate": "Moderate",
+      "high": "Severe"
+    },
+    "description": {
+      "low": "Stable condition without significant abnormalities.",
+      "moderate": "Clinically significant findings requiring monitoring and treatment adjustment.",
+      "high": "High risk of complications. Active management required."
+    }
+  },
+  "errors": {
+    "insufficientData": "Insufficient data",
+    "failedToGenerate": "Failed to generate clinical summary."
+  },
+  "auth": {
+    "checking": "Checking authorization"
+  },
+  "diagnosticInventory": {
+    "title": "Diagnostic Inventory",
+    "examinations": "examinations",
+    "modalities": {
+      "ct": "CT",
+      "mri": "MRI",
+      "usm": "Ultrasound",
+      "xray": "X-Ray",
+      "pet": "PET",
+      "spect": "SPECT",
+      "eeg": "EEG",
+      "ekg": "ECG",
+      "echoEkg": "Echocardiography",
+      "holter": "Holter Monitoring",
+      "spirometry": "Spirometry",
+      "dopler": "Doppler Study",
+      "gastroscopy": "Gastroscopy",
+      "capsuleEndoscopy": "Capsule Endoscopy",
+      "ginecology": "Gynecological Studies",
+      "angiography": "Angiography",
+      "coronography": "Coronary Angiography",
+      "labTests": "Laboratory Tests"
+    }
+  }
+}

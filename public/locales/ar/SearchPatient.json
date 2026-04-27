@@ -1,0 +1,49 @@
+{
+  "page": {
+    "title": "البحث عن مريض (البريد / الهاتف / الوثيقة / UUID)"
+  },
+  "alerts": {
+    "emptyQuery": "يرجى إدخال البريد الإلكتروني أو رقم الهاتف أو رقم الوثيقة أو patientUUID.",
+    "searchError": "حدث خطأ أثناء البحث عن المريض. حاول مرة أخرى."
+  },
+  "input": {
+    "placeholder": "أدخل البريد الإلكتروني أو الهاتف أو رقم الوثيقة أو patientUUID"
+  },
+  "buttons": {
+    "search": "بحث",
+    "openDashboard": "فتح لوحة العيادة",
+    "addPatient": "إضافة مريض"
+  },
+  "statuses": {
+    "attached": {
+      "title": "تم العثور على المريض وربطه!",
+      "message": "تم ربط المريض بالعيادة بنجاح."
+    },
+    "needsPatientActivation": {
+      "title": "المريض موجود في النظام",
+      "instruction": "اطلب من المريض تسجيل الدخول إلى Docpats وتفعيل",
+      "highlight": "حساب العيادة"
+    },
+    "notFound": {
+      "title": "المريض غير مسجل في Docpats.",
+      "instruction": "يجب على المريض إنشاء حساب بنفسه."
+    }
+  },
+  "patientInfo": {
+    "title": "معلومات المريض",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "uuid": "UUID",
+    "notSpecified": "غير محدد"
+  },
+  "searchPatient": {
+    "heroSub": "البحث عن مريض بالاسم أو البريد الإلكتروني أو UUID",
+    "tag": "DocPats · Polyclinic",
+    "loadingSearch": "جارٍ البحث...",
+    "alert": {
+      "title": "المريض موجود بالفعل في قائمة private",
+      "text": "تم إضافة هذا المريض من قبلك سابقًا."
+    },
+    "openCard": "فتح بطاقة المريض"
+  }
+}

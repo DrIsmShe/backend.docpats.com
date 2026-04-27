@@ -1,0 +1,831 @@
+{
+  "AngiographyScanerDetails": {
+    "page": {
+      "title": "Anjiyografi İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "error": "Veriler alınamadı",
+      "nodata": "Veri bulunamadı"
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "Muayene Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "pdf": {
+      "download": "PDF indir",
+      "upload": "PDF yükle",
+      "print": "Yazdır"
+    }
+  },
+  "AngiographyScanerTemplateDiagnosis": {
+    "page": {
+      "title": "Tanı Şablonu Ekle"
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "save": "Kaydet"
+    },
+    "messages": {
+      "success": "✅ Tanı şablonu başarıyla eklendi.",
+      "fail": "Şablon eklenemedi.",
+      "network": "Ağ hatası"
+    }
+  },
+  "AngiographyScanerTemplateDiagnosisDetails": {
+    "page": {
+      "title": "Tanı Şablonu Detayları",
+      "loading": "Yükleniyor...",
+      "error": "Şablon yüklenemedi."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    },
+    "AngiographyScanerTemplateDiagnosisEdit": {
+      "page": {
+        "title": "Anjiyografi Tanı Şablonunu Düzenle",
+        "success": "✅ Tanı şablonu başarıyla güncellendi!",
+        "error": "❌ Şablon güncellenirken hata oluştu"
+      },
+
+      "labels": {
+        "title": "Başlık",
+        "titlePlaceholder": "Başlık girin...",
+        "content": "İçerik",
+        "contentPlaceholder": "İçeriği girin..."
+      },
+
+      "buttons": {
+        "update": "Şablonu Güncelle"
+      }
+    }
+  },
+  "AngiographyScanerTemplateDiagnosisList": {
+    "title": "🧾 Anjiyografi tanı şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "✏️ Düzenle"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Tanı şablonları yüklenirken hata oluştu",
+      "deleteSuccess": "✅ Şablon başarıyla silindi",
+      "deleteError": "❌ Şablon silinirken hata oluştu"
+    }
+  },
+  "AngiographyScanerTemplateNameofexam": {
+    "title": "Anjiyografi Tetkik Adı Şablonu Ekle",
+    "fields": {
+      "title": {
+        "placeholder": "Şablon başlığını girin..."
+      },
+      "content": {
+        "placeholder": "Şablon içeriğini girin..."
+      }
+    },
+    "buttons": {
+      "save": "Kaydet"
+    },
+    "messages": {
+      "createSuccess": "✅ Şablon başarıyla eklendi",
+      "createError": "❌ Şablon eklenirken hata oluştu",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "AngiographyScanerTemplateNameofexamDetail": {
+    "title": "Anjiyografi Tetkik Adı Şablonu Detayları",
+    "page": {
+      "loading": "Yükleniyor..."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenirken hata oluştu"
+    }
+  },
+  "AngiographyScanerTemplateNameofexamEdit": {
+    "title": "Anjiyografi Tetkik Adı Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "loadError": "Şablon yüklenemedi",
+      "updateSuccess": "✅ Şablon başarıyla güncellendi",
+      "updateError": "❌ Şablon güncellenemedi"
+    }
+  },
+  "AngiographyScanerTemplateNameofexamList": {
+    "title": "Anjiyografi Tetkik Adı Şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Şablonlar yüklenirken hata oluştu",
+      "deleteSuccess": "✅ Şablon başarıyla silindi",
+      "deleteError": "❌ Şablon silinemedi"
+    }
+  },
+  "AngiographyScanerTemplateRecomendation": {
+    "title": "Anjiyografi İçin Öneri Şablonu Ekle",
+    "fields": {
+      "title": {
+        "placeholder": "Öneri başlığını girin..."
+      },
+      "content": {
+        "placeholder": "Öneri içeriğini girin..."
+      }
+    },
+    "buttons": {
+      "save": "Kaydet"
+    },
+    "messages": {
+      "createSuccess": "✅ Öneri şablonu başarıyla eklendi",
+      "createError": "❌ Öneri şablonu eklenemedi",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "AngiographyScanerTemplateRecomendationList": {
+    "title": "Anjiyografi Öneri Şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Öneri şablonları yüklenirken hata oluştu",
+      "deleteSuccess": "✅ Öneri şablonu başarıyla silindi",
+      "deleteError": "❌ Öneri şablonu silinemedi"
+    }
+  },
+  "AngiographyScanerTemplateRecomendationEdit": {
+    "title": "Anjiyografi Öneri Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "loadError": "Öneri şablonu yüklenemedi",
+      "updateSuccess": "✅ Öneri şablonu başarıyla güncellendi",
+      "updateError": "❌ Öneri şablonu güncellenemedi"
+    }
+  },
+  "AngiographyScanerTemplateRecomendationDetails": {
+    "title": "Anjiyografi Öneri Şablonu Detayları",
+    "page": {
+      "loading": "Yükleniyor..."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loadError": "Öneri şablonu yüklenemedi"
+    }
+  },
+  "AngiographyScanerTemplateReport": {
+    "title": "Anjiyografi Rapor Şablonu Ekle",
+    "fields": {
+      "title": {
+        "placeholder": "Rapor başlığını girin..."
+      },
+      "content": {
+        "placeholder": "Rapor içeriğini girin..."
+      }
+    },
+    "buttons": {
+      "save": "Kaydet"
+    },
+    "messages": {
+      "createSuccess": "✅ Rapor şablonu başarıyla eklendi",
+      "createError": "❌ Rapor şablonu eklenemedi",
+      "networkError": "⚠️ Ağ hatası"
+    }
+  },
+  "AngiographyScanerTemplateReportList": {
+    "title": "Anjiyografi Rapor Şablonları",
+    "buttons": {
+      "delete": "🗑️ Sil",
+      "edit": "Düzenle"
+    },
+    "confirm": {
+      "delete": "Bu şablonu silmek istediğinizden emin misiniz?"
+    },
+    "messages": {
+      "loadError": "Rapor şablonları yüklenirken hata oluştu",
+      "deleteSuccess": "✅ Rapor şablonu başarıyla silindi",
+      "deleteError": "❌ Rapor şablonu silinemedi"
+    }
+  },
+  "AngiographyScanerTemplateReportEdit": {
+    "title": "Anjiyografi Rapor Şablonunu Düzenle",
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik"
+    },
+    "buttons": {
+      "update": "Şablonu Güncelle"
+    },
+    "messages": {
+      "loadError": "Rapor şablonu yüklenemedi",
+      "updateSuccess": "✅ Rapor şablonu başarıyla güncellendi",
+      "updateError": "❌ Rapor şablonu güncellenemedi"
+    }
+  },
+  "AngiographyScanerTemplateReportDetails": {
+    "title": "Anjiyografi Rapor Şablonu Detayları",
+    "page": {
+      "loading": "Yükleniyor..."
+    },
+    "fields": {
+      "title": "Başlık",
+      "content": "İçerik",
+      "doctor": "Doktor"
+    },
+    "buttons": {
+      "edit": "Düzenle"
+    },
+    "messages": {
+      "loadError": "Rapor şablonu yüklenemedi"
+    }
+  },
+  "CapsuleEndoscopyScanerDetails": {
+    "page": {
+      "title": "Kapsül Endoskopi İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri mevcut değil",
+      "errors": {
+        "fetchError": "İnceleme verileri alınamadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "İnceleme Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "CoronographyScanerDetails": {
+    "page": {
+      "title": "Koronografi İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri mevcut değil",
+      "errors": {
+        "fetchError": "İnceleme verileri alınamadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "İnceleme Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "CTScanerDetails": {
+    "page": {
+      "title": "BT İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri mevcut değil",
+      "errors": {
+        "fetchError": "İnceleme verileri alınamadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "İnceleme Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "DopleryScanerDetails": {
+    "page": {
+      "title": "Doppler İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri mevcut değil",
+      "errors": {
+        "fetchError": "İnceleme verileri alınamadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "İnceleme Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "EchoEKGScanerDetails": {
+    "page": {
+      "title": "Eko EKG İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri mevcut değil",
+      "errors": {
+        "fetchError": "İnceleme verileri alınamadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "İnceleme Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "EEGScanerDetails": {
+    "page": {
+      "title": "EEG İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri mevcut değil",
+      "errors": {
+        "fetchError": "İnceleme verileri alınamadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "İnceleme Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "EKGScanerDetails": {
+    "page": {
+      "title": "EKG İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri mevcut değil",
+      "errors": {
+        "fetchError": "İnceleme verileri alınamadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "İnceleme Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "GastroscopyScanerDetails": {
+    "page": {
+      "title": "Gastroskopi İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri mevcut değil",
+      "errors": {
+        "fetchError": "İnceleme verileri alınamadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "İnceleme Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "GinecologyDetails": {
+    "page": {
+      "title": "Jinekoloji Test Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri mevcut değil",
+      "errors": {
+        "fetchError": "Test verileri alınamadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "Test Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "HOLTERScanerDetails": {
+    "page": {
+      "title": "Holter Monitör İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri bulunamadı",
+      "errors": {
+        "fetchError": "İnceleme verileri alınamadı"
+      },
+      "messages": {
+        "uploadSuccess": "PDF başarıyla yüklendi! Bağlantı:",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "Tetkik Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recomandation": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "LabtestScanerDetails": {
+    "page": {
+      "title": "Laboratuvar Analizi",
+      "loading": "Yükleniyor...",
+      "noData": "Veri yok",
+      "errors": {
+        "fetchError": "Laboratuvar analizi yüklenemedi."
+      }
+    },
+    "files": {
+      "noFile": "Dosya seçilmedi",
+      "chooseFile": "Dosya seç"
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "labName": "Laboratuvar",
+      "diagnosis": "Ön tanı",
+      "report": "Doktor raporu",
+      "parameters": "🧪 Analiz Parametreleri:",
+      "paramName": "Parametre",
+      "paramValue": "Değer",
+      "unit": "Birim",
+      "reference": "Referans aralığı",
+      "files": "📎 Ekli dosyalar",
+      "doctorComments": "💬 Doktor yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "MRIScanerDetails": {
+    "page": {
+      "title": "MR İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri bulunamadı",
+      "errors": {
+        "fetchError": "MR inceleme verileri alınamadı."
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "Tetkik Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recommendations": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "PETScanerDetails": {
+    "page": {
+      "title": "PET İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri bulunamadı",
+      "errors": {
+        "fetchError": "PET inceleme verileri alınamadı.",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "Tetkik Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recommendations": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "SPECTScanerDetails": {
+    "page": {
+      "title": "SPECT İncelemesi Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri bulunamadı",
+      "errors": {
+        "fetchError": "SPECT inceleme verileri alınamadı.",
+        "uploadError": "PDF yükleme hatası"
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "Tetkik Adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recommendations": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görseller",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "SpirometryScanerDetails": {
+    "page": {
+      "title": "Spirometri Taraması Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri bulunamadı",
+      "errors": {
+        "fetchError": "Spirometri tarama verileri yüklenemedi."
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "Tetkik Adı",
+      "diagnosis": "Teşhis",
+      "report": "Rapor",
+      "recommendations": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı mı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görüntüler",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "USMScanerDetails": {
+    "page": {
+      "title": "Ultrason Taraması Detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri bulunamadı",
+      "errors": {
+        "fetchError": "Ultrason tarama verileri yüklenemedi."
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "Tetkik Adı",
+      "diagnosis": "Teşhis",
+      "report": "Rapor",
+      "recommendations": "Öneriler",
+      "contrastUsed": "Kontrast Kullanıldı mı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görüntüler",
+      "doctorComments": "Doktor Yorumları"
+    },
+    "buttons": {
+      "download": "PDF İndir",
+      "upload": "PDF Yükle",
+      "print": "Yazdır"
+    }
+  },
+  "XRAYScanerDetails": {
+    "page": {
+      "title": "Röntgen inceleme detayları",
+      "loading": "Yükleniyor...",
+      "noData": "Veri yok",
+      "errors": {
+        "fetchError": "Röntgen verileri alınamadı."
+      }
+    },
+    "fields": {
+      "patient": "Hasta",
+      "doctor": "Doktor",
+      "date": "Tarih",
+      "nameofexam": "Tetkik adı",
+      "diagnosis": "Tanı",
+      "report": "Rapor",
+      "recommendations": "Öneriler",
+      "contrastUsed": "Kontrast kullanıldı",
+      "yes": "Evet",
+      "no": "Hayır",
+      "images": "Görüntüler",
+      "doctorComments": "Doktor yorumları"
+    },
+    "buttons": {
+      "download": "PDF indir",
+      "upload": "PDF yükle",
+      "print": "Yazdır"
+    }
+  }
+}
