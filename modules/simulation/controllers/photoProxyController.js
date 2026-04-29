@@ -1,138 +1,166 @@
 // server/modules/simulation/controllers/photoProxyController.js
 //
-// S.7.7+ — Proxy endpoint для фото симуляции.
+// S.7.7+ — Backend прокси для фото из R2.
 //
-// Зачем:
-//   Прямая раздача через media.docpats.com (Cloudflare Custom Domain → R2)
-//   имеет задержку propagation 5-30+ минут на новых файлах. Это ломает
-//   UX — после upload фото невидимо в editor'е до тех пор пока CDN edge
-//   не подтянется.
+// Frontend получает URL вида:
+//   /api/simulation/photos/proxy?key=simulation/{doctorId}/temp/abc.webp
 //
-//   Proxy через backend читает файл напрямую из R2 через S3 SDK, минуя
-//   Cloudflare CDN. R2 internal API имеет минимальную eventual consistency
-//   (обычно <1 сек), поэтому фото доступно практически сразу после upload.
+// Контроллер:
+//   1. Проверяет авторизацию (req.session.userId / req.doctorId)
+//   2. Проверяет что key принадлежит этому врачу (защита от path traversal)
+//   3. Стримит файл из R2 через S3 SDK
 //
-// Endpoint:
-//   GET /api/simulation/photos/proxy?key={r2Key}
-//
-// Authorization:
-//   • Только аутентифицированные доктора (requireAuth уже на router level)
-//   • Дополнительно проверяем что r2Key принадлежит этому доктору
-//     (по prefix simulation/{doctorId}/...)
-//
-// Caching:
-//   • Cache-Control: private, max-age=86400 — браузер кеширует 24ч
-//   • ETag из R2 — для conditional requests
-//   • Если файл иммутабельный (что наш случай — UUID в имени), это
-//     эффективно как CDN, только без propagation задержки
+// CORS:
+//   • Когда <img crossOrigin="use-credentials" src="https://backend.docpats.com/...">
+//     загружает картинку с другого домена, браузер требует:
+//       - Access-Control-Allow-Origin: точный origin (НЕ "*")
+//       - Access-Control-Allow-Credentials: true
+//   • Без этих headers браузер блокирует cross-origin <img> с credentials.
 
-import { s3, BUCKET, KEY_PREFIX } from "../config/r2.js";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  GetObjectCommand,
+  HeadObjectCommand,
+} from "@aws-sdk/client-s3";
+
+const r2Client = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+});
+
+const BUCKET = process.env.R2_BUCKET || "docpats-media";
 
 /**
- * GET /api/simulation/photos/proxy?key=simulation/{doctorId}/{...}/{file}.jpg
+ * Парсит список разрешённых origins из ENV.
+ * Если переменная не задана — используется fallback на docpats.com и localhost.
  */
-export async function photoProxyController(req, res) {
+function getAllowedOrigins() {
+  const fromEnv = process.env.ALLOWED_ORIGINS;
+  if (fromEnv) {
+    return fromEnv
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [
+    "https://docpats.com",
+    "https://www.docpats.com",
+    "http://localhost:3000",
+    "http://localhost:3001",
+  ];
+}
+
+/**
+ * Устанавливает CORS headers для cross-origin <img crossOrigin="use-credentials">.
+ * ВАЖНО: с credentials нельзя использовать "*", нужен точный origin.
+ */
+function applyCorsHeaders(req, res) {
+  const origin = req.headers.origin;
+  const allowed = getAllowedOrigins();
+
+  if (origin && allowed.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Vary", "Origin");
+  }
+}
+
+export default async function photoProxyController(req, res) {
+  // CORS headers — обязательно ДО любых других ответов
+  applyCorsHeaders(req, res);
+
+  // Preflight
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Cookie");
+    res.setHeader("Access-Control-Max-Age", "86400");
+    return res.status(204).end();
+  }
+
   try {
-    const { key } = req.query;
-
-    if (!key || typeof key !== "string") {
-      return res.status(400).json({
-        error: "missing_key",
-        message: "Query parameter 'key' is required",
-      });
+    // 1. Авторизация
+    const userId = req.session?.userId || req.doctorId;
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ error: "unauthorized", message: "Authentication required" });
     }
 
-    // Защита от path traversal
-    if (key.includes("..") || key.includes("//")) {
-      return res.status(400).json({
-        error: "invalid_key",
-        message: "Invalid key format",
-      });
+    // 2. Парсим key
+    const r2Key = req.query.key;
+    if (!r2Key || typeof r2Key !== "string") {
+      return res
+        .status(400)
+        .json({ error: "missing_key", message: "key parameter required" });
     }
 
-    // Authorization: ключ должен начинаться с simulation/{doctorId}/
-    const doctorId = String(req.doctorId);
-    const requiredPrefix = `${KEY_PREFIX}/${doctorId}/`;
-    if (!key.startsWith(requiredPrefix)) {
+    // 3. Защита от path traversal
+    if (r2Key.includes("..") || r2Key.includes("\\")) {
+      return res
+        .status(400)
+        .json({ error: "invalid_key", message: "Invalid key" });
+    }
+
+    // 4. Authorization check: key должен начинаться с simulation/{userId}/
+    const expectedPrefix = `simulation/${userId}/`;
+    if (!r2Key.startsWith(expectedPrefix)) {
       return res.status(403).json({
         error: "forbidden",
         message: "You don't have access to this photo",
       });
     }
 
-    // Conditional GET support — если у клиента есть валидный ETag,
-    // отдаём 304 Not Modified
-    const ifNoneMatch = req.headers["if-none-match"];
-
-    const cmd = new GetObjectCommand({
-      Bucket: BUCKET,
-      Key: key,
-      ...(ifNoneMatch ? { IfNoneMatch: ifNoneMatch } : {}),
-    });
-
-    let response;
+    // 5. HEAD для ETag и Content-Length
+    let head;
     try {
-      response = await s3.send(cmd);
+      head = await r2Client.send(
+        new HeadObjectCommand({ Bucket: BUCKET, Key: r2Key }),
+      );
     } catch (err) {
-      // S3 NotModified возвращается как exception в SDK v3
-      if (err.name === "NotModified" || err.$metadata?.httpStatusCode === 304) {
-        return res.status(304).end();
-      }
-      if (err.name === "NoSuchKey" || err.$metadata?.httpStatusCode === 404) {
-        return res.status(404).json({
-          error: "not_found",
-          message: "Photo not found",
-        });
+      if (err.$metadata?.httpStatusCode === 404 || err.name === "NotFound") {
+        return res
+          .status(404)
+          .json({ error: "not_found", message: "Photo not found" });
       }
       throw err;
     }
 
-    // Headers
+    // 6. Conditional GET (ETag/304)
+    const etag = head.ETag;
+    if (etag && req.headers["if-none-match"] === etag) {
+      res.setHeader("ETag", etag);
+      res.setHeader("Cache-Control", "private, max-age=86400, immutable");
+      return res.status(304).end();
+    }
+
+    // 7. GET object и стрим клиенту
+    const obj = await r2Client.send(
+      new GetObjectCommand({ Bucket: BUCKET, Key: r2Key }),
+    );
+
     res.setHeader(
       "Content-Type",
-      response.ContentType || "application/octet-stream",
+      obj.ContentType || head.ContentType || "image/webp",
     );
-    if (response.ContentLength) {
-      res.setHeader("Content-Length", String(response.ContentLength));
+    if (obj.ContentLength || head.ContentLength) {
+      res.setHeader("Content-Length", obj.ContentLength || head.ContentLength);
     }
-    if (response.ETag) {
-      res.setHeader("ETag", response.ETag);
-    }
-    // Файлы immutable (UUID в имени) — кешируем агрессивно у клиента
+    if (etag) res.setHeader("ETag", etag);
     res.setHeader("Cache-Control", "private, max-age=86400, immutable");
 
-    // Stream body
-    if (response.Body && typeof response.Body.pipe === "function") {
-      response.Body.pipe(res);
-      // Обработка ошибок stream
-      response.Body.on("error", (err) => {
-        // eslint-disable-next-line no-console
-        console.error("[photoProxy] stream error:", err);
-        if (!res.headersSent) {
-          res.status(500).json({ error: "stream_error" });
-        } else {
-          res.destroy(err);
-        }
-      });
-    } else if (response.Body) {
-      // Fallback: буфер целиком
-      const chunks = [];
-      for await (const chunk of response.Body) {
-        chunks.push(chunk);
-      }
-      res.send(Buffer.concat(chunks));
-    } else {
-      res.status(500).json({ error: "empty_body" });
-    }
+    // Стрим
+    obj.Body.pipe(res);
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error("[photoProxy] unexpected error:", err);
+    console.error("[simulation/photoProxy] error:", err);
     if (!res.headersSent) {
-      res.status(500).json({
-        error: "internal_error",
-        message: "Failed to fetch photo",
-      });
+      res
+        .status(500)
+        .json({ error: "internal_error", message: "Failed to fetch photo" });
     }
   }
 }
