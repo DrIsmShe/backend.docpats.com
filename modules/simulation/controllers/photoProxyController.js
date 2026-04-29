@@ -69,7 +69,7 @@ function applyCorsHeaders(req, res) {
   }
 }
 
-export default async function photoProxyController(req, res) {
+export async function photoProxyController(req, res) {
   // CORS headers — обязательно ДО любых других ответов
   applyCorsHeaders(req, res);
 
