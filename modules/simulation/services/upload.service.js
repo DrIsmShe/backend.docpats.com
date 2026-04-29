@@ -14,70 +14,21 @@ const JPEG_QUALITY = 90;
 const WEBP_QUALITY = 90;
 
 /* ──────────────────────────────────────────────────────────────────────────
-   S.7.5+ — CDN propagation wait.
+   S.7.7+ — Убрана waitForCdnPropagation:
+     Раньше после putObject в R2 мы ждали до 30 секунд пока CDN
+     (media.docpats.com) пропагирует файл. Эта задержка передавалась
+     клиенту как медленный upload. Хуже того — она не гарантировала
+     результат: Cloudflare иногда пропагирует через 5-30 МИНУТ.
 
-   После putObject в R2, файл появляется в bucket мгновенно, но CDN edge
-   (media.docpats.com) может видеть его не сразу. У некоторых users
-   наблюдается ожидание 5-10 минут. Решение: HEAD-проверка на CDN URL
-   с retry — не возвращаем URL клиенту пока не убедимся в доступности.
+     Новое решение: фронт ходит за фото через backend proxy
+     (/api/simulation/photos/proxy?key=...), который читает напрямую
+     из R2 через S3 SDK. R2 internal API имеет минимальную eventual
+     consistency (~1 сек), поэтому фото доступно через proxy сразу
+     после upload. Никаких задержек.
 
-   Цикл: 6 попыток с возрастающим интервалом (0s, 1s, 2s, 4s, 8s, 15s).
-   Итого ~30 секунд макс. Обычно пропагирует за 2-5 секунд.
-   Если за 30 сек не появился — всё равно возвращаем URL (пусть клиент
-   попробует через свой retry), но логируем warning.
+   Главная функция: buffer от multer → sharp normalize → R2 → embedded photo.
    ────────────────────────────────────────────────────────────────────────── */
 
-const CDN_CHECK_DELAYS_MS = [1000, 2000, 4000, 8000, 15000];
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * HEAD-запрос на CDN URL. Возвращает true когда status 200/2xx.
- * Не бросает: при сетевых ошибках/timeout — возвращает false для retry.
- */
-async function checkUrlAvailable(url, timeoutMs = 5000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, {
-      method: "HEAD",
-      signal: controller.signal,
-      cache: "no-store",
-    });
-    return response.ok;
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function waitForCdnPropagation(url) {
-  // Попытка 0 — сразу
-  if (await checkUrlAvailable(url)) {
-    return { ok: true, attempts: 1, totalMs: 0 };
-  }
-
-  // Попытки 1..N с backoff
-  let totalMs = 0;
-  for (let i = 0; i < CDN_CHECK_DELAYS_MS.length; i++) {
-    const waitMs = CDN_CHECK_DELAYS_MS[i];
-    await delay(waitMs);
-    totalMs += waitMs;
-
-    if (await checkUrlAvailable(url)) {
-      return { ok: true, attempts: i + 2, totalMs };
-    }
-  }
-
-  return { ok: false, attempts: CDN_CHECK_DELAYS_MS.length + 1, totalMs };
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
-   Главный метод: buffer от multer → R2 → CDN-check → embedded photo object.
-   ────────────────────────────────────────────────────────────────────────── */
 export async function processAndUploadPhoto({
   buffer,
   doctorId,
@@ -162,26 +113,12 @@ export async function processAndUploadPhoto({
     contentType: finalMime,
   });
 
-  /* ────────────── S.7.5+ — Wait for CDN propagation ────────────── */
-  const cdnResult = await waitForCdnPropagation(url);
-  if (cdnResult.ok) {
-    if (cdnResult.totalMs > 0) {
-      console.log(
-        `[simulation/upload] CDN propagated in ${cdnResult.totalMs}ms ` +
-          `(${cdnResult.attempts} attempts): ${url}`,
-      );
-    }
-  } else {
-    // Не блокируем upload — клиент попробует с retry на своей стороне.
-    console.warn(
-      `[simulation/upload] CDN propagation timeout after ${cdnResult.totalMs}ms ` +
-        `(${cdnResult.attempts} attempts). Returning URL anyway: ${url}`,
-    );
-  }
+  // S.7.7+ — НЕ ждём CDN пропагации. Клиент ходит через backend proxy
+  // (см. photoProxyController), который читает прямо из R2.
 
   return {
     r2Key,
-    url,
+    url, // CDN URL остаётся в БД как fallback (если когда-то откатимся на CDN)
     width: info.width,
     height: info.height,
     size: processedBuffer.length,

@@ -5,45 +5,54 @@ import { encrypt, safeDecrypt } from "./encryption.service.js";
 import { deletePhotoObject } from "./upload.service.js";
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Сервисный слой для SimulationPlan. Правила:
+   Сервисный слой для SimulationPlan.
 
-   1. Все методы принимают doctorId как первый аргумент — это ownership
-      фильтр для КАЖДОГО запроса. Сервер никогда не доверяет clientId
-      из body.
-   2. Шифрование/дешифрование label и patientRef происходит ТОЛЬКО здесь.
-      Controllers работают с plaintext, модель хранит ciphertext.
-   3. Soft delete везде — deletedAt ставится, физический файл R2 тоже
-      удаляется (hard-delete файла, soft-delete документа). Это компромисс:
-      undo "удалил план" возможен, но фото уже не вернёшь.
-   4. Все методы возвращают уже desereliazed объект (plain object с
-      расшифрованным label), а не mongoose Document.
+   S.7.7+: photo.url теперь backend proxy URL (/api/simulation/photos/proxy?key=...)
+   вместо прямого CDN URL (media.docpats.com). Решает проблему Cloudflare
+   propagation 5-30 минут на свежезагруженных файлах.
+
+   r2Key хранится в БД и используется:
+     • для строительства proxy URL через buildPhotoProxyUrl()
+     • для surgery worker (внутреннее использование)
+     • для cleanup при delete/dedup
    ────────────────────────────────────────────────────────────────────────── */
 
+/**
+ * S.7.7+ — Строим proxy URL для фото из r2Key.
+ * Frontend получает этот URL и обращается к backend, минуя Cloudflare CDN.
+ */
+function buildPhotoProxyUrl(r2Key) {
+  if (!r2Key) return null;
+  return `/api/simulation/photos/proxy?key=${encodeURIComponent(r2Key)}`;
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
-   DTO helper. Превращает mongoose document в plain object для API.
-   safeDecrypt — листинги не должны падать из-за одной битой записи.
+   DTO helper
    ────────────────────────────────────────────────────────────────────────── */
 function toPlanDTO(doc) {
   if (!doc) return null;
-  const obj = doc.toObject ? doc.toObject() : doc;
+  const o = doc.toObject ? doc.toObject() : doc;
 
   return {
-    id: String(obj._id),
-    doctorId: String(obj.doctorId),
-    label: safeDecrypt(obj.labelEncrypted, ""),
-    patientRef: safeDecrypt(obj.patientRefEncrypted, ""),
-    photo: {
-      url: obj.photo.url,
-      width: obj.photo.width,
-      height: obj.photo.height,
-      mimeType: obj.photo.mimeType,
-      uploadedAt: obj.photo.uploadedAt,
-      // r2Key НЕ отдаём клиенту — внутренний идентификатор.
-    },
-    controlPoints: obj.controlPoints || [],
-    createdAt: obj.createdAt,
-    updatedAt: obj.updatedAt,
-    deletedAt: obj.deletedAt || null,
+    id: String(o._id),
+    doctorId: String(o.doctorId),
+    label: safeDecrypt(o.labelEncrypted, ""),
+    patientRef: safeDecrypt(o.patientRefEncrypted, ""),
+    photo: o.photo
+      ? {
+          // S.7.7+ — отдаём proxy URL, не CDN URL
+          url: buildPhotoProxyUrl(o.photo.r2Key),
+          width: o.photo.width,
+          height: o.photo.height,
+          mimeType: o.photo.mimeType,
+          uploadedAt: o.photo.uploadedAt,
+          // r2Key НЕ отдаём клиенту — внутренний идентификатор.
+        }
+      : null,
+    controlPoints: o.controlPoints || [],
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+    deletedAt: o.deletedAt || null,
   };
 }
 
@@ -66,8 +75,7 @@ export async function createPlan(
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   LIST — пагинация через cursor (_id + createdAt desc).
-   Cursor-based лучше offset/limit: стабильна при вставках, масштабируется.
+   LIST
    ────────────────────────────────────────────────────────────────────────── */
 export async function listPlans(
   doctorId,
@@ -80,14 +88,12 @@ export async function listPlans(
   }
 
   if (cursor) {
-    // Cursor — последний _id из предыдущей страницы. Идём "меньше чем он"
-    // при сортировке по _id desc.
     query._id = { $lt: new mongoose.Types.ObjectId(cursor) };
   }
 
   const docs = await SimulationPlan.find(query)
     .sort({ _id: -1 })
-    .limit(limit + 1) // +1 чтобы определить hasMore без второго запроса
+    .limit(limit + 1)
     .lean();
 
   const hasMore = docs.length > limit;
@@ -101,8 +107,7 @@ export async function listPlans(
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   GET ById — с ownership check. Если план чужой ИЛИ удалён — 404
-   (не 403 — не раскрываем сам факт существования).
+   GET ById
    ────────────────────────────────────────────────────────────────────────── */
 export async function getPlanById(
   doctorId,
@@ -125,8 +130,7 @@ export async function getPlanById(
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   UPDATE — частичное. Шифруем то, что шифруется; controlPoints пишем
-   как есть.
+   UPDATE
    ────────────────────────────────────────────────────────────────────────── */
 export async function updatePlan(doctorId, planId, patch) {
   if (!mongoose.isValidObjectId(planId)) return null;
@@ -144,7 +148,6 @@ export async function updatePlan(doctorId, planId, patch) {
   }
 
   if (Object.keys(update).length === 0) {
-    // Валидатор уже гарантировал min(1), но на всякий случай.
     return getPlanById(doctorId, planId);
   }
 
@@ -158,10 +161,7 @@ export async function updatePlan(doctorId, planId, patch) {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   DELETE — soft. Документ помечается deletedAt, R2-объект удаляется
-   физически (compromise — см. header).
-
-   Если планы уже был удалён — идемпотентно возвращаем тот же результат.
+   DELETE
    ────────────────────────────────────────────────────────────────────────── */
 export async function deletePlan(doctorId, planId) {
   if (!mongoose.isValidObjectId(planId)) return null;
@@ -174,9 +174,6 @@ export async function deletePlan(doctorId, planId) {
 
   if (!doc) return null;
 
-  // Физическое удаление фото в R2. Best-effort — если упадёт, план всё
-  // равно помечен удалённым, а r2Key остался в документе для ручного
-  // cleanup. Не throw'им.
   if (doc.photo?.r2Key) {
     const shared = await isPhotoSharedWithOtherPlans(
       doctorId,
@@ -192,18 +189,7 @@ export async function deletePlan(doctorId, planId) {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   DUPLICATE — копирует всё (включая controlPoints), но с новым _id и
-   новым label. Фото НЕ копируем физически: новый план ссылается на тот
-   же r2Key.
-
-   ВАЖНО: это нарушает правило "каждый план владеет своим фото" (см.
-   валидатор). На практике это означает: если удалить оригинал, фото
-   исчезнет и в копии. Альтернатива — копировать R2-объект (CopyObject
-   SDK команда), но это +1 запрос и +storage. Для MVP оставляем shared,
-   позже при нужде добавим deep-copy.
-
-   Компенсация: deletePlan больше НЕ удаляет R2 если r2Key есть в другой
-   живой записи. Это проверим там же.
+   DUPLICATE
    ────────────────────────────────────────────────────────────────────────── */
 export async function duplicatePlan(doctorId, planId, { newLabel } = {}) {
   const original = await SimulationPlan.findOne({
@@ -220,8 +206,8 @@ export async function duplicatePlan(doctorId, planId, { newLabel } = {}) {
   const doc = await SimulationPlan.create({
     doctorId,
     labelEncrypted: encrypt(label),
-    patientRefEncrypted: original.patientRefEncrypted, // та же зашифр. строка
-    photo: original.photo, // shared r2Key
+    patientRefEncrypted: original.patientRefEncrypted,
+    photo: original.photo,
     controlPoints: original.controlPoints,
   });
 
@@ -229,8 +215,7 @@ export async function duplicatePlan(doctorId, planId, { newLabel } = {}) {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Проверка: используется ли r2Key в другом живом плане (для delete).
-   Нужна потому что duplicatePlan шарит фото.
+   isPhotoSharedWithOtherPlans
    ────────────────────────────────────────────────────────────────────────── */
 export async function isPhotoSharedWithOtherPlans(
   doctorId,

@@ -1,13 +1,9 @@
 // server/modules/simulation/services/landmarksService.js
 //
 // Сервисный слой landmarks.
-// - Проверяет владение планом (doctorId === session.userId).
-// - Атомарно обновляет landmarks + landmarksMeta.
-// - Возвращает обновлённый план целиком, чтобы клиент мог напрямую
-//   замержить ответ в state.simulation.current через normalizePlan.
-//
-// Сериализация плана выполняется локальной функцией serializePlan
-// (нет внешней зависимости от common-сериализатора).
+// S.7.7+ — serializePlan строит proxy URL для photo.url (как и в
+// simulationPlan.service.js). Без этого после save landmarks клиент
+// получил бы план с CDN URL → перезаписал в Redux → 30 минут ожидания.
 
 import mongoose from "mongoose";
 import SimulationPlan from "../models/SimulationPlan.js";
@@ -16,26 +12,26 @@ import {
   validateLandmarksMeta,
 } from "../validators/landmarksValidator.js";
 
-/* ─────────────────────────────────────────────────────────────────────
-   Helper для бросания типизированных ошибок.
-   Контроллер маппит err.code → HTTP status.
-   ───────────────────────────────────────────────────────────────────── */
 function makeError(code, message) {
   const err = new Error(message || code);
   err.code = code;
   return err;
 }
 
+/**
+ * S.7.7+ — Строит proxy URL из r2Key. Должен совпадать с реализацией
+ * в simulationPlan.service.js. Не выносим в общий модуль чтобы сохранить
+ * self-contained принцип модуля simulation.
+ */
+function buildPhotoProxyUrl(r2Key) {
+  if (!r2Key) return null;
+  return `/api/simulation/photos/proxy?key=${encodeURIComponent(r2Key)}`;
+}
+
 /* ─────────────────────────────────────────────────────────────────────
    Локальная сериализация плана для ответа клиенту.
-
-   ВАЖНО: labelEncrypted и patientRefEncrypted НЕ возвращаются в
-   raw-виде — они зашифрованы (PHI). Если у тебя есть decrypt-логика
-   в getPlan-контроллере, скопируй её сюда или вынеси общий serializer
-   и замени эту функцию на импорт.
-
-   Пока возвращаем только то, что клиенту реально нужно для editor'а
-   после save/clear landmarks.
+   labelEncrypted и patientRefEncrypted остаются зашифрованными в shape,
+   normalizePlan на клиенте этого ожидает.
    ───────────────────────────────────────────────────────────────────── */
 function serializePlan(planDoc) {
   if (!planDoc) return null;
@@ -44,15 +40,15 @@ function serializePlan(planDoc) {
   return {
     id: String(obj._id),
     doctorId: String(obj.doctorId),
-    // Зашифрованные поля прокидываем как есть — клиент их не использует
-    // в editor'е после landmarks-операции, но они должны присутствовать
-    // в shape, чтобы не сломать normalizePlan на клиенте.
     labelEncrypted: obj.labelEncrypted,
     patientRefEncrypted: obj.patientRefEncrypted ?? null,
     photo: obj.photo
       ? {
+          // r2Key оставляем для совместимости с возможными внутренними
+          // потребителями этого DTO, но клиент использует только url
           r2Key: obj.photo.r2Key,
-          url: obj.photo.url,
+          // S.7.7+ — proxy URL
+          url: buildPhotoProxyUrl(obj.photo.r2Key),
           width: obj.photo.width,
           height: obj.photo.height,
           size: obj.photo.size,
@@ -76,22 +72,12 @@ function serializePlan(planDoc) {
 
 /**
  * Сохраняет landmarks для плана.
- *
- * @param {Object} args
- * @param {string} args.planId
- * @param {string} args.userId      — doctorId из сессии
- * @param {Array}  args.landmarks   — payload с клиента
- * @param {Object} args.meta        — { modelVersion, imageWidth, imageHeight }
- * @returns {Promise<Object>}       — сериализованный план
- *
- * @throws {Error & {code}} 'invalid_id' | 'invalid_payload' | 'not_found' | 'forbidden'
  */
 export async function saveLandmarks({ planId, userId, landmarks, meta }) {
   if (!mongoose.Types.ObjectId.isValid(planId)) {
     throw makeError("invalid_id", "invalid plan id");
   }
 
-  // Валидация payload
   let cleanLandmarks;
   let cleanMeta;
   try {
@@ -128,7 +114,6 @@ export async function saveLandmarks({ planId, userId, landmarks, meta }) {
   );
 
   if (!updated) {
-    // race: план удалили между findById и findByIdAndUpdate
     throw makeError("not_found", "plan disappeared during update");
   }
 
@@ -136,13 +121,7 @@ export async function saveLandmarks({ planId, userId, landmarks, meta }) {
 }
 
 /**
- * Очищает landmarks (например, при смене фото в плане).
- * Реализован как тонкая обёртка над saveLandmarks с пустыми данными.
- *
- * @param {Object} args
- * @param {string} args.planId
- * @param {string} args.userId
- * @returns {Promise<Object>}
+ * Очищает landmarks.
  */
 export async function clearLandmarks({ planId, userId }) {
   return saveLandmarks({

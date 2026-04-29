@@ -19,6 +19,7 @@ import {
 } from "../validators/simulationPlan.validator.js";
 
 import { uploadPhotoController } from "../controllers/uploadPhotoController.js";
+import { photoProxyController } from "../controllers/photoProxyController.js";
 import { createPlanController } from "../controllers/createPlanController.js";
 import { listPlansController } from "../controllers/listPlansController.js";
 import { getPlanController } from "../controllers/getPlanController.js";
@@ -34,25 +35,30 @@ import {
 const router = Router();
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Все роуты модуля под auth. Никаких публичных endpoints.
+   Все роуты модуля под auth.
    ────────────────────────────────────────────────────────────────────────── */
 router.use(requireAuth);
 
 /* ──────────────────────────────────────────────────────────────────────────
-   PHOTOS — upload для последующего create плана.
-   POST /api/simulation/photos
+   PHOTOS
+     POST /api/simulation/photos          — upload
+     GET  /api/simulation/photos/proxy    — S.7.7+ proxy для obхода CDN
+                                            propagation. Регистрируется ДО
+                                            POST чтобы избежать конфликта
+                                            (Express всё равно различает
+                                            методы, но порядок безопаснее).
    ────────────────────────────────────────────────────────────────────────── */
+router.get("/photos/proxy", photoProxyController);
+
 router.post(
   "/photos",
   uploadSinglePhoto,
-  handleUploadErrors, // ловит multer-ошибки до controller'а
+  handleUploadErrors,
   uploadPhotoController,
 );
 
 /* ──────────────────────────────────────────────────────────────────────────
    PLANS — список и создание.
-   GET  /api/simulation/plans
-   POST /api/simulation/plans
    ────────────────────────────────────────────────────────────────────────── */
 router.get("/plans", validateQuery(listPlansQuerySchema), listPlansController);
 
@@ -60,7 +66,6 @@ router.post("/plans", validate(createPlanSchema), createPlanController);
 
 /* ──────────────────────────────────────────────────────────────────────────
    PLANS/:id/duplicate — ДО общего /:id, иначе перехват.
-   Помним из security-audit: "Express route registration order matters".
    ────────────────────────────────────────────────────────────────────────── */
 router.post(
   "/plans/:id/duplicate",
@@ -70,10 +75,7 @@ router.post(
 );
 
 /* ──────────────────────────────────────────────────────────────────────────
-   PLANS/:id/landmarks — S.7 automated anatomical landmarks.
-   Регистрируется ДО общего /plans/:id чтобы избежать перехвата.
-   PUT    — сохранить (468 точек или [])
-   DELETE — очистить
+   PLANS/:id/landmarks
    ────────────────────────────────────────────────────────────────────────── */
 router.put(
   "/plans/:id/landmarks",

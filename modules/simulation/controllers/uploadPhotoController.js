@@ -1,21 +1,22 @@
 // server/modules/simulation/controllers/uploadPhotoController.js
+//
+// S.7.7+ — отдаём клиенту photo с proxy URL вместо CDN URL.
+// Это критично: клиент использует photo.url СРАЗУ для preview перед
+// созданием плана. Если бы мы отдавали CDN URL — preview ждал бы
+// Cloudflare propagation 5-30 минут.
+
 import { processAndUploadPhoto } from "../services/upload.service.js";
 import { UploadValidationError } from "../validators/upload.validator.js";
 
-/* ──────────────────────────────────────────────────────────────────────────
-   POST /api/simulation/photos
-   multipart/form-data, поле "photo".
+/**
+ * S.7.7+ — Строит proxy URL из r2Key.
+ * Должен совпадать с реализацией в simulationPlan.service.js.
+ */
+function buildPhotoProxyUrl(r2Key) {
+  if (!r2Key) return null;
+  return `/api/simulation/photos/proxy?key=${encodeURIComponent(r2Key)}`;
+}
 
-   Поток: multer кладёт файл в req.file.buffer → sharp проверяет реальные
-   байты → нормализация → R2 → клиент получает embedded-photo объект,
-   который потом подкладывает в createPlan.
-
-   Двухшаговый upload (а не "всё в одном create") нужен потому что:
-   — клиент хочет показать preview ДО создания плана,
-   — create может упасть из-за валидации label, а фото уже залито,
-   — в будущем: один и тот же upload может использоваться для нескольких
-     планов (сейчас shared через duplicatePlan).
-   ────────────────────────────────────────────────────────────────────────── */
 export async function uploadPhotoController(req, res) {
   try {
     if (!req.file) {
@@ -31,7 +32,13 @@ export async function uploadPhotoController(req, res) {
       originalMimeType: req.file.mimetype,
     });
 
-    return res.status(201).json({ photo });
+    // S.7.7+ — подменяем url на proxy URL
+    const responsePhoto = {
+      ...photo,
+      url: buildPhotoProxyUrl(photo.r2Key),
+    };
+
+    return res.status(201).json({ photo: responsePhoto });
   } catch (err) {
     if (err instanceof UploadValidationError) {
       return res.status(400).json({
