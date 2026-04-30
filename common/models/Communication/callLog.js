@@ -1,13 +1,3 @@
-Нашли. Последняя строка — классическая ошибка:
-jsexport default mongoose.model("CallLog", callLogSchema);
-При повторной загрузке (когда simulation.worker тоже импортирует) — взрыв OverwriteModelError. Заменим на безопасный паттерн:
-bashcd ~/app/backend.docpats.com
-
-# Backup
-cp common/models/Communication/callLog.js common/models/Communication/callLog.js.backup
-
-# Полная перезапись
-cat > common/models/Communication/callLog.js << 'EOF'
 import mongoose from "mongoose";
 
 const callLogSchema = new mongoose.Schema(
@@ -59,7 +49,7 @@ const callLogSchema = new mongoose.Schema(
     errorReason: { type: String, default: null },
     notes: { type: String, default: "" },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 callLogSchema.pre("save", function (next) {
