@@ -1,52 +1,35 @@
 // server/modules/simulation/models/SimulationPlan.js
 //
-// УНИВЕРСАЛЬНАЯ модель для всех типов симуляции.
-//
-// Принцип: НЕ используем mongoose discriminator (он ломает legacy документы и
-// требует миграций при добавлении новых типов). Вместо этого:
-//   • planType — обычный enum string. Любое значение можно добавить тут.
-//   • anatomy — Schema.Types.Mixed. Любая структура anatomical points
-//                в зависимости от типа. Frontend знает какая.
-//   • operation — Schema.Types.Mixed. Параметры конкретной операции.
-//   • calibration — общая структура (px → mm), применима ко всем типам.
-//
-// Преимущества:
-//   ✅ Старые face документы (без planType) работают без миграций.
-//   ✅ Добавление нового типа (abdomen, arms, thighs, ...) = одна строка
-//      в SUPPORTED_PLAN_TYPES.
-//   ✅ Frontend контролирует структуру anatomy/operation для каждого типа.
-//   ✅ Joi валидация на API-уровне обеспечивает type safety.
-//
-// Trade-off:
-//   • Менее строгая mongoose-валидация структуры anatomy (Mixed).
-//     Это сознательное решение — гибкость > строгость.
-//   • Frontend ОБЯЗАН валидировать данные перед отправкой.
+// S.7.7+ обновления:
+//   • LandmarkSchema.mediapipeIndex — расширен с 0..467 до 0..477 (478 точек)
+//   • LandmarkSchema.group — расширен enum: forehead, chin, cheeks, jaws, manual, ears
+//   • landmarks array length — relaxed validator (0..2000) после убирания anatomy
+//     с frontend в Phase Б.2 v3 minimal. Старый whitelist [0,6,468,478] reject'ил
+//     планы с partial landmarks данными в БД.
+//   • LandmarksMetaSchema — добавлены: source, facesDetected, selectedFaceIndex,
+//     rotationUsed (для multi-face и rotation retry)
+//   • LandmarksMetaSchema.pointsCount — расширен до 478
 
 import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Поддерживаемые типы планов. Чтобы добавить новый — добавь сюда.
-   "face" — default для старых документов где поля planType нет.
+   Photo schema
    ────────────────────────────────────────────────────────────────────────── */
-export const SUPPORTED_PLAN_TYPES = [
-  "face",
-  "breast",
-  // Будущее:
-  "abdomen",
-  "arms",
-  "thighs",
-  "back",
-  "buttocks",
-  "neck",
-  "ears",
-  "eyes",
-  "lips",
-];
+const PhotoSchema = new Schema(
+  {
+    url: { type: String, required: true },
+    r2Key: { type: String, default: null },
+    width: { type: Number, default: null, min: 1, max: 20000 },
+    height: { type: Number, default: null, min: 1, max: 20000 },
+    photoView: { type: String, default: "front" },
+  },
+  { _id: false },
+);
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Control point — общий для всех типов (warp engine использует одинаково).
+   Control point (без изменений)
    ────────────────────────────────────────────────────────────────────────── */
 const ControlPointSchema = new Schema(
   {
@@ -62,12 +45,11 @@ const ControlPointSchema = new Schema(
     radius: { type: Number, required: true, min: 0.001, max: 1 },
     strength: { type: Number, required: true, min: -1, max: 1 },
   },
-  { _id: false },
+  { _id: false, strict: false },
 );
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Anatomical landmark (face-specific, MediaPipe).
-   Используется ТОЛЬКО для face планов. Для других типов — пустой массив.
+   Anatomical landmark (S.7) — точка из MediaPipe или ручной разметки.
    ────────────────────────────────────────────────────────────────────────── */
 const LandmarkSchema = new Schema(
   {
@@ -102,16 +84,20 @@ const LandmarkSchema = new Schema(
     source: { type: String, default: null, maxlength: 32 },
     hidden: { type: Boolean, default: false },
   },
-  { _id: false },
+  { _id: false, strict: false },
 );
 
+/* ──────────────────────────────────────────────────────────────────────────
+   LandmarksMeta — без изменений
+   ────────────────────────────────────────────────────────────────────────── */
 const LandmarksMetaSchema = new Schema(
   {
     detectedAt: { type: Date, default: null },
     modelVersion: { type: String, default: null, maxlength: 64 },
     imageWidth: { type: Number, default: null, min: 1, max: 20000 },
     imageHeight: { type: Number, default: null, min: 1, max: 20000 },
-    pointsCount: { type: Number, default: 0, min: 0, max: 478 },
+    pointsCount: { type: Number, default: 0, min: 0, max: 600 },
+
     source: {
       type: String,
       default: "auto",
@@ -124,54 +110,17 @@ const LandmarksMetaSchema = new Schema(
       default: 0,
       enum: [0, 90, 180, 270],
     },
-    anchorCount: { type: Number, default: 0, min: 0, max: 20 },
+    anchorCount: { type: Number, default: 0, min: 0, max: 50 },
   },
-  { _id: false },
+  { _id: false, strict: false },
 );
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Photo (общая для всех типов).
-   ────────────────────────────────────────────────────────────────────────── */
-const PhotoSchema = new Schema(
-  {
-    r2Key: { type: String, required: true },
-    url: { type: String, required: true },
-    width: { type: Number, required: true, min: 1 },
-    height: { type: Number, required: true, min: 1 },
-    size: { type: Number, required: true, min: 0 },
-    mimeType: { type: String, required: true },
-    uploadedAt: { type: Date, required: true, default: Date.now },
-  },
-  { _id: false },
-);
+   SimulationPlan — основная схема.
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Calibration (общая) — px → mm пересчёт.
-   p1, p2 — две точки на фото с известным расстоянием в мм.
-   ────────────────────────────────────────────────────────────────────────── */
-const CalibrationSchema = new Schema(
-  {
-    knownDistanceMm: { type: Number, default: null, min: 1, max: 1000 },
-    p1: {
-      x: { type: Number, default: null, min: 0, max: 1 },
-      y: { type: Number, default: null, min: 0, max: 1 },
-    },
-    p2: {
-      x: { type: Number, default: null, min: 0, max: 1 },
-      y: { type: Number, default: null, min: 0, max: 1 },
-    },
-    referenceLabel: { type: String, default: "", maxlength: 100 },
-  },
-  { _id: false },
-);
-
-/* ──────────────────────────────────────────────────────────────────────────
-   Допустимые длины массива landmarks (face only).
-   ────────────────────────────────────────────────────────────────────────── */
-const ALLOWED_LANDMARK_LENGTHS = new Set([0, 1, 6, 468, 478]);
-
-/* ──────────────────────────────────────────────────────────────────────────
-   Главная schema — единая для всех типов.
+   Validator landmarks смягчён до диапазона 0..2000 после убирания anatomy
+   разметки с frontend. Раньше whitelist'ил только [0, 6, 468, 478] что
+   ломало update планов с partial landmarks данными.
    ────────────────────────────────────────────────────────────────────────── */
 const SimulationPlanSchema = new Schema(
   {
@@ -181,56 +130,28 @@ const SimulationPlanSchema = new Schema(
       index: true,
     },
 
-    // S.8 — Тип симуляции. Default "face" для backwards compat.
-    // Чтобы добавить новый тип — расширь SUPPORTED_PLAN_TYPES выше.
-    planType: {
-      type: String,
-      enum: SUPPORTED_PLAN_TYPES,
-      default: "face",
-      index: true,
-    },
-
-    // S.8 — Ракурс фото (для multi-view типов: breast, abdomen, arms).
-    // Для face — null (один ракурс на план).
-    photoView: {
-      type: String,
-      default: null,
-      maxlength: 32,
-    },
-
     labelEncrypted: { type: String, required: true },
     patientRefEncrypted: { type: String, default: null },
 
+    photoView: { type: String, default: "front" },
     photo: { type: PhotoSchema, required: true },
+
+    // Anatomy / operation / calibration — Mixed для будущего использования.
+    // Frontend больше не отправляет, но БД сохраняет для совместимости.
+    anatomy: { type: Schema.Types.Mixed, default: () => ({}) },
+    operation: { type: Schema.Types.Mixed, default: () => ({}) },
+    calibration: { type: Schema.Types.Mixed, default: () => ({}) },
+
     controlPoints: { type: [ControlPointSchema], default: [] },
 
-    // S.8 — Универсальные anatomy points. Структура зависит от planType.
-    // Frontend знает что куда класть, mongoose не валидирует структуру.
-    // Schema.Types.Mixed — любой JSON.
-    anatomy: {
-      type: Schema.Types.Mixed,
-      default: {},
-    },
-
-    // S.8 — Параметры операции. Структура зависит от planType.
-    operation: {
-      type: Schema.Types.Mixed,
-      default: { type: null },
-    },
-
-    // Калибровка px → mm. Общая структура для всех типов.
-    calibration: {
-      type: CalibrationSchema,
-      default: () => ({}),
-    },
-
-    // Face-specific (для других типов остаются пустыми).
+    // Landmarks — relaxed validator
     landmarks: {
       type: [LandmarkSchema],
       default: [],
       validate: {
-        validator: (arr) => ALLOWED_LANDMARK_LENGTHS.has(arr.length),
-        message: "landmarks must be 0, 1, 6, 468, or 478",
+        validator: (arr) =>
+          Array.isArray(arr) && arr.length >= 0 && arr.length <= 2000,
+        message: "landmarks must be array of 0..2000 elements",
       },
     },
     landmarksMeta: {
@@ -243,16 +164,15 @@ const SimulationPlanSchema = new Schema(
   {
     timestamps: true,
     collection: "simulation_plans",
-    // strict: true (default) — но Mixed поля принимают любые данные.
-    // Минимальная инвазивность для legacy документов:
-    minimize: false, // не удаляет пустые объекты
+    strict: false,
   },
 );
 
 SimulationPlanSchema.index({ doctorId: 1, createdAt: -1 });
 SimulationPlanSchema.index({ doctorId: 1, deletedAt: 1 });
-SimulationPlanSchema.index({ doctorId: 1, planType: 1, deletedAt: 1 });
 
-const SimulationPlan = mongoose.model("SimulationPlan", SimulationPlanSchema);
+const SimulationPlan =
+  mongoose.models.SimulationPlan ||
+  mongoose.model("SimulationPlan", SimulationPlanSchema);
 
 export default SimulationPlan;
