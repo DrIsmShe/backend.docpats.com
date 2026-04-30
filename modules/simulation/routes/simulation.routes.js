@@ -12,6 +12,7 @@ import {
   validateParams,
   validateQuery,
   createPlanSchema,
+  createBreastPlanSchema, // S.8
   updatePlanSchema,
   duplicatePlanSchema,
   listPlansQuerySchema,
@@ -21,6 +22,10 @@ import {
 import { uploadPhotoController } from "../controllers/uploadPhotoController.js";
 import { photoProxyController } from "../controllers/photoProxyController.js";
 import { createPlanController } from "../controllers/createPlanController.js";
+// S.8 — breast controllers
+import { createBreastPlanController } from "../controllers/createBreastPlanController.js";
+import { listBreastGroupedController } from "../controllers/listBreastGroupedController.js";
+
 import { listPlansController } from "../controllers/listPlansController.js";
 import { getPlanController } from "../controllers/getPlanController.js";
 import { updatePlanController } from "../controllers/updatePlanController.js";
@@ -41,12 +46,8 @@ router.use(requireAuth);
 
 /* ──────────────────────────────────────────────────────────────────────────
    PHOTOS
-     POST /api/simulation/photos          — upload
-     GET  /api/simulation/photos/proxy    — S.7.7+ proxy для obхода CDN
-                                            propagation. Регистрируется ДО
-                                            POST чтобы избежать конфликта
-                                            (Express всё равно различает
-                                            методы, но порядок безопаснее).
+     POST /api/simulation/photos          — upload (face и breast одинаково)
+     GET  /api/simulation/photos/proxy    — S.7.7+ proxy
    ────────────────────────────────────────────────────────────────────────── */
 router.get("/photos/proxy", photoProxyController);
 
@@ -58,7 +59,25 @@ router.post(
 );
 
 /* ──────────────────────────────────────────────────────────────────────────
-   PLANS — список и создание.
+   S.8 — BREAST (специфичные endpoints — ДО общих /plans/...).
+
+   POST /api/simulation/plans/breast        — создание breast plan
+   GET  /api/simulation/breast/grouped      — группировка по пациенту
+
+   Note: список breast и обычный get/update/delete идут через общие
+   /plans endpoints с фильтром planType=breast в query.
+   ────────────────────────────────────────────────────────────────────────── */
+router.post(
+  "/plans/breast",
+  validate(createBreastPlanSchema),
+  createBreastPlanController,
+);
+
+router.get("/breast/grouped", listBreastGroupedController);
+
+/* ──────────────────────────────────────────────────────────────────────────
+   PLANS — список и создание (face).
+   GET /plans поддерживает ?planType=face|breast для фильтрации.
    ────────────────────────────────────────────────────────────────────────── */
 router.get("/plans", validateQuery(listPlansQuerySchema), listPlansController);
 
@@ -75,7 +94,7 @@ router.post(
 );
 
 /* ──────────────────────────────────────────────────────────────────────────
-   PLANS/:id/landmarks
+   PLANS/:id/landmarks (face only — для breast не используется)
    ────────────────────────────────────────────────────────────────────────── */
 router.put(
   "/plans/:id/landmarks",
@@ -91,6 +110,8 @@ router.delete(
 
 /* ──────────────────────────────────────────────────────────────────────────
    PLANS/:id — get/update/delete.
+   updatePlanSchema теперь поддерживает breast-specific поля
+   (anatomy, operation, calibration) опционально.
    ────────────────────────────────────────────────────────────────────────── */
 router.get("/plans/:id", validateParams(planIdParamSchema), getPlanController);
 
