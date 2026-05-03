@@ -2,8 +2,14 @@ import Anthropic from "@anthropic-ai/sdk";
 import UserSynthesis from "./userSynthesis.model.js";
 import User from "../../common/models/Auth/users.js";
 
+// ─── Лимиты по планам ────────────────────────────────────────
+// guest        — неавторизованный посетитель (нет userId)
+// free         — зарегистрированный пациент без платного плана
+// doctor_free  — зарегистрированный врач без платного плана
+// остальные    — платные планы
 const MONTHLY_LIMITS = {
-  free: 1,
+  guest: 1,
+  free: 3,
   standard: 5,
   premium: 20,
   doctor_free: 3,
@@ -17,13 +23,29 @@ function getClient() {
 }
 
 export async function checkUserLimit(userId) {
-  if (!userId) return { allowed: true, used: 0, limit: 1 };
+  // ─── Гость (нет сессии) ────────────────────────────────────
+  if (!userId) {
+    return {
+      allowed: true,
+      used: 0,
+      limit: MONTHLY_LIMITS.guest,
+      plan: "guest",
+      remaining: MONTHLY_LIMITS.guest,
+    };
+  }
 
+  // ─── Авторизованный пользователь ───────────────────────────
   const user = await User.findById(userId).lean();
   if (!user) throw new Error("Пользователь не найден");
 
-  const plan = user.subscriptionPlan || "free";
-  const limit = MONTHLY_LIMITS[plan] ?? 1;
+  // Если у пользователя нет subscriptionPlan — определяем дефолт по роли:
+  // врач → doctor_free, любой другой (пациент/админ) → free
+  let plan = user.subscriptionPlan;
+  if (!plan) {
+    plan = user.role === "doctor" ? "doctor_free" : "free";
+  }
+
+  const limit = MONTHLY_LIMITS[plan] ?? 3;
 
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
