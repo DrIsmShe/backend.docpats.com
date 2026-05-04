@@ -1,44 +1,20 @@
 import Anthropic from "@anthropic-ai/sdk";
 import UserSynthesis from "./userSynthesis.model.js";
 import User from "../../common/models/Auth/users.js";
-
-// ─── Лимиты по планам ──────────────────────────────────────────
-// guest        — неавторизованный посетитель (нет userId)
-// free         — зарегистрированный пациент без платного плана
-// patient_pro  — пациент с платной подпиской
-// standard     — общий платный план (легаси, оставлен для совместимости)
-// premium      — расширенный платный
-// doctor_free  — врач без платной подписки
-// doctor_super — врач с расширенной подпиской
-// doctor_pro   — врач с топ-подпиской
-// clinic       — корпоративная клиника (фактически без лимита)
-const MONTHLY_LIMITS = {
-  guest: 1,
-  free: 3,
-  patient_pro: 20,
-  standard: 5,
-  premium: 20,
-  doctor_free: 3,
-  doctor_super: 30,
-  doctor_pro: 50,
-  clinic: 999,
-};
+import {
+  PLAN_LIMITS,
+  resolveEffectivePlan,
+  getLimit,
+} from "../../common/config/aiPlanLimits.js";
 
 // ─── Роли пациентов (для дисклеймера и блокировки личных тем) ──
 const PATIENT_ROLES = ["patient", "user"];
 
 // ─── Паттерны личных мед.запросов ──────────────────────────────
-// Блокируются для роли patient: AI не должен писать "статью" про
-// конкретные симптомы конкретного человека — это самолечение.
-// Для таких вопросов есть отдельный модуль consultation-ai.
 const PERSONAL_PATTERNS = [
-  // RU
   /\b(у меня|у моего|у моей|у моих|у мужа|у жены|у сына|у дочери|у ребёнка|у ребенка|меня болит|мне больно|мой диагноз|моя болезнь|моё заболевание|мое заболевание|у меня болит|у меня боли|я болею|я заболел|я заболела)\b/i,
-  // EN
   /\b(my (pain|symptoms?|diagnosis|condition|disease|illness)|i have (a |an |the )?(pain|symptoms?|fever|cough|cancer|diabetes|tumor|illness)|i('?m| am) suffering|i feel sick)\b/i,
-  // TR
   /\b(bende\s+(ağrı|hastalık|şikayet)|benim\s+(ağrım|hastalığım|şikayetim))\b/i,
-  // AZ
   /\b(məndə\s+(ağrı|xəstəlik)|mənim\s+(ağrım|xəstəliyim))\b/i,
 ];
 
@@ -51,34 +27,28 @@ function getClient() {
 }
 
 // ────────────────────────────────────────────────────────────────
-// ПРОВЕРКА ЛИМИТА
+// ПРОВЕРКА ЛИМИТА — теперь работает через resolveEffectivePlan
 // ────────────────────────────────────────────────────────────────
 export async function checkUserLimit(userId) {
-  // ─── Гость (нет сессии) ─────────────────────────────────────
   if (!userId) {
     console.log("[checkUserLimit] userId=null → guest");
+    const limit = getLimit("guest", "aiArticles");
     return {
       allowed: true,
       used: 0,
-      limit: MONTHLY_LIMITS.guest,
+      limit,
       plan: "guest",
       role: "guest",
-      remaining: MONTHLY_LIMITS.guest,
+      remaining: limit,
     };
   }
 
-  // ─── Авторизованный пользователь ────────────────────────────
   const user = await User.findById(userId).lean();
   if (!user) throw new Error("Пользователь не найден");
 
-  // Если у пользователя нет subscriptionPlan — определяем дефолт по роли:
-  // врач → doctor_free, любой другой (пациент/админ) → free
-  let plan = user.subscriptionPlan;
-  if (!plan) {
-    plan = user.role === "doctor" ? "doctor_free" : "free";
-  }
-
-  const limit = MONTHLY_LIMITS[plan] ?? 3;
+  // Эффективный план учитывает trial для врачей
+  const plan = resolveEffectivePlan(user);
+  const limit = getLimit(plan, "aiArticles");
 
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
@@ -90,16 +60,17 @@ export async function checkUserLimit(userId) {
   });
 
   console.log(
-    `[checkUserLimit] userId=${userId} role=${user.role} plan=${plan} used=${used}/${limit}`,
+    `[checkUserLimit] userId=${userId} role=${user.role} plan=${plan} used=${used}/${limit === -1 ? "∞" : limit}`,
   );
 
   return {
-    allowed: used < limit,
+    allowed: limit === -1 || used < limit,
     used,
-    limit,
+    limit: limit === -1 ? Infinity : limit,
     plan,
     role: user.role || "patient",
-    remaining: Math.max(0, limit - used),
+    remaining: limit === -1 ? Infinity : Math.max(0, limit - used),
+    trialEndsAt: user.trialEndsAt || null,
   };
 }
 
@@ -121,10 +92,6 @@ export async function generateUserSynthesis({
     );
   }
 
-  // ─── Проверка на личный мед.запрос (для пациентов) ──────────
-  // Пациент не должен использовать генератор как замену консультации.
-  // Если в теме есть "у меня болит / my pain / bende ağrı" — отказываем
-  // и направляем в AI-консультацию или к врачу.
   const isPatient = PATIENT_ROLES.includes(limitCheck.role);
   if (isPatient && isPersonalMedicalQuery(topic)) {
     throw new Error(
@@ -158,8 +125,6 @@ export async function generateUserSynthesis({
     ar: "⚠️ مهم: هذه المقالة مادة تعليمية وليست استشارة طبية. قبل أي قرار علاجي، استشر طبيبك.",
   };
 
-  // Дисклеймер требуется для гостей и пациентов.
-  // Для врачей не нужен — они сами знают что AI ≠ диагноз.
   const disclaimerInstruction = isGuestOrPatient
     ? `\n\nВАЖНО: В САМОМ НАЧАЛЕ статьи (сразу после заголовка, до введения) ОБЯЗАТЕЛЬНО разместить блок-дисклеймер в виде блока цитаты:\n> ${DISCLAIMER_BY_LANG[language] || DISCLAIMER_BY_LANG.ru}`
     : "";
@@ -232,7 +197,7 @@ ${isGuestOrPatient ? "> [Блок-дисклеймер из инструкции
   const title = titleMatch ? titleMatch[1].trim() : `Обзор: ${topic}`;
   const wordCount = body.split(/\s+/).filter(Boolean).length;
 
-  // ── Генерация SEO-метаданных ────────────────────────────────
+  // ── Генерация SEO-метаданных (без изменений) ────────────────
   let seoData = {};
   try {
     const seoMessage = await getClient().messages.create({
@@ -310,7 +275,6 @@ tags (5 штук — категориальные теги):
       tags: [topic],
     };
   }
-  // ────────────────────────────────────────────────────────────
 
   if (userId) {
     const saved = await UserSynthesis.create({
@@ -336,23 +300,25 @@ tags (5 штук — категориальные теги):
       tags: Array.isArray(seoData.tags) ? seoData.tags : [],
     });
 
-    console.log("💾 Сохранено с SEO:", {
+    console.log("💾 Сохранено:", {
       userId,
       role: limitCheck.role,
       plan: limitCheck.plan,
-      metaDescription: `${saved.metaDescription?.slice(0, 60)}... (${saved.metaDescription?.length} симв.)`,
-      abstract: saved.abstract?.slice(0, 60),
-      keywords: saved.keywords,
-      lsiKeywords: saved.lsiKeywords,
-      tags: saved.tags,
+      remaining:
+        limitCheck.remaining === Infinity ? "∞" : limitCheck.remaining - 1,
     });
+
+    const remaining =
+      limitCheck.remaining === Infinity
+        ? Infinity
+        : Math.max(0, limitCheck.remaining - 1);
 
     return {
       _id: saved._id,
       title,
       body,
       wordCount,
-      remaining: Math.max(0, limitCheck.remaining - 1),
+      remaining,
       plan: limitCheck.plan,
       role: limitCheck.role,
       metaDescription: saved.metaDescription,
@@ -363,7 +329,6 @@ tags (5 штук — категориальные теги):
     };
   }
 
-  // ─── Гость (без userId) — статья отдаётся, но не сохраняется ─
   return {
     title,
     body,
@@ -392,13 +357,9 @@ export async function getUserArticles(userId, { page = 1, limit = 10 } = {}) {
       .lean(),
     UserSynthesis.countDocuments({ userId }),
   ]);
-
   return { articles, total, page: +page };
 }
 
-// ────────────────────────────────────────────────────────────────
-// ОДНА СТАТЬЯ
-// ────────────────────────────────────────────────────────────────
 export async function getUserArticle(userId, articleId) {
   const article = await UserSynthesis.findOne({
     _id: articleId,

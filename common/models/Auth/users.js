@@ -1,4 +1,20 @@
-// Импорт ядра и утилит ----------------------------------------------------------
+// server/common/models/Auth/users.js
+// ─────────────────────────────────────────────────────────────────────
+//   ЗАМЕНИТЬ ЦЕЛИКОМ — модель User со всеми полями подписки v2
+//
+//   Изменения относительно предыдущей версии:
+//   1. Удалён мёртвый код (объект subscriptionFields)
+//   2. Расширен enum subscriptionPlan новыми ключами + сохранены legacy
+//   3. Переименовано subscriptionExpiresAt → subscriptionEndsAt
+//   4. Добавлены поля: subscriptionPeriod, trialEndsAt, trialReminders,
+//      paymentCustomerId/SubscriptionId/LastChargedAt
+//   5. Pre-save хук теперь синхронизирует features.maxPatients и при
+//      изменении subscriptionPlan, и при изменении subscription.tier
+//   6. Объект subscription (с tier/billing/status) сохранён без изменений
+//      для обратной совместимости
+//   7. Виртуалы, методы, encryption, RBAC, sessions — все сохранены
+// ─────────────────────────────────────────────────────────────────────
+
 import mongoose from "mongoose";
 import crypto from "crypto";
 import "dotenv/config";
@@ -91,8 +107,6 @@ export const ROLE_PRESETS = {
 
   patient: ["user.read", "file.read", "file.upload", "chat.read", "chat.write"],
 
-  /* ===== КЛИНИКИ ===== */
-
   clinic_admin: [
     "user.read",
     "file.read",
@@ -162,6 +176,37 @@ const SessionSchema = new mongoose.Schema(
   { _id: true },
 );
 
+/* ======================= Маппинг плана → maxPatients =====================
+   Используется в pre-save хуке для синхронизации features.maxPatients
+   при изменении subscriptionPlan (плоское поле) или subscription.tier
+   (объектное поле).
+
+   Числа должны совпадать с patientsInOffice в aiPlanLimits.js.
+========================================================================= */
+const PLAN_TO_MAX_PATIENTS = {
+  // Новые ключи
+  doctor_basic: 5,
+  doctor_super: 50,
+  doctor_pro: 1000,
+  doctor_trial: 50, // как Super во время trial
+
+  patient_free: 0,
+  patient_std: 0,
+  patient_pro: 0,
+
+  clinic_start: 1000,
+  clinic: 1000,
+  clinic_pro: 1000,
+
+  // Legacy ключи
+  free: 5, // у врачей было — 5 пациентов
+  doctor_free: 5,
+  doctor_plus: 50,
+  standard: 0,
+  premium: 0,
+  clinic: 1000,
+};
+
 /* ======================= Основная схема User ======================= */
 const userSchema = new mongoose.Schema(
   {
@@ -169,23 +214,66 @@ const userSchema = new mongoose.Schema(
     lastOffenseAt: { type: Date },
     blockedUntil: { type: Date, default: null },
     permanentlyBanned: { type: Boolean, default: false },
+
+    /* ───── Подписка v2 — плоский план (основной источник правды) ───── */
     subscriptionPlan: {
       type: String,
       enum: [
+        // Новые ключи v2
+        "patient_free",
+        "patient_std",
+        "patient_pro",
+        "doctor_basic",
+        "doctor_super",
+        "doctor_pro",
+        "clinic_start",
+        "clinic",
+        "clinic_pro",
+        // Legacy — оставить для обратной совместимости с существующими юзерами в БД
         "free",
         "standard",
         "premium",
         "doctor_free",
-        "doctor_super",
-        "doctor_pro",
-        "clinic",
+        null,
       ],
-      default: "free",
+      default: null, // null = автоопределение через resolveEffectivePlan по role и trialEndsAt
     },
-    subscriptionExpiresAt: {
+
+    // Период подписки — для скидки -20% на годовую
+    subscriptionPeriod: {
+      type: String,
+      enum: ["monthly", "yearly", null],
+      default: null,
+    },
+
+    // Когда заканчивается оплаченный период подписки
+    // (раньше это поле называлось subscriptionExpiresAt)
+    subscriptionEndsAt: {
       type: Date,
       default: null,
     },
+
+    // Когда заканчивается TRIAL для врачей.
+    // У пациентов = null. У врачей при регистрации = Date.now() + 180 days.
+    // После окончания resolveEffectivePlan вернёт "doctor_basic".
+    trialEndsAt: {
+      type: Date,
+      default: null,
+    },
+
+    // Флаги отправленных email-напоминаний об окончании trial
+    trialReminders: {
+      sent30d: { type: Boolean, default: false },
+      sent7d: { type: Boolean, default: false },
+      sent1d: { type: Boolean, default: false },
+    },
+
+    // Stripe / платёжный шлюз
+    paymentCustomerId: { type: String, default: null },
+    paymentSubscriptionId: { type: String, default: null },
+    paymentLastChargedAt: { type: Date, default: null },
+
+    /* ───── Идентификация и шифрование ───── */
     emailHash: { type: String, required: true, unique: true, index: true },
     emailEncrypted: { type: String, required: true },
     firstNameHash: { type: String, required: true, index: true },
@@ -242,7 +330,7 @@ const userSchema = new mongoose.Schema(
     agreement: { type: Boolean, required: true },
     registeredAt: { type: Date, default: null },
     isChild: { type: Boolean, default: false },
-    childStatus: { type: String, default: "pending" }, // pending / waitingParent / active
+    childStatus: { type: String, default: "pending" },
     parentEmail: { type: String, default: null },
     childOtp: { type: String, default: null },
     childOtpExpires: { type: Date, default: null },
@@ -255,6 +343,9 @@ const userSchema = new mongoose.Schema(
       default: "offline",
     },
 
+    /* ───── Объектная подписка (legacy) — оставлена для совместимости ───── */
+    // НЕ ИСПОЛЬЗОВАТЬ для новой логики. Все новые проверки идут через
+    // плоское поле subscriptionPlan + resolveEffectivePlan.
     subscription: {
       tier: {
         type: String,
@@ -279,13 +370,14 @@ const userSchema = new mongoose.Schema(
       expiresAt: Date,
 
       billing: {
-        provider: { type: String }, // stripe | manual | clinic
+        provider: { type: String },
         customerId: String,
         subscriptionId: String,
       },
     },
+
     features: {
-      maxPatients: { type: Number, default: 5 }, // ← free врач
+      maxPatients: { type: Number, default: 5 },
       aiAccess: { type: Boolean, default: false },
       prioritySupport: { type: Boolean, default: false },
       familyMembers: { type: Number, default: 0 },
@@ -370,11 +462,6 @@ const userSchema = new mongoose.Schema(
         uploadedAt: { type: Date, default: Date.now },
       },
     ],
-
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
 
     callHistory: [
       {
@@ -603,6 +690,8 @@ const userSchema = new mongoose.Schema(
 /* ======================= Индексы ======================= */
 userSchema.index({ role: 1 });
 userSchema.index({ "access.permissions": 1 });
+userSchema.index({ trialEndsAt: 1 }); // для cron-задачи trial-напоминаний
+userSchema.index({ subscriptionEndsAt: 1 });
 
 /* ======================= Хелпер для update-хуков ======================= */
 function getSetObjectFromUpdate(update) {
@@ -643,7 +732,7 @@ userSchema.pre("findOneAndUpdate", function (next) {
 
 /* ======================= Хук SAVE ======================= */
 userSchema.pre("save", function (next) {
-  // 🔐 Шифрование
+  // 🔐 Шифрование полей PII
   if (this.isModified("emailEncrypted"))
     this.emailEncrypted = encrypt(this.emailEncrypted);
 
@@ -669,23 +758,20 @@ userSchema.pre("save", function (next) {
     if (lastPlain) this.lastNameHash = sha256(normalizeNameForHash(lastPlain));
   }
 
-  // 🧠 Подписка → лимиты
-  if (this.isModified("subscription.tier")) {
-    switch (this.subscription.tier) {
-      case "doctor_free":
-        this.features.maxPatients = 5;
-        break;
-
-      case "doctor_plus":
-        this.features.maxPatients = 50;
-        break;
-
-      case "doctor_pro":
-        this.features.maxPatients = 1000;
-        break;
-
-      default:
-        break;
+  // 🧠 Подписка → лимиты maxPatients
+  // Срабатывает при изменении НОВОГО плоского поля subscriptionPlan
+  // ИЛИ старого объектного subscription.tier — для обратной совместимости
+  // с кодом который мог использовать старый формат.
+  if (
+    this.isModified("subscriptionPlan") ||
+    this.isModified("subscription.tier")
+  ) {
+    const planKey = this.subscriptionPlan || this.subscription?.tier;
+    const mapped = PLAN_TO_MAX_PATIENTS[planKey];
+    if (mapped !== undefined) {
+      // Инициализируем features если его ещё нет
+      if (!this.features) this.features = {};
+      this.features.maxPatients = mapped;
     }
   }
 
@@ -728,6 +814,20 @@ userSchema.methods.can = function (permission) {
   return this.effectivePermissions.includes(permission);
 };
 
+// Удобный виртуал — врач сейчас в trial-периоде?
+userSchema.virtual("isInTrial").get(function () {
+  if (this.role !== "doctor") return false;
+  if (!this.trialEndsAt) return false;
+  return new Date() < new Date(this.trialEndsAt);
+});
+
+// Сколько дней trial осталось (или null если не в trial)
+userSchema.virtual("trialDaysLeft").get(function () {
+  if (!this.isInTrial) return null;
+  const ms = new Date(this.trialEndsAt).getTime() - Date.now();
+  return Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+});
+
 /* ======================= Сериализация ======================= */
 userSchema.set("toJSON", {
   virtuals: true,
@@ -755,5 +855,5 @@ userSchema.set("toObject", { virtuals: true });
 
 /* ======================= Экспорт ======================= */
 const User = mongoose.model("User", userSchema);
-export { decrypt }; // именованный экспорт функции (presets уже экспортированы выше)
-export default User; // дефолтная модель
+export { decrypt };
+export default User;

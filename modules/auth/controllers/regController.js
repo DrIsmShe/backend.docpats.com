@@ -6,6 +6,8 @@ import { sendEmail } from "../../../common/services/emailService.js";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import crypto from "crypto";
 import { SUBSCRIPTION_PRESETS } from "../../../common/config/subscriptions.js";
+// 💎 Новый импорт — для trial-периода врачей
+import { DOCTOR_TRIAL_DAYS } from "../../../common/config/aiPlanLimits.js";
 
 // ---------- utils ----------
 const safeLower = (v) => (typeof v === "string" ? v.toLowerCase() : "");
@@ -66,7 +68,6 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // agreement должно быть строго true
     if (agreement !== true) {
       return res.status(400).json({
         message: "Agreement must be accepted.",
@@ -107,11 +108,26 @@ export const registerUser = async (req, res) => {
     }
 
     const isChild = role === "patient" && age < 18;
-    // 🎯 Выбор стартового тарифа по роли
-    const defaultTier = role === "doctor" ? "doctor_free" : "patient_free";
 
-    // 🎯 Фичи по тарифу
+    // 🎯 Старая система — выбор стартового тарифа по роли (объект subscription)
+    const defaultTier = role === "doctor" ? "doctor_free" : "patient_free";
     const defaultFeatures = SUBSCRIPTION_PRESETS[defaultTier];
+
+    // 💎 НОВАЯ СИСТЕМА — расчёт trial и плоского subscriptionPlan
+    //
+    // Врачам даём 6 месяцев trial → resolveEffectivePlan() будет
+    // возвращать "doctor_trial" (= лимиты Doctor Super) пока trial активен,
+    // а после окончания — "doctor_basic" (платный базовый).
+    //
+    // Пациентам trial не нужен — у них Free навсегда.
+    const trialEndsAt =
+      role === "doctor"
+        ? new Date(Date.now() + DOCTOR_TRIAL_DAYS * 24 * 60 * 60 * 1000)
+        : null;
+
+    // subscriptionPlan = null означает "автоопределение" в resolveEffectivePlan
+    // (возьмёт patient_free / doctor_trial / doctor_basic в зависимости от роли)
+    const subscriptionPlan = null;
 
     if (isChild && !parentEmail) {
       return res.status(400).json({
@@ -204,18 +220,30 @@ export const registerUser = async (req, res) => {
       parentEmail: parentEmail || null,
       parentOtp,
       parentOtpExpires,
-      // 💎 ПОДПИСКА (FREE по умолчанию)
+
+      // 💎 СТАРАЯ СИСТЕМА — объект subscription (для совместимости со
+      // старым кодом, который мог им пользоваться)
       subscription: {
         tier: defaultTier,
         status: "active",
         startedAt: new Date(),
       },
-
-      // 💎 ФИЧИ ПО ТАРИФУ
       features: defaultFeatures,
+
+      // 💎 НОВАЯ СИСТЕМА v2 — плоское поле + trial
+      // subscriptionPlan: null = автоопределение через resolveEffectivePlan()
+      // trialEndsAt: для врачей = +180 дней, для пациентов = null
+      subscriptionPlan,
+      trialEndsAt,
     });
 
     await newUser.save();
+
+    console.log("✅ User created:", {
+      username,
+      role,
+      trialEndsAt: trialEndsAt ? trialEndsAt.toISOString() : null,
+    });
 
     // ----------- Отправка OTP пользователю -----------
     await sendEmail(email, "Your OTP Code", `Your OTP code is: ${otpPassword}`);
