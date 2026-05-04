@@ -10,6 +10,9 @@ const DOCTOR_PROFILES = "doctorprofiles";
 const COMMENTS = "commentdocpats";
 const SPECIALIZATIONS = "specializations";
 
+const SUPPORTED_LANGS = ["ru", "en", "tr", "az", "ar"];
+
+/* ── helpers ── */
 const stripHtmlToText = (html) =>
   sanitizeHtml(html || "", { allowedTags: [], allowedAttributes: {} })
     .replace(/\s+/g, " ")
@@ -51,6 +54,33 @@ const parseCats = (val) => {
     .filter(Boolean);
 };
 
+/* Resolve the user's target language: explicit header > Accept-Language > default ru.
+   Always returns a value from SUPPORTED_LANGS to avoid feeding the translator garbage. */
+const resolveTargetLanguage = (req) => {
+  const fromHeader = norm(req.headers["x-language"]).toLowerCase();
+  if (SUPPORTED_LANGS.includes(fromHeader)) return fromHeader;
+
+  const acceptLang = norm(req.headers["accept-language"])
+    .split(",")[0]
+    .split("-")[0]
+    .toLowerCase();
+  if (SUPPORTED_LANGS.includes(acceptLang)) return acceptLang;
+
+  return "ru";
+};
+
+/* Detect the actual original language of an article by inspecting its text.
+   This matters because the article model does not always carry `originalLanguage`,
+   and articles can be authored in any of the supported languages. */
+const detectArticleLanguage = (titleText, contentText) => {
+  const sample = `${titleText || ""} ${contentText || ""}`.slice(0, 500);
+  if (/[а-яА-ЯёЁ]/.test(sample)) return "ru";
+  if (/[\u0600-\u06FF]/.test(sample)) return "ar";
+  if (/[əƏ]/.test(sample)) return "az";
+  if (/[çşğüöÇŞĞÜÖıİ]/.test(sample)) return "tr";
+  return "en";
+};
+
 const articlesAllController = async (req, res) => {
   try {
     const page = Math.max(toInt(req.query.page, 1, 1), 1);
@@ -68,12 +98,9 @@ const articlesAllController = async (req, res) => {
     const dateTo = norm(req.query.dateTo);
     const sortBy = norm(req.query.sortBy) || "date_desc";
 
-    const targetLanguage =
-      req.headers["x-language"] ||
-      req.headers["accept-language"]?.split(",")[0]?.split("-")[0] ||
-      "ru";
+    const targetLanguage = resolveTargetLanguage(req);
 
-    // Поиск по переводам если язык не русский
+    /* Search by translations when target language is non-default and we have a query */
     let translationEntityIds = [];
     if (qTitle && targetLanguage !== "ru") {
       const rx = buildRegex(qTitle);
@@ -287,6 +314,7 @@ const articlesAllController = async (req, res) => {
           _id: 1,
           title: 1,
           content: 1,
+          originalLanguage: 1,
           imageUrl: 1,
           createdAt: 1,
           updatedAt: 1,
@@ -398,27 +426,46 @@ const articlesAllController = async (req, res) => {
             ? decrypt(a.authorLastNameEnc) || "Фамилия"
             : "Фамилия";
 
-        let title = stripHtmlToText(a.title) || a.title || "Без заголовка";
+        const titleText = stripHtmlToText(a.title);
+        const contentText = stripHtmlToText(a.content);
+        let title = titleText || a.title || "Без заголовка";
         let preview = makePreview(a.content, previewWords);
 
+        /* Localize the article. The original language is taken from the document if
+           present, otherwise detected from the actual text. We never fall back to
+           "ru" blindly — that's exactly the bug that left English articles untranslated. */
         try {
-          const localized = await getOrCreateTranslation({
-            entity: {
-              _id: a._id,
-              title: a.title,
-              content: a.content,
-              abstract: "",
-              originalLanguage: "ru",
-              translationVersion: 1,
-            },
-            entityType: "Article",
-            targetLanguage,
-          });
-          if (localized && !localized.isOriginal) {
-            title = stripHtmlToText(localized.title) || title;
-            preview = makePreview(localized.content, previewWords) || preview;
+          const originalLanguage =
+            (SUPPORTED_LANGS.includes(a.originalLanguage)
+              ? a.originalLanguage
+              : null) || detectArticleLanguage(titleText, contentText);
+
+          if (originalLanguage !== targetLanguage) {
+            const localized = await getOrCreateTranslation({
+              entity: {
+                _id: a._id,
+                title: a.title,
+                content: a.content,
+                abstract: "",
+                originalLanguage,
+                translationVersion: 1,
+              },
+              entityType: "Article",
+              targetLanguage,
+            });
+            if (localized && !localized.isOriginal) {
+              title = stripHtmlToText(localized.title) || title;
+              preview = makePreview(localized.content, previewWords) || preview;
+            }
           }
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[articlesAll] translation failed for article",
+            String(a._id),
+            "→",
+            err?.message || err,
+          );
+        }
 
         return {
           _id: a._id,
