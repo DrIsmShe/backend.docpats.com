@@ -2,7 +2,7 @@
 import "./modules/translation/translation.worker.js";
 import "./modules/surgery/simulation.worker.js";
 import express from "express";
-
+import meRoutes from "./modules/me/me.routes.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
@@ -22,7 +22,7 @@ import routes from "./common/routes/index.js";
 import uploadRoutes from "./common/routes/uploadRoutes.js";
 import uploadFileRoutes from "./common/routes/uploadFileRoutes.js";
 import emailLimiter from "./common/middlewares/rateLimiter.js";
-
+import { scheduleTrialReminders } from "./jobs/checkTrialReminders.js";
 import User, { decrypt as decryptUser } from "./common/models/Auth/users.js";
 import NewPatientPolyclinic from "./common/models/PatientProfile/patientProfile.js";
 import "./common/models/Comments/CommentDocpats.js";
@@ -275,6 +275,7 @@ app.use(uploadRoutes);
 app.use(routes);
 app.use("/update-email-doctor", emailLimiter);
 app.use(simulation.basePath, simulation.router);
+app.use("/api/me", meRoutes);
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
 await import("./common/models/index.js")
@@ -334,7 +335,7 @@ async function bootstrap(startPort = PORT) {
 
     // ✅ Call gateway на том же nsp
     initCallGateway(nsp);
-
+    scheduleTrialReminders();
     app.set("io", io);
     setSimulationIo(io);
     server.listen(startPort, () =>
