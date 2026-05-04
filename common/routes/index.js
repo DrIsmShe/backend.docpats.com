@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import doctorProfileModule from "./../../modules/doctorsProfiles/index.js";
+import doctorProfileModule from "../../modules/doctorsProfiles/routes/index.js";
 import doctorPatientModule from "../../modules/patientsProfiles/index.js";
 import commentsLikesModule from "../../modules/commentsLikes/index.js";
 import authModule from "../../modules/auth/index.js";

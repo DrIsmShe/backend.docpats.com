@@ -2,19 +2,19 @@ import express from "express";
 const router = express.Router();
 
 // DOCTOR PROFILE ROUTES START
-import EndorseRecomendationDoctorFromDoctorRoute from "./routes/endorseRecomendationDoctorFromDoctorRoute.js";
-import friendsDoctorRoute from "./routes/friendsDoctorRoute.js";
-import AllDoctorRoute from "./routes/AllDoctorRoute.js";
-import DoctorDetailRoute from "./routes/DoctorDetailRoute.js";
-import changePasswordProfileRoute from "./routes/changePasswordProfileRoute.js";
-import profileDoctorRoute from "./routes/profileDoctorRoute.js";
-import profileUpdateDoctorRoute from "./routes/profileUpdateDoctorRoute.js";
-import profileMainUpdateDoctorRoute from "./routes/profileMainUpdateDoctorRoute.js";
-import updatePhoneNumberDoctorRoute from "./routes/updatePhoneNumberDoctorRoute.js";
-import updateEmailDoctorRoute from "./routes/updateEmailDoctorRoute.js";
-import getSpecializationDoctorRoute from "./routes/getSpecializationDoctorRoute.js";
-import getSpecializationDetailDoctorRoute from "./routes/getSpecializationDetailDoctorRoute.js";
-import getProfileDoctorRoute from "./routes/getProfileDoctorRoute.js";
+import EndorseRecomendationDoctorFromDoctorRoute from "./endorseRecomendationDoctorFromDoctorRoute.js";
+import friendsDoctorRoute from "./friendsDoctorRoute.js";
+import AllDoctorRoute from "./AllDoctorRoute.js";
+import DoctorDetailRoute from "./DoctorDetailRoute.js";
+import changePasswordProfileRoute from "./changePasswordProfileRoute.js";
+import profileDoctorRoute from "./profileDoctorRoute.js";
+import profileUpdateDoctorRoute from "./profileUpdateDoctorRoute.js";
+import profileMainUpdateDoctorRoute from "./profileMainUpdateDoctorRoute.js";
+import updatePhoneNumberDoctorRoute from "./updatePhoneNumberDoctorRoute.js";
+import updateEmailDoctorRoute from "./updateEmailDoctorRoute.js";
+import getSpecializationDoctorRoute from "./getSpecializationDoctorRoute.js";
+import getSpecializationDetailDoctorRoute from "./getSpecializationDetailDoctorRoute.js";
+import getProfileDoctorRoute from "./getProfileDoctorRoute.js";
 
 router.use(
   "/recommendations-from-doctor",
@@ -35,10 +35,10 @@ router.use("/get-profile-doctor", getProfileDoctorRoute);
 // DOCTOR PROFILE ROUTES END
 
 // COUNT OF ARTICLES OF DOCTOR START
-import countAllDoctorRoute from "./routes/countAllDoctorRoute.js";
-import countArticlesTodayRoute from "./routes/countArticlesTodayRoute.js";
-import countAllArticlesRoute from "./routes/countAllArticlesRoute.js";
-import countPatientsRoute from "./routes/countPatientsRoute.js";
+import countAllDoctorRoute from "./countAllDoctorRoute.js";
+import countArticlesTodayRoute from "./countArticlesTodayRoute.js";
+import countAllArticlesRoute from "./countAllArticlesRoute.js";
+import countPatientsRoute from "./countPatientsRoute.js";
 
 router.use("/api", countAllDoctorRoute);
 router.use("/api", countArticlesTodayRoute);
@@ -46,15 +46,23 @@ router.use("/api", countAllArticlesRoute);
 router.use("/api", countPatientsRoute);
 // COUNT OF ARTICLES OF DOCTOR END
 
+// COUNT OF SCIENTIFIC ARTICLES OF DOCTOR START
+import countSCIENTIFICArticlesTodayRoute from "./countSCIENTIFICArticlesTodayRoute.js";
+import countSCIENTIFICAllArticlesRoute from "./countSCIENTIFICAllArticlesRoute.js";
+
+router.use("/api", countSCIENTIFICArticlesTodayRoute);
+router.use("/api", countSCIENTIFICAllArticlesRoute);
+// COUNT OF SCIENTIFIC ARTICLES OF DOCTOR END
+
 // ARTICLES OF DOCTOR START
 
-import articlesAllRoute from "./routes/articlesAllRoute.js";
-import AllDoctorArticlesRoute from "./routes/AllDoctorArticlesRoute.js";
-import myArticlesDoctorRoute from "./routes/getMyArticlesDoctorRoute.js";
-import myArticleSingleRoute from "./routes/myArticleSingleRoute.js";
-import createArticleRoute from "./routes/createArticleRoute.js";
-import deleteMyArticleDoctor from "./routes/deleteMyArtcleDoctorRoute.js";
-import updateMyarticleRoute from "./routes/updateMyarticleRoute.js";
+import articlesAllRoute from "./articlesAllRoute.js";
+import AllDoctorArticlesRoute from "./AllDoctorArticlesRoute.js";
+import myArticlesDoctorRoute from "./getMyArticlesDoctorRoute.js";
+import myArticleSingleRoute from "./myArticleSingleRoute.js";
+import createArticleRoute from "./createArticleRoute.js";
+import deleteMyArticleDoctor from "./deleteMyArtcleDoctorRoute.js";
+import updateMyarticleRoute from "./updateMyarticleRoute.js";
 
 router.use("/articles-all", articlesAllRoute);
 router.use("/doctor-articles", AllDoctorArticlesRoute);
@@ -66,13 +74,13 @@ router.use("/update-my-article", updateMyarticleRoute);
 // ARTICLES OF DOCTOR END
 
 // SCIENTIFIC ARTICLES OF DOCTOR START
-import articlesScientificAllRoute from "./routes/articlesScientificAllRoute.js";
-import AllDoctorArticleScientificsRoute from "./routes/AllDoctorArticleScientificsRoute.js";
-import myArticleScientificDoctorRoute from "./routes/myArticleScientificDoctorRoute.js";
-import myArticleScientificSingleRoute from "./routes/myArticleScientificSingleRoute.js";
-import createArticleScientificRoute from "./routes/createArticleScientificRoute.js";
-import deleteMyArticleScientificDoctor from "./routes/deleteMyArticleScientificDoctor.js";
-import updateMyarticleScientificRoute from "./routes/updateMyarticleScientificRoute.js";
+import articlesScientificAllRoute from "./articlesScientificAllRoute.js";
+import AllDoctorArticleScientificsRoute from "./AllDoctorArticleScientificsRoute.js";
+import myArticleScientificDoctorRoute from "./myArticleScientificDoctorRoute.js";
+import myArticleScientificSingleRoute from "./myArticleScientificSingleRoute.js";
+import createArticleScientificRoute from "./createArticleScientificRoute.js";
+import deleteMyArticleScientificDoctor from "./deleteMyArticleScientificDoctor.js";
+import updateMyarticleScientificRoute from "./updateMyarticleScientificRoute.js";
 
 router.use("/articles-scientific-all", articlesScientificAllRoute);
 router.use("/doctor-articles-scientific", AllDoctorArticleScientificsRoute);
@@ -84,9 +92,9 @@ router.use("/update-my-article-scientific", updateMyarticleScientificRoute);
 // SCIENTIFIC ARTICLES OF DOCTOR END
 
 // DOCTOR VERIFICATIONS ROUTES START
-import addVerificationDocumentsRoute from "./routes/addVerificationDocumentsRoute.js";
-import getVerificationDocumentsRoute from "./routes/getVerificationDocumentsRoute.js";
-import CancelVerificationDocumentsRoute from "./routes/CancelVerificationDocumentsRoute.js";
+import addVerificationDocumentsRoute from "./addVerificationDocumentsRoute.js";
+import getVerificationDocumentsRoute from "./getVerificationDocumentsRoute.js";
+import CancelVerificationDocumentsRoute from "./CancelVerificationDocumentsRoute.js";
 
 router.use("/add-verification", addVerificationDocumentsRoute);
 router.use("/get-verification", getVerificationDocumentsRoute);
