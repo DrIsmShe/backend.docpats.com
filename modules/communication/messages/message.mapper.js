@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
+
 export function mapAttachmentToDTO(attachment) {
   if (!attachment) return null;
-
   return {
     id: attachment._id.toString(),
     type: attachment.type,
@@ -15,11 +15,35 @@ export function mapAttachmentToDTO(attachment) {
   };
 }
 
+// ─── Helper: получить читаемый текст из любого формата сообщения ──────────
+// Mongoose document → берём virtual decryptedText
+// Plain object (после toObject() или из mongoose.lean()) → читаем поля сами
+function extractText(msg) {
+  // Если это mongoose document с virtual — он сам решит
+  if (typeof msg.decryptedText !== "undefined") {
+    return msg.decryptedText;
+  }
+  // Plain object (из .lean() или после toObject)
+  if (msg.textEncrypted) {
+    // На lean-объекте virtual не работает — используем safeDecrypt напрямую
+    // Импортируем lazy чтобы избежать циклической зависимости через model
+    try {
+      // eslint-disable-next-line global-require
+      const {
+        safeDecrypt,
+      } = require("../../simulation/services/encryption.service.js");
+      return safeDecrypt(msg.textEncrypted, "");
+    } catch {
+      return "";
+    }
+  }
+  return msg.text ?? null;
+}
+
 export function mapMessageToDTO(message) {
-  const msg = message.toObject ? message.toObject() : message;
+  const msg = message.toObject ? message.toObject({ virtuals: true }) : message;
 
   let replyTo = null;
-
   if (msg.replyTo) {
     // если populate не сработал и там просто ObjectId/строка
     if (
@@ -34,7 +58,7 @@ export function mapMessageToDTO(message) {
     } else {
       replyTo = {
         id: msg.replyTo._id.toString(),
-        text: msg.replyTo.text ?? null,
+        text: extractText(msg.replyTo),
         sender: msg.replyTo.senderId
           ? {
               id: msg.replyTo.senderId._id.toString(),
@@ -61,7 +85,9 @@ export function mapMessageToDTO(message) {
         }
       : null,
     type: msg.type,
-    text: msg.text ?? null,
+    // ⚠️ ВАЖНО: фронт получает дешифрованный текст в обычном поле "text".
+    // Поле textEncrypted НИКОГДА не уходит на клиент.
+    text: extractText(msg),
     attachments: Array.isArray(msg.attachments)
       ? msg.attachments.filter((a) => !a.isDeleted).map(mapAttachmentToDTO)
       : [],

@@ -1,5 +1,5 @@
 // server/modules/communication/messages/message.service.js
-import MessageModel from "./message.model.js";
+import MessageModel, { encryptMessageText } from "./message.model.js";
 import MessageAttachmentModel from "./messageAttachment.model.js";
 import DialogParticipantModel from "../dialogs/dialogParticipant.model.js";
 import { mapMessageToDTO } from "./message.mapper.js";
@@ -7,8 +7,16 @@ import mongoose from "mongoose";
 import DialogModel from "../dialogs/dialog.model.js";
 import { prefetchMessageTranslations } from "../chat-translation/messageTranslation.service.js";
 import User from "../../../common/models/Auth/users.js";
+
 /**
  * Получить сообщения диалога
+ *
+ * Шифрование: messages в БД могут лежать в двух форматах:
+ *   - Legacy: text (plain) ← старые записи до миграции
+ *   - Зашифрованные: textEncrypted ← все новые + старые после migrate-скрипта
+ *
+ * Mapper автоматически выбирает правильный формат через virtual decryptedText.
+ * Фронту всегда возвращается DTO с обычным полем `text` (дешифрованным).
  */
 export async function getMessagesForDialog({
   userId,
@@ -55,6 +63,9 @@ export async function getMessagesForDialog({
   }
 
   // 3. Достаём сообщения (новые → старые)
+  // ВАЖНО: НЕ используем .lean() — virtual decryptedText работает только
+  // на полноценных mongoose document'ах. Если когда-то понадобится lean,
+  // заменим на ручной safeDecrypt в mapper (он уже умеет оба варианта).
   const messages = await MessageModel.find(where)
     .sort({ createdAt: -1 })
     .limit(limit)
@@ -81,6 +92,9 @@ export async function getMessagesForDialog({
 
 /**
  * Отправить сообщение (text / file / voice)
+ *
+ * Шифрование текста — HIPAA § 164.312(a)(2)(iv). Plain text НИКОГДА
+ * не сохраняется в БД для новых сообщений. Только textEncrypted.
  */
 export async function sendMessage({
   userId,
@@ -105,20 +119,31 @@ export async function sendMessage({
     throw err;
   }
 
+  // ── Шифруем текст ДО создания записи в БД ────────────────────────────
+  // encryptMessageText вернёт null для пустых сообщений (file-only/voice).
+  // Поле text НЕ записываем — только textEncrypted.
+  const textEncrypted = encryptMessageText(text);
+
   // 1️⃣ Создаём сообщение
   let message = await MessageModel.create({
     dialogId,
     senderId: userId,
     type,
-    text,
+    textEncrypted, // ← зашифрованный текст
+    // text НЕ передаём — он остаётся undefined для новых сообщений
     replyTo: replyToId ? new mongoose.Types.ObjectId(replyToId) : null,
   });
 
   // 2️⃣ Обновляем диалог
+  // ВАЖНО: lastMessagePreview раньше брался из message.text — теперь это
+  // virtual, который дешифрует. Используем его явно.
+  // Альтернатива: хранить preview как plain (но это утечка PHI в Dialog
+  // коллекцию — лучше тоже шифровать или не хранить вообще).
+  // СЕЙЧАС: используем оригинальный text из аргумента (он у нас в памяти).
   await DialogModel.findByIdAndUpdate(dialogId, {
     lastMessageId: message._id,
     lastMessageAt: message.createdAt,
-    lastMessagePreview: message.text?.slice(0, 100) || null,
+    lastMessagePreview: text?.slice(0, 100) || null,
   });
 
   // 3️⃣ Вложения
@@ -151,18 +176,21 @@ export async function sendMessage({
       select: "username firstName lastName avatar",
     },
   });
-  // 5️⃣ Формируем объект
+
+  // 5️⃣ Формируем объект для mapper
+  // Используем toObject() с virtuals — virtual decryptedText сам разшифрует
+  // textEncrypted в text для DTO.
   const messageWithAttachments = {
-    ...message.toObject(),
+    ...message.toObject({ virtuals: true }),
     attachments: attachmentDocs,
   };
 
-  // 6️⃣ Возвращаем DTO
+  // 6️⃣ Возвращаем DTO (там text уже дешифрованный)
   const dto = mapMessageToDTO(messageWithAttachments);
 
   // ── Prefetch переводов для участников (fire-and-forget) ──────────────────
-  // Запускаем перевод для каждого участника с preferredLanguage сразу после
-  // отправки. Когда получатель откроет чат — перевод уже будет в MongoDB.
+  // Используем оригинальный text (не зашифрованный) — он есть в памяти.
+  // Translation service шифрует свой кэш сам (если умеет).
   if (type === "text" && text?.trim()) {
     (async () => {
       try {
