@@ -14,6 +14,9 @@ import {
 // Хранилище: { userId → { timestamps, blockedUntil, violations } }
 const httpRateStore = new Map();
 
+// Прогрессивные блокировки: первое нарушение 60с, потом 5мин, 15мин, час
+const PENALTIES_SEC = [60, 300, 900, 3600];
+
 function httpRateLimit(req, res, next) {
   const userId = String(req.user?._id || req.user?.id || req.ip);
   console.log(
@@ -41,9 +44,8 @@ function httpRateLimit(req, res, next) {
 
   if (state.timestamps.length >= 30) {
     state.violations++;
-    const penalties = [60, 300, 900, 3600];
-    const penaltySec =
-      penalties[Math.min(state.violations - 1, penalties.length - 1)];
+    const idx = Math.min(state.violations - 1, PENALTIES_SEC.length - 1);
+    const penaltySec = PENALTIES_SEC[idx];
     state.blockedUntil = now + penaltySec * 1000;
     const label =
       penaltySec >= 60
@@ -60,6 +62,31 @@ function httpRateLimit(req, res, next) {
   state.timestamps.push(now);
   next();
 }
+
+// ─── Auto-cleanup для httpRateStore ────────────────────────────────────────
+// Каждые 5 минут удаляем юзеров, которые молчат 30+ минут И не заблокированы.
+// Без этого Map растёт бесконечно (memory leak).
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+const INACTIVE_THRESHOLD_MS = 30 * 60 * 1000;
+
+setInterval(() => {
+  const now = Date.now();
+  let cleaned = 0;
+  for (const [userId, state] of httpRateStore.entries()) {
+    const lastTs = state.timestamps[state.timestamps.length - 1] || 0;
+    const isInactive = now - lastTs > INACTIVE_THRESHOLD_MS;
+    const notBlocked = now > state.blockedUntil;
+    if (isInactive && notBlocked) {
+      httpRateStore.delete(userId);
+      cleaned++;
+    }
+  }
+  if (cleaned > 0) {
+    console.log(
+      `🧹 HTTP RateLimit cleanup: removed ${cleaned} inactive entries (size=${httpRateStore.size})`,
+    );
+  }
+}, CLEANUP_INTERVAL_MS);
 
 const router = Router();
 

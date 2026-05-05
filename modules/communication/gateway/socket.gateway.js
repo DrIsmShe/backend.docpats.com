@@ -1,4 +1,4 @@
-// server/modules/communication/socket_gateway.js
+// server/modules/communication/gateway/socket.gateway.js
 import DialogParticipant from "../dialogs/dialogParticipant.model.js";
 import * as messageService from "../messages/message.service.js";
 import Dialog from "../dialogs/dialog.model.js";
@@ -9,7 +9,32 @@ import {
   translateMessage,
   SUPPORTED_LANGUAGES,
 } from "../chat-translation/messageTranslation.service.js";
+import { createSocketRateLimiter } from "../../../common/utils/socketRateLimit.js";
+
 let ioInstance = null;
+
+// ─── Rate limiters per event type ─────────────────────────────────────
+// Каждое событие имеет свой счётчик независимый от других.
+// При превышении лимита: 60с → 5мин → 15мин → 1ч (прогрессивно)
+const messageSendLimiter = createSocketRateLimiter("message:send", {
+  max: 30,
+  windowMs: 60_000, // 30 сообщений в минуту
+});
+
+const messageReactLimiter = createSocketRateLimiter("message:react", {
+  max: 60,
+  windowMs: 60_000, // 60 реакций в минуту
+});
+
+const typingLimiter = createSocketRateLimiter("typing:start", {
+  max: 20,
+  windowMs: 60_000, // 20 typing-стартов в минуту
+});
+
+const dialogJoinLimiter = createSocketRateLimiter("dialog:join", {
+  max: 30,
+  windowMs: 60_000, // 30 заходов в диалог в минуту
+});
 
 export async function getDialogsForUser(userId) {
   const participants = await DialogParticipant.find({
@@ -57,6 +82,9 @@ export function initCommunicationGateway(nsp) {
       try {
         if (!dialogId) return;
 
+        // ── Rate limit: 30/min ──
+        if (!dialogJoinLimiter.check(socket, userId)) return;
+
         const dialogObjectId = new mongoose.Types.ObjectId(dialogId);
         const userObjectId = new mongoose.Types.ObjectId(userId);
 
@@ -82,7 +110,7 @@ export function initCommunicationGateway(nsp) {
     });
 
     // ======================================================
-    // LEAVE DIALOG
+    // LEAVE DIALOG (без лимита — служебное событие)
     // ======================================================
     socket.on("dialog:leave", ({ dialogId }) => {
       if (!dialogId) return;
@@ -91,7 +119,7 @@ export function initCommunicationGateway(nsp) {
     });
 
     // ======================================================
-    // MARK DIALOG READ (явный вызов с клиента)
+    // MARK DIALOG READ (без лимита — служебное событие)
     // ======================================================
     socket.on("dialog:markRead", async ({ dialogId }) => {
       try {
@@ -109,6 +137,11 @@ export function initCommunicationGateway(nsp) {
       try {
         const { tempId, dialogId, type, text, attachments } = payload;
         if (!dialogId) return;
+
+        // ── Rate limit: 30/min ──
+        // Дублирует HTTP rate limit (тот защищает /messages POST,
+        // этот защищает прямой вызов через WebSocket).
+        if (!messageSendLimiter.check(socket, userId)) return;
 
         console.log("MESSAGE SEND:", payload);
 
@@ -157,7 +190,7 @@ export function initCommunicationGateway(nsp) {
     });
 
     // ======================================================
-    // DELETE MESSAGE
+    // DELETE MESSAGE (без лимита — редкое действие)
     // ======================================================
     socket.on("message:delete", async ({ messageId }) => {
       console.log("🗑 DELETE REQUEST:", messageId, "from", userId);
@@ -198,6 +231,9 @@ export function initCommunicationGateway(nsp) {
       async ({ messageId, dialogId, emoji, action }) => {
         try {
           if (!messageId || !dialogId || !emoji) return;
+
+          // ── Rate limit: 60/min ──
+          if (!messageReactLimiter.check(socket, userId)) return;
 
           const isParticipant = await DialogParticipant.exists({
             dialogId: new mongoose.Types.ObjectId(dialogId),
@@ -246,6 +282,9 @@ export function initCommunicationGateway(nsp) {
     // ======================================================
     socket.on("typing:start", ({ dialogId }) => {
       if (!dialogId) return;
+      // ── Rate limit: 20/min ──
+      // typing:stop не лимитим — он может прилететь вне зависимости.
+      if (!typingLimiter.check(socket, userId)) return;
       socket
         .to(`room:dialog:${dialogId}`)
         .emit("typing:start", { dialogId, userId });
@@ -257,6 +296,10 @@ export function initCommunicationGateway(nsp) {
         .to(`room:dialog:${dialogId}`)
         .emit("typing:stop", { dialogId, userId });
     });
+
+    // ======================================================
+    // TRANSLATION REQUEST (свой rate limit уже в translateMessage)
+    // ======================================================
     socket.on("translation:request", async ({ messageId, targetLang } = {}) => {
       try {
         if (!messageId || !targetLang) return;
