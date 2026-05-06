@@ -57,10 +57,15 @@ function extractActorFromReq(req) {
 
   if (!userId) return null;
 
+  // Email и role могут быть в req.user (из authMiddleware) или в req.session
+  // (для DocPats — основной источник). Берём из обоих.
+  const email = req.user.email || req.session?.email || null;
+  const role = req.user.role || req.session?.role || null;
+
   return {
     userId,
-    email: req.user.email,
-    role: req.user.role,
+    email,
+    role,
   };
 }
 

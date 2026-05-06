@@ -31,6 +31,22 @@ router.get(
     action: "chat.dialog.list",
   }),
   async (req, res, next) => {
+    // ⚠️ TEMP DEBUG - удалить после
+    console.log("=== DEBUG req.user ===", JSON.stringify(req.user, null, 2));
+    console.log(
+      "=== DEBUG req.session ===",
+      JSON.stringify(
+        {
+          userId: req.session?.userId,
+          email: req.session?.email,
+          role: req.session?.role,
+          keys: Object.keys(req.session || {}),
+        },
+        null,
+        2,
+      ),
+    );
+
     try {
       const userId = req.user._id;
       const result = await dialogService.getDialogsForUser(userId);
