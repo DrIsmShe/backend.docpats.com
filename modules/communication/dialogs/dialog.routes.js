@@ -1,26 +1,41 @@
 import { Router } from "express";
 import * as dialogService from "./dialog.service.js";
 import authMiddleware from "../../../common/middlewares/authvalidateMiddleware/authMiddleware.js";
-import auditMiddleware from "../../audit/middleware/auditMiddleware.js"; // ← ДОБАВИТЬ
+import auditMiddleware from "../../audit/middleware/auditMiddleware.js";
+
 const router = Router();
 
 // --- создать диалог ---
-router.post("/", authMiddleware, async (req, res, next) => {
-  try {
-    const userId = req.user._id;
-    const { participantIds, type } = req.body;
+router.post(
+  "/",
+  authMiddleware,
+  auditMiddleware({
+    resourceType: "chat-dialog",
+    action: "chat.dialog.create",
+    metaFrom: (req) => ({
+      type: req.body?.type,
+      participantsCount: Array.isArray(req.body?.participantIds)
+        ? req.body.participantIds.length
+        : 0,
+    }),
+  }),
+  async (req, res, next) => {
+    try {
+      const userId = req.user._id;
+      const { participantIds, type } = req.body;
 
-    const dialog = await dialogService.createDialog({
-      creatorId: userId,
-      participantIds,
-      type,
-    });
+      const dialog = await dialogService.createDialog({
+        creatorId: userId,
+        participantIds,
+        type,
+      });
 
-    res.status(201).json(dialog);
-  } catch (err) {
-    next(err);
-  }
-});
+      res.status(201).json(dialog);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // --- список диалогов ---
 router.get(
@@ -31,22 +46,6 @@ router.get(
     action: "chat.dialog.list",
   }),
   async (req, res, next) => {
-    // ⚠️ TEMP DEBUG - удалить после
-    console.log("=== DEBUG req.user ===", JSON.stringify(req.user, null, 2));
-    console.log(
-      "=== DEBUG req.session ===",
-      JSON.stringify(
-        {
-          userId: req.session?.userId,
-          email: req.session?.email,
-          role: req.session?.role,
-          keys: Object.keys(req.session || {}),
-        },
-        null,
-        2,
-      ),
-    );
-
     try {
       const userId = req.user._id;
       const result = await dialogService.getDialogsForUser(userId);
@@ -57,79 +56,121 @@ router.get(
   },
 );
 
-router.get("/search", authMiddleware, async (req, res, next) => {
-  try {
-    const userId = req.user._id;
-    const q = (req.query.q || "").trim();
+// --- поиск по диалогам и сообщениям ---
+router.get(
+  "/search",
+  authMiddleware,
+  auditMiddleware({
+    resourceType: "chat-dialog",
+    action: "chat.dialog.search",
+    // ВАЖНО: НЕ записываем сам поисковый запрос — он может содержать
+    // PHI (имя пациента, диагноз). Только статистику.
+    metaFrom: (req) => ({
+      queryLength: (req.query?.q || "").length,
+    }),
+  }),
+  async (req, res, next) => {
+    try {
+      const userId = req.user._id;
+      const q = (req.query.q || "").trim();
 
-    if (!q || q.length < 2) {
-      return res.json({ dialogs: [], messages: [] });
+      if (!q || q.length < 2) {
+        return res.json({ dialogs: [], messages: [] });
+      }
+
+      const results = await dialogService.searchDialogsAndMessages({
+        userId,
+        q,
+      });
+      res.json(results);
+    } catch (err) {
+      next(err);
     }
-
-    const results = await dialogService.searchDialogsAndMessages({ userId, q });
-    res.json(results);
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 
 // --- получить диалог ---
-router.get("/:dialogId", authMiddleware, async (req, res, next) => {
-  try {
-    const userId = req.user._id;
-    const { dialogId } = req.params;
+router.get(
+  "/:dialogId",
+  authMiddleware,
+  auditMiddleware({
+    resourceType: "chat-dialog",
+    action: "chat.dialog.read",
+    resourceIdFrom: "params.dialogId",
+  }),
+  async (req, res, next) => {
+    try {
+      const userId = req.user._id;
+      const { dialogId } = req.params;
 
-    const dialog = await dialogService.getDialogById({ userId, dialogId });
-    res.json(dialog);
-  } catch (err) {
-    next(err);
-  }
-});
+      const dialog = await dialogService.getDialogById({ userId, dialogId });
+      res.json(dialog);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // --- отметить прочитанным ---
-router.post("/:dialogId/read", authMiddleware, async (req, res, next) => {
-  try {
-    const userId = req.user._id;
-    const { dialogId } = req.params;
-    const { lastReadMessageId } = req.body;
+router.post(
+  "/:dialogId/read",
+  authMiddleware,
+  auditMiddleware({
+    resourceType: "chat-dialog",
+    action: "chat.dialog.mark_read",
+    resourceIdFrom: "params.dialogId",
+  }),
+  async (req, res, next) => {
+    try {
+      const userId = req.user._id;
+      const { dialogId } = req.params;
+      const { lastReadMessageId } = req.body;
 
-    await dialogService.markDialogRead({
-      userId,
-      dialogId,
-      lastReadMessageId,
-    });
+      await dialogService.markDialogRead({
+        userId,
+        dialogId,
+        lastReadMessageId,
+      });
 
-    res.json({ success: true });
-  } catch (err) {
-    next(err);
-  }
-});
+      res.json({ success: true });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // 🔥 ВАЖНО: приватный диалог с пользователем
-router.post("/with-user", authMiddleware, async (req, res, next) => {
-  try {
-    console.log("➡️ POST /communication/dialogs/with-user BODY:", req.body);
-    console.log("👤 currentUserId:", req.user._id);
+router.post(
+  "/with-user",
+  authMiddleware,
+  auditMiddleware({
+    resourceType: "chat-dialog",
+    action: "chat.dialog.create_private",
+    // peerUserId — это owner ресурса (с кем создаём диалог).
+    // Позволяет пациенту через GET /audit/owners/:userId увидеть
+    // кто инициировал с ним приватный чат.
+    resourceOwnerIdFrom: "body.peerUserId",
+  }),
+  async (req, res, next) => {
+    try {
+      const currentUserId = req.user._id;
+      const { peerUserId } = req.body;
 
-    const currentUserId = req.user._id;
-    const { peerUserId } = req.body;
+      if (!peerUserId) {
+        return res.status(400).json({ message: "peerUserId обязателен" });
+      }
 
-    if (!peerUserId) {
-      return res.status(400).json({ message: "peerUserId обязателен" });
+      const dialog = await dialogService.getOrCreatePrivateDialog({
+        currentUserId,
+        peerUserId,
+      });
+
+      res.json({ dialog });
+    } catch (err) {
+      console.error("❌ getOrCreatePrivateDialog error:", err);
+      next(err);
     }
-
-    const dialog = await dialogService.getOrCreatePrivateDialog({
-      currentUserId,
-      peerUserId,
-    });
-
-    console.log("✅ dialog created/found:", dialog._id.toString());
-
-    res.json({ dialog });
-  } catch (err) {
-    console.error("❌ getOrCreatePrivateDialog error:", err);
-    next(err);
-  }
-});
+  },
+);
 
 export default router;
