@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as dialogService from "./dialog.service.js";
 import authMiddleware from "../../../common/middlewares/authvalidateMiddleware/authMiddleware.js";
-
+import auditMiddleware from "../../audit/middleware/auditMiddleware.js"; // ← ДОБАВИТЬ
 const router = Router();
 
 // --- создать диалог ---
@@ -23,15 +23,23 @@ router.post("/", authMiddleware, async (req, res, next) => {
 });
 
 // --- список диалогов ---
-router.get("/", authMiddleware, async (req, res, next) => {
-  try {
-    const userId = req.user._id;
-    const result = await dialogService.getDialogsForUser(userId);
-    res.json({ dialogs: result });
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  "/",
+  authMiddleware,
+  auditMiddleware({
+    resourceType: "chat-dialog",
+    action: "chat.dialog.list",
+  }),
+  async (req, res, next) => {
+    try {
+      const userId = req.user._id;
+      const result = await dialogService.getDialogsForUser(userId);
+      res.json({ dialogs: result });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.get("/search", authMiddleware, async (req, res, next) => {
   try {

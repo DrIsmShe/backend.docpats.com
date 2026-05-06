@@ -40,7 +40,7 @@ import "./jobs/prefetch.job.js";
 import userSynthesisRoutes from "./modules/userSynthesis/userSynthesis.routes.js";
 // ✅ NEW: anthropometry module
 import { routes as anthropometryRoutes } from "./modules/anthropometry/index.js";
-
+import { auditRoutes } from "./modules/audit/index.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -276,6 +276,7 @@ app.use(routes);
 app.use("/update-email-doctor", emailLimiter);
 app.use(simulation.basePath, simulation.router);
 app.use("/api/me", meRoutes);
+app.use("/audit", auditRoutes);
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
 await import("./common/models/index.js")
