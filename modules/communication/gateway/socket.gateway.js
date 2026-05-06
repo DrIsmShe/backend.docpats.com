@@ -10,6 +10,7 @@ import {
   SUPPORTED_LANGUAGES,
 } from "../chat-translation/messageTranslation.service.js";
 import { createSocketRateLimiter } from "../../../common/utils/socketRateLimit.js";
+import { recordActionAsync } from "../../audit/index.js";
 
 let ioInstance = null;
 
@@ -35,6 +36,24 @@ const dialogJoinLimiter = createSocketRateLimiter("dialog:join", {
   max: 30,
   windowMs: 60_000, // 30 заходов в диалог в минуту
 });
+
+// ─── Audit context helper ─────────────────────────────────────────────
+// Вытаскивает actor info из socket для аудита.
+// Email/role могут отсутствовать — если так, audit запишется только с userId.
+function _auditContext(socket) {
+  const session = socket.request?.session || {};
+  return {
+    userId: socket.user?.id,
+    actorEmail: session.email || null,
+    actorRole: session.role || null,
+    sessionId: socket.request?.sessionID || null,
+    ipAddress:
+      socket.handshake?.address ||
+      socket.request?.connection?.remoteAddress ||
+      null,
+    userAgent: socket.handshake?.headers?.["user-agent"] || null,
+  };
+}
 
 export async function getDialogsForUser(userId) {
   const participants = await DialogParticipant.find({
@@ -96,16 +115,50 @@ export function initCommunicationGateway(nsp) {
 
         if (!isParticipant) {
           console.log("❌ NOT PARTICIPANT:", userId, dialogId);
+
+          // ✅ AUDIT — denied access (важно для security аналитики)
+          recordActionAsync({
+            ..._auditContext(socket),
+            action: "chat.dialog.join",
+            resourceType: "chat-dialog",
+            resourceId: dialogId,
+            outcome: "denied",
+            failureReason: "not_a_participant",
+            metadata: { via: "websocket" },
+          });
           return;
         }
 
         socket.join(`room:dialog:${dialogId}`);
         console.log("✅ JOIN:", dialogId);
+        console.log(
+          "🔍 [AUDIT-DEBUG] about to call recordActionAsync from dialog:join",
+        );
+        // ✅ AUDIT — join success
+        recordActionAsync({
+          ..._auditContext(socket),
+          action: "chat.dialog.join",
+          resourceType: "chat-dialog",
+          resourceId: dialogId,
+          outcome: "success",
+          metadata: { via: "websocket" },
+        });
 
         // ✅ FIX: При входе в диалог — отмечаем все сообщения как прочитанные
         await _markDialogRead(nsp, dialogId, userId);
       } catch (error) {
         console.error("dialog:join error:", error);
+
+        // ✅ AUDIT — failure
+        recordActionAsync({
+          ..._auditContext(socket),
+          action: "chat.dialog.join",
+          resourceType: "chat-dialog",
+          resourceId: dialogId,
+          outcome: "failure",
+          failureReason: error.message,
+          metadata: { via: "websocket" },
+        });
       }
     });
 
@@ -125,8 +178,28 @@ export function initCommunicationGateway(nsp) {
       try {
         if (!dialogId) return;
         await _markDialogRead(nsp, dialogId, userId);
+
+        // ✅ AUDIT — mark read success
+        recordActionAsync({
+          ..._auditContext(socket),
+          action: "chat.dialog.mark_read",
+          resourceType: "chat-dialog",
+          resourceId: dialogId,
+          outcome: "success",
+          metadata: { via: "websocket" },
+        });
       } catch (error) {
         console.error("dialog:markRead error:", error);
+
+        recordActionAsync({
+          ..._auditContext(socket),
+          action: "chat.dialog.mark_read",
+          resourceType: "chat-dialog",
+          resourceId: dialogId,
+          outcome: "failure",
+          failureReason: error.message,
+          metadata: { via: "websocket" },
+        });
       }
     });
 
@@ -134,14 +207,27 @@ export function initCommunicationGateway(nsp) {
     // SEND MESSAGE
     // ======================================================
     socket.on("message:send", async (payload = {}) => {
+      const { tempId, dialogId, type, text, attachments } = payload;
+
       try {
-        const { tempId, dialogId, type, text, attachments } = payload;
         if (!dialogId) return;
 
         // ── Rate limit: 30/min ──
         // Дублирует HTTP rate limit (тот защищает /messages POST,
         // этот защищает прямой вызов через WebSocket).
-        if (!messageSendLimiter.check(socket, userId)) return;
+        if (!messageSendLimiter.check(socket, userId)) {
+          // ✅ AUDIT — rate limited (важно для security)
+          recordActionAsync({
+            ..._auditContext(socket),
+            action: "chat.message.create",
+            resourceType: "chat-message",
+            resourceId: dialogId,
+            outcome: "denied",
+            failureReason: "rate_limit_exceeded",
+            metadata: { via: "websocket" },
+          });
+          return;
+        }
 
         console.log("MESSAGE SEND:", payload);
 
@@ -149,6 +235,18 @@ export function initCommunicationGateway(nsp) {
         const { blocked, reason } = await checkBlockBetween(userId, peerId);
         if (blocked) {
           socket.emit("message:blocked", { dialogId, reason });
+
+          // ✅ AUDIT — blocked
+          recordActionAsync({
+            ..._auditContext(socket),
+            action: "chat.message.create",
+            resourceType: "chat-message",
+            resourceId: dialogId,
+            resourceOwnerId: peerId ? String(peerId) : null,
+            outcome: "denied",
+            failureReason: `blocked: ${reason || "unknown"}`,
+            metadata: { via: "websocket" },
+          });
           return;
         }
 
@@ -158,6 +256,26 @@ export function initCommunicationGateway(nsp) {
           type,
           text,
           attachments,
+        });
+
+        // ✅ AUDIT — message created
+        // ВАЖНО: НЕ записываем сам text — это PHI. Только статистику.
+        recordActionAsync({
+          ..._auditContext(socket),
+          action: "chat.message.create",
+          resourceType: "chat-message",
+          resourceId: message?._id ? String(message._id) : dialogId,
+          resourceOwnerId: peerId ? String(peerId) : null,
+          outcome: "success",
+          metadata: {
+            via: "websocket",
+            dialogId,
+            type: type || "text",
+            textLength: typeof text === "string" ? text.length : 0,
+            attachmentsCount: Array.isArray(attachments)
+              ? attachments.length
+              : 0,
+          },
         });
 
         // Уведомляем всех в открытом диалоге (чат окно)
@@ -186,6 +304,17 @@ export function initCommunicationGateway(nsp) {
         }
       } catch (error) {
         console.error("message:send error:", error);
+
+        // ✅ AUDIT — failure
+        recordActionAsync({
+          ..._auditContext(socket),
+          action: "chat.message.create",
+          resourceType: "chat-message",
+          resourceId: dialogId,
+          outcome: "failure",
+          failureReason: error.message,
+          metadata: { via: "websocket" },
+        });
       }
     });
 
@@ -200,11 +329,38 @@ export function initCommunicationGateway(nsp) {
         const message = await ChatMessageModel.findById(messageId);
         if (!message) return;
 
-        if (String(message.senderId) !== String(userId)) return;
+        if (String(message.senderId) !== String(userId)) {
+          // ✅ AUDIT — denied (попытка удалить чужое сообщение!)
+          recordActionAsync({
+            ..._auditContext(socket),
+            action: "chat.message.delete",
+            resourceType: "chat-message",
+            resourceId: messageId,
+            outcome: "denied",
+            failureReason: "not_message_owner",
+            metadata: { via: "websocket" },
+          });
+          return;
+        }
 
         const DELETE_TIME_LIMIT_MS = 10 * 60 * 1000;
         const messageAge = Date.now() - new Date(message.createdAt).getTime();
-        if (messageAge > DELETE_TIME_LIMIT_MS) return;
+        if (messageAge > DELETE_TIME_LIMIT_MS) {
+          // ✅ AUDIT — denied (попытка удалить сообщение старше 10 мин)
+          recordActionAsync({
+            ..._auditContext(socket),
+            action: "chat.message.delete",
+            resourceType: "chat-message",
+            resourceId: messageId,
+            outcome: "denied",
+            failureReason: "time_limit_exceeded",
+            metadata: {
+              via: "websocket",
+              messageAgeSec: Math.round(messageAge / 1000),
+            },
+          });
+          return;
+        }
 
         message.isDeleted = true;
         message.deletedAt = new Date();
@@ -214,12 +370,35 @@ export function initCommunicationGateway(nsp) {
 
         await message.save();
 
+        // ✅ AUDIT — delete success
+        recordActionAsync({
+          ..._auditContext(socket),
+          action: "chat.message.delete",
+          resourceType: "chat-message",
+          resourceId: messageId,
+          outcome: "success",
+          metadata: {
+            via: "websocket",
+            dialogId: String(message.dialogId),
+          },
+        });
+
         nsp.to(`room:dialog:${message.dialogId}`).emit("message:deleted", {
           dialogId: message.dialogId,
           messageId,
         });
       } catch (error) {
         console.error("message:delete error:", error);
+
+        recordActionAsync({
+          ..._auditContext(socket),
+          action: "chat.message.delete",
+          resourceType: "chat-message",
+          resourceId: messageId,
+          outcome: "failure",
+          failureReason: error.message,
+          metadata: { via: "websocket" },
+        });
       }
     });
 
@@ -240,7 +419,19 @@ export function initCommunicationGateway(nsp) {
             userId: new mongoose.Types.ObjectId(userId),
             isRemoved: { $ne: true },
           });
-          if (!isParticipant) return;
+          if (!isParticipant) {
+            // ✅ AUDIT — denied (попытка реакции в чужом диалоге)
+            recordActionAsync({
+              ..._auditContext(socket),
+              action: "chat.message.react",
+              resourceType: "chat-message",
+              resourceId: messageId,
+              outcome: "denied",
+              failureReason: "not_a_participant",
+              metadata: { via: "websocket", dialogId },
+            });
+            return;
+          }
 
           const message = await ChatMessageModel.findById(messageId).select(
             "isDeleted reactions dialogId",
@@ -265,6 +456,22 @@ export function initCommunicationGateway(nsp) {
             );
           }
 
+          // ✅ AUDIT — react success
+          // metadata: только action и наличие emoji (НЕ сам emoji — он может
+          // быть неуместным/спорным контентом, лучше хранить только факт)
+          recordActionAsync({
+            ..._auditContext(socket),
+            action: "chat.message.react",
+            resourceType: "chat-message",
+            resourceId: messageId,
+            outcome: "success",
+            metadata: {
+              via: "websocket",
+              dialogId,
+              reactionAction: action || "add",
+            },
+          });
+
           nsp.to(`room:dialog:${dialogId}`).emit("message:reaction", {
             messageId,
             emoji,
@@ -273,12 +480,22 @@ export function initCommunicationGateway(nsp) {
           });
         } catch (error) {
           console.error("message:react error:", error);
+
+          recordActionAsync({
+            ..._auditContext(socket),
+            action: "chat.message.react",
+            resourceType: "chat-message",
+            resourceId: messageId,
+            outcome: "failure",
+            failureReason: error.message,
+            metadata: { via: "websocket" },
+          });
         }
       },
     );
 
     // ======================================================
-    // TYPING EVENTS
+    // TYPING EVENTS (без audit — ephemeral, не PHI)
     // ======================================================
     socket.on("typing:start", ({ dialogId }) => {
       if (!dialogId) return;

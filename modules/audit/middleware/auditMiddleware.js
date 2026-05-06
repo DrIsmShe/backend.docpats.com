@@ -5,12 +5,25 @@
 // Использование:
 //   import auditMiddleware from "../audit/middleware/auditMiddleware.js";
 //
+//   // Вариант со строкой (dot-path):
 //   router.get("/dialog/:dialogId",
 //     authMiddleware,
 //     auditMiddleware({
 //       resourceType: "chat-dialog",
 //       action: "chat.dialog.read",
 //       resourceIdFrom: "params.dialogId",
+//     }),
+//     handler,
+//   );
+//
+//   // Вариант с функцией (для сложных случаев — например fallback dialogId/roomId):
+//   router.post("/",
+//     authMiddleware,
+//     auditMiddleware({
+//       resourceType: "chat-message",
+//       action: "chat.message.create",
+//       resourceIdFrom: (req) => req.body?.dialogId || req.body?.roomId,
+//       metaFrom: (req) => ({ type: req.body?.type, textLength: req.body?.text?.length || 0 }),
 //     }),
 //     handler,
 //   );
@@ -38,6 +51,35 @@ function getValueByPath(obj, path) {
     if (acc === null || acc === undefined) return null;
     return acc[key];
   }, obj);
+}
+
+/* ═══════════ resolveValue ═══════════
+   Универсальный извлекатель значения из req.
+
+   Источник может быть:
+     - строкой:    "params.dialogId"        → getValueByPath(req, ...)
+     - функцией:   (req) => req.body?.id    → source(req)
+
+   Если функция падает или источник не валидный — возвращает null.
+   Никогда не бросает ошибку.
+*/
+function resolveValue(req, source) {
+  if (!source) return null;
+
+  if (typeof source === "function") {
+    try {
+      return source(req);
+    } catch (err) {
+      console.warn("[audit] resolveValue function error:", err.message);
+      return null;
+    }
+  }
+
+  if (typeof source === "string") {
+    return getValueByPath(req, source);
+  }
+
+  return null;
 }
 
 /* ═══════════ extractActorFromReq ═══════════
@@ -101,21 +143,26 @@ function extractContextFromReq(req, res) {
    @param {object} opts
    @param {string} opts.resourceType — chat-dialog/surgical-case/etc (required)
    @param {string} opts.action       — read/create/update/delete/etc (required)
-   
-   @param {string} [opts.resourceIdFrom]      — путь к ID ресурса в req
-                                                 "params.dialogId" / "body.id"
-                                                 Можно опустить для list-actions.
-   
-   @param {string} [opts.resourceOwnerIdFrom] — путь к userId владельца
-                                                 "params.userId" / "body.patientId"
-   
-   @param {string} [opts.caseIdFrom]          — путь к caseId (для anthropometry)
-   
-   @param {function} [opts.skipIf]            — (req) => bool. Если true — не логируем.
-                                                 Например, не логировать когда юзер
-                                                 смотрит сам себя.
-   
-   @param {function} [opts.metaFrom]          — (req, res) => object. Доп. мета.
+
+   @param {string|function} [opts.resourceIdFrom]
+                                       — путь к ID ресурса в req:
+                                          • строка: "params.dialogId" / "body.id"
+                                          • функция: (req) => req.body?.dialogId
+                                          Можно опустить для list-actions.
+
+   @param {string|function} [opts.resourceOwnerIdFrom]
+                                       — путь к userId владельца:
+                                          • строка: "params.userId" / "body.patientId"
+                                          • функция: (req) => ...
+
+   @param {string|function} [opts.caseIdFrom]
+                                       — путь к caseId (для anthropometry)
+
+   @param {function} [opts.skipIf]     — (req) => bool. Если true — не логируем.
+                                          Например, не логировать когда юзер
+                                          смотрит сам себя.
+
+   @param {function} [opts.metaFrom]   — (req, res) => object. Доп. мета.
 
    @returns {function} Express middleware
 */
@@ -138,24 +185,24 @@ export default function auditMiddleware(opts) {
           return;
         }
 
-        // Извлекаем resourceId
+        // Извлекаем resourceId (поддерживает строку и функцию)
         let resourceId = null;
         if (opts.resourceIdFrom) {
-          const val = getValueByPath(req, opts.resourceIdFrom);
+          const val = resolveValue(req, opts.resourceIdFrom);
           resourceId = val ? String(val) : null;
         }
 
-        // Извлекаем resourceOwnerId
+        // Извлекаем resourceOwnerId (поддерживает строку и функцию)
         let resourceOwnerId = null;
         if (opts.resourceOwnerIdFrom) {
-          const val = getValueByPath(req, opts.resourceOwnerIdFrom);
+          const val = resolveValue(req, opts.resourceOwnerIdFrom);
           resourceOwnerId = val ? String(val) : null;
         }
 
-        // Извлекаем caseId (для anthropometry)
+        // Извлекаем caseId (для anthropometry, поддерживает строку и функцию)
         let caseId = null;
         if (opts.caseIdFrom) {
-          const val = getValueByPath(req, opts.caseIdFrom);
+          const val = resolveValue(req, opts.caseIdFrom);
           caseId = val ? String(val) : null;
         }
 
