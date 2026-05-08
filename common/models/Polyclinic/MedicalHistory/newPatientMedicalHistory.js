@@ -3,8 +3,6 @@ import mongoose from "mongoose";
 // Определение схемы для хранения информации о пациенте в поликлинике
 const newPatientMedicalHistorySchema = new mongoose.Schema(
   {
-    // Пациент, к которому относится история болезни (ОДИН пациент)
-
     // Врач, создавший запись (Автор истории болезни)
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -19,11 +17,12 @@ const newPatientMedicalHistorySchema = new mongoose.Schema(
     isPublished: { type: Boolean, default: false },
     // Ссылка на лечащего врача
     doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    // Ссылка на лечащего врача
+    // Профиль лечащего врача
     doctorProfileId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "DoctorProfile",
     },
+
     // Количество просмотров профиля пациента
     views: { type: Number, default: 0 },
     // Примерное время чтения данных о пациенте
@@ -48,10 +47,26 @@ const newPatientMedicalHistorySchema = new mongoose.Schema(
     ultrasoundResults: { type: String, trim: true },
     // Результаты лабораторных исследований
     laboratoryTestResults: { type: String, trim: true },
-    // Связанные диагнозы
-    diagnosis: { type: String, trim: true, required: true },
-    //дополнительный уточняющий диагноз
+
+    // ─────────────────────────────────────────────
+    // ОСНОВНОЙ ДИАГНОЗ ПО МКБ-10
+    // code      — код МКБ (например "J45.1") для аналитики/статистики
+    // codeTitle — официальное англ. название из NLM (на момент выбора)
+    // text      — диагноз на родном языке врача (свободно редактируется)
+    // ─────────────────────────────────────────────
+    mainDiagnosis: {
+      code: { type: String, trim: true, default: "" },
+      codeTitle: { type: String, trim: true, default: "" },
+      text: { type: String, trim: true, default: "" },
+    },
+
+    // Старое поле — оставлено для обратной совместимости со старыми записями.
+    // Новые записи его не используют. Можно удалить после полной миграции.
+    diagnosis: { type: String, trim: true },
+
+    // Дополнительный уточняющий диагноз — без изменений
     additionalDiagnosis: { type: String, trim: true },
+
     // Файлы пациента
     files: [{ type: mongoose.Schema.Types.ObjectId, ref: "File", default: [] }],
     // История посещений пациента
@@ -115,14 +130,12 @@ const newPatientMedicalHistorySchema = new mongoose.Schema(
       required: true,
       refPath: "patientTypeModel",
     },
-
     patientTypeModel: {
       type: String,
       required: true,
       enum: ["DoctorPrivatePatient", "NewPatientPolyclinic"],
     },
-
-    // Хронические заболевания
+    // Прививочный статус
     immunization: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -137,11 +150,37 @@ const newPatientMedicalHistorySchema = new mongoose.Schema(
   },
 );
 
-// Индексы для быстрого поиска по имени и телефону
-// ✅ ПРАВИЛЬНО
+// ─────────────────────────────────────────────
+// ИНДЕКСЫ
+// ─────────────────────────────────────────────
+
+// Существующий составной индекс — не трогаем
 newPatientMedicalHistorySchema.index({
   patientType: 1,
   patientRef: 1,
+});
+
+// Новый индекс для аналитики по МКБ-кодам
+// (быстрая выборка "все пациенты с диагнозом J45.*", статистика и т.д.)
+newPatientMedicalHistorySchema.index({ "mainDiagnosis.code": 1 });
+
+// ─────────────────────────────────────────────
+// ВАЛИДАЦИЯ ОСНОВНОГО ДИАГНОЗА
+// Применяется только к новым записям, чтобы не сломать существующие
+// (у которых mainDiagnosis ещё не заполнен — есть только старое поле diagnosis).
+// ─────────────────────────────────────────────
+newPatientMedicalHistorySchema.pre("validate", function (next) {
+  if (this.isNew) {
+    const md = this.mainDiagnosis;
+    if (!md || !md.code?.trim() || !md.text?.trim()) {
+      return next(
+        new Error(
+          "Main diagnosis is required: ICD-10 code and diagnosis text must be filled.",
+        ),
+      );
+    }
+  }
+  next();
 });
 
 // Создаем и экспортируем модель

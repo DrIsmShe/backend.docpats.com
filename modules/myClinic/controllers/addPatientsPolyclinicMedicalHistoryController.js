@@ -88,7 +88,8 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     anamnesisVitae,
     statusPreasens,
     statusLocalis,
-    diagnosis,
+    mainDiagnosis: rawMainDiagnosis, // ← НОВОЕ: приходит как JSON-строка
+    diagnosis, // ← старое поле, оставлено для обратной совместимости
     additionalDiagnosis,
     recommendations,
     ctScanResults,
@@ -102,6 +103,46 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
 
   const patientTypeModel =
     patientType === "private" ? "DoctorPrivatePatient" : "NewPatientPolyclinic";
+
+  /* ─── 5.1) Парсинг и валидация mainDiagnosis ─── */
+  // FormData не умеет передавать вложенные объекты, поэтому фронт шлёт JSON-строкой.
+  let mainDiagnosis = null;
+
+  if (rawMainDiagnosis) {
+    if (typeof rawMainDiagnosis === "string") {
+      try {
+        mainDiagnosis = JSON.parse(rawMainDiagnosis);
+      } catch (e) {
+        return res.status(400).json({
+          success: false,
+          message: "Некорректный формат основного диагноза (mainDiagnosis).",
+        });
+      }
+    } else if (typeof rawMainDiagnosis === "object") {
+      // На случай, если придёт уже как объект (например, JSON-запрос вместо FormData)
+      mainDiagnosis = rawMainDiagnosis;
+    }
+  }
+
+  // Проверяем обязательные поля диагноза
+  if (
+    !mainDiagnosis ||
+    !mainDiagnosis.code?.toString().trim() ||
+    !mainDiagnosis.text?.toString().trim()
+  ) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Основной диагноз обязателен: укажите код МКБ-10 и текст диагноза.",
+    });
+  }
+
+  // Чистим перед сохранением
+  const cleanMainDiagnosis = {
+    code: mainDiagnosis.code.toString().trim(),
+    codeTitle: (mainDiagnosis.codeTitle || "").toString().trim(),
+    text: mainDiagnosis.text.toString().trim(),
+  };
 
   /* ─────────────── 6) PAYLOAD ─────────────── */
   const docPayload = {
@@ -122,7 +163,14 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     statusPreasens: trimOrNull(statusPreasens),
     statusLocalis: trimOrNull(statusLocalis),
 
-    diagnosis: trimOrNull(diagnosis),
+    // ─── Новый структурированный диагноз ───
+    mainDiagnosis: cleanMainDiagnosis,
+
+    // ─── Старое поле — заполняем из text для обратной совместимости ───
+    // Это нужно, чтобы старые места кода, которые читают `diagnosis`
+    // (списки, экспорт, отчёты), продолжали работать без изменений.
+    diagnosis: cleanMainDiagnosis.text,
+
     additionalDiagnosis: trimOrNull(additionalDiagnosis),
     recommendations: trimOrNull(recommendations),
 
@@ -146,6 +194,22 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     });
   } catch (err) {
     console.error("[MedicalHistory] Ошибка сохранения:", err);
+
+    // Mongoose ValidationError → 400, читаемое сообщение
+    if (err.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
+
+    // Кастомная ошибка из pre('validate') хука
+    if (err.message?.includes("Main diagnosis")) {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
 
     return res.status(500).json({
       success: false,

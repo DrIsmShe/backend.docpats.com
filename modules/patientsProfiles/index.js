@@ -7,6 +7,7 @@ import countAllArticlesForPatientRoute from "./routes/countAllArticlesForPatient
 import AllDoctorForPatientRoute from "./routes/AllDoctorForPatientRoute.js";
 import AllDoctorArticlesForPatientRoute from "./routes/AllDoctorArticlesForPatientRoute.js";
 import DoctorDetailsForPatientRoute from "./routes/DoctorDetailsForPatientRoute.js";
+import AllDoctorScientificArticlesForPatientRoute from "./routes/AllDoctorScientificArticlesForPatientRoute.js";
 import articlesAllRoute from "./routes/articlesAllRoute.js";
 import SearchPatientRoute from "./routes/SearchPatientRoute.js";
 import getPatientUserProfileRote from "./routes/patientProfileRoute.js";
@@ -97,6 +98,10 @@ router.use("/api-patient", countAllArticlesForPatientRoute);
 router.use("/doctors-for-patient", AllDoctorForPatientRoute);
 router.use("/doctor-details-for-patient", DoctorDetailsForPatientRoute);
 router.use("/doctor-articles", AllDoctorArticlesForPatientRoute);
+router.use(
+  "/doctor-scientific-articles",
+  AllDoctorScientificArticlesForPatientRoute,
+);
 router.use("/articles-all", articlesAllRoute);
 router.use("/article-single", ArticleSingleRoute);
 router.use("/search-patient", SearchPatientRoute);
