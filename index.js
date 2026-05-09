@@ -41,6 +41,7 @@ import userSynthesisRoutes from "./modules/userSynthesis/userSynthesis.routes.js
 // ✅ NEW: anthropometry module
 import { routes as anthropometryRoutes } from "./modules/anthropometry/index.js";
 import { auditRoutes } from "./modules/audit/index.js";
+import clinicRoutes from "./modules/clinic/index.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -277,6 +278,7 @@ app.use("/update-email-doctor", emailLimiter);
 app.use(simulation.basePath, simulation.router);
 app.use("/api/me", meRoutes);
 app.use("/audit", auditRoutes);
+app.use("/api/v1/clinic", clinicRoutes);
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
 await import("./common/models/index.js")
