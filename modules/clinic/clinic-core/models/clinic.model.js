@@ -8,7 +8,7 @@
 // It uses softDelete only.
 
 import mongoose from "mongoose";
-import { softDeletePlugin } from "../../../common/plugins/softDelete.plugin.js";
+import { softDeletePlugin } from "../../../../common/plugins/softDelete.plugin.js";
 import slugify from "slugify";
 
 const ALLOWED_TIERS = ["starter", "pro", "medical_tourism", "enterprise"];

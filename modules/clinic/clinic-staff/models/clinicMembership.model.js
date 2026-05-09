@@ -5,7 +5,7 @@
 // Ending a membership = setting leftAt (NOT deleting), to preserve history.
 
 import mongoose from "mongoose";
-import { ROLES } from "../../../common/auth/permissions.js";
+import { ROLES } from "../../../../common/auth/permissions.js";
 
 const ALLOWED_ROLES = Object.values(ROLES);
 

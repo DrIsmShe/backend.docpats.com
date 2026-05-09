@@ -4,7 +4,7 @@
 // Used by tenantMiddleware on every request.
 
 import mongoose from "mongoose";
-import ClinicMembership from "../../modules/clinic/clinic-staff/clinicMembership.model.js";
+import ClinicMembership from "../../modules/clinic/clinic-staff/models/clinicMembership.model.js";
 import logger from "../logger.js";
 
 const log = logger.child({ module: "clinicResolver" });

@@ -1,28 +1,28 @@
 // __tests__/setup.js
 //
 // Global setup for all test files.
-// - Starts in-memory MongoDB before all tests
-// - Stops it after all tests
-// - Provides clean DB for each test file
+// Uses MongoMemoryReplSet (single-node replica set) so we can run
+// transactions in tests (session.withTransaction).
 
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import { beforeAll, afterAll, afterEach } from "vitest";
 
 let mongoServer;
 
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
+  mongoServer = await MongoMemoryReplSet.create({
+    replSet: { count: 1 },
+  });
   const uri = mongoServer.getUri();
   await mongoose.connect(uri, { dbName: "test" });
-}, 30000);
+}, 60000);
 
 afterAll(async () => {
   await mongoose.disconnect();
   await mongoServer.stop();
 }, 30000);
 
-// Clean all collections between tests so each test starts fresh
 afterEach(async () => {
   const collections = mongoose.connection.collections;
   for (const key in collections) {

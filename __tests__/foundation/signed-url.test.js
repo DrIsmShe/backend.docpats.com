@@ -67,7 +67,7 @@ describe("signedUrl — security", () => {
 
   it("rejects expired token", async () => {
     const shortToken = createSignedToken({ x: 1 }, 1);
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 2100));
     expect(() => verifySignedToken(shortToken)).toThrow();
     try {
       verifySignedToken(shortToken);

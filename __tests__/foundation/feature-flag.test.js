@@ -9,7 +9,7 @@ import {
   invalidateFeatureCache,
   clearFeatureCache,
 } from "../../common/services/featureFlag.service.js";
-import Clinic from "../../modules/clinic/clinic-core/clinic.model.js";
+import Clinic from "../../modules/clinic/clinic-core/models/clinic.model.js";
 
 beforeEach(() => {
   clearFeatureCache();

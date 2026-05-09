@@ -7,8 +7,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import mongoose from "mongoose";
 import { runWithTenantContext } from "../common/context/tenantContext.js";
 import { standardModelPlugin } from "../common/plugins/standardModel.plugin.js";
-import Clinic from "../modules/clinic/clinic-core/clinic.model.js";
-import ClinicMembership from "../modules/clinic/clinic-staff/clinicMembership.model.js";
+import Clinic from "../modules/clinic/clinic-core/models/clinic.model.js";
+import ClinicMembership from "../modules/clinic/clinic-staff/models/clinicMembership.model.js";
 import { resolveActiveClinic } from "../common/services/clinicResolver.service.js";
 
 // ─── TEST MODEL ────────────────────────────────────────────────
