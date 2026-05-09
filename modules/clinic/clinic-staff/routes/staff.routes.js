@@ -5,6 +5,7 @@ import * as ctrl from "../controllers/staff.controller.js";
 
 const router = express.Router();
 
+router.get("/staff/search-doctors", ctrl.searchDoctors);
 router.get("/staff", ctrl.listStaff);
 router.post("/staff", ctrl.addStaff);
 router.patch("/staff/:id/role", ctrl.updateStaffRole);

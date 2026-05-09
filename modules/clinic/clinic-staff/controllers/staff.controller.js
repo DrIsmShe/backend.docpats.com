@@ -136,3 +136,20 @@ export async function removeStaff(req, res, next) {
     next(err);
   }
 }
+import * as searchService from "../services/searchDoctors.service.js";
+
+export async function searchDoctors(req, res, next) {
+  try {
+    requireActor();
+    if (!can("staff", "write")) {
+      throw new ForbiddenError("staff.write permission required");
+    }
+
+    const query = req.query.q || "";
+    const doctors = await searchService.searchDoctors(query);
+
+    res.json({ doctors });
+  } catch (err) {
+    next(err);
+  }
+}
