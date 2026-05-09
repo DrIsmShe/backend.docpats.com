@@ -6,6 +6,7 @@
 import express from "express";
 import Clinic from "./clinic-core/models/clinic.model.js";
 import clinicCoreRouter from "./clinic-core/routes/clinic.routes.js";
+import clinicStaffRouter from "./clinic-staff/routes/staff.routes.js";
 import { tenantMiddleware } from "../../common/middlewares/tenantMiddleware.js";
 import {
   errorHandler,
@@ -158,9 +159,7 @@ router.get("/health", (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 
 router.use("/", clinicCoreRouter);
-
-// import clinicStaffRouter from "./clinic-staff/routes/clinicStaff.routes.js";
-// router.use("/", clinicStaffRouter);
+router.use("/", clinicStaffRouter);
 
 // ═══════════════════════════════════════════════════════════════
 // 4. 404 + error handler
