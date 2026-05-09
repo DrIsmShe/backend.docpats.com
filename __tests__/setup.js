@@ -10,6 +10,11 @@ import { beforeAll, afterAll, afterEach } from "vitest";
 
 let mongoServer;
 
+// Set test env defaults
+if (!process.env.ENCRYPTION_KEY) {
+  process.env.ENCRYPTION_KEY = "test_encryption_key_padded_to_32_chars";
+}
+
 beforeAll(async () => {
   mongoServer = await MongoMemoryReplSet.create({
     replSet: { count: 1 },

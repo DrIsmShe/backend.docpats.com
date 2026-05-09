@@ -63,6 +63,18 @@ const clinicMembershipSchema = new mongoose.Schema(
       default: null,
     },
     customTitle: { type: String, trim: true, maxlength: 200 },
+
+    // Discriminator: which collection holds the userId
+    // - "user" (default): userId points to User collection (doctors/patients)
+    // - "employee": userId points to ClinicEmployee collection (internal staff)
+    // This lets clinicResolver and tenantMiddleware know which collection
+    // to look up when resolving the actor's identity.
+    actorType: {
+      type: String,
+      enum: ["user", "employee"],
+      default: "user",
+      index: true,
+    },
   },
   {
     timestamps: true,
