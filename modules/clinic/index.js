@@ -2,11 +2,10 @@
 //
 // Main router for ALL clinic-* submodules.
 // Mounted at /api/v1/clinic/* in main index.js.
-//
-// As we add submodules (clinic-staff, clinic-scheduling, etc.),
-// register them here.
 
 import express from "express";
+import Clinic from "./clinic-core/models/clinic.model.js";
+import clinicCoreRouter from "./clinic-core/routes/clinic.routes.js";
 import { tenantMiddleware } from "../../common/middlewares/tenantMiddleware.js";
 import {
   errorHandler,
@@ -31,25 +30,16 @@ const router = express.Router();
 
 // ═══════════════════════════════════════════════════════════════
 // 1. tenantMiddleware — устанавливает context из session.userId
-//    Не required: разрешает запросы без активной clinic membership
 // ═══════════════════════════════════════════════════════════════
 
 router.use(tenantMiddleware({ required: false }));
 
 // ═══════════════════════════════════════════════════════════════
-// 2. Built-in endpoints (доступны всем authenticated users)
+// 2. Built-in endpoints
 // ═══════════════════════════════════════════════════════════════
 
 /**
  * GET /api/v1/clinic/me
- *
- * Returns current tenant context: which clinic, what role, what permissions.
- * Used by frontend to render UI based on user's role.
- *
- * Response:
- *   200 OK + context if user has active membership
- *   200 OK + { authenticated: false } if not logged in
- *   200 OK + { authenticated: true, hasClinic: false } if logged in but no clinic
  */
 router.get(
   "/me",
@@ -69,7 +59,6 @@ router.get(
       });
     }
 
-    // Effective permissions: role defaults merged with overrides
     const role = getCurrentRole();
     const overridePermissions = getCurrentPermissions();
     const rolePermissions = ROLE_PERMISSIONS[role] || {};
@@ -87,8 +76,13 @@ router.get(
         fromRole || { read: false, write: false, delete: false };
     }
 
-    // Enabled features for this clinic (from tier + overrides)
     const features = await getEnabledFeatures(clinicId);
+
+    const clinic = await Clinic.findById(clinicId)
+      .select(
+        "name slug tier timezone defaultCurrency defaultLanguage supportedLanguages isVerified",
+      )
+      .lean();
 
     res.json({
       authenticated: true,
@@ -99,15 +93,25 @@ router.get(
       membershipId: getCurrentMembershipId(),
       permissions: effectivePermissions,
       features: Array.from(features),
+      clinic: clinic
+        ? {
+            id: String(clinic._id),
+            name: clinic.name,
+            slug: clinic.slug,
+            tier: clinic.tier,
+            timezone: clinic.timezone,
+            defaultCurrency: clinic.defaultCurrency,
+            defaultLanguage: clinic.defaultLanguage,
+            supportedLanguages: clinic.supportedLanguages,
+            isVerified: clinic.isVerified,
+          }
+        : null,
     });
   }),
 );
 
 /**
  * GET /api/v1/clinic/me/memberships
- *
- * List all clinics the current user belongs to.
- * Used by clinic switcher UI for users in multiple clinics.
  */
 router.get(
   "/me/memberships",
@@ -139,9 +143,6 @@ router.get(
 
 /**
  * GET /api/v1/clinic/health
- *
- * Liveness check for clinic module.
- * Used by ops/monitoring to verify foundation is healthy.
  */
 router.get("/health", (req, res) => {
   res.json({
@@ -153,19 +154,16 @@ router.get("/health", (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 3. Submodule routes — будут регистрироваться здесь по мере
-//    готовности (Week 1 onwards)
+// 3. Submodule routes
 // ═══════════════════════════════════════════════════════════════
 
-// Example (commented, will be enabled in Week 1):
-// import clinicCoreRouter from "./clinic-core/index.js";
-// router.use("/clinics", clinicCoreRouter);
+router.use("/", clinicCoreRouter);
 
-// import clinicStaffRouter from "./clinic-staff/index.js";
-// router.use("/staff", clinicStaffRouter);
+// import clinicStaffRouter from "./clinic-staff/routes/clinicStaff.routes.js";
+// router.use("/", clinicStaffRouter);
 
 // ═══════════════════════════════════════════════════════════════
-// 4. 404 + error handler — должны быть последними
+// 4. 404 + error handler
 // ═══════════════════════════════════════════════════════════════
 
 router.use(notFoundHandler);
