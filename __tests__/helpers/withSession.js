@@ -13,8 +13,10 @@ import clinicRoutes from "../../modules/clinic/index.js";
  * Build a minimal Express app for testing /api/v1/clinic/* endpoints.
  *
  * @param {object} [options]
- * @param {string} [options.userId]  If provided, every request is treated
- *                                   as that user (session.userId is set).
+ * @param {string} [options.userId]      If provided, every request is treated
+ *                                       as that DocPats user (session.userId).
+ * @param {string} [options.employeeId]  If provided, every request is treated
+ *                                       as that ClinicEmployee (session.employeeId).
  * @returns {express.Application}
  */
 export function createTestApp(options = {}) {
@@ -31,10 +33,15 @@ export function createTestApp(options = {}) {
     }),
   );
 
-  // Test-only middleware: inject userId into session if provided
-  if (options.userId) {
+  // Test-only middleware: inject identity into session if provided.
+  // Only one of userId/employeeId should be set; userId wins if both are passed.
+  if (options.userId || options.employeeId) {
     app.use((req, res, next) => {
-      req.session.userId = String(options.userId);
+      if (options.userId) {
+        req.session.userId = String(options.userId);
+      } else if (options.employeeId) {
+        req.session.employeeId = String(options.employeeId);
+      }
       next();
     });
   }

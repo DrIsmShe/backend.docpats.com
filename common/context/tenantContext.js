@@ -1,18 +1,28 @@
 // server/common/context/tenantContext.js
 //
 // AsyncLocalStorage-based per-request context.
-// Stores: userId, clinicId, role, permissions, membershipId.
+// Stores: userId, clinicId, role, permissions, membershipId, actorType.
 //
 // The context is set once by tenantMiddleware at the start of each request,
 // and is automatically propagated through async chains (await, callbacks,
 // timers — everything Node's async_hooks tracks).
+//
+// actorType:
+//   "user"     — DocPats public user (doctor or patient) authenticated via session.userId
+//   "employee" — Internal clinic staff authenticated via session.employeeId
+//   null       — outside auth context (public endpoint, cron, seed)
+//
+// Note: when actorType is "employee", `userId` field still holds the actor's id
+// (the ClinicEmployee._id), so existing code that reads getCurrentUserId() keeps
+// working for RBAC and audit purposes. Use getCurrentActorType() to distinguish
+// the two cases.
 //
 // Usage:
 //
 //   // 1. In middleware (later step):
 //   import { runWithTenantContext } from "../context/tenantContext.js";
 //   app.use((req, res, next) => {
-//     runWithTenantContext({ userId, clinicId, role, permissions }, () => next());
+//     runWithTenantContext({ userId, clinicId, role, permissions, actorType }, () => next());
 //   });
 //
 //   // 2. In service code:
@@ -39,7 +49,7 @@ const tenantContext = new AsyncLocalStorage();
  * Run a function within a tenant context.
  * All async operations inside fn (and their descendants) will see the context.
  *
- * @param {object} ctx  Context object: { userId, clinicId, role, permissions, membershipId }
+ * @param {object} ctx  Context object: { userId, clinicId, role, permissions, membershipId, actorType }
  * @param {function} fn  Function to run inside the context
  * @returns {*}  Whatever fn returns
  */
@@ -73,6 +83,7 @@ export function getTenantContext() {
 
 /**
  * Get current userId, or null if not authenticated.
+ * For employees, this returns the ClinicEmployee._id.
  * @returns {string|null}
  */
 export function getCurrentUserId() {
@@ -114,6 +125,17 @@ export function getCurrentPermissions() {
 export function getCurrentMembershipId() {
   const ctx = tenantContext.getStore();
   return ctx?.membershipId || null;
+}
+
+/**
+ * Get current actor type: "user", "employee", or null when outside context.
+ * Use this to distinguish DocPats users from ClinicEmployees when business
+ * logic needs to behave differently for the two.
+ * @returns {"user"|"employee"|null}
+ */
+export function getCurrentActorType() {
+  const ctx = tenantContext.getStore();
+  return ctx?.actorType || null;
 }
 
 /**

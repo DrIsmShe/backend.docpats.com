@@ -2,18 +2,28 @@
 //
 // Express middleware that establishes the tenant context for the request.
 //
-// MUST be mounted AFTER session middleware so req.session.userId is available.
+// MUST be mounted AFTER session middleware so req.session.userId / employeeId
+// is available.
 // MUST be mounted BEFORE clinic-* routes so they have context.
 //
 // Behavior:
-//   1. If no session/userId → continue without context (public routes work fine).
-//   2. If userId present → resolve active clinic membership.
-//   3. Wrap the rest of the request lifecycle in runWithTenantContext.
-//   4. Also expose { userId, clinicId, role, permissions } as req.tenantContext
-//      for backwards compatibility with code that prefers req-based access.
+//   1. If no session → continue without context (public routes work fine).
+//   2. If session.userId → resolve active clinic membership for User.
+//   3. If session.employeeId → resolve clinic directly from ClinicEmployee.
+//   4. Wrap the rest of the request lifecycle in runWithTenantContext.
+//   5. Also expose { userId, clinicId, role, permissions, actorType } as
+//      req.tenantContext for backwards compatibility with code that prefers
+//      req-based access.
+//
+// Note: for ClinicEmployee, the `userId` field of the context holds the
+// ClinicEmployee._id. Distinguish via `actorType: "employee"` when needed.
+
+import mongoose from "mongoose";
 
 import { runWithTenantContext } from "../context/tenantContext.js";
 import { resolveActiveClinic } from "../services/clinicResolver.service.js";
+import ClinicEmployee from "../../modules/clinic/clinic-staff/models/clinicEmployee.model.js";
+import ClinicMembership from "../../modules/clinic/clinic-staff/models/clinicMembership.model.js";
 import logger from "../logger.js";
 
 const log = logger.child({ module: "tenantMiddleware" });
@@ -28,22 +38,36 @@ export function tenantMiddleware(options = {}) {
   return async function tenantMiddlewareImpl(req, res, next) {
     try {
       const userId = req.session?.userId;
+      const employeeId = req.session?.employeeId;
 
-      if (!userId) {
+      // No auth at all
+      if (!userId && !employeeId) {
         if (required) {
           return res.status(401).json({
             error: "Authentication required",
             code: "UNAUTHORIZED",
           });
         }
-        // Public route — proceed without context
         return next();
       }
 
-      // ClinicId can come from:
-      //   1. Header X-Clinic-Id (multi-clinic users explicitly switching)
-      //   2. URL param :clinicId (for /clinic/:clinicId/* routes)
-      //   3. Default — user's primary clinic
+      // Employee branch — internal clinic staff
+      if (employeeId) {
+        const ctx = await resolveEmployeeContext(employeeId);
+        if (!ctx) {
+          if (required) {
+            return res.status(403).json({
+              error: "Employee account not active",
+              code: "EMPLOYEE_INACTIVE",
+            });
+          }
+          return next();
+        }
+        req.tenantContext = ctx;
+        return runWithTenantContext(ctx, () => next());
+      }
+
+      // User branch — public DocPats user (existing behaviour, untouched)
       const headerClinicId = req.headers["x-clinic-id"];
       const paramClinicId = req.params?.clinicId;
       const requestedClinicId = headerClinicId || paramClinicId || null;
@@ -57,8 +81,7 @@ export function tenantMiddleware(options = {}) {
             code: "NO_CLINIC_MEMBERSHIP",
           });
         }
-        // User authenticated but no clinic — may still be valid for some routes
-        const ctx = { userId };
+        const ctx = { userId, actorType: "user" };
         req.tenantContext = ctx;
         return runWithTenantContext(ctx, () => next());
       }
@@ -69,16 +92,64 @@ export function tenantMiddleware(options = {}) {
         role: active.role,
         permissions: active.permissions,
         membershipId: String(active.membershipId),
+        actorType: "user",
       };
 
-      // Expose to downstream code via req for those who prefer it
       req.tenantContext = ctx;
-
-      // Wrap rest of request in AsyncLocalStorage
       runWithTenantContext(ctx, () => next());
     } catch (err) {
-      log.error({ err, userId: req.session?.userId }, "tenantMiddleware error");
+      log.error(
+        {
+          err,
+          userId: req.session?.userId,
+          employeeId: req.session?.employeeId,
+        },
+        "tenantMiddleware error",
+      );
       next(err);
     }
+  };
+}
+
+/**
+ * Resolve the tenant context for a ClinicEmployee.
+ * Employees belong to exactly one clinic (by design), so we don't need
+ * the multi-clinic resolution logic that Users have.
+ *
+ * @param {string} employeeId
+ * @returns {Promise<object|null>}  context object or null if not active
+ */
+async function resolveEmployeeContext(employeeId) {
+  if (!mongoose.isValidObjectId(employeeId)) return null;
+
+  const employee = await ClinicEmployee.findById(employeeId).lean();
+  if (!employee) return null;
+  if (employee.isDeleted) return null;
+  if (employee.isActive === false) return null;
+
+  // Find the corresponding membership (created at invitation accept time)
+  const membership = await ClinicMembership.findOne({
+    userId: employee._id,
+    clinicId: employee.clinicId,
+    actorType: "employee",
+    isActive: true,
+    leftAt: null,
+  }).lean();
+
+  if (!membership) {
+    log.warn(
+      { employeeId: String(employee._id), clinicId: String(employee.clinicId) },
+      "Employee has no active membership — auth rejected",
+    );
+    return null;
+  }
+
+  return {
+    userId: String(employee._id), // employee id acts as actor id
+    clinicId: String(employee.clinicId),
+    role: membership.role,
+    permissions: membership.permissions || {},
+    membershipId: String(membership._id),
+    actorType: "employee",
   };
 }

@@ -8,6 +8,7 @@ import Clinic from "./clinic-core/models/clinic.model.js";
 import clinicCoreRouter from "./clinic-core/routes/clinic.routes.js";
 import clinicStaffRouter from "./clinic-staff/routes/staff.routes.js";
 import clinicInvitationRouter from "./clinic-staff/routes/invitation.routes.js";
+import clinicEmployeeAuthRouter from "./clinic-staff/routes/employeeAuth.routes.js";
 import { tenantMiddleware } from "../../common/middlewares/tenantMiddleware.js";
 import {
   errorHandler,
@@ -31,13 +32,20 @@ import { ROLE_PERMISSIONS } from "../../common/auth/permissions.js";
 const router = express.Router();
 
 // ═══════════════════════════════════════════════════════════════
-// 1. tenantMiddleware — устанавливает context из session.userId
+// 1. Employee auth routes — MOUNTED BEFORE tenantMiddleware
+//    so /login can run without an auth context.
+// ═══════════════════════════════════════════════════════════════
+
+router.use("/", clinicEmployeeAuthRouter);
+
+// ═══════════════════════════════════════════════════════════════
+// 2. tenantMiddleware — устанавливает context из session.userId/employeeId
 // ═══════════════════════════════════════════════════════════════
 
 router.use(tenantMiddleware({ required: false }));
 
 // ═══════════════════════════════════════════════════════════════
-// 2. Built-in endpoints
+// 3. Built-in endpoints
 // ═══════════════════════════════════════════════════════════════
 
 /**
@@ -156,7 +164,7 @@ router.get("/health", (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// 3. Submodule routes
+// 4. Submodule routes (protected by tenantMiddleware above)
 // ═══════════════════════════════════════════════════════════════
 
 router.use("/", clinicCoreRouter);
@@ -164,7 +172,7 @@ router.use("/", clinicStaffRouter);
 router.use("/", clinicInvitationRouter);
 
 // ═══════════════════════════════════════════════════════════════
-// 4. 404 + error handler
+// 5. 404 + error handler
 // ═══════════════════════════════════════════════════════════════
 
 router.use(notFoundHandler);

@@ -1,0 +1,13 @@
+// modules/clinic/clinic-staff/validators/employeeAuth.schemas.js
+//
+// Zod schemas for ClinicEmployee authentication.
+
+import { z } from "zod";
+
+export const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Invalid email format"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .max(200, "Password too long"),
+});
