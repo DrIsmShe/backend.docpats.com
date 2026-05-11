@@ -1,6 +1,7 @@
 // modules/clinic/clinic-staff/controllers/staff.controller.js
 
 import * as service from "../services/staff.service.js";
+import * as searchService from "../services/searchDoctors.service.js";
 import {
   addStaffSchema,
   updateRoleSchema,
@@ -27,6 +28,19 @@ function requireActor() {
   return { userId, role, clinicId };
 }
 
+// ─── GET /staff ────────────────────────────────────────────────────────────
+//
+// Returns the staff roster of the current clinic. Each item is a flat shape
+// that combines membership metadata (role, joinedAt, etc.) with the actor's
+// decrypted PII (firstName, lastName, email, avatar).
+//
+// The actor lives in one of two collections depending on actorType:
+//   - "user"     → User (DocPats doctor)
+//   - "employee" → ClinicEmployee (internal staff: nurse, receptionist, ...)
+//
+// Decryption is performed in the service layer using each model's existing
+// decrypt helper, so we never touch crypto here.
+
 export async function listStaff(req, res, next) {
   try {
     requireActor();
@@ -35,17 +49,28 @@ export async function listStaff(req, res, next) {
     }
     const includeLeft = req.query.includeLeft === "true";
     const staff = await service.listStaff({ includeLeft });
+
     res.json({
       staff: staff.map((m) => ({
         membershipId: String(m._id),
         userId: String(m.userId),
         clinicId: String(m.clinicId),
+        actorType: m.actorType || "user",
         role: m.role,
-        customTitle: m.customTitle,
+        customTitle: m.customTitle || m.sourceCustomTitle || null,
         employmentType: m.employmentType,
         isPrimary: m.isPrimary,
         joinedAt: m.joinedAt,
         leftAt: m.leftAt,
+
+        // PII (decrypted in the service layer)
+        firstName: m.firstName || null,
+        lastName: m.lastName || null,
+        email: m.email || null,
+        username: m.username || null,
+        avatar: m.avatar || null,
+        phoneNumber: m.phoneNumber || null,
+        actorIsActive: m.actorIsActive !== false,
       })),
     });
   } catch (err) {
@@ -136,7 +161,6 @@ export async function removeStaff(req, res, next) {
     next(err);
   }
 }
-import * as searchService from "../services/searchDoctors.service.js";
 
 export async function searchDoctors(req, res, next) {
   try {
