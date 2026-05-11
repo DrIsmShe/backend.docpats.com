@@ -22,10 +22,39 @@ import { can } from "../../../../common/auth/can.js";
  * Anyone authenticated can create a clinic and become its owner.
  * No tenant context required (this IS the bootstrap of a tenant).
  */
+/**
+ * POST /api/v1/clinic/clinics
+ *
+ * Only verified DocPats DOCTORS can create a clinic and become its owner.
+ * Patients and other user types are explicitly forbidden — clinic ownership
+ * is a medical-professional-only capability.
+ *
+ * No tenant context required (this IS the bootstrap of a tenant).
+ */
 export async function createClinic(req, res, next) {
   try {
     const userId = req.session?.userId;
     if (!userId) throw new UnauthorizedError();
+
+    // Verify the requester is a registered DocPats doctor.
+    // Load the user fresh from DB — never trust session state for authorization.
+    const User = (await import("../../../../common/models/Auth/users.js"))
+      .default;
+    const user = await User.findById(userId).select(
+      "_id isDoctor isPatient isBlocked role",
+    );
+
+    if (!user) {
+      throw new UnauthorizedError("User not found");
+    }
+    if (user.isBlocked) {
+      throw new ForbiddenError("Account is blocked");
+    }
+    if (!user.isDoctor) {
+      throw new ForbiddenError(
+        "Only verified DocPats doctors can create a clinic",
+      );
+    }
 
     // Validate body
     const parsed = createClinicSchema.safeParse(req.body);
@@ -62,7 +91,6 @@ export async function createClinic(req, res, next) {
     next(err);
   }
 }
-
 /**
  * GET /api/v1/clinic/clinics/me
  *

@@ -2,6 +2,24 @@
 //
 // HTTP controllers for ClinicEmployee authentication.
 // Public: login. Authenticated: logout, me.
+//
+// IMPORTANT — session model (Variant B, path-based MVP):
+// We keep a SINGLE session per browser that can hold BOTH a DocPats user
+// identity (req.session.userId) and a ClinicEmployee identity
+// (req.session.employeeId) at the same time. This is deliberate:
+//
+//   - A DocPats doctor who opens a clinic owns it via userId (clinic admin).
+//   - The same person can ALSO be an employee elsewhere (via employeeId).
+//   - The two identities serve different routes — DocPats routes read
+//     userId, clinic-employee routes read employeeId. No conflict.
+//
+// Employee login therefore ADDS employeeId to the existing session
+// WITHOUT touching userId. We do NOT regenerate the session here, because
+// regenerate would wipe the DocPats user's logged-in state.
+//
+// (Note: in a future Variant A migration to clinic.docpats.com subdomain,
+//  this controller will move to a dedicated clinic_employee_sid cookie
+//  and regenerate will be safe to re-enable.)
 
 import * as authService from "../services/employeeAuth.service.js";
 import { loginSchema } from "../validators/employeeAuth.schemas.js";
@@ -29,16 +47,10 @@ export async function login(req, res, next) {
       password: data.password,
     });
 
-    // Establish session — clear any previous user/employee identity
+    // Add employee identity to the existing session WITHOUT touching userId.
+    // The DocPats user (if logged in) stays logged in side-by-side.
     if (req.session) {
-      // Regenerate the session id to prevent fixation attacks
-      await new Promise((resolve, reject) => {
-        req.session.regenerate((err) => (err ? reject(err) : resolve()));
-      });
-
       req.session.employeeId = String(employee._id);
-      // Make sure no stale userId leaks into the new session
-      delete req.session.userId;
 
       await new Promise((resolve, reject) => {
         req.session.save((err) => (err ? reject(err) : resolve()));
@@ -61,16 +73,23 @@ export async function login(req, res, next) {
 }
 
 // ─── POST /logout ─────────────────────────────────────────────
+//
+// Employee logout: remove ONLY employeeId from the session. Keep userId
+// (the DocPats user identity) intact so the person remains logged in to
+// the main site after logging out of the clinic.
 
 export async function logout(req, res, next) {
   try {
     if (!req.session) {
       return res.json({ success: true });
     }
+
+    delete req.session.employeeId;
+
     await new Promise((resolve, reject) => {
-      req.session.destroy((err) => (err ? reject(err) : resolve()));
+      req.session.save((err) => (err ? reject(err) : resolve()));
     });
-    res.clearCookie("connect.sid"); // best-effort
+
     res.json({ success: true });
   } catch (err) {
     next(err);
