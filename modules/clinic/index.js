@@ -9,6 +9,7 @@ import clinicCoreRouter from "./clinic-core/routes/clinic.routes.js";
 import clinicStaffRouter from "./clinic-staff/routes/staff.routes.js";
 import clinicInvitationRouter from "./clinic-staff/routes/invitation.routes.js";
 import clinicEmployeeAuthRouter from "./clinic-staff/routes/employeeAuth.routes.js";
+import clinicPatientRouter from "./clinic-patients/routes/patient.routes.js";
 import { tenantMiddleware } from "../../common/middlewares/tenantMiddleware.js";
 import {
   errorHandler,
@@ -170,6 +171,7 @@ router.get("/health", (req, res) => {
 router.use("/", clinicCoreRouter);
 router.use("/", clinicStaffRouter);
 router.use("/", clinicInvitationRouter);
+router.use("/", clinicPatientRouter);
 
 // ═══════════════════════════════════════════════════════════════
 // 5. 404 + error handler

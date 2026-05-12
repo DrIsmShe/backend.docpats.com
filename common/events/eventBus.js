@@ -112,6 +112,12 @@ export const EVENTS = Object.freeze({
   PATIENT_CALLED: "patient.called",
   PATIENT_ENTERED_ROOM: "patient.entered_room",
 
+  // Patient records (CRUD)
+  PATIENT_CREATED: "patient.created",
+  PATIENT_UPDATED: "patient.updated",
+  PATIENT_LINKED: "patient.linked",
+  PATIENT_DELETED: "patient.deleted",
+
   // Billing
   INVOICE_CREATED: "invoice.created",
   INVOICE_ISSUED: "invoice.issued",
