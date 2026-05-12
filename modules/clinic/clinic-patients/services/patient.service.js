@@ -15,6 +15,10 @@
 //      patients per clinic. Beyond that we'd need a different strategy.
 //   4. Service functions throw typed errors; controller catches them.
 //      Permissions are checked via require() — fail fast.
+//   5. List/Detail/Search responses include `createdByName` — actor's
+//      display name resolved via bulk fetch + decrypt from User or
+//      ClinicEmployee depending on createdByType. Skipped on write
+//      paths (create/update/link) where the actor is the caller itself.
 
 import ClinicPatient, {
   encryptValue,
@@ -80,6 +84,8 @@ function normalizePhone(phone) {
  *   - decrypt PHI fields
  *   - strip encrypted/hash fields
  *   - keep audit + demographic fields as-is
+ *   - includes `createdByName` if previously enriched via
+ *     enrichWithCreatedByName (otherwise null)
  *
  * NEVER returns raw encrypted blobs to callers.
  */
@@ -98,11 +104,100 @@ function toApiShape(doc) {
     linkedUserId: doc.linkedUserId ? String(doc.linkedUserId) : null,
     createdBy: doc.createdBy ? String(doc.createdBy) : null,
     createdByType: doc.createdByType,
+    createdByName: doc.createdByName || null,
     lastUpdatedBy: doc.lastUpdatedBy ? String(doc.lastUpdatedBy) : null,
     lastVisitAt: doc.lastVisitAt || null,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
+}
+
+// ─── createdBy name resolver ─────────────────────────────────────────
+//
+// For a batch of patient docs, fetch the actor's name from User or
+// ClinicEmployee collection (depending on createdByType) and merge it
+// into the doc as `createdByName`. Uses two parallel bulk queries.
+
+async function enrichWithCreatedByName(docs) {
+  if (!docs || docs.length === 0) return docs;
+
+  // Split createdBy IDs by actor type (skip null/missing)
+  const userIds = [];
+  const employeeIds = [];
+  for (const d of docs) {
+    if (!d.createdBy) continue;
+    if (d.createdByType === "employee") {
+      employeeIds.push(d.createdBy);
+    } else {
+      userIds.push(d.createdBy);
+    }
+  }
+
+  if (userIds.length === 0 && employeeIds.length === 0) return docs;
+
+  // Lazy import — same pattern as in linkToUser, avoids circular deps
+  const User = (await import("../../../../common/models/Auth/users.js"))
+    .default;
+  const ClinicEmployee = (
+    await import("../../clinic-staff/models/clinicEmployee.model.js")
+  ).default;
+
+  const [users, employees] = await Promise.all([
+    userIds.length
+      ? User.find({ _id: { $in: userIds } })
+          .select("_id firstNameEncrypted lastNameEncrypted username")
+          .lean()
+      : Promise.resolve([]),
+    employeeIds.length
+      ? ClinicEmployee.find({ _id: { $in: employeeIds } })
+          .select("_id firstNameEncrypted lastNameEncrypted")
+          .lean()
+      : Promise.resolve([]),
+  ]);
+
+  // Import decrypt helpers
+  const { decrypt: decryptUser } =
+    await import("../../../../common/models/Auth/users.js");
+  const { decryptValue: decryptEmployee } =
+    await import("../../clinic-staff/models/clinicEmployee.model.js");
+
+  const safeDecrypt = (fn, value) => {
+    if (!value) return null;
+    try {
+      return fn(value) || null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Build name maps for O(1) lookup
+  const userNames = new Map(
+    users.map((u) => {
+      const fn = safeDecrypt(decryptUser, u.firstNameEncrypted);
+      const ln = safeDecrypt(decryptUser, u.lastNameEncrypted);
+      const name = [fn, ln].filter(Boolean).join(" ") || u.username || null;
+      return [String(u._id), name];
+    }),
+  );
+  const employeeNames = new Map(
+    employees.map((e) => {
+      const fn = safeDecrypt(decryptEmployee, e.firstNameEncrypted);
+      const ln = safeDecrypt(decryptEmployee, e.lastNameEncrypted);
+      const name = [fn, ln].filter(Boolean).join(" ") || null;
+      return [String(e._id), name];
+    }),
+  );
+
+  // Merge name into each doc
+  return docs.map((d) => {
+    if (!d.createdBy) return d;
+    const idStr = String(d.createdBy);
+    const name =
+      d.createdByType === "employee"
+        ? employeeNames.get(idStr)
+        : userNames.get(idStr);
+    return { ...d, createdByName: name || null };
+  });
 }
 
 // ─── createPatient ────────────────────────────────────────────────────
@@ -191,7 +286,8 @@ export async function listPatients(query = {}) {
     .limit(Math.min(limit, 100))
     .lean();
 
-  const result = items.map(toApiShape);
+  const enriched = await enrichWithCreatedByName(items);
+  const result = enriched.map(toApiShape);
 
   // Next-page cursor: last item's sortBy field. Client passes this back as `before`.
   const nextCursor =
@@ -210,7 +306,8 @@ export async function getPatientById(id) {
 
   const doc = await ClinicPatient.findById(id).lean();
   if (!doc) throw new NotFoundError("Patient");
-  return toApiShape(doc);
+  const [enriched] = await enrichWithCreatedByName([doc]);
+  return toApiShape(enriched);
 }
 
 // ─── updatePatient ────────────────────────────────────────────────────
@@ -404,14 +501,17 @@ export async function searchPatients(query) {
 
   // De-duplicate by _id (a patient could match both phone AND lastName)
   const seen = new Set();
-  const merged = [];
+  const deduped = [];
   for (const doc of [...exactMatches, ...nameMatches]) {
     const id = String(doc._id);
     if (seen.has(id)) continue;
     seen.add(id);
-    merged.push(toApiShape(doc));
-    if (merged.length >= limit) break;
+    deduped.push(doc);
+    if (deduped.length >= limit) break;
   }
+
+  const enriched = await enrichWithCreatedByName(deduped);
+  const merged = enriched.map(toApiShape);
 
   return { items: merged, count: merged.length };
 }
