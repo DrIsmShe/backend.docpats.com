@@ -117,6 +117,7 @@ export const ACTION_ENUM = [
   "clinic.patient.delete",
   "clinic.patient.link", // связка с DocPats user-аккаунтом
   "clinic.patient.unlink",
+  "clinic.patient.user_search", // поиск User-аккаунта для линковки
   "clinic.patient.export",
 
   // ═══════════ CLINIC STAFF / MEMBERSHIPS ═══════════

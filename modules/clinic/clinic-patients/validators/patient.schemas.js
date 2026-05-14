@@ -141,6 +141,41 @@ export const linkPatientSchema = z.object({
   userId: objectIdField,
 });
 
+// ─── searchUsersSchema ────────────────────────────────────────────────
+//
+// Search DocPats User accounts to link a patient to. GET endpoint, so
+// input comes from req.query (strings only).
+//
+// Two mutually exclusive modes:
+//   mode "email" — `email` is required. Exact-match via emailHash.
+//   mode "dob"   — `dateOfBirth` is required (YYYY-MM-DD). firstName and
+//                  lastName are optional name filters applied on top.
+//
+// Note: we keep email/dateOfBirth as loose trimmed strings here (not the
+// strict emailField / dobField used for patient records). The service
+// layer normalizes and validates them — and for SEARCH we want to be
+// forgiving: a slightly-off query should return empty results, not a
+// 400. Strict rejection only on missing required field per mode.
+
+export const searchUsersSchema = z
+  .object({
+    mode: z.enum(["email", "dob"]),
+    email: z.string().trim().max(254).optional(),
+    dateOfBirth: z.string().trim().max(40).optional(),
+    firstName: z.string().trim().max(100).optional(),
+    lastName: z.string().trim().max(100).optional(),
+  })
+  .refine(
+    (q) => {
+      if (q.mode === "email") return !!q.email;
+      if (q.mode === "dob") return !!q.dateOfBirth;
+      return false;
+    },
+    {
+      message: "mode=email requires `email`; mode=dob requires `dateOfBirth`",
+    },
+  );
+
 // ─── paramSchemas ────────────────────────────────────────────────────
 
 export const patientIdParamSchema = z.object({

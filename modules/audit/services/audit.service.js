@@ -69,12 +69,20 @@ export const recordAction = async (params) => {
   }
   // resourceId опционален для list-actions (например, "list dialogs")
   // Но для всех остальных действий — должен быть.
-  if (!resourceId && action !== "list" && !action.endsWith(".list")) {
+  // resourceId опционален для коллекционных действий — list И search.
+  // У "list dialogs" / "search patients" / "search users" нет одного
+  // конкретного resourceId: они работают над выборкой, а не над записью.
+  // Для всех остальных действий resourceId обязателен.
+  const isCollectionAction =
+    action === "list" ||
+    action.endsWith(".list") ||
+    action.endsWith(".search") ||
+    action.endsWith(".user_search");
+  if (!resourceId && !isCollectionAction) {
     throw new Error(
       `audit.recordAction: resourceId is required for action "${action}"`,
     );
   }
-
   const doc = {
     userId: actor.userId,
     impersonatedBy: impersonatedBy || null,

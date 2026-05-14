@@ -599,3 +599,160 @@ export async function unlinkFromUser(id) {
 
   return toApiShape(patient.toObject());
 }
+
+// ─── searchUsersForLink ───────────────────────────────────────────────
+//
+// Search DocPats User accounts to link a ClinicPatient to. Used by the
+// "Link to user" UI on the patient detail page.
+//
+// Two independent modes (cannot be combined):
+//
+//   mode "email" — exact match via emailHash blind index.
+//     User enters the full email. We hash it the SAME way the User
+//     model does (sha256 of trim+lowercase) and do an O(1) indexed
+//     lookup. Scales to millions of users.
+//
+//   mode "dob" — date-of-birth + name filter.
+//     User enters the full date of birth + first/last name. We query
+//     User.find({ dateOfBirth }) which hits the new dateOfBirth index
+//     and statistically returns only a few dozen people. Then we
+//     decrypt firstName/lastName ONLY on that narrow set and filter
+//     in memory (case-insensitive, prefix match). This is why it does
+//     not collapse at 1M users — the expensive decrypt runs on dozens,
+//     not millions.
+//
+// Why we don't do partial-name search globally: User names are
+// sha256-hashed (one-way, exact-match only) and there's no searchable
+// token field. Decrypt-then-filter across the WHOLE users collection
+// would not scale. The dateOfBirth pre-filter is what makes name
+// matching affordable.
+//
+// PHI note: this is a PHI operation (searching by DOB + name). The
+// route is permission-gated (patient.write) and audited.
+//
+// Returns: array of { _id, firstName, lastName, email, avatar, role,
+//                     dateOfBirth, username } — decrypted, display-ready.
+//          Excludes soft-deleted users. Capped at DOB_SCAN_CAP.
+
+const DOB_SCAN_CAP = 200;
+const USER_SEARCH_RESULT_LIMIT = 25;
+
+export async function searchUsersForLink(query) {
+  requirePerm("patient", "write");
+  requireClinicId();
+
+  const { mode } = query;
+
+  // Lazy import — same pattern as linkToUser / enrichWithCreatedByName
+  const User = (await import("../../../../common/models/Auth/users.js"))
+    .default;
+  const { decrypt: decryptUser } =
+    await import("../../../../common/models/Auth/users.js");
+
+  const crypto = await import("crypto");
+  const sha256 = (v) =>
+    crypto.createHash("sha256").update(String(v)).digest("hex");
+
+  const safeDecrypt = (value) => {
+    if (!value) return null;
+    try {
+      return decryptUser(value) || null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Shape a raw lean User doc into a safe, decrypted result object.
+  const toUserResult = (u) => ({
+    _id: String(u._id),
+    firstName: safeDecrypt(u.firstNameEncrypted),
+    lastName: safeDecrypt(u.lastNameEncrypted),
+    email: safeDecrypt(u.emailEncrypted),
+    avatar: u.avatar || null,
+    role: u.role || null,
+    username: u.username || null,
+    dateOfBirth: u.dateOfBirth || null,
+  });
+
+  const selectFields =
+    "_id firstNameEncrypted lastNameEncrypted emailEncrypted avatar role username dateOfBirth isDeleted";
+
+  // ─── Mode: email (exact, O(1) via blind index) ───
+  if (mode === "email") {
+    const raw = query.email;
+    if (!raw || typeof raw !== "string") {
+      throw new UnprocessableError("email is required for email search");
+    }
+    const normalized = raw.trim().toLowerCase();
+    if (!normalized) {
+      throw new UnprocessableError("email is required for email search");
+    }
+
+    const emailHash = sha256(normalized);
+    const docs = await User.find({ emailHash, isDeleted: { $ne: true } })
+      .select(selectFields)
+      .limit(USER_SEARCH_RESULT_LIMIT)
+      .lean();
+
+    return { items: docs.map(toUserResult), count: docs.length };
+  }
+
+  // ─── Mode: dob (date of birth + name filter) ───
+  if (mode === "dob") {
+    const { dateOfBirth, firstName, lastName } = query;
+    if (!dateOfBirth) {
+      throw new UnprocessableError(
+        "dateOfBirth is required for date-of-birth search",
+      );
+    }
+
+    // Parse the date and build a full-day range [start, end). The
+    // client sends "YYYY-MM-DD"; users in DB may have a time component,
+    // so we match the whole calendar day rather than an exact instant.
+    const dayStart = new Date(dateOfBirth);
+    if (Number.isNaN(dayStart.getTime())) {
+      throw new UnprocessableError("dateOfBirth is not a valid date");
+    }
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+
+    // Indexed query — narrows 1M users down to a few dozen.
+    const candidates = await User.find({
+      dateOfBirth: { $gte: dayStart, $lt: dayEnd },
+      isDeleted: { $ne: true },
+    })
+      .select(selectFields)
+      .limit(DOB_SCAN_CAP)
+      .lean();
+
+    // Decrypt + in-memory filter ONLY on the narrow candidate set.
+    const fNeedle = (firstName || "").trim().toLowerCase();
+    const lNeedle = (lastName || "").trim().toLowerCase();
+
+    let results = candidates.map(toUserResult);
+
+    // Filter by name if provided. Both partial (prefix) and
+    // case-insensitive — affordable because we're filtering decrypted
+    // strings on a tiny set, not hashes on millions.
+    if (fNeedle || lNeedle) {
+      results = results.filter((u) => {
+        const fn = (u.firstName || "").toLowerCase();
+        const ln = (u.lastName || "").toLowerCase();
+        const fOk = fNeedle ? fn.startsWith(fNeedle) : true;
+        const lOk = lNeedle ? ln.startsWith(lNeedle) : true;
+        return fOk && lOk;
+      });
+    }
+
+    if (results.length > USER_SEARCH_RESULT_LIMIT) {
+      results = results.slice(0, USER_SEARCH_RESULT_LIMIT);
+    }
+
+    return { items: results, count: results.length };
+  }
+
+  throw new UnprocessableError(
+    `Unknown search mode "${mode}" — expected "email" or "dob"`,
+  );
+}

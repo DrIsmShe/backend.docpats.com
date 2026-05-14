@@ -692,6 +692,7 @@ userSchema.index({ role: 1 });
 userSchema.index({ "access.permissions": 1 });
 userSchema.index({ trialEndsAt: 1 }); // для cron-задачи trial-напоминаний
 userSchema.index({ subscriptionEndsAt: 1 });
+userSchema.index({ dateOfBirth: 1 }); // поиск user по ДР при линковке пациента к карте клиники
 
 /* ======================= Хелпер для update-хуков ======================= */
 function getSetObjectFromUpdate(update) {

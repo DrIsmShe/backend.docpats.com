@@ -18,6 +18,7 @@ import {
   listPatientsSchema,
   linkPatientSchema,
   patientIdParamSchema,
+  searchUsersSchema,
 } from "../validators/patient.schemas.js";
 import { ValidationError } from "../../../../common/utils/errors.js";
 
@@ -127,6 +128,21 @@ export async function unlinkPatient(req, res, next) {
     const { id } = parse(patientIdParamSchema, req.params, "patient id");
     const patient = await service.unlinkFromUser(id);
     res.json({ patient });
+  } catch (err) {
+    next(err);
+  }
+}
+// ─── GET /patients/users/search ───────────────────────────────────────
+//
+// Search DocPats User accounts to link a patient to. Two modes:
+//   ?mode=email&email=...
+//   ?mode=dob&dateOfBirth=YYYY-MM-DD&firstName=...&lastName=...
+
+export async function searchUsers(req, res, next) {
+  try {
+    const query = parse(searchUsersSchema, req.query, "user search query");
+    const result = await service.searchUsersForLink(query);
+    res.json(result);
   } catch (err) {
     next(err);
   }

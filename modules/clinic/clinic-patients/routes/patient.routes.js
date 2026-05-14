@@ -1,10 +1,11 @@
 // server/modules/clinic/clinic-patients/routes/patient.routes.js
 //
-// REST endpoints for ClinicPatient CRUD + search + link.
+// REST endpoints for ClinicPatient CRUD + search + link + user-search.
 //
 // Mount path (from parent clinic router): /api/v1/clinic/*
 // Final URLs:
 //   GET    /api/v1/clinic/patients/search
+//   GET    /api/v1/clinic/patients/users/search
 //   GET    /api/v1/clinic/patients
 //   POST   /api/v1/clinic/patients
 //   GET    /api/v1/clinic/patients/:id
@@ -39,7 +40,7 @@ import auditMiddleware from "../../../audit/middleware/auditMiddleware.js";
 
 const router = express.Router();
 
-// ─── Search ───────────────────────────────────────────────────────────
+// ─── Search patients ──────────────────────────────────────────────────
 // MUST come before /patients/:id — otherwise "search" is matched as :id.
 // We log WHAT TYPE of search was performed (phone/email/lastName), not
 // the search value itself — search terms can be PHI.
@@ -60,6 +61,26 @@ router.get(
     }),
   }),
   ctrl.searchPatients,
+);
+
+// ─── Search DocPats users (for linking) ───────────────────────────────
+// Search User accounts to link a patient to. MUST come before
+// /patients/:id — otherwise "users" is matched as :id.
+//
+// PHI operation — searching by date of birth + name. metaFrom logs the
+// search MODE (email vs dob) and whether name filters were used, never
+// the actual email/dob/name values.
+router.get(
+  "/patients/users/search",
+  auditMiddleware({
+    resourceType: "clinic-patient",
+    action: "clinic.patient.user_search",
+    metaFrom: (req) => ({
+      mode: req.query?.mode || "unknown",
+      hasNameFilter: Boolean(req.query?.firstName || req.query?.lastName),
+    }),
+  }),
+  ctrl.searchUsers,
 );
 
 // ─── List ─────────────────────────────────────────────────────────────
