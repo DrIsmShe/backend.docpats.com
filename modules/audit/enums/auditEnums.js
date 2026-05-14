@@ -104,6 +104,39 @@ export const ACTION_ENUM = [
   "patient.profile.read",
   "patient.profile.update",
 
+  // ═══════════ CLINIC PATIENTS (ClinicPatient — карта пациента в клинике) ═══════════
+  // Отличается от patient.profile.* (которые про User-аккаунт пациента
+  // на DocPats). ClinicPatient — внутренняя клиническая запись с PHI,
+  // привязанная к конкретной клинике (tenant). Регистратор/админ/owner
+  // создают карту → доктор читает на приёме → потом обновляет.
+  "clinic.patient.create",
+  "clinic.patient.read",
+  "clinic.patient.list",
+  "clinic.patient.search",
+  "clinic.patient.update",
+  "clinic.patient.delete",
+  "clinic.patient.link", // связка с DocPats user-аккаунтом
+  "clinic.patient.unlink",
+  "clinic.patient.export",
+
+  // ═══════════ CLINIC STAFF / MEMBERSHIPS ═══════════
+  // На будущее: когда будем аудитить операции с сотрудниками клиники
+  // (добавление врача, смена роли, удаление). Сейчас не используется.
+  "clinic.staff.invite",
+  "clinic.staff.add",
+  "clinic.staff.role_change",
+  "clinic.staff.remove",
+  "clinic.staff.list",
+  "clinic.staff.read",
+
+  // ═══════════ CLINIC SETTINGS ═══════════
+  // На будущее: изменения настроек клиники (название, часовой пояс,
+  // валюта, языки, тариф) и сама регистрация клиники.
+  "clinic.create",
+  "clinic.read",
+  "clinic.update",
+  "clinic.delete",
+
   // ═══════════ APPOINTMENTS ═══════════
   "appointment.create",
   "appointment.read",
@@ -152,6 +185,14 @@ export const RESOURCE_TYPE_ENUM = [
   "consultation",
   "ai-consultation",
   "appointment",
+
+  // Clinic module (Sprint 0+)
+  // clinic-patient: ClinicPatient карта пациента (PHI, tenant-scoped)
+  // clinic-employee: ClinicEmployee — внутренний сотрудник клиники
+  // clinic: сама клиника (tenant) — для аудита смены настроек
+  "clinic-patient",
+  "clinic-employee",
+  "clinic",
 
   // Profiles
   "doctor-profile",

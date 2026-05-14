@@ -83,32 +83,55 @@ function resolveValue(req, source) {
 }
 
 /* ═══════════ extractActorFromReq ═══════════
-   Достать actor из req. Поддерживаем оба варианта:
-   - req.actor (если уже был extractActor middleware)
-   - req.user  (если extractActor не использовался)
+   Достать actor из req. Поддерживаем ТРИ варианта аутентификации:
+   1. req.actor       — если был extractActor middleware ранее
+   2. req.user        — заполняется authMiddleware (communication routes,
+                        anthropometry, surgery — там есть authMiddleware)
+   3. req.session.*   — clinic routes используют session-only auth БЕЗ
+                        authMiddleware. req.user НЕ заполняется. Actor
+                        берётся напрямую из сессии:
+                          • session.userId     → обычный User (owner/admin/doctor)
+                          • session.employeeId → ClinicEmployee (nurse/reception)
 */
 function extractActorFromReq(req) {
+  // 1. req.actor — готовый actor от extractActor middleware
   if (req.actor?.userId) return req.actor;
 
-  if (!req.user) return null;
+  // 2. req.user — заполняется authMiddleware
+  if (req.user) {
+    const userId =
+      req.user._id?.toString?.() ||
+      req.user.userId?.toString?.() ||
+      req.userId?.toString?.();
 
-  const userId =
-    req.user._id?.toString?.() ||
-    req.user.userId?.toString?.() ||
-    req.userId?.toString?.();
+    if (userId) {
+      const email = req.user.email || req.session?.email || null;
+      const role = req.user.role || req.session?.role || null;
+      return { userId, email, role };
+    }
+  }
 
-  if (!userId) return null;
+  // 3. Fallback: clinic routes — session-only auth (нет req.user).
+  //    Обычный User-актор.
+  if (req.session?.userId) {
+    return {
+      userId: String(req.session.userId),
+      email:
+        req.session.email || req.session.userEmail || req.user?.email || null,
+      role: req.session.role || req.session.userRole || null,
+    };
+  }
 
-  // Email и role могут быть в req.user (из authMiddleware) или в req.session
-  // (для DocPats — основной источник). Берём из обоих.
-  const email = req.user.email || req.session?.email || null;
-  const role = req.user.role || req.session?.role || null;
+  // 4. Fallback: ClinicEmployee-аутентификация (session.employeeId).
+  if (req.session?.employeeId) {
+    return {
+      userId: String(req.session.employeeId),
+      email: req.session.employeeEmail || null,
+      role: req.session.employeeRole || null,
+    };
+  }
 
-  return {
-    userId,
-    email,
-    role,
-  };
+  return null;
 }
 
 /* ═══════════ extractContextFromReq ═══════════ */
@@ -180,11 +203,11 @@ export default function auditMiddleware(opts) {
         if (opts.skipIf && opts.skipIf(req)) return;
 
         const actor = extractActorFromReq(req);
+
         if (!actor) {
           // Не аутентифицирован — нет смысла логировать как user-action.
           return;
         }
-
         // Извлекаем resourceId (поддерживает строку и функцию)
         let resourceId = null;
         if (opts.resourceIdFrom) {
