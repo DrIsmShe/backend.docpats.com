@@ -152,6 +152,8 @@ export const ACTION_ENUM = [
   "clinic.schedule.exception.bulk_day_off", // диапазон дат как выходные (отпуск)
   "clinic.schedule.exception.list", // список исключений врача за период
   "clinic.schedule.exception.delete", // удаление одного исключения
+  // Slot lookup — вычисленные свободные слоты (недельный паттерн + исключения).
+  "clinic.schedule.slots.view", // запрос свободных слотов врача за период
 
   // ═══════════ CLINIC APPOINTMENTS (Appointments module, Sprint 1) ═══════════
   // Приёмы внутри клиники. Отдельно от legacy appointment.* (старый
