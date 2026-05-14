@@ -10,6 +10,7 @@ import clinicStaffRouter from "./clinic-staff/routes/staff.routes.js";
 import clinicInvitationRouter from "./clinic-staff/routes/invitation.routes.js";
 import clinicEmployeeAuthRouter from "./clinic-staff/routes/employeeAuth.routes.js";
 import clinicPatientRouter from "./clinic-patients/routes/patient.routes.js";
+import clinicAppointmentsRouter from "./clinic-appointments/index.js";
 import { tenantMiddleware } from "../../common/middlewares/tenantMiddleware.js";
 import {
   errorHandler,
@@ -172,6 +173,7 @@ router.use("/", clinicCoreRouter);
 router.use("/", clinicStaffRouter);
 router.use("/", clinicInvitationRouter);
 router.use("/", clinicPatientRouter);
+router.use("/appointments", clinicAppointmentsRouter);
 
 // ═══════════════════════════════════════════════════════════════
 // 5. 404 + error handler

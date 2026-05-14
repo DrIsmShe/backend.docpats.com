@@ -138,7 +138,37 @@ export const ACTION_ENUM = [
   "clinic.update",
   "clinic.delete",
 
-  // ═══════════ APPOINTMENTS ═══════════
+  // ═══════════ CLINIC DOCTOR SCHEDULES (Appointments module, Sprint 1) ═══════════
+  // Недельное расписание врача ВНУТРИ клиники. Отдельно от legacy
+  // doctorSchedule-модуля (тот про публичную запись к частным врачам).
+  // Часы работы — не PHI, но кто/когда менял доступность врача —
+  // security-relevant (подмена расписания, форензика). Аудитим все.
+  "clinic.schedule.list", // список всех расписаний клиники (admin overview)
+  "clinic.schedule.view", // расписание одного врача
+  "clinic.schedule.upsert", // создание/замена недельного паттерна
+  // Schedule exceptions — разовые отклонения от недельного паттерна на
+  // конкретную дату (выходной/отпуск/нестандартные часы).
+  "clinic.schedule.exception.create", // одно исключение на одну дату
+  "clinic.schedule.exception.bulk_day_off", // диапазон дат как выходные (отпуск)
+  "clinic.schedule.exception.list", // список исключений врача за период
+  "clinic.schedule.exception.delete", // удаление одного исключения
+
+  // ═══════════ CLINIC APPOINTMENTS (Appointments module, Sprint 1) ═══════════
+  // Приёмы внутри клиники. Отдельно от legacy appointment.* (старый
+  // per-doctor модуль записи). Причина визита (reason) — PHI, шифруется;
+  // в audit meta пишем только структуру, не значения. Регистратор создаёт
+  // приём → пациент приходит (checkin) → доктор закрывает (complete).
+  "clinic.appointment.list", // список приёмов (по врачу/дате/статусу)
+  "clinic.appointment.view", // один приём
+  "clinic.appointment.slots", // запрос свободных слотов врача
+  "clinic.appointment.create", // бронирование приёма
+  "clinic.appointment.reschedule", // перенос на другое время
+  "clinic.appointment.cancel", // отмена
+  "clinic.appointment.checkin", // пациент пришёл (scheduled → checked_in)
+  "clinic.appointment.complete", // приём завершён
+  "clinic.appointment.noshow", // пациент не явился
+
+  // ═══════════ APPOINTMENTS (legacy per-doctor module) ═══════════
   "appointment.create",
   "appointment.read",
   "appointment.update",
@@ -194,6 +224,14 @@ export const RESOURCE_TYPE_ENUM = [
   "clinic-patient",
   "clinic-employee",
   "clinic",
+
+  // Clinic appointments module (Sprint 1)
+  // clinic-doctor-schedule: ClinicDoctorSchedule — недельное расписание
+  //   врача внутри клиники (tenant-scoped, не PHI)
+  // clinic-appointment: ClinicAppointment — приём в клинике (reason — PHI,
+  //   шифруется; tenant-scoped)
+  "clinic-doctor-schedule",
+  "clinic-appointment",
 
   // Profiles
   "doctor-profile",
