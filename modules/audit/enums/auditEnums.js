@@ -154,22 +154,19 @@ export const ACTION_ENUM = [
   "clinic.schedule.exception.delete", // удаление одного исключения
   // Slot lookup — вычисленные свободные слоты (недельный паттерн + исключения).
   "clinic.schedule.slots.view", // запрос свободных слотов врача за период
+  // Appointments — конкретные приёмы врач-пациент (Sprint 1, day 4).
+  // status_change покрывает любой переход FSM (scheduled→checked_in/cancelled/no_show,
+  // checked_in→completed/cancelled/no_show). Для отмен metaFrom фиксирует hasCancelReason,
+  // но не само значение (это может содержать комментарий оператора).
+  "clinic.appointment.create", // создание приёма
+  "clinic.appointment.view", // чтение одного приёма
+  "clinic.appointment.list", // список приёмов (по врачу/по пациенту)
+  "clinic.appointment.reschedule", // перенос времени активного приёма
+  "clinic.appointment.update_reason", // правка reason/notes (любой статус)
+  "clinic.appointment.status_change", // смена статуса по FSM
+  "clinic.appointment.slots_free.view", // свободные слоты с учётом занятых
 
   // ═══════════ CLINIC APPOINTMENTS (Appointments module, Sprint 1) ═══════════
-  // Приёмы внутри клиники. Отдельно от legacy appointment.* (старый
-  // per-doctor модуль записи). Причина визита (reason) — PHI, шифруется;
-  // в audit meta пишем только структуру, не значения. Регистратор создаёт
-  // приём → пациент приходит (checkin) → доктор закрывает (complete).
-  "clinic.appointment.list", // список приёмов (по врачу/дате/статусу)
-  "clinic.appointment.view", // один приём
-  "clinic.appointment.slots", // запрос свободных слотов врача
-  "clinic.appointment.create", // бронирование приёма
-  "clinic.appointment.reschedule", // перенос на другое время
-  "clinic.appointment.cancel", // отмена
-  "clinic.appointment.checkin", // пациент пришёл (scheduled → checked_in)
-  "clinic.appointment.complete", // приём завершён
-  "clinic.appointment.noshow", // пациент не явился
-
   // ═══════════ APPOINTMENTS (legacy per-doctor module) ═══════════
   "appointment.create",
   "appointment.read",

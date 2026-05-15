@@ -153,4 +153,8 @@ export const EVENTS = Object.freeze({
 
   // Analytics & misc
   KPI_CALCULATED: "kpi.calculated",
+  APPOINTMENT_CREATED: "appointment.created",
+  APPOINTMENT_RESCHEDULED: "appointment.rescheduled",
+  APPOINTMENT_STATUS_CHANGED: "appointment.status_changed",
+  APPOINTMENT_CANCELLED: "appointment.cancelled",
 });
