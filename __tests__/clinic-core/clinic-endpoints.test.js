@@ -2,15 +2,27 @@
 //
 // Integration tests for clinic-core HTTP endpoints.
 // Uses supertest + an in-process Express app with mocked session.
+//
+// IMPORTANT (16 May 2026):
+//   The createClinic controller now loads the User from DB and verifies
+//   user.isDoctor === true (day-10 security fix). Tests that hit
+//   POST /clinics MUST seed a matching User document via createTestDoctor,
+//   not just mock req.session.userId. Otherwise the controller throws
+//   UnauthorizedError ("User not found") → 401.
+//
+//   Other endpoints (PATCH /clinics/:id, GET /me, etc.) DO NOT load the
+//   User and just trust the session — those tests don't need a seeded
+//   User for the auth path itself (though they call service.createClinic
+//   directly to set up tenant memberships).
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import request from "supertest";
 import mongoose from "mongoose";
 
 import { createTestApp } from "../helpers/withSession.js";
+import { createTestDoctor } from "../helpers/createTestUser.js";
 import * as service from "../../modules/clinic/clinic-core/services/clinic.service.js";
 import Clinic from "../../modules/clinic/clinic-core/models/clinic.model.js";
-import ClinicMembership from "../../modules/clinic/clinic-staff/models/clinicMembership.model.js";
 
 describe("POST /api/v1/clinic/clinics", () => {
   it("rejects unauthenticated requests", async () => {
@@ -24,7 +36,9 @@ describe("POST /api/v1/clinic/clinics", () => {
   });
 
   it("creates clinic for authenticated user", async () => {
-    const userId = new mongoose.Types.ObjectId();
+    // Seed a doctor User in DB — controller's createClinic guard
+    // does User.findById(userId) and requires isDoctor === true.
+    const { userId } = await createTestDoctor();
     const app = createTestApp({ userId });
 
     const res = await request(app).post("/api/v1/clinic/clinics").send({
@@ -42,7 +56,7 @@ describe("POST /api/v1/clinic/clinics", () => {
   });
 
   it("rejects invalid input (no name)", async () => {
-    const userId = new mongoose.Types.ObjectId();
+    const { userId } = await createTestDoctor();
     const app = createTestApp({ userId });
 
     const res = await request(app)
@@ -54,7 +68,7 @@ describe("POST /api/v1/clinic/clinics", () => {
   });
 
   it("rejects duplicate slug with 409", async () => {
-    const userId = new mongoose.Types.ObjectId();
+    const { userId } = await createTestDoctor();
     const app = createTestApp({ userId });
 
     await request(app)

@@ -67,12 +67,17 @@ describe("can() — context-aware", () => {
     expect(can("patient", "read")).toBe(false);
   });
 
-  it("doctor can patient.write but not patient.delete", () => {
+  // Day-8 business decision (clinic Patients module): only owner/admin/
+  // receptionist can create/modify patient cards. Doctors are read-only —
+  // editing a patient card is reception work, not clinical work.
+  // The doctor's clinical work happens on MedicalRecord, not on the
+  // patient demographics themselves.
+  it("doctor can read patients but not write or delete them", () => {
     runWithTenantContext(
       { userId: "u", clinicId: "c", role: ROLES.DOCTOR },
       () => {
         expect(can("patient", "read")).toBe(true);
-        expect(can("patient", "write")).toBe(true);
+        expect(can("patient", "write")).toBe(false);
         expect(can("patient", "delete")).toBe(false);
       },
     );
