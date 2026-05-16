@@ -340,6 +340,52 @@ function toDTO(doc) {
   };
 }
 
+// ─── Patient-name enrichment ──────────────────────────────────────────
+//
+// Appointment DTOs need the patient's display name so the UI can render
+// "Иван Тестов" instead of an opaque ObjectId. Mirror the pattern from
+// patient.service's enrichWithCreatedByName: bulk fetch ClinicPatient
+// records by id, decrypt firstName/lastName once, build a Map for O(1)
+// lookup, attach to each DTO.
+//
+// PHI safety: the names are decrypted in memory and returned to the
+// authenticated caller, who already has read access to these patients
+// via the clinic tenant scope. No PHI leaves this process.
+
+async function enrichDTOsWithPatientName(dtos) {
+  if (!dtos || dtos.length === 0) return dtos;
+
+  // Unique, non-null patient ids
+  const ids = [...new Set(dtos.map((d) => d?.patientId).filter(Boolean))];
+  if (ids.length === 0) return dtos;
+
+  const patients = await ClinicPatient.find({ _id: { $in: ids } })
+    .select("_id firstNameEncrypted lastNameEncrypted")
+    .lean();
+
+  const nameMap = new Map();
+  for (const p of patients) {
+    let firstName = null;
+    let lastName = null;
+    try {
+      firstName = decryptValue(p.firstNameEncrypted) || null;
+    } catch {
+      /* ignore — leave null */
+    }
+    try {
+      lastName = decryptValue(p.lastNameEncrypted) || null;
+    } catch {
+      /* ignore — leave null */
+    }
+    const display = [firstName, lastName].filter(Boolean).join(" ") || null;
+    nameMap.set(String(p._id), display);
+  }
+
+  return dtos.map((d) =>
+    d ? { ...d, patientName: nameMap.get(String(d.patientId)) || null } : d,
+  );
+}
+
 // ════════════════════════════════════════════════════════════════
 //  PUBLIC API
 // ════════════════════════════════════════════════════════════════
@@ -424,7 +470,9 @@ export async function getAppointment(id) {
   }
   const doc = await ClinicAppointment.findById(id).lean();
   if (!doc) throw new NotFoundError("Appointment");
-  return toDTO(doc);
+  const dto = toDTO(doc);
+  const [enriched] = await enrichDTOsWithPatientName([dto]);
+  return enriched;
 }
 
 /**
@@ -466,10 +514,8 @@ export async function listAppointments(query) {
     const items = await ClinicAppointment.find(filter)
       .sort({ startUTC: 1 })
       .lean();
-    return {
-      items: items.map(toDTO),
-      count: items.length,
-    };
+    const dtos = await enrichDTOsWithPatientName(items.map(toDTO));
+    return { items: dtos, count: dtos.length };
   }
 
   // Patient mode — cursor pagination.
@@ -487,9 +533,10 @@ export async function listAppointments(query) {
       ? items[items.length - 1].startUTC
       : null;
 
+  const dtos = await enrichDTOsWithPatientName(items.map(toDTO));
   return {
-    items: items.map(toDTO),
-    count: items.length,
+    items: dtos,
+    count: dtos.length,
     nextBefore,
   };
 }

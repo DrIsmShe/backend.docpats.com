@@ -7,7 +7,7 @@
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import mongoose from "mongoose";
 import { beforeAll, afterAll, afterEach } from "vitest";
-
+import "dotenv/config";
 let mongoServer;
 
 // Set test env defaults
