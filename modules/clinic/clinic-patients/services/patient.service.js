@@ -17,8 +17,16 @@
 //      Permissions are checked via require() — fail fast.
 //   5. List/Detail/Search responses include `createdByName` — actor's
 //      display name resolved via bulk fetch + decrypt from User or
-//      ClinicEmployee depending on createdByType. Skipped on write
-//      paths (create/update/link) where the actor is the caller itself.
+//      ClinicEmployee depending on createdByType.
+//
+//      Write paths fall into two groups:
+//        - create / update — caller IS the actor; frontend already knows
+//          who they are, no need to enrich. Skipped.
+//        - link / unlink   — caller is often DIFFERENT from the original
+//          creator (e.g. receptionist created the card, admin linked it).
+//          Frontend needs createdByName to render the audit trail. We
+//          DO enrich on these paths. (17 May 2026 fix — previously
+//          showed "Unknown" / "Неизвестно" after link/unlink in the UI.)
 
 import ClinicPatient, {
   encryptValue,
@@ -522,6 +530,11 @@ export async function searchPatients(query) {
 // Idempotent: linking the same user twice is fine.
 // Re-linking to a different user requires explicit unlink first
 // (we throw ConflictError to force a deliberate action).
+//
+// Response includes `createdByName` (resolved via enrichWithCreatedByName)
+// because the linker is often a different person from the original creator
+// (e.g. receptionist created → admin linked). Without enrichment the
+// frontend would show "Unknown" for the createdBy actor. (17 May 2026)
 
 export async function linkToUser(id, userId) {
   requirePerm("patient", "write");
@@ -533,8 +546,10 @@ export async function linkToUser(id, userId) {
 
   if (patient.linkedUserId) {
     if (String(patient.linkedUserId) === String(userId)) {
-      // No-op: already linked to this user
-      return toApiShape(patient.toObject());
+      // No-op: already linked to this user. Still enrich so the response
+      // shape is consistent with the linked-this-time path.
+      const [enriched] = await enrichWithCreatedByName([patient.toObject()]);
+      return toApiShape(enriched);
     }
     throw new ConflictError(
       "Patient is already linked to a different user. Unlink first.",
@@ -570,10 +585,16 @@ export async function linkToUser(id, userId) {
     linkedBy: String(actorId),
   });
 
-  return toApiShape(patient.toObject());
+  // Enrich BEFORE shaping — frontend depends on createdByName to render
+  // the audit trail in the patient detail view.
+  const [enriched] = await enrichWithCreatedByName([patient.toObject()]);
+  return toApiShape(enriched);
 }
 
 // ─── unlinkFromUser ───────────────────────────────────────────────────
+//
+// Same enrichment rationale as linkToUser — the unlinker may be a
+// different person from the creator.
 
 export async function unlinkFromUser(id) {
   requirePerm("patient", "write");
@@ -584,7 +605,9 @@ export async function unlinkFromUser(id) {
   if (!patient) throw new NotFoundError("Patient");
 
   if (!patient.linkedUserId) {
-    return toApiShape(patient.toObject()); // no-op
+    // no-op — still enrich for response-shape consistency
+    const [enriched] = await enrichWithCreatedByName([patient.toObject()]);
+    return toApiShape(enriched);
   }
 
   const previousLink = String(patient.linkedUserId);
@@ -597,7 +620,8 @@ export async function unlinkFromUser(id) {
     "Patient unlinked from user",
   );
 
-  return toApiShape(patient.toObject());
+  const [enriched] = await enrichWithCreatedByName([patient.toObject()]);
+  return toApiShape(enriched);
 }
 
 // ─── searchUsersForLink ───────────────────────────────────────────────
