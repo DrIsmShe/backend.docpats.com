@@ -10,11 +10,27 @@
 // the day-1/day-2 controllers (and patient.controller.js). It just decorates
 // the validator's error with a label for easier debugging.
 //
-// One extra concern here: for the CREATE flow, the audit middleware needs
-// to record `resourceId` (the new appointment's id) but that id doesn't
-// exist until AFTER the service runs. The controller therefore stashes the
-// id on `res.locals.createdAppointmentId` so the route's
-// `resourceIdFrom` resolver can pick it up.
+// AUDIT — special case for createAppointmentController:
+//   All other appointment endpoints use auditMiddleware (see
+//   appointment.routes.js). createAppointmentController is the
+//   exception: the new appointment._id is only known AFTER
+//   service.createAppointment() resolves, so we cannot use middleware's
+//   resourceIdFrom (it would fire with resourceId=null and trigger the
+//   strict invariant in audit.service.js, polluting prod logs with the
+//   warning "[audit] async recordAction failed: resourceId is required
+//   for action clinic.appointment.create").
+//
+//   A previous attempt used res.locals.createdAppointmentId + a
+//   (req,res)=>... callback in resourceIdFrom, but auditMiddleware's
+//   resolveValue only passes `req` to function-style sources, so `res`
+//   was always undefined. That approach silently fell through to null.
+//
+//   This pattern mirrors clinic.patient.create + clinic.staff.* fixes
+//   (commits 6a5be8b6 + e05c6465 on prod): direct call to
+//   auditService.recordActionAsync after the operation, with actor +
+//   context extracted from req using the same logic as auditMiddleware.
+//   On failure (caught error) we record outcome="failure" so denied/
+//   broken create attempts are visible in audit log.
 
 import {
   createAppointment,
@@ -33,6 +49,7 @@ import {
   validateFreeSlotsQuery,
 } from "../validators/appointment.validator.js";
 import { ValidationError } from "../../../../common/utils/errors.js";
+import auditService from "../../../audit/services/audit.service.js";
 
 // ─── Validator wrapper ────────────────────────────────────────
 function parse(validatorFn, source, label) {
@@ -46,17 +63,148 @@ function parse(validatorFn, source, label) {
   }
 }
 
+/* ═══════════ AUDIT HELPERS ═══════════
+   Mirror the extraction logic from auditMiddleware.js. Kept inline
+   (not imported) because auditMiddleware doesn't export these helpers —
+   they're internal there. Duplication is intentional and small.
+   Same helpers as patient.controller.js — if middleware's extractors
+   evolve, update in all three places (patient, appointment, staff).
+*/
+
+function extractActor(req) {
+  if (req.actor?.userId) return req.actor;
+
+  if (req.user) {
+    const userId =
+      req.user._id?.toString?.() ||
+      req.user.userId?.toString?.() ||
+      req.userId?.toString?.();
+
+    if (userId) {
+      return {
+        userId,
+        email: req.user.email || req.session?.email || null,
+        role: req.user.role || req.session?.role || null,
+      };
+    }
+  }
+
+  if (req.session?.userId) {
+    return {
+      userId: String(req.session.userId),
+      email:
+        req.session.email || req.session.userEmail || req.user?.email || null,
+      role: req.session.role || req.session.userRole || null,
+    };
+  }
+
+  if (req.session?.employeeId) {
+    return {
+      userId: String(req.session.employeeId),
+      email: req.session.employeeEmail || null,
+      role: req.session.employeeRole || null,
+    };
+  }
+
+  return null;
+}
+
+function extractContext(req, statusCode) {
+  if (req.context) {
+    return {
+      ...req.context,
+      httpMethod: req.method,
+      httpPath: req.originalUrl || req.url,
+      statusCode,
+    };
+  }
+
+  return {
+    ipAddress:
+      req.ip ||
+      req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.connection?.remoteAddress ||
+      null,
+    userAgent: req.headers?.["user-agent"] || null,
+    sessionId: req.sessionID || null,
+    requestId: req.id || null,
+    httpMethod: req.method,
+    httpPath: req.originalUrl || req.url,
+    statusCode,
+  };
+}
+
 // ─── POST /appointments ───────────────────────────────────────
 //  Body: { doctorId, patientId, startUTC, endUTC, reason? }
 //  201   { appointment: {...} }
+//
+// Audit is recorded HERE, not via middleware — see file header comment.
+// We capture the real appointment._id as resourceId, satisfying the
+// strict invariant in audit.service.js for create actions.
+//
+// res.locals.createdAppointmentId is still set for backward compatibility
+// — in case any other middleware downstream reads it. It's no longer the
+// audit source.
+//
+// PHI safety — metadata: only structural flags (hasReason, ids, timing).
+// NEVER decrypted reason text, names, phones, emails.
 export async function createAppointmentController(req, res, next) {
+  const actor = extractActor(req);
+  // Collected before try so failure-path audit also sees it.
+  const baseMetadata = {
+    doctorId: req.body?.doctorId ?? null,
+    patientId: req.body?.patientId ?? null,
+    hasReason: Boolean(req.body?.reason),
+    startUTC: req.body?.startUTC ?? null,
+    endUTC: req.body?.endUTC ?? null,
+  };
+
   try {
     const input = parse(validateCreateAppointment, req.body, "create");
     const appointment = await createAppointment(input);
-    // For the audit middleware (resourceIdFrom reads res.locals)
+
+    // Kept for backward compat with any other downstream consumer.
     res.locals.createdAppointmentId = appointment.id;
+
+    // Audit AFTER successful creation — resourceId is real now.
+    if (actor) {
+      auditService.recordActionAsync({
+        actor,
+        action: "clinic.appointment.create",
+        resourceType: "clinic-appointment",
+        resourceId: String(appointment.id),
+        outcome: "success",
+        metadata: baseMetadata,
+        context: extractContext(req, 201),
+      });
+    }
+
     res.status(201).json({ appointment });
   } catch (err) {
+    // Record the failed attempt. resourceId is null because the
+    // appointment was never created. recordActionAsync internally
+    // swallows the strict-invariant warning by virtue of being
+    // fire-and-forget; we also wrap defensively in try/catch so the
+    // primary next(err) never breaks because of audit issues.
+    if (actor) {
+      try {
+        auditService.recordActionAsync({
+          actor,
+          action: "clinic.appointment.create",
+          resourceType: "clinic-appointment",
+          resourceId: null,
+          outcome: "failure",
+          failureReason: err?.message?.slice(0, 500) || "unknown",
+          metadata: baseMetadata,
+          context: extractContext(req, err?.statusCode || 500),
+        });
+      } catch (auditErr) {
+        console.warn(
+          "[audit] appointment.create failure record failed:",
+          auditErr.message,
+        );
+      }
+    }
     next(err);
   }
 }

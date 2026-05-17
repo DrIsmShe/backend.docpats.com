@@ -26,10 +26,25 @@
 // cancelReason that came from req.body). Only structural metadata: ids,
 // timing structure, status string, field names.
 //
-// resourceIdFrom: most routes can read from `params.id`. The CREATE
-// route is special — the new appointment's id only exists after the
-// controller runs, so the controller stashes it on
-// `res.locals.createdAppointmentId` and the resolver picks it up there.
+// resourceIdFrom: most routes can read from `params.id`.
+//
+// EXCEPTION — POST / (create appointment):
+//   The new appointment's id doesn't exist until the service runs, so
+//   resourceIdFrom can't capture it via middleware. Previous attempt
+//   used res.locals.createdAppointmentId + a (req,res)=>... callback,
+//   but auditMiddleware's resolveValue only passes `req` to functions,
+//   so res was always undefined and resourceId stayed null in prod
+//   audit log (see prod warning "[audit] async recordAction failed:
+//   resourceId is required for action clinic.appointment.create").
+//
+//   Fix mirrors clinic.patient.create / clinic.staff.* approach
+//   (commits 6a5be8b6 + e05c6465): auditMiddleware is NOT attached to
+//   the create route. Instead, the controller calls recordActionAsync
+//   directly AFTER service.createAppointment() returns, with the real
+//   appointment._id as resourceId. Failure path also recorded so
+//   denied/broken creates are visible in audit log.
+//
+//   See appointment.controller.js → createAppointmentController.
 
 import express from "express";
 
@@ -66,26 +81,14 @@ router.get(
 
 // ─── CRUD root ────────────────────────────────────────────────
 
-// POST /appointments — create
-router.post(
-  "/",
-  auditMiddleware({
-    resourceType: "clinic-appointment",
-    action: "clinic.appointment.create",
-    // The id doesn't exist on the request — the controller fills
-    // res.locals.createdAppointmentId after the service runs.
-    resourceIdFrom: (req, res) => res?.locals?.createdAppointmentId || null,
-    metaFrom: (req) => ({
-      doctorId: req.body?.doctorId ?? null,
-      patientId: req.body?.patientId ?? null,
-      hasReason: Boolean(req.body?.reason),
-      // Timing is structural metadata, not PHI:
-      startUTC: req.body?.startUTC ?? null,
-      endUTC: req.body?.endUTC ?? null,
-    }),
-  }),
-  createAppointmentController,
-);
+// POST /appointments — create.
+// NO auditMiddleware here — see header comment. Audit is recorded
+// inside controllers/appointment.controller.js → createAppointmentController
+// AFTER the service generates the appointment._id, so resourceId is
+// real instead of null. This closes the prod warning
+// "[audit] async recordAction failed: resourceId is required for
+// action clinic.appointment.create".
+router.post("/", createAppointmentController);
 
 // GET /appointments — list (doctor mode OR patient mode)
 router.get(
