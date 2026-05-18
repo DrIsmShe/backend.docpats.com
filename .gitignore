@@ -3,3 +3,7 @@ node_modules/
 uploads/
 .DS_Store
 npm-debug.log
+
+# Test/migration output logs
+*-out.log
+test-output.log
