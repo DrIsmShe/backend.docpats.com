@@ -28,10 +28,11 @@
 //     trusted from the client.
 //
 // PHI:
-//   reasonEncrypted — patient's reason for visit / chief complaint.
-//   Encrypted at-rest with SURGERY_ENCRYPTION_KEY (AES-256-GCM,
-//   "iv:authTag:ciphertext" hex format) using the project-wide
-//   encrypt/decrypt helpers. Mirrors how ClinicPatient stores its PHI.
+//   reasonEncrypted � patient's reason for visit / chief complaint.
+//   Encrypted at-rest with ENCRYPTION_KEY (AES-256-CBC,
+//   "iv:ciphertext" hex format) via encryptValue/decryptValue imported
+//   from clinicPatient.model.js � single canonical crypto helper
+//   (Sprint Cleanup 17.05.2026, unified across all clinic modules).
 //
 // Multi-tenancy:
 //   tenantScopedPlugin auto-attaches clinicId to all queries — appointments
@@ -154,7 +155,7 @@ const clinicAppointmentSchema = new Schema(
     },
 
     // ─── PHI — reason / chief complaint (encrypted) ───
-    // "iv:authTag:ciphertext" hex via SURGERY_ENCRYPTION_KEY. May be empty
+    // "iv:ciphertext" hex via ENCRYPTION_KEY (CBC). May be empty
     // (the visit reason isn't always recorded at booking).
     reasonEncrypted: {
       type: String,
