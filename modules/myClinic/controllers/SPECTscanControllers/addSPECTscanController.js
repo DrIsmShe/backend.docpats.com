@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import SPECTScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/SPECTScansTemplates/SPECTScan.js";
 import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
 // Функция для безопасного определения fileType
@@ -145,22 +145,28 @@ const addSPECTscanController = async (req, res) => {
     await newSPECTScan.save();
     // 🔄 AI Auto Refresh — очищаем кеш AI summary пациента
     await invalidatePatientAISummary(patient._id);
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_SPECT_SCAN",
-        doctor: doctorId,
-        userId: doctorId,
-        patient: patient._id,
-        patientModel: patientModelName,
+
+    // ── HIPAA Audit (Sprint Cleanup Phase 4) ──────────────────────────
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget.
+    recordActionAsync({
+      userId: doctorId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newSPECTScan._id,
+      metadata: {
         studyType: "SPECTScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error("❌ AuditLog error (SPECTScan):", logErr.message);
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
+
     const saved = await SPECTScan.findById(newSPECTScan._id).populate("files");
 
     return res.status(201).json({

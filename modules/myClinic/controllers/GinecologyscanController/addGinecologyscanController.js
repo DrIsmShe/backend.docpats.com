@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import GinecologyScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/GinecologyTemplates/Ginecology.js";
 import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js"; // путь подгони под свой
+import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
 // 🎯 Безопасное определение типа файла
@@ -147,23 +147,26 @@ const AddGinecologyscanController = async (req, res) => {
 
     await newGinecologyScan.save();
 
-    // 🔍 АУДИТ-ЛОГ (не ломает ответ пользователю, даже если упадёт)
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_GINECOLOGY_SCAN",
-        doctor: doctorId,
-        userId: doctorId,
-        patient: patient._id,
-        patientModel: patientModelName,
+    // 🔍 АУДИТ-ЛОГ (Sprint Cleanup Phase 4)
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget.
+    recordActionAsync({
+      userId: doctorId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newGinecologyScan._id,
+      metadata: {
         studyType: "GinecologyScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error("❌ AuditLog error (Ginecology):", logErr.message);
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
 
     const saved = await GinecologyScan.findById(newGinecologyScan._id).populate(
       "files",

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import PETScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/PETScansTemplates/PETScan.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
 /* ========================== HELPERS ========================== */
@@ -159,24 +159,27 @@ const addPETscanController = async (req, res) => {
     });
     // 🔄 AI Auto Refresh — очищаем кеш AI summary пациента
     await invalidatePatientAISummary(patient._id);
-    /* ================= AUDIT LOG ================= */
 
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_PET_SCAN",
-        doctor: doctorId,
-        userId: doctorId,
-        patient: patient._id,
-        patientModel: patientModelName,
+    /* ================= AUDIT LOG (Sprint Cleanup Phase 4) ================= */
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget.
+    recordActionAsync({
+      userId: doctorId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newPETScan._id,
+      metadata: {
         studyType: "PETScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error("❌ AuditLog error (PETScan):", logErr.message);
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
 
     /* ================= RESPONSE ================= */
 

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import CTScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScan.js";
 import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
 // Функция для безопасного определения fileType
@@ -116,22 +116,31 @@ const addCTscanController = async (req, res) => {
     });
 
     await newCTScan.save();
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_CT_SCAN",
-        doctor: doctorId,
-        userId: doctorId,
-        patient: patient._id,
-        patientModel: patientModelName,
+
+    // ── HIPAA Audit (Sprint Cleanup Phase 4) ──────────────────────────
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget — не блокирует
+    // ответ если запись лога упадёт.
+    // ВНИМАНИЕ: studyType "AngiographyScan" сохранён как был в legacy.
+    // Если это копипаста-баг — поправим отдельным коммитом.
+    recordActionAsync({
+      userId: doctorId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newCTScan._id,
+      metadata: {
         studyType: "AngiographyScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error("❌ AuditLog error (CTScan):", logErr.message);
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
+
     const saved = await CTScan.findById(newCTScan._id).populate("files");
     // 🔄 AI Auto Refresh — очищаем кеш AI summary пациента
     await invalidatePatientAISummary(patient._id);

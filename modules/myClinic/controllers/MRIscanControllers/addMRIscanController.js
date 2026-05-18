@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import MRIScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/MRIScansTemplates/MRIScan.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../../audit/index.js";
 /* ================= MIME → fileType ================= */
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
@@ -148,22 +148,28 @@ const addMRIScanController = async (req, res) => {
     });
 
     await newMRIScan.save();
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_MRI_SCAN",
-        doctor: doctorId,
-        userId: doctorId,
-        patient: patient._id,
-        patientModel: patientModelName,
+
+    // ── HIPAA Audit (Sprint Cleanup Phase 4) ──────────────────────────
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget.
+    recordActionAsync({
+      userId: doctorId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newMRIScan._id,
+      metadata: {
         studyType: "MRIScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error("❌ AuditLog error (MRIScan):", logErr.message);
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
+
     const saved = await MRIScan.findById(newMRIScan._id)
       .populate("doctor", "firstNameEncrypted lastNameEncrypted")
       .populate("files");

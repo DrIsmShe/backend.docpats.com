@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import CoronographyScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/CoronographyscanTemplates/Coronographyscan.js";
 import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
 // Безопасное определение типа файла
@@ -114,23 +114,28 @@ const addCoronographyScanController = async (req, res) => {
     });
 
     await newCoronographyScan.save();
-    // ===== AUDIT LOG =====
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_CORONOGRAPHY_SCAN",
-        doctor: doctorId,
-        userId: doctorId,
-        patient: patient._id,
-        patientModel: patientModelName,
+
+    // ── HIPAA Audit (Sprint Cleanup Phase 4) ──────────────────────────
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget.
+    recordActionAsync({
+      userId: doctorId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newCoronographyScan._id,
+      metadata: {
         studyType: "CoronographyScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error("❌ AuditLog error (CoronographyScan):", logErr.message);
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
+
     const saved = await CoronographyScan.findById(
       newCoronographyScan._id,
     ).populate("files");

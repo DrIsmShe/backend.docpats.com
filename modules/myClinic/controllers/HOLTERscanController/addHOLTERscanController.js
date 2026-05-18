@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import HOLTERScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/HOLTERscanTemplates/HOLTERscan.js";
 import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
 // Функция безопасного определения fileType
@@ -114,22 +114,28 @@ const addHOLTERScanController = async (req, res) => {
     });
 
     await newHOLTERScan.save();
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_HOLTERS_SCAN",
-        doctor: doctorId,
-        userId: doctorId,
-        patient: patient._id,
-        patientModel: patientModelName,
+
+    // ── HIPAA Audit (Sprint Cleanup Phase 4) ──────────────────────────
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget.
+    recordActionAsync({
+      userId: doctorId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newHOLTERScan._id,
+      metadata: {
         studyType: "HOLTERScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error("❌ AuditLog error (HOLTERScan):", logErr.message);
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
+
     const saved = await HOLTERScan.findById(newHOLTERScan._id).populate(
       "files",
     );

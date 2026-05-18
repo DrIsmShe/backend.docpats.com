@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import EchoEKGscan from "../../../../common/models/Polyclinic/ExamenationsTemplates/EchoEKGscanTemplates/EchoEKGscan.js";
 import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
 // 🎯 Утилита для определения допустимого типа файла
@@ -156,24 +156,26 @@ const addEKGScanController = async (req, res) => {
 
     await newEchoEKGscan.save();
 
-    /* ================= AUDIT LOG ================= */
-
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_ECHOEKG_SCAN",
-        doctor: doctorId,
-        userId: doctorId,
-        patient: patient._id,
-        patientModel: patientModelName,
+    /* ================= AUDIT LOG (Sprint Cleanup Phase 4) ================= */
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget.
+    recordActionAsync({
+      userId: doctorId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newEchoEKGscan._id,
+      metadata: {
         studyType: "EchoEKGScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error("❌ AuditLog error (EchoEKGscan):", logErr.message);
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
 
     /* ================= POPULATE RESPONSE ================= */
 

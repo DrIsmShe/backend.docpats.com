@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import USMScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/USMscanTemplates/USMscan.js";
 import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
 // 🔍 MIME → fileType
@@ -169,24 +169,27 @@ const addUSMscanController = async (req, res) => {
     await newUSMScan.save();
     // 🔄 AI Auto Refresh — очищаем кеш AI summary пациента
     await invalidatePatientAISummary(patient._id);
-    /* ================= AUDIT LOG ================= */
 
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_USM_SCAN",
-        doctor: userId,
-        userId: userId,
-        patient: patient._id,
-        patientModel: patientModelName,
+    /* ================= AUDIT LOG (Sprint Cleanup Phase 4) ================= */
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget.
+    recordActionAsync({
+      userId: userId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newUSMScan._id,
+      metadata: {
         studyType: "USMScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error("❌ AuditLog error (USMScan):", logErr.message);
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
 
     /* ================= POPULATE RESPONSE ================= */
 

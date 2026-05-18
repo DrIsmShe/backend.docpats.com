@@ -1,7 +1,7 @@
 import User from "../../../common/models/Auth/users.js";
 import DoctorProfileModel from "../../../common/models/DoctorProfile/profileDoctor.js";
 import PatientProfileModel from "../../../common/models/PatientProfile/patientProfile.js";
-import AuditLog from "../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../audit/index.js";
 import argon2 from "argon2";
 import crypto from "crypto";
 import "dotenv/config";
@@ -117,13 +117,22 @@ export const loginUser = async (req, res) => {
       });
     });
 
-    // === АУДИТ ===
-    await AuditLog.create({
-      action: "Login",
+    // === АУДИТ (Sprint Cleanup Phase 4) ===
+    // Заменяет legacy AuditLog.create() → canonical recordActionAsync()
+    // пишущий в hipaa_audit_logs. Те же данные что и раньше.
+    recordActionAsync({
       userId: user._id,
-      timestamp: new Date(),
-      ip: req.ip || req.connection?.remoteAddress,
-      details: `User ${user.username} logged in successfully.`,
+      actorRole: user.role,
+      action: "auth.login",
+      resourceType: "user-account",
+      resourceId: user._id,
+      metadata: {
+        username: user.username,
+        details: `User ${user.username} logged in successfully.`,
+      },
+      context: {
+        ipAddress: req.ip || req.connection?.remoteAddress,
+      },
     });
 
     // === Ответ ===

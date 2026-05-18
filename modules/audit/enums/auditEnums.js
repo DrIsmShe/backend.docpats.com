@@ -92,6 +92,18 @@ export const ACTION_ENUM = [
   "simulation.plan.delete",
   "simulation.plan.export",
 
+  // ═══════════ EXAMINATIONS (medical scans: CT, MRI, EKG, etc.) ═══════════
+  // Generic actions for all examination types. Specific scan type
+  // (CTScan, MRI, EKG, etc.) goes into metadata.studyType.
+  // Sprint Cleanup Phase 4 — replaces legacy AuditLog.createLog with
+  // "CREATE_X_SCAN" string actions used across 16 myClinic controllers.
+  "examination.create",
+  "examination.read",
+  "examination.list",
+  "examination.update",
+  "examination.delete",
+  "examination.export",
+
   // ═══════════ CONSULTATION ═══════════
   "consultation.create",
   "consultation.read",
@@ -209,6 +221,10 @@ export const RESOURCE_TYPE_ENUM = [
   "anthropometry-photo",
   "anthropometry-annotation",
 
+  // Medical examinations (CT, MRI, EKG, etc.) — concrete scan type
+  // lives in metadata.studyType. Sprint Cleanup Phase 4.
+  "examination",
+
   // Other modules
   "surgical-case",
   "simulation-plan",
@@ -256,6 +272,7 @@ export const OUTCOME_ENUM = ["success", "failure", "denied"];
 
 export default {
   ACTION_ENUM,
+
   RESOURCE_TYPE_ENUM,
   OUTCOME_ENUM,
 };

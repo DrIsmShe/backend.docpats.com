@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import CapsuleEndoscopyScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScan.js";
 import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
 // 🔎 Определение fileType по mimetype
@@ -147,26 +147,28 @@ const addCapsuleEndoscopyScanController = async (req, res) => {
     });
 
     await newCapsuleEndoscopyScan.save();
-    // ===== AUDIT LOG =====
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_CAPSULEENDOSCOPYSCAN_SCAN",
-        doctor: doctorId,
-        userId: doctorId,
-        patient: patient._id,
-        patientModel: patientModelName,
+
+    // ── HIPAA Audit (Sprint Cleanup Phase 4) ──────────────────────────
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget.
+    recordActionAsync({
+      userId: doctorId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newCapsuleEndoscopyScan._id,
+      metadata: {
         studyType: "CapsuleEndoscopyScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error(
-        "❌ AuditLog error (CapsuleEndoscopyScan):",
-        logErr.message,
-      );
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
+
     const saved = await CapsuleEndoscopyScan.findById(
       newCapsuleEndoscopyScan._id,
     ).populate("files");

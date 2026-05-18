@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import XRAYScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/XRayScansTemplates/XRayScan.js";
 import User from "../../../../common/models/Auth/users.js";
-import AuditLog from "../../../../common/models/auditLog.js";
+import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
 
 /* ========================== CONTROLLER ========================== */
@@ -122,24 +122,27 @@ const addXRAYscanController = async (req, res) => {
 
     // 🔄 AI Auto Refresh — очищаем кеш AI summary пациента
     await invalidatePatientAISummary(patient._id);
-    /* ---------- Audit ---------- */
 
-    try {
-      await AuditLog.createLog({
-        action: "CREATE_XRAY_SCAN",
-        doctor: doctorId,
-        userId: doctorId,
-        patient: patient._id,
-        patientModel: patientModelName,
+    /* ---------- Audit (Sprint Cleanup Phase 4) ---------- */
+    // Заменяет legacy AuditLog.createLog. Fire-and-forget.
+    recordActionAsync({
+      userId: doctorId,
+      actorRole: doctor.role,
+      action: "examination.create",
+      resourceType: "examination",
+      resourceId: newXRAYScan._id,
+      metadata: {
         studyType: "XRAYScan",
+        patientId: patient._id?.toString(),
+        patientModel: patientModelName,
+        patientType: isPrivatePatient ? "private" : "registered",
         performedOutsideSpecialization,
         doctorSpecialization: doctorSpecName,
-        ip: req.ip,
-        details: isPrivatePatient ? "Private patient" : "Registered patient",
-      });
-    } catch (logErr) {
-      console.error("❌ AuditLog error (XRAYScan):", logErr.message);
-    }
+      },
+      context: {
+        ipAddress: req.ip,
+      },
+    });
 
     return res.status(201).json({
       message: "✅",
