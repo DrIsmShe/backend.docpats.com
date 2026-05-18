@@ -1,4 +1,11 @@
+// server/modules/communication/messages/message.mapper.js
+//
+// DTO mapper for ChatMessage documents.
+// Decryption of textEncrypted is delegated to safeDecrypt from message.model.js
+// (single canonical helper, Sprint Cleanup 17.05.2026 — unified ENCRYPTION_KEY/CBC).
+
 import mongoose from "mongoose";
+import { safeDecrypt } from "./message.model.js";
 
 export function mapAttachmentToDTO(attachment) {
   if (!attachment) return null;
@@ -16,27 +23,19 @@ export function mapAttachmentToDTO(attachment) {
 }
 
 // ─── Helper: получить читаемый текст из любого формата сообщения ──────────
-// Mongoose document → берём virtual decryptedText
-// Plain object (после toObject() или из mongoose.lean()) → читаем поля сами
+// Mongoose document → берём virtual decryptedText (model сам разшифрует).
+// Plain object (после toObject() или из mongoose.lean()) → virtual не работает,
+// используем safeDecrypt напрямую (импорт сверху файла).
 function extractText(msg) {
   // Если это mongoose document с virtual — он сам решит
   if (typeof msg.decryptedText !== "undefined") {
     return msg.decryptedText;
   }
-  // Plain object (из .lean() или после toObject)
+  // Plain object — virtual не доступен, дешифруем напрямую
   if (msg.textEncrypted) {
-    // На lean-объекте virtual не работает — используем safeDecrypt напрямую
-    // Импортируем lazy чтобы избежать циклической зависимости через model
-    try {
-      // eslint-disable-next-line global-require
-      const {
-        safeDecrypt,
-      } = require("../../simulation/services/encryption.service.js");
-      return safeDecrypt(msg.textEncrypted, "");
-    } catch {
-      return "";
-    }
+    return safeDecrypt(msg.textEncrypted, "");
   }
+  // Legacy plain text (до миграции на encrypted)
   return msg.text ?? null;
 }
 
