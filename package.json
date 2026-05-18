@@ -17,9 +17,6 @@
     "http://localhost:3000",
     "http://localhost:3001"
   ],
-  "overrides": {
-    "@anthropic-ai/sdk": "0.82.0"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
