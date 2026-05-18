@@ -247,7 +247,7 @@ describe("createAppointment — happy paths", () => {
     const raw = await ClinicAppointment.collection.findOne({});
     // Raw doc has the encrypted blob, not the plaintext reason.
     expect(raw.reasonEncrypted).toBeDefined();
-    expect(raw.reasonEncrypted).toMatch(/^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$/);
+    expect(raw.reasonEncrypted).toMatch(/^[a-f0-9]+:[a-f0-9]+$/);
     expect(raw.reason).toBeUndefined();
   });
 
@@ -1187,3 +1187,4 @@ describe("listAppointments — patient mode", () => {
     expect(String(res.items[0].patientId)).toBe(String(patientId));
   });
 });
+

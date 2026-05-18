@@ -2,13 +2,15 @@
 //
 // Patient record owned by a clinic.
 //
-// Encryption strategy:
-//   - PHI fields (firstName, lastName, phone, email) are encrypted at rest
-//     using SURGERY_ENCRYPTION_KEY (canonical 32-byte AES-256-GCM key).
-//   - We additionally store SHA-256 hashes of phone and email to enable
+// Encryption strategy (unified with rest of DocPats — Sprint Cleanup 17.05.2026):
+//   - PHI fields (firstName, lastName, phone, email, notes) are encrypted
+//     at rest using ENCRYPTION_KEY (legacy 16-byte key padded to 32 bytes,
+//     AES-256-CBC). Same algorithm as User model, clinicEmployee, etc.
+//   - Storage format: "iv:ciphertext" (all hex, 2 parts).
+//   - We additionally store SHA-256 HMAC hashes of phone and email to enable
 //     deterministic equality search WITHOUT decrypting every record
-//     (blind index pattern). Hashes are pepper'd with the same encryption
-//     key so they're not vulnerable to rainbow tables.
+//     (blind index pattern). HMAC pepper = same ENCRYPTION_KEY (32 bytes
+//     padded). Same input ALWAYS produces same hash.
 //   - First/last name are NOT hashed — search by name does decrypt-then-
 //     filter inside the clinic scope (small N, acceptable).
 //
@@ -24,49 +26,50 @@ const { Schema } = mongoose;
 
 // ─── Crypto helpers ────────────────────────────────────────────────────
 
-const ALGO = "aes-256-gcm";
-const KEY_HEX = process.env.SURGERY_ENCRYPTION_KEY;
+const ALGO = "aes-256-cbc";
+const RAW_KEY = process.env.ENCRYPTION_KEY || "";
 
-if (!KEY_HEX || KEY_HEX.length !== 64) {
+if (!RAW_KEY) {
   // Defensive: catch misconfiguration at boot, not at first patient create.
   throw new Error(
-    "[clinicPatient.model] SURGERY_ENCRYPTION_KEY must be 64 hex chars (32 bytes)",
+    "[clinicPatient.model] ENCRYPTION_KEY must be set in environment",
   );
 }
-const KEY = Buffer.from(KEY_HEX, "hex");
+
+// Pad/truncate to exactly 32 bytes — same approach as User model
+// (consistency across the codebase: ENCRYPTION_KEY may be 16 chars in
+// .env, padded to 32 for AES-256-CBC).
+const KEY = Buffer.from(RAW_KEY.padEnd(32, "0").slice(0, 32), "utf8");
 
 /**
- * Encrypt a string to "iv:authTag:ciphertext" (all hex).
+ * Encrypt a string to "iv:ciphertext" (all hex).
  * Returns null for null/undefined/empty input — never throws on absence.
  */
 export function encryptValue(plain) {
   if (plain === null || plain === undefined || plain === "") return null;
-  const iv = crypto.randomBytes(12);
+  const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(ALGO, KEY, iv);
   const enc = Buffer.concat([
     cipher.update(String(plain), "utf8"),
     cipher.final(),
   ]);
-  const authTag = cipher.getAuthTag();
-  return `${iv.toString("hex")}:${authTag.toString("hex")}:${enc.toString("hex")}`;
+  return `${iv.toString("hex")}:${enc.toString("hex")}`;
 }
 
 /**
- * Decrypt "iv:authTag:ciphertext" back to plaintext.
+ * Decrypt "iv:ciphertext" back to plaintext.
  * Returns null for null/undefined/malformed input — never throws (caller
  * decides what to do with null).
  */
 export function decryptValue(payload) {
   if (!payload || typeof payload !== "string") return null;
   const parts = payload.split(":");
-  if (parts.length !== 3) return null;
+  if (parts.length !== 2) return null;
   try {
-    const [ivHex, tagHex, dataHex] = parts;
+    const [ivHex, dataHex] = parts;
     const iv = Buffer.from(ivHex, "hex");
-    const authTag = Buffer.from(tagHex, "hex");
     const data = Buffer.from(dataHex, "hex");
     const decipher = crypto.createDecipheriv(ALGO, KEY, iv);
-    decipher.setAuthTag(authTag);
     const dec = Buffer.concat([decipher.update(data), decipher.final()]);
     return dec.toString("utf8");
   } catch {
@@ -75,7 +78,7 @@ export function decryptValue(payload) {
 }
 
 /**
- * Deterministic SHA-256 hash with the encryption key as pepper.
+ * Deterministic HMAC-SHA256 hash with the encryption key as pepper.
  * Used for blind-index search on phone/email — same input ALWAYS produces
  * same hash, so we can do exact-match queries without decrypting all records.
  *
@@ -191,9 +194,6 @@ clinicPatientSchema.virtual("notes").get(function () {
   return decryptValue(this.notesEncrypted);
 });
 
-clinicPatientSchema.set("toJSON", { virtuals: true });
-clinicPatientSchema.set("toObject", { virtuals: true });
-
 // ─── Hide encrypted fields from JSON output ──────────────────────────
 //
 // Without this, API responses would include both `firstName` (virtual,
@@ -213,6 +213,7 @@ clinicPatientSchema.set("toJSON", {
     return ret;
   },
 });
+clinicPatientSchema.set("toObject", { virtuals: true });
 
 // ─── Model export (safe for hot reload / multiple imports) ──────────
 
