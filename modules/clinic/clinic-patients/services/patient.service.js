@@ -27,6 +27,22 @@
 //          Frontend needs createdByName to render the audit trail. We
 //          DO enrich on these paths. (17 May 2026 fix — previously
 //          showed "Unknown" / "Неизвестно" after link/unlink in the UI.)
+//
+//   6. CROSS-CLINIC DEDUP (22 May 2026) — createPatient now checks the
+//      global User collection by email BEFORE creating anything new.
+//      Three resulting cases:
+//        (a) Found active User (real registered patient with their own
+//            email/password): link ClinicPatient to it, NO card issued.
+//            Requires patientConsentConfirmed=true on input.
+//        (b) Found provisional User (unactivated card from any clinic):
+//            reissue credentials (new tmp email + password + extended
+//            expiry), update/create ClinicPatient with linkedUserId,
+//            issue new card. Requires patientConsentConfirmed=true.
+//        (c) No User found: existing path — create User + ClinicPatient
+//            from scratch (or just ClinicPatient if createProvisionalUser
+//            is false).
+//      Without consent, (a) and (b) return 409 with the found user's
+//      identity in details, prompting UI to show a consent modal.
 
 import ClinicPatient, {
   encryptValue,
@@ -45,7 +61,14 @@ import {
   getCurrentUserId,
   getCurrentActorType,
 } from "../../../../common/context/tenantContext.js";
+import {
+  createProvisionalUser as createProvisionalUserSvc,
+  reissueProvisionalCredentials as reissueProvisionalCredentialsSvc,
+  findExistingUserByContact as findExistingUserByContactSvc,
+  wipeProvisionalUser,
+} from "./provisional.service.js";
 import { require as requirePerm } from "../../../../common/auth/can.js";
+import auditService from "../../../audit/services/audit.service.js";
 import logger from "../../../../common/logger.js";
 
 const log = logger.child({ module: "clinic-patients/service" });
@@ -209,6 +232,55 @@ async function enrichWithCreatedByName(docs) {
 }
 
 // ─── createPatient ────────────────────────────────────────────────────
+//
+// Creates a ClinicPatient record. Now handles four flow branches
+// (22 May 2026 — cross-clinic dedup):
+//
+//   CASE A — phone/email duplicate WITHIN this clinic
+//     → 409 ConflictError(code=patient_duplicate_in_clinic, existingPatientId)
+//     → UI opens existing patient detail page.
+//
+//   CASE B — email matches an ACTIVE User account globally
+//     (user.isProvisional === false)
+//     → If !patientConsentConfirmed:
+//         409 ConflictError(code=user_exists_active_consent_required,
+//                            existingUser: {firstName, lastName, dateOfBirth})
+//     → If patientConsentConfirmed:
+//         - If ClinicPatient already linked to this user in this clinic:
+//             409 ConflictError(code=already_linked_here, existingPatientId)
+//         - Else: create ClinicPatient with linkedUserId, NO provisional,
+//             NO card. Returns { patient }.
+//
+//   CASE C — email matches a PROVISIONAL User (unactivated card from any clinic)
+//     (user.isProvisional === true)
+//     → If !patientConsentConfirmed:
+//         409 ConflictError(code=user_exists_provisional_consent_required,
+//                            existingUser: {firstName, lastName, dateOfBirth},
+//                            originalClinicId, originalIssuedAt)
+//     → If patientConsentConfirmed:
+//         - Call reissueProvisionalCredentials() → new tmp email + password +
+//             extended expiry, audit "user.provisional.reissued"
+//         - If ClinicPatient in this clinic already exists with linkedUserId
+//             pointing to this user: update its contact info (Case C3a)
+//         - Else: create new ClinicPatient with linkedUserId (Case C3b)
+//         - Returns { patient, provisionalCredentials } — new card issued
+//
+//   CASE D — no existing User by this email (or no email given at all)
+//     → Existing path:
+//         - If createProvisionalUser=true: createProvisionalUser() then
+//             create ClinicPatient with linkedUserId. Returns
+//             { patient, provisionalCredentials }.
+//         - Else: just create ClinicPatient. Returns the raw patient
+//             (legacy shape).
+//
+// Return shape:
+//   Legacy callers (createProvisionalUser=false or absent, no dedup hit)
+//   get the same raw patient object as before — UI-side destructuring
+//   keeps working.
+//   New callers (provisional flow OR Case C reissue) get
+//   { patient, provisionalCredentials }.
+//   Case B success returns { patient } (no credentials — patient already
+//   has their own).
 
 export async function createPatient(input) {
   requirePerm("patient", "write");
@@ -219,35 +291,445 @@ export async function createPatient(input) {
   const normalizedPhone = normalizePhone(input.phone);
   const normalizedEmail = input.email ? input.email.trim().toLowerCase() : null;
 
-  // Optional duplicate check: same phone within the same clinic
+  // ─── CASE A.1 — phone duplicate in this clinic ─────────────────────
   if (normalizedPhone) {
     const phoneHash = hashValue(normalizedPhone);
     const dup = await ClinicPatient.findOne({ phoneHash }).lean();
     if (dup) {
       throw new ConflictError("Patient with this phone already exists", {
+        code: "patient_duplicate_in_clinic",
         existingPatientId: String(dup._id),
+        matchedField: "phone",
       });
     }
   }
 
-  const doc = await ClinicPatient.create({
-    clinicId, // tenantScoped plugin will also enforce this on writes
-    firstNameEncrypted: encryptValue(input.firstName),
-    lastNameEncrypted: encryptValue(input.lastName),
-    phoneEncrypted: normalizedPhone ? encryptValue(normalizedPhone) : null,
-    emailEncrypted: normalizedEmail ? encryptValue(normalizedEmail) : null,
-    phoneHash: normalizedPhone ? hashValue(normalizedPhone) : null,
-    emailHash: normalizedEmail ? hashValue(normalizedEmail) : null,
-    dateOfBirth: input.dateOfBirth || null,
-    gender: input.gender || null,
-    notesEncrypted: input.notes ? encryptValue(input.notes) : null,
-    createdBy: userId,
-    createdByType: actorType,
-  });
+  // ─── CASE A.2 — email duplicate in this clinic ─────────────────────
+  // Symmetric with phone — new in May 2026. Previously only phone was
+  // checked, allowing receptionists to create multiple cards for the
+  // same email by accident.
+  if (normalizedEmail) {
+    const emailHash = hashValue(normalizedEmail);
+    const dup = await ClinicPatient.findOne({ emailHash }).lean();
+    if (dup) {
+      throw new ConflictError("Patient with this email already exists", {
+        code: "patient_duplicate_in_clinic",
+        existingPatientId: String(dup._id),
+        matchedField: "email",
+      });
+    }
+  }
+
+  // ─── CASE B/C — global User dedup by email ─────────────────────────
+  // Only triggered when an email is provided. Phone-based global dedup
+  // isn't supported (User model has no phone blind index).
+  let existingUserMatch = null;
+  if (normalizedEmail) {
+    existingUserMatch = await findExistingUserByContactSvc({
+      email: normalizedEmail,
+    });
+  }
+
+  // ─── CASE B — found ACTIVE user globally ───────────────────────────
+  if (existingUserMatch?.status === "active") {
+    const existingUser = existingUserMatch.user;
+
+    if (!input.patientConsentConfirmed) {
+      // Audit the consent-required denial — every PHI lookup leaves a trail.
+      // The receptionist gets the existing user's identity (firstName,
+      // lastName, dateOfBirth) in the 409 details to verify against the
+      // physical patient. Audit records "we surfaced PHI to clinic X about
+      // user Y" so misuse can be detected later.
+      try {
+        auditService.recordActionAsync({
+          actor: { userId, role: actorType === "employee" ? "employee" : null },
+          action: "clinic.patient.lookup_consent_required",
+          resourceType: "user-account",
+          resourceId: String(existingUser._id),
+          outcome: "denied",
+          metadata: {
+            scenario: "active_user_found",
+            clinicId: String(clinicId),
+            // we do NOT log email here — it's already in actor's request
+            // body and audit chain. Logging again multiplies PHI exposure.
+          },
+          context: null,
+        });
+      } catch (auditErr) {
+        log.warn(
+          { err: auditErr.message },
+          "Failed to audit consent_required for active user lookup",
+        );
+      }
+
+      throw new ConflictError("Patient is already registered in DocPats", {
+        code: "user_exists_active_consent_required",
+        requiresConsent: true,
+        existingUser: {
+          // Decrypted on read — firstName/lastName virtuals don't fire on
+          // .lean(), so we decrypt explicitly from the lean doc.
+          firstName: decryptValueFromUser(existingUser.firstNameEncrypted),
+          lastName: decryptValueFromUser(existingUser.lastNameEncrypted),
+          dateOfBirth: existingUser.dateOfBirth || null,
+        },
+      });
+    }
+
+    // Consent confirmed → link path.
+    // Sub-case: do we already have a ClinicPatient pointing to this user
+    // in this clinic? If yes — surface as conflict so receptionist can
+    // open the existing card instead of duplicating.
+    const alreadyLinked = await ClinicPatient.findOne({
+      linkedUserId: existingUser._id,
+    }).lean();
+    if (alreadyLinked) {
+      throw new ConflictError(
+        "This patient is already registered in your clinic",
+        {
+          code: "already_linked_here",
+          existingPatientId: String(alreadyLinked._id),
+        },
+      );
+    }
+
+    // Create ClinicPatient linked to the existing User. No provisional,
+    // no card — the user already has their own credentials.
+    let doc;
+    try {
+      doc = await ClinicPatient.create({
+        clinicId,
+        firstNameEncrypted: encryptValue(input.firstName),
+        lastNameEncrypted: encryptValue(input.lastName),
+        phoneEncrypted: normalizedPhone ? encryptValue(normalizedPhone) : null,
+        emailEncrypted: normalizedEmail ? encryptValue(normalizedEmail) : null,
+        phoneHash: normalizedPhone ? hashValue(normalizedPhone) : null,
+        emailHash: normalizedEmail ? hashValue(normalizedEmail) : null,
+        dateOfBirth: input.dateOfBirth || null,
+        gender: input.gender || null,
+        notesEncrypted: input.notes ? encryptValue(input.notes) : null,
+        linkedUserId: existingUser._id,
+        createdBy: userId,
+        createdByType: actorType,
+      });
+    } catch (err) {
+      // No provisional was created — no compensation needed.
+      throw err;
+    }
+
+    log.info(
+      {
+        patientId: String(doc._id),
+        clinicId: String(clinicId),
+        linkedUserId: String(existingUser._id),
+        scenario: "active_user_linked_with_consent",
+      },
+      "Patient created and linked to existing active User with consent",
+    );
+
+    // Audit: this is the consent-confirmed sister of the deny above.
+    try {
+      auditService.recordActionAsync({
+        actor: { userId, role: actorType === "employee" ? "employee" : null },
+        action: "clinic.patient.linked_with_consent",
+        resourceType: "clinic-patient",
+        resourceId: String(doc._id),
+        outcome: "success",
+        metadata: {
+          linkedUserId: String(existingUser._id),
+          userIsActive: true,
+          clinicId: String(clinicId),
+        },
+        context: null,
+      });
+    } catch (auditErr) {
+      log.warn(
+        { err: auditErr.message },
+        "Failed to audit linked_with_consent for active user",
+      );
+    }
+
+    eventBus.emitSafe(EVENTS.PATIENT_CREATED, {
+      patientId: String(doc._id),
+      clinicId: String(clinicId),
+      createdBy: String(userId),
+      createdByType: actorType,
+      linkedUserId: String(existingUser._id),
+    });
+
+    return toApiShape(doc.toObject());
+  }
+
+  // ─── CASE C — found PROVISIONAL user globally ──────────────────────
+  if (existingUserMatch?.status === "provisional") {
+    const existingUser = existingUserMatch.user;
+
+    if (!input.patientConsentConfirmed) {
+      try {
+        auditService.recordActionAsync({
+          actor: { userId, role: actorType === "employee" ? "employee" : null },
+          action: "clinic.patient.lookup_consent_required",
+          resourceType: "user-account",
+          resourceId: String(existingUser._id),
+          outcome: "denied",
+          metadata: {
+            scenario: "provisional_user_found",
+            clinicId: String(clinicId),
+            originalClinicId: existingUser.provisionalCreatedBy
+              ? String(existingUser.provisionalCreatedBy)
+              : null,
+          },
+          context: null,
+        });
+      } catch (auditErr) {
+        log.warn(
+          { err: auditErr.message },
+          "Failed to audit consent_required for provisional user lookup",
+        );
+      }
+
+      throw new ConflictError(
+        "Patient has an unactivated card from another clinic",
+        {
+          code: "user_exists_provisional_consent_required",
+          requiresConsent: true,
+          existingUser: {
+            firstName: decryptValueFromUser(existingUser.firstNameEncrypted),
+            lastName: decryptValueFromUser(existingUser.lastNameEncrypted),
+            dateOfBirth: existingUser.dateOfBirth || null,
+          },
+          originalClinicId: existingUser.provisionalCreatedBy
+            ? String(existingUser.provisionalCreatedBy)
+            : null,
+          originalIssuedAt: existingUser.provisionalCreatedAt || null,
+          reissueCount: Array.isArray(existingUser.reissueHistory)
+            ? existingUser.reissueHistory.length
+            : 0,
+        },
+      );
+    }
+
+    // Consent confirmed → reissue path.
+    // dateOfBirth is required for reissue same as for fresh provisional
+    // (model invariant). If receptionist somehow submitted without it,
+    // fail explicitly.
+    if (!input.dateOfBirth) {
+      throw new ConflictError(
+        "dateOfBirth is required to reissue a provisional card",
+        { code: "dob_required_for_reissue", field: "dateOfBirth" },
+      );
+    }
+
+    const reissueResult = await reissueProvisionalCredentialsSvc({
+      userId: String(existingUser._id),
+      clinicId,
+      reissuedBy: userId,
+      reissuedByType: actorType,
+      contactEmail: normalizedEmail,
+    });
+
+    // Now — do we already have a ClinicPatient in this clinic linked to
+    // this user (Case C3a)? Or do we need to create one (Case C3b)?
+    let patientDoc;
+    const existingInClinic = await ClinicPatient.findOne({
+      linkedUserId: existingUser._id,
+    });
+
+    if (existingInClinic) {
+      // Case C3a — already in this clinic. Update contact info from the
+      // new input (clinic may have learned a better phone/email since
+      // last visit). Medical records on this patient stay attached.
+      existingInClinic.firstNameEncrypted = encryptValue(input.firstName);
+      existingInClinic.lastNameEncrypted = encryptValue(input.lastName);
+      if (normalizedPhone) {
+        existingInClinic.phoneEncrypted = encryptValue(normalizedPhone);
+        existingInClinic.phoneHash = hashValue(normalizedPhone);
+      }
+      if (normalizedEmail) {
+        existingInClinic.emailEncrypted = encryptValue(normalizedEmail);
+        existingInClinic.emailHash = hashValue(normalizedEmail);
+      }
+      if (input.dateOfBirth) existingInClinic.dateOfBirth = input.dateOfBirth;
+      if (input.gender) existingInClinic.gender = input.gender;
+      if (input.notes !== undefined) {
+        existingInClinic.notesEncrypted = input.notes
+          ? encryptValue(input.notes)
+          : null;
+      }
+      existingInClinic.lastUpdatedBy = userId;
+      await existingInClinic.save();
+      patientDoc = existingInClinic;
+
+      log.info(
+        {
+          patientId: String(patientDoc._id),
+          clinicId: String(clinicId),
+          linkedUserId: String(existingUser._id),
+          scenario: "provisional_reissue_existing_clinic_patient",
+        },
+        "ClinicPatient contact info updated during provisional reissue (Case C3a)",
+      );
+    } else {
+      // Case C3b — patient is provisional from another clinic, now first
+      // visit to this clinic. Create a fresh ClinicPatient linked to
+      // the same User._id.
+      patientDoc = await ClinicPatient.create({
+        clinicId,
+        firstNameEncrypted: encryptValue(input.firstName),
+        lastNameEncrypted: encryptValue(input.lastName),
+        phoneEncrypted: normalizedPhone ? encryptValue(normalizedPhone) : null,
+        emailEncrypted: normalizedEmail ? encryptValue(normalizedEmail) : null,
+        phoneHash: normalizedPhone ? hashValue(normalizedPhone) : null,
+        emailHash: normalizedEmail ? hashValue(normalizedEmail) : null,
+        dateOfBirth: input.dateOfBirth || null,
+        gender: input.gender || null,
+        notesEncrypted: input.notes ? encryptValue(input.notes) : null,
+        linkedUserId: existingUser._id,
+        createdBy: userId,
+        createdByType: actorType,
+      });
+
+      log.info(
+        {
+          patientId: String(patientDoc._id),
+          clinicId: String(clinicId),
+          linkedUserId: String(existingUser._id),
+          scenario: "provisional_reissue_new_clinic_patient",
+        },
+        "ClinicPatient created during cross-clinic provisional reissue (Case C3b)",
+      );
+    }
+
+    // Audit at the patient level (the user-side audit is already emitted
+    // by provisional.service.reissueProvisionalCredentials).
+    try {
+      auditService.recordActionAsync({
+        actor: { userId, role: actorType === "employee" ? "employee" : null },
+        action: "clinic.patient.reissued_existing_user",
+        resourceType: "clinic-patient",
+        resourceId: String(patientDoc._id),
+        outcome: "success",
+        metadata: {
+          linkedUserId: String(existingUser._id),
+          clinicId: String(clinicId),
+          scenario: existingInClinic
+            ? "existing_clinic_patient_updated"
+            : "new_clinic_patient_created",
+          originalClinicId: existingUser.provisionalCreatedBy
+            ? String(existingUser.provisionalCreatedBy)
+            : null,
+        },
+        context: null,
+      });
+    } catch (auditErr) {
+      log.warn(
+        { err: auditErr.message },
+        "Failed to audit reissued_existing_user",
+      );
+    }
+
+    eventBus.emitSafe(EVENTS.PATIENT_CREATED, {
+      patientId: String(patientDoc._id),
+      clinicId: String(clinicId),
+      createdBy: String(userId),
+      createdByType: actorType,
+      linkedUserId: String(existingUser._id),
+    });
+
+    return {
+      patient: toApiShape(patientDoc.toObject()),
+      provisionalCredentials: {
+        tmpEmail: reissueResult.tmpEmail,
+        tempPassword: reissueResult.tempPassword,
+        userId: String(reissueResult.user._id),
+        expiresAt: reissueResult.user.provisionalExpiresAt,
+      },
+    };
+  }
+
+  // ─── CASE D — no existing User globally ────────────────────────────
+  // Existing code path: if flagged, create a fresh provisional User, then
+  // create the ClinicPatient. Order matters — User._id is needed for
+  // linkedUserId before ClinicPatient save.
+  let provisionalResult = null;
+  if (input.createProvisionalUser === true) {
+    if (!input.dateOfBirth) {
+      throw new ConflictError(
+        "dateOfBirth is required to create a provisional account",
+        { field: "dateOfBirth" },
+      );
+    }
+    provisionalResult = await createProvisionalUserSvc({
+      clinicId,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      dateOfBirth: input.dateOfBirth,
+      gender: input.gender,
+      phone: normalizedPhone,
+      contactEmail: normalizedEmail,
+    });
+    log.info(
+      {
+        provisionalUserId: String(provisionalResult.user._id),
+        clinicId: String(clinicId),
+        cardEmailRequested: Boolean(normalizedEmail),
+      },
+      "Provisional user created — proceeding to ClinicPatient (Case D)",
+    );
+  }
+
+  // Create the ClinicPatient. If we created a provisional, link to it
+  // immediately. If the create fails, wipe the orphan provisional user.
+  let doc;
+  try {
+    doc = await ClinicPatient.create({
+      clinicId,
+      firstNameEncrypted: encryptValue(input.firstName),
+      lastNameEncrypted: encryptValue(input.lastName),
+      phoneEncrypted: normalizedPhone ? encryptValue(normalizedPhone) : null,
+      emailEncrypted: normalizedEmail ? encryptValue(normalizedEmail) : null,
+      phoneHash: normalizedPhone ? hashValue(normalizedPhone) : null,
+      emailHash: normalizedEmail ? hashValue(normalizedEmail) : null,
+      dateOfBirth: input.dateOfBirth || null,
+      gender: input.gender || null,
+      notesEncrypted: input.notes ? encryptValue(input.notes) : null,
+      linkedUserId: provisionalResult ? provisionalResult.user._id : null,
+      createdBy: userId,
+      createdByType: actorType,
+    });
+  } catch (err) {
+    if (provisionalResult?.user?._id) {
+      log.error(
+        {
+          provisionalUserId: String(provisionalResult.user._id),
+          err: err.message,
+        },
+        "ClinicPatient creation failed — wiping orphan provisional User",
+      );
+      try {
+        await wipeProvisionalUser(
+          String(provisionalResult.user._id),
+          "wiped_by_clinic",
+        );
+      } catch (wipeErr) {
+        log.error(
+          {
+            provisionalUserId: String(provisionalResult.user._id),
+            wipeErr: wipeErr.message,
+          },
+          "Failed to wipe orphan provisional User — manual cleanup needed",
+        );
+      }
+    }
+    throw err;
+  }
 
   log.info(
-    { patientId: String(doc._id), clinicId: String(clinicId) },
-    "Patient created",
+    {
+      patientId: String(doc._id),
+      clinicId: String(clinicId),
+      hasProvisional: Boolean(provisionalResult),
+    },
+    "Patient created (Case D)",
   );
 
   eventBus.emitSafe(EVENTS.PATIENT_CREATED, {
@@ -255,11 +737,47 @@ export async function createPatient(input) {
     clinicId: String(clinicId),
     createdBy: String(userId),
     createdByType: actorType,
+    linkedUserId: provisionalResult ? String(provisionalResult.user._id) : null,
   });
 
-  // Return decrypted shape; doc.toObject() would also work but lean is
-  // consistent with the rest of the service (and faster).
-  return toApiShape(doc.toObject());
+  const patientShape = toApiShape(doc.toObject());
+
+  if (provisionalResult) {
+    return {
+      patient: patientShape,
+      provisionalCredentials: {
+        tmpEmail: provisionalResult.tmpEmail,
+        tempPassword: provisionalResult.tempPassword,
+        userId: String(provisionalResult.user._id),
+        expiresAt: provisionalResult.user.provisionalExpiresAt,
+      },
+    };
+  }
+
+  // Legacy callers — return the raw patient object (unchanged shape).
+  return patientShape;
+}
+
+// ─── helper for decrypting User PII ───────────────────────────────────
+//
+// User and ClinicPatient happen to use the same AES-256-CBC algorithm
+// with the same ENCRYPTION_KEY (padded to 32 bytes). The ciphertext
+// format is identical: "ivHex:dataHex". So we can decrypt User-side
+// PII (firstNameEncrypted etc.) by feeding it into ClinicPatient's
+// decryptValue() — no need to import a separate decrypt helper from
+// users.js.
+//
+// If User's encryption ever diverges from ClinicPatient's (different
+// key, different algo, different format), this helper must be updated
+// to use the User-side decrypt directly.
+
+function decryptValueFromUser(payload) {
+  if (!payload) return null;
+  try {
+    return decryptValue(payload);
+  } catch {
+    return null;
+  }
 }
 
 // ─── listPatients ─────────────────────────────────────────────────────
@@ -486,8 +1004,6 @@ export async function searchPatients(query) {
   let nameMatches = [];
   if (lastName) {
     const needle = lastName.trim().toLowerCase();
-    // Scan up to LAST_NAME_SCAN_CAP records. Bias toward recent patients
-    // (createdAt DESC) so newly-added are findable instantly.
     const candidates = await ClinicPatient.find()
       .select(
         "_id clinicId firstNameEncrypted lastNameEncrypted phoneEncrypted emailEncrypted dateOfBirth gender linkedUserId createdAt updatedAt createdBy createdByType lastVisitAt",
@@ -507,7 +1023,7 @@ export async function searchPatients(query) {
     }
   }
 
-  // De-duplicate by _id (a patient could match both phone AND lastName)
+  // De-duplicate by _id
   const seen = new Set();
   const deduped = [];
   for (const doc of [...exactMatches, ...nameMatches]) {
@@ -525,16 +1041,6 @@ export async function searchPatients(query) {
 }
 
 // ─── linkToUser ───────────────────────────────────────────────────────
-//
-// Connects this ClinicPatient record to an existing DocPats User account.
-// Idempotent: linking the same user twice is fine.
-// Re-linking to a different user requires explicit unlink first
-// (we throw ConflictError to force a deliberate action).
-//
-// Response includes `createdByName` (resolved via enrichWithCreatedByName)
-// because the linker is often a different person from the original creator
-// (e.g. receptionist created → admin linked). Without enrichment the
-// frontend would show "Unknown" for the createdBy actor. (17 May 2026)
 
 export async function linkToUser(id, userId) {
   requirePerm("patient", "write");
@@ -546,8 +1052,6 @@ export async function linkToUser(id, userId) {
 
   if (patient.linkedUserId) {
     if (String(patient.linkedUserId) === String(userId)) {
-      // No-op: already linked to this user. Still enrich so the response
-      // shape is consistent with the linked-this-time path.
       const [enriched] = await enrichWithCreatedByName([patient.toObject()]);
       return toApiShape(enriched);
     }
@@ -557,7 +1061,6 @@ export async function linkToUser(id, userId) {
     );
   }
 
-  // Lazy import User to avoid circular dependency with auth module
   const User = (await import("../../../../common/models/Auth/users.js"))
     .default;
   const userExists = await User.exists({ _id: userId });
@@ -585,16 +1088,11 @@ export async function linkToUser(id, userId) {
     linkedBy: String(actorId),
   });
 
-  // Enrich BEFORE shaping — frontend depends on createdByName to render
-  // the audit trail in the patient detail view.
   const [enriched] = await enrichWithCreatedByName([patient.toObject()]);
   return toApiShape(enriched);
 }
 
 // ─── unlinkFromUser ───────────────────────────────────────────────────
-//
-// Same enrichment rationale as linkToUser — the unlinker may be a
-// different person from the creator.
 
 export async function unlinkFromUser(id) {
   requirePerm("patient", "write");
@@ -605,7 +1103,6 @@ export async function unlinkFromUser(id) {
   if (!patient) throw new NotFoundError("Patient");
 
   if (!patient.linkedUserId) {
-    // no-op — still enrich for response-shape consistency
     const [enriched] = await enrichWithCreatedByName([patient.toObject()]);
     return toApiShape(enriched);
   }
@@ -625,38 +1122,6 @@ export async function unlinkFromUser(id) {
 }
 
 // ─── searchUsersForLink ───────────────────────────────────────────────
-//
-// Search DocPats User accounts to link a ClinicPatient to. Used by the
-// "Link to user" UI on the patient detail page.
-//
-// Two independent modes (cannot be combined):
-//
-//   mode "email" — exact match via emailHash blind index.
-//     User enters the full email. We hash it the SAME way the User
-//     model does (sha256 of trim+lowercase) and do an O(1) indexed
-//     lookup. Scales to millions of users.
-//
-//   mode "dob" — date-of-birth + name filter.
-//     User enters the full date of birth + first/last name. We query
-//     User.find({ dateOfBirth }) which hits the new dateOfBirth index
-//     and statistically returns only a few dozen people. Then we
-//     decrypt firstName/lastName ONLY on that narrow set and filter
-//     in memory (case-insensitive, prefix match). This is why it does
-//     not collapse at 1M users — the expensive decrypt runs on dozens,
-//     not millions.
-//
-// Why we don't do partial-name search globally: User names are
-// sha256-hashed (one-way, exact-match only) and there's no searchable
-// token field. Decrypt-then-filter across the WHOLE users collection
-// would not scale. The dateOfBirth pre-filter is what makes name
-// matching affordable.
-//
-// PHI note: this is a PHI operation (searching by DOB + name). The
-// route is permission-gated (patient.write) and audited.
-//
-// Returns: array of { _id, firstName, lastName, email, avatar, role,
-//                     dateOfBirth, username } — decrypted, display-ready.
-//          Excludes soft-deleted users. Capped at DOB_SCAN_CAP.
 
 const DOB_SCAN_CAP = 200;
 const USER_SEARCH_RESULT_LIMIT = 25;
@@ -667,7 +1132,6 @@ export async function searchUsersForLink(query) {
 
   const { mode } = query;
 
-  // Lazy import — same pattern as linkToUser / enrichWithCreatedByName
   const User = (await import("../../../../common/models/Auth/users.js"))
     .default;
   const { decrypt: decryptUser } =
@@ -686,7 +1150,6 @@ export async function searchUsersForLink(query) {
     }
   };
 
-  // Shape a raw lean User doc into a safe, decrypted result object.
   const toUserResult = (u) => ({
     _id: String(u._id),
     firstName: safeDecrypt(u.firstNameEncrypted),
@@ -701,7 +1164,6 @@ export async function searchUsersForLink(query) {
   const selectFields =
     "_id firstNameEncrypted lastNameEncrypted emailEncrypted avatar role username dateOfBirth isDeleted";
 
-  // ─── Mode: email (exact, O(1) via blind index) ───
   if (mode === "email") {
     const raw = query.email;
     if (!raw || typeof raw !== "string") {
@@ -713,15 +1175,19 @@ export async function searchUsersForLink(query) {
     }
 
     const emailHash = sha256(normalized);
-    const docs = await User.find({ emailHash, isDeleted: { $ne: true } })
+    const docs = await User.find({
+      emailHash,
+      isDeleted: { $ne: true },
+      isAnonymized: { $ne: true },
+      role: { $ne: "doctor" },
+      isDoctor: { $ne: true },
+    })
       .select(selectFields)
       .limit(USER_SEARCH_RESULT_LIMIT)
       .lean();
-
     return { items: docs.map(toUserResult), count: docs.length };
   }
 
-  // ─── Mode: dob (date of birth + name filter) ───
   if (mode === "dob") {
     const { dateOfBirth, firstName, lastName } = query;
     if (!dateOfBirth) {
@@ -730,9 +1196,6 @@ export async function searchUsersForLink(query) {
       );
     }
 
-    // Parse the date and build a full-day range [start, end). The
-    // client sends "YYYY-MM-DD"; users in DB may have a time component,
-    // so we match the whole calendar day rather than an exact instant.
     const dayStart = new Date(dateOfBirth);
     if (Number.isNaN(dayStart.getTime())) {
       throw new UnprocessableError("dateOfBirth is not a valid date");
@@ -741,24 +1204,22 @@ export async function searchUsersForLink(query) {
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
 
-    // Indexed query — narrows 1M users down to a few dozen.
     const candidates = await User.find({
       dateOfBirth: { $gte: dayStart, $lt: dayEnd },
       isDeleted: { $ne: true },
+      isAnonymized: { $ne: true },
+      role: { $ne: "doctor" },
+      isDoctor: { $ne: true },
     })
       .select(selectFields)
       .limit(DOB_SCAN_CAP)
       .lean();
 
-    // Decrypt + in-memory filter ONLY on the narrow candidate set.
     const fNeedle = (firstName || "").trim().toLowerCase();
     const lNeedle = (lastName || "").trim().toLowerCase();
 
     let results = candidates.map(toUserResult);
 
-    // Filter by name if provided. Both partial (prefix) and
-    // case-insensitive — affordable because we're filtering decrypted
-    // strings on a tiny set, not hashes on millions.
     if (fNeedle || lNeedle) {
       results = results.filter((u) => {
         const fn = (u.firstName || "").toLowerCase();

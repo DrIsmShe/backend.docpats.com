@@ -131,7 +131,7 @@ export const ACTION_ENUM = [
   "clinic.patient.unlink",
   "clinic.patient.user_search", // поиск User-аккаунта для линковки
   "clinic.patient.export",
-
+  "clinic.patient.provisional_user_created", // создание provisional User одновременно с ClinicPatient
   // ═══════════ CLINIC STAFF / MEMBERSHIPS ═══════════
   // На будущее: когда будем аудитить операции с сотрудниками клиники
   // (добавление врача, смена роли, удаление). Сейчас не используется.
@@ -188,6 +188,17 @@ export const ACTION_ENUM = [
   // ═══════════ AI ═══════════
   "ai.consultation.create",
   "ai.consultation.read",
+
+  // ═══════════ USER PROVISIONAL ACCOUNTS ═══════════
+  // Provisional User lifecycle: created by clinic → patient requests
+  // activation → confirms via OTP → fully activated.
+  // resourceType: "user-account", resourceId: User._id.
+  "user.provisional.created", // clinic created tmp credentials
+  "user.provisional.activation_requested", // patient typed new email+password, OTP sent
+  "user.provisional.activation_otp_failed", // wrong/expired OTP — security signal
+  "user.provisional.activated", // OTP verified, account fully activated
+  "user.provisional.wiped", // another clinic wiped before activation
+  "user.provisional.expired", // cron anonymized after 3-year TTL
 
   // ═══════════ ADMIN ═══════════
   "admin.user.view",

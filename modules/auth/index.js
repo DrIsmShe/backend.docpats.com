@@ -11,6 +11,7 @@ import otpforresetPasswordRoute from "./routes/otpforresetPassword.js";
 import changePasswordRoute from "./routes/changePasswordRoutes.js";
 import MustChangePassworddRoute from "./routes/MustChangePassworddRoute.js";
 import logoutRoute from "./routes/logoutRoute.js";
+import CompleteProvisionalRegistrationRoute from "./routes/completeProvisionalRegistrationRoute.js";
 // system USER end
 // система auth USER start
 router.use((req, res, next) => {
@@ -26,5 +27,9 @@ router.use("/otp-for-reset-password", otpforresetPasswordRoute); // страни
 router.use("/change-password", changePasswordRoute); // страница изменения пароля
 router.use("/Must-Change-Password-true", MustChangePassworddRoute); // страница изменения пароля
 router.use("/logout", logoutRoute); //выход из авторизации
+router.use(
+  "/complete-provisional-registration",
+  CompleteProvisionalRegistrationRoute,
+);
 // система auth USER end
 export default router;

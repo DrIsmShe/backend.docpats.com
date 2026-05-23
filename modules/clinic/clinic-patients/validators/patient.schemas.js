@@ -63,16 +63,54 @@ const objectIdField = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId");
 
 // ─── createPatientSchema ──────────────────────────────────────────────
 
-export const createPatientSchema = z.object({
-  firstName: nameField,
-  lastName: nameField,
-  phone: phoneField.optional().nullable(),
-  email: emailField.optional().nullable(),
-  dateOfBirth: dobField.optional().nullable(),
-  gender: genderField.optional().nullable(),
-  notes: notesField.optional().nullable(),
-  // linkedUserId is set via separate endpoint (POST /:id/link), not on create
-});
+export const createPatientSchema = z
+  .object({
+    firstName: nameField,
+    lastName: nameField,
+    phone: phoneField.optional().nullable(),
+    email: emailField.optional().nullable(),
+    dateOfBirth: dobField.optional().nullable(),
+    gender: genderField.optional().nullable(),
+    notes: notesField.optional().nullable(),
+    // linkedUserId is set via separate endpoint (POST /:id/link), not on create
+
+    // Provisional User flag (v2, May 2026):
+    // When true, the service ALSO creates a temporary DocPats User
+    // account with tmp email + password, links it to this ClinicPatient,
+    // and returns the credentials in the response (one time only).
+    // The patient receives a printed/PDF card with these credentials and
+    // can log in within 3 years to activate.
+    createProvisionalUser: z.boolean().optional().default(false),
+
+    // Cross-clinic dedup consent flag (22 May 2026):
+    // When the patient's email matches an existing DocPats User account
+    // (either active or another clinic's provisional), the service refuses
+    // to create/link until the receptionist explicitly confirms that the
+    // patient gave consent. UI shows a modal with the found user's name +
+    // DOB; receptionist ticks "пациент дал согласие" and resubmits with
+    // this flag set to true.
+    //
+    // Why a boolean here rather than a separate endpoint:
+    //   1. Frontend already has the full payload from Step 2 — resubmitting
+    //      the same body + one extra flag is simpler than POSTing twice.
+    //   2. Service-layer logic can decide what to DO with consent based on
+    //      what the existing user is — active = link, provisional = reissue.
+    //      One endpoint, one happy path, no race between two requests.
+    patientConsentConfirmed: z.boolean().optional().default(false),
+  })
+  .refine(
+    // If createProvisionalUser is true, dateOfBirth is REQUIRED.
+    // User model requires dateOfBirth, and we don't want to invent a fake
+    // value just to satisfy the schema — the clinic should know the DOB.
+    (data) => {
+      if (data.createProvisionalUser && !data.dateOfBirth) return false;
+      return true;
+    },
+    {
+      message: "dateOfBirth is required when createProvisionalUser is true",
+      path: ["dateOfBirth"],
+    },
+  );
 
 // ─── updatePatientSchema ──────────────────────────────────────────────
 //

@@ -13,6 +13,15 @@
 //   6. Объект subscription (с tier/billing/status) сохранён без изменений
 //      для обратной совместимости
 //   7. Виртуалы, методы, encryption, RBAC, sessions — все сохранены
+//   8. NEW (22 May 2026): reissueHistory[] — лог перевыпусков
+//      provisional-карточки разными клиниками. Каждая запись = одна
+//      операция перевыпуска (см. provisional.service.reissueProvisionalCredentials).
+//      provisionalCreatedBy при этом НЕ меняется — остаётся изначальная
+//      клиника. Это позволяет audit-системе ответить на вопросы:
+//        - "кто впервые создал этот provisional?" → provisionalCreatedBy
+//        - "кто потом перевыпускал?" → reissueHistory
+//        - "почему пациент пожаловался что карта Клиники Y не работает?"
+//          → найти reissueHistory[i] где другая клиника перевыпустила.
 // ─────────────────────────────────────────────────────────────────────
 
 import mongoose from "mongoose";
@@ -176,6 +185,46 @@ const SessionSchema = new mongoose.Schema(
   { _id: true },
 );
 
+/* ──────────── ReissueHistory подсхема (22 May 2026) ─────────────────
+   Каждая запись = один акт перевыпуска provisional-карточки.
+   _id: false — это плоская запись внутри User, не отдельный документ.
+
+   Поля:
+   - clinicId        — клиника которая перевыпустила
+   - reissuedAt      — когда
+   - reissuedBy      — actor (userId или employeeId — см. reissuedByType)
+   - reissuedByType  — "user" | "employee" (как createdByType в ClinicPatient)
+   - previousExpiresAt — старый provisionalExpiresAt ДО перевыпуска
+                         (нужно для audit: "у пациента было ещё X дней,
+                         клиника Y продлила на ещё 3 года")
+
+   provisionalCreatedBy/At/ExpiresAt на родительском User обновляются:
+   - createdBy: не меняется (изначальная клиника навсегда)
+   - createdAt: не меняется (когда изначально создан)
+   - expiresAt: ПЕРЕЗАПИСЫВАЕТСЯ на now + 3 года при каждом перевыпуске
+================================================================== */
+const ReissueHistorySchema = new mongoose.Schema(
+  {
+    clinicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Clinic",
+      required: true,
+    },
+    reissuedAt: { type: Date, default: Date.now, required: true },
+    reissuedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    reissuedByType: {
+      type: String,
+      enum: ["user", "employee"],
+      required: true,
+    },
+    previousExpiresAt: { type: Date, default: null },
+  },
+  { _id: false },
+);
+
 /* ======================= Маппинг плана → maxPatients =====================
    Используется в pre-save хуке для синхронизации features.maxPatients
    при изменении subscriptionPlan (плоское поле) или subscription.tier
@@ -319,6 +368,61 @@ const userSchema = new mongoose.Schema(
     isPatient: { type: Boolean, default: false },
 
     mustChangePassword: { type: Boolean, default: false },
+
+    /* ───── Provisional registration v2 (19 мая 2026) ─────
+       Клиника может зарегистрировать пациента БЕЗ его участия,
+       создав временный User с tmp email и паролем. У пациента
+       3 года, чтобы активировать аккаунт (сменить email + пароль
+       через POST /auth/complete-provisional-registration).
+       Если просрочил — cron анонимизирует данные.
+       Если пациент пришёл в другую клинику до активации —
+       клиника может перевыпустить карточку (см. reissueHistory).
+    */
+    isProvisional: { type: Boolean, default: false, index: true },
+    provisionalCreatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Clinic",
+      default: null,
+    },
+    provisionalCreatedAt: { type: Date, default: null },
+    provisionalExpiresAt: { type: Date, default: null }, // создан + 3 года
+    mustCompleteRegistration: { type: Boolean, default: false },
+
+    // История перевыпусков карточки (22 May 2026).
+    // Каждая запись добавляется при вызове reissueProvisionalCredentials.
+    // Изначально пустой массив — у "свежесозданного" provisional User'а
+    // нет ни одного перевыпуска.
+    reissueHistory: { type: [ReissueHistorySchema], default: [] },
+
+    // Анонимизация — для просроченных или стёртых клиникой записей.
+    // _id сохраняется для FK integrity (ClinicPatient.linkedUserId).
+    isAnonymized: { type: Boolean, default: false, index: true },
+    anonymizedAt: { type: Date, default: null },
+    anonymizedReason: {
+      type: String,
+      enum: ["expired", "wiped_by_clinic", null],
+      default: null,
+    },
+    /* ───── Provisional activation OTP (21 мая 2026) ─────
+       Two-step activation: patient enters new email+password →
+       backend generates 6-digit OTP, stores it here as plain text,
+       sends to the new email. Patient enters OTP within 10 min →
+       changes are applied, all fields below cleared to null.
+
+       Plain text matches the pattern of User.otp / User.childOtp /
+       User.parentOtp for ordinary registration — visible in Mongo
+       Compass for debugging when email delivery fails.
+
+       pendingNewEmail is encrypted (same AES-256-CBC as emailEncrypted)
+       because it's PII even before activation. pendingNewPasswordHash
+       is already an argon2 hash — no further encryption needed.
+    */
+    activationOtp: { type: String, default: null },
+    activationOtpExpiresAt: { type: Date, default: null },
+    activationOtpAttempts: { type: Number, default: 0 },
+    activationOtpLastSentAt: { type: Date, default: null },
+    pendingNewEmailEncrypted: { type: String, default: null },
+    pendingNewPasswordHash: { type: String, default: null },
     otpPassword: { type: String },
     lastLoginAt: { type: Date, default: null },
 
@@ -694,6 +798,17 @@ userSchema.index({ trialEndsAt: 1 }); // для cron-задачи trial-напо
 userSchema.index({ subscriptionEndsAt: 1 });
 userSchema.index({ dateOfBirth: 1 }); // поиск user по ДР при линковке пациента к карте клиники
 
+// Поиск provisional User по ДР при следующем визите в клинику —
+// hits dateOfBirth + isProvisional + isAnonymized для быстрого "active provisional only"
+userSchema.index({ dateOfBirth: 1, isProvisional: 1, isAnonymized: 1 });
+
+// Cron cleanup — найти все просроченные provisional, ещё не анонимизированные
+userSchema.index({
+  provisionalExpiresAt: 1,
+  isProvisional: 1,
+  isAnonymized: 1,
+});
+
 /* ======================= Хелпер для update-хуков ======================= */
 function getSetObjectFromUpdate(update) {
   if (!update || typeof update !== "object") return {};
@@ -827,6 +942,27 @@ userSchema.virtual("trialDaysLeft").get(function () {
   if (!this.isInTrial) return null;
   const ms = new Date(this.trialEndsAt).getTime() - Date.now();
   return Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+});
+// Provisional — истёк ли срок активации?
+userSchema.virtual("isProvisionalExpired").get(function () {
+  if (!this.isProvisional) return false;
+  if (!this.provisionalExpiresAt) return false;
+  return new Date() >= new Date(this.provisionalExpiresAt);
+});
+
+// Сколько дней осталось до автоматической анонимизации provisional User.
+// null если не provisional. Может быть отрицательным = просрочено.
+userSchema.virtual("provisionalDaysLeft").get(function () {
+  if (!this.isProvisional) return null;
+  if (!this.provisionalExpiresAt) return null;
+  const ms = new Date(this.provisionalExpiresAt).getTime() - Date.now();
+  return Math.ceil(ms / (24 * 60 * 60 * 1000));
+});
+
+// Сколько раз перевыпускалась provisional-карточка (включая 0 = ни разу).
+// Удобно для UI: "Карта перевыпускалась 2 раза в Клинике X и Клинике Y"
+userSchema.virtual("reissueCount").get(function () {
+  return Array.isArray(this.reissueHistory) ? this.reissueHistory.length : 0;
 });
 
 /* ======================= Сериализация ======================= */

@@ -30,6 +30,7 @@ import consultationRoutes from "./modules/consultation/consultation.routes.js";
 import { initializeSpecializations } from "./common/utils/initSpecializations.js";
 import cron from "node-cron";
 import { cleanupOldNotifications } from "./jobs/cleanupOldNotifications.js";
+import { cleanupExpiredProvisional } from "./jobs/cleanupExpiredProvisional.js";
 import { initCommunicationGateway } from "./modules/communication/gateway/socket.gateway.js";
 // ✅ ИСПРАВЛЕНО: импорт на верхнем уровне, НЕ внутри функции
 import { initCallGateway } from "./modules/communication/calls/call.gateway.js";
@@ -42,6 +43,7 @@ import userSynthesisRoutes from "./modules/userSynthesis/userSynthesis.routes.js
 import { routes as anthropometryRoutes } from "./modules/anthropometry/index.js";
 import { auditRoutes } from "./modules/audit/index.js";
 import clinicRoutes from "./modules/clinic/index.js";
+import blockUnfinishedRegistration from "./common/middlewares/blockUnfinishedRegistration.middleware.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -145,7 +147,7 @@ const sessionMiddleware = session({
 });
 
 app.use(sessionMiddleware);
-
+app.use(blockUnfinishedRegistration);
 // ✅ ИСПРАВЛЕНО: consultation routes теперь после sessionMiddleware,
 // чтобы req.session был доступен в контроллерах
 app.use("/api/consultation", consultationRoutes);
@@ -300,7 +302,23 @@ cron.schedule("0 3 * * *", async () => {
   }
 });
 console.log("⏳ Планировщик очистки уведомлений активен");
-
+// ──── Provisional User cleanup (weekly, Sunday 03:30) ─────────────────
+// Anonymizes Users created by clinics that have passed their 3-year TTL
+// without the patient activating. See jobs/cleanupExpiredProvisional.js.
+cron.schedule("30 3 * * 0", async () => {
+  try {
+    console.log("🕒 Запуск очистки просроченных provisional users...");
+    const result = await cleanupExpiredProvisional();
+    if (result.wiped > 0 || result.failed > 0) {
+      console.log(
+        `   → wiped: ${result.wiped}, failed: ${result.failed}, found: ${result.found}`,
+      );
+    }
+  } catch (err) {
+    console.error("❌ Ошибка очистки provisional (cron):", err);
+  }
+});
+console.log("⏳ Планировщик очистки provisional users активен");
 // ======================= BOOTSTRAP =======================
 async function bootstrap(startPort = PORT) {
   try {

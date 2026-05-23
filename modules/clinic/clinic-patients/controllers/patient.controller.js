@@ -162,7 +162,14 @@ export async function createPatient(req, res, next) {
 
   try {
     const input = parse(createPatientSchema, req.body, "patient data");
-    const patient = await service.createPatient(input);
+    const result = await service.createPatient(input);
+
+    // Service returns one of two shapes:
+    //   - Legacy: the patient object directly (no provisional flow)
+    //   - New:    { patient, provisionalCredentials } when
+    //             createProvisionalUser: true was passed
+    const patient = result?.patient ?? result;
+    const provisionalCredentials = result?.provisionalCredentials || null;
 
     // Audit AFTER successful creation — resourceId is real now.
     if (actor) {
@@ -172,12 +179,51 @@ export async function createPatient(req, res, next) {
         resourceType: "clinic-patient",
         resourceId: String(patient._id),
         outcome: "success",
-        metadata: baseMetadata,
+        metadata: {
+          ...baseMetadata,
+          provisionalUserCreated: Boolean(provisionalCredentials),
+        },
         context: extractContext(req, 201),
       });
+
+      // Additional audit for the provisional-user-creation side effect.
+      // This is separate from user.provisional.created (which the
+      // provisional.service emits internally on the User side) — this
+      // one is on the ClinicPatient side, so HIPAA forensics can query
+      // "all provisional accounts ever created BY clinic X" by filtering
+      // for this action.
+      if (provisionalCredentials) {
+        auditService.recordActionAsync({
+          actor,
+          action: "clinic.patient.provisional_user_created",
+          resourceType: "clinic-patient",
+          resourceId: String(patient._id),
+          outcome: "success",
+          metadata: {
+            provisionalUserId: provisionalCredentials.userId,
+            // PHI safety: NEVER log tmpEmail or tempPassword in audit —
+            // even though tmpEmail is "synthetic", it's still an
+            // identifier. tempPassword is plaintext credential and must
+            // never appear anywhere except the one-time API response.
+          },
+          context: extractContext(req, 201),
+        });
+      }
     }
 
-    res.status(201).json({ patient });
+    // Response shape:
+    //   - Legacy: { patient } (unchanged for existing frontend code)
+    //   - New:    { patient, provisionalCredentials }
+    //     where provisionalCredentials = { tmpEmail, tempPassword,
+    //     userId, expiresAt } — TEMP PASSWORD APPEARS HERE ONCE,
+    //     NEVER AGAIN.
+    res
+      .status(201)
+      .json(
+        provisionalCredentials
+          ? { patient, provisionalCredentials }
+          : { patient },
+      );
   } catch (err) {
     // Record the failed attempt. resourceId is null here because the
     // patient was never created. recordActionAsync swallows the

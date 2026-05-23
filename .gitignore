@@ -7,3 +7,6 @@ npm-debug.log
 # Test/migration output logs
 *-out.log
 test-output.log
+# Local debug scripts
+test-smtp.js
+
