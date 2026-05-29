@@ -77,7 +77,8 @@ export const recordAction = async (params) => {
     action === "list" ||
     action.endsWith(".list") ||
     action.endsWith(".search") ||
-    action.endsWith(".user_search");
+    action.endsWith(".user_search") ||
+    action === "system.r2_orphan.cleanup";
   if (!resourceId && !isCollectionAction) {
     throw new Error(
       `audit.recordAction: resourceId is required for action "${action}"`,

@@ -288,6 +288,7 @@ export const ACTION_ENUM = [
   // Заглушка для случаев когда нужно записать что-то нестандартное.
   // Используй редко — лучше добавь конкретный enum выше.
   "other",
+  "system.r2_orphan.cleanup",
 ];
 
 /* ============================================================
@@ -359,7 +360,7 @@ export const RESOURCE_TYPE_ENUM = [
   "doctor-profile",
   "patient-profile",
   "user-account",
-
+  "orphan-r2-file",
   // Catch-all
   "other",
 ];

@@ -34,7 +34,7 @@ import { cleanupExpiredProvisional } from "./jobs/cleanupExpiredProvisional.js";
 import { initCommunicationGateway } from "./modules/communication/gateway/socket.gateway.js";
 // ✅ ИСПРАВЛЕНО: импорт на верхнем уровне, НЕ внутри функции
 import { initCallGateway } from "./modules/communication/calls/call.gateway.js";
-
+import { startR2OrphanCleanupCron } from "./jobs/r2OrphanCleanup.cron.js";
 import sitemapRoutes from "./common/sitemap/routes/sitemap.routes.js";
 import { setSimulationIo } from "./modules/surgery/simulationIo.js";
 import "./jobs/prefetch.job.js";
@@ -364,6 +364,8 @@ async function bootstrap(startPort = PORT) {
         `🚀 Сервер + WebSocket запущен: http://localhost:${startPort}`,
       ),
     );
+    startR2OrphanCleanupCron();
+    console.log("🗑️  R2 orphan cleanup cron активен (каждые 15 минут)");
   } catch (err) {
     console.error("❌ Ошибка запуска сервера:", err);
     process.exit(1);

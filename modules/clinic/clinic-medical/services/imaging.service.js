@@ -1,42 +1,13 @@
 // modules/clinic/clinic-medical/services/imaging.service.js
 //
-// Imaging study service for clinic-medical. Sprint 2 Phase 2C.2.
+// (mod 30 May 2026): deleteImaging теперь не просто логгирует orphan files,
+// а ставит их в очередь OrphanR2File для cron'а jobs/r2OrphanCleanup.cron.js.
 //
-// ─────────────────────────────────────────────────────────────────────────────
-//  WHY HAND-WRITTEN (not via subRecordBase factory)
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// ImagingStudy differs from text sub-records:
-//   - has file attachments (image URLs uploaded to R2 by the controller via
-//     processFiles middleware — service receives ready URL strings in images[])
-//   - uses `patient` legacy field semantics + new `patientId` for clinic-medical
-//   - richer field set (studyType, report, diagnosis, contrastUsed)
-//   - own validation workflow (validatedByDoctor) — not status machine
-//
-// But it REUSES the same access-chain rules:
-//   1. ownership      — createdByClinicId === currentClinicId
-//   2. per-record     — sharedWith includes currentClinicId
-//   3. global consent — PatientConsent.checkScope(patientId, clinicId, "imaging")
-//
-// ─────────────────────────────────────────────────────────────────────────────
-//  ⚠️ files[] vs images[] — different things in ImagingStudy
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// The legacy ImagingStudy.files[] is an embedded schema (File.schema) used by
-// myClinic flow — every entry is REQUIRED to be linked to a Scan document
-// (CTScan/MRIScan/etc) via a `study` ref. Mongoose validator enforces this.
-//
-// clinic-medical doesn't create Scan documents — it uploads image URLs straight
-// into the simple String[] field `images[]`. We must NOT populate `files[]`
-// here or Mongoose validation fails with:
-//   "ImagingStudy validation failed: files: File must be linked to a study"
-//
-// Result: controller still extracts file metadata from req.uploadedFiles for
-// audit purposes, but service stores ONLY images[] (URL strings). The richer
-// `files[]` array stays empty for clinic-medical records.
+// Изменения только в deleteImaging — остальное идентично Sprint 2.
 
 import ImagingStudy from "../../../../common/models/Polyclinic/MedicalHistory/ImagingStudy.js";
 import PatientConsent from "../../../../common/models/Polyclinic/PatientConsent.js";
+import OrphanR2File from "../../../../common/models/system/OrphanR2File.js";
 import {
   NotFoundError,
   ForbiddenError,
@@ -71,8 +42,6 @@ const VALID_STUDY_TYPES = [
   "CapsuleEndoscopy",
 ];
 
-// ─── context helpers ──────────────────────────────────────────────────
-
 function requireClinicId() {
   const clinicId = getCurrentClinicId();
   if (!clinicId) throw new ForbiddenError("No active clinic context");
@@ -88,12 +57,6 @@ function requireActor() {
   return { userId, actorType };
 }
 
-// ─── response shape ───────────────────────────────────────────────────
-//
-// Exposes images[] (URL strings) and NOT files[] (legacy myClinic-only
-// embedded schema). Controller's uploaded-file metadata isn't echoed back
-// — clients can derive what they need from images[].
-
 function toShape(doc) {
   if (!doc) return null;
   return {
@@ -107,7 +70,6 @@ function toShape(doc) {
     contrastUsed: Boolean(doc.contrastUsed),
     validatedByDoctor: Boolean(doc.validatedByDoctor),
     doctorNotes: doc.doctorNotes || null,
-
     createdBy: doc.createdBy ? String(doc.createdBy) : null,
     createdByEmployee: doc.createdByEmployee
       ? String(doc.createdByEmployee)
@@ -118,13 +80,10 @@ function toShape(doc) {
     sharedWith: Array.isArray(doc.sharedWith)
       ? doc.sharedWith.map((id) => String(id))
       : [],
-
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
 }
-
-// ─── access decision (per record) ─────────────────────────────────────
 
 async function decideRecordAccess(record, clinicId) {
   if (
@@ -151,19 +110,9 @@ async function decideRecordAccess(record, clinicId) {
   return { granted: false, reason: "denied", isCrossClinic: false };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  CREATE
-// ─────────────────────────────────────────────────────────────────────────
-//
-// @param patient  — req.clinicPatient (resolved upstream)
-// @param body     — { studyType, date, report, diagnosis, contrastUsed }
-// @param images   — string[] of uploaded URLs (from controller/processFiles)
-// @param files    — IGNORED (kept in signature for backward compat with the
-//                   controller; legacy files[] requires a study ref that
-//                   clinic-medical doesn't have, so we must not populate it)
+// ─── CREATE ────────────────────────────────────────────────────────────
 
 export async function createImaging({ patient, body, images = [], files }) {
-  // `files` arg intentionally unused — see file header.
   void files;
 
   requirePerm("medical_record", "write");
@@ -195,19 +144,13 @@ export async function createImaging({ patient, body, images = [], files }) {
 
   const payload = {
     patientId: patient._id,
-    // patient (legacy NewPatientPolyclinic ref) left null — clinic-medical
-    // uses patientId. Validator accepts either.
     patient: null,
-
     studyType: body.studyType,
     date: body.date || new Date(),
     images: Array.isArray(images) ? images : [],
     report: body.report || null,
     diagnosis: body.diagnosis || null,
     contrastUsed: Boolean(body.contrastUsed),
-    // files: NOT set — see header comment. Legacy myClinic schema requires
-    // every embedded file to link to a Scan document, which we don't create.
-
     ...authorship,
     sharedWith: Array.isArray(body.sharedWith) ? body.sharedWith : [],
   };
@@ -244,9 +187,7 @@ export async function createImaging({ patient, body, images = [], files }) {
   return toShape(doc.toObject());
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  GET (single)
-// ─────────────────────────────────────────────────────────────────────────
+// ─── GET ───────────────────────────────────────────────────────────────
 
 export async function getImaging({ recordId }) {
   requirePerm("medical_record", "read");
@@ -268,9 +209,7 @@ export async function getImaging({ recordId }) {
   return shape;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  LIST (for a patient)
-// ─────────────────────────────────────────────────────────────────────────
+// ─── LIST ──────────────────────────────────────────────────────────────
 
 export async function listImaging({ patient, query = {} }) {
   requirePerm("medical_record", "read");
@@ -320,9 +259,7 @@ export async function listImaging({ patient, query = {} }) {
   return { items, nextCursor, count: items.length };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  UPDATE (owner clinic only)
-// ─────────────────────────────────────────────────────────────────────────
+// ─── UPDATE ────────────────────────────────────────────────────────────
 
 export async function updateImaging({ recordId, body }) {
   requirePerm("medical_record", "write");
@@ -368,9 +305,11 @@ export async function updateImaging({ recordId, body }) {
   return toShape(doc.toObject());
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  DELETE (owner clinic only)
-// ─────────────────────────────────────────────────────────────────────────
+// ─── DELETE ────────────────────────────────────────────────────────────
+//
+// (mod 30 May 2026)
+// Hard delete документа + постановка images[] в очередь OrphanR2File
+// для фонового удаления из R2. См. jobs/r2OrphanCleanup.cron.js.
 
 export async function deleteImaging({ recordId }) {
   requirePerm("medical_record", "delete");
@@ -392,16 +331,57 @@ export async function deleteImaging({ recordId }) {
 
   const recordIdStr = String(doc._id);
   const imageUrls = Array.isArray(doc.images) ? [...doc.images] : [];
+
   await doc.deleteOne();
 
-  log.warn(
+  // Ставим R2 файлы в очередь на удаление. Если БД упадёт здесь —
+  // основная операция уже committed (doc удалён), но мы потеряем
+  // референс на файлы. Это приемлемо для MVP — будет видно в логах
+  // как warning. Альтернатива (transactions) усложнит код без
+  // соответствующего выигрыша для cleanup задачи.
+  let queuedCount = 0;
+  if (imageUrls.length > 0) {
+    try {
+      const orphanDocs = imageUrls.map((url) => ({
+        fileUrl: url,
+        sourceModel: "ImagingStudy",
+        sourceId: doc._id,
+        clinicId,
+        deletedAt: new Date(),
+      }));
+      const inserted = await OrphanR2File.insertMany(orphanDocs, {
+        // Не валидируем "ordered" — если одна запись упадёт, остальные пишутся
+        ordered: false,
+      });
+      queuedCount = inserted.length;
+    } catch (err) {
+      log.error(
+        {
+          err,
+          imagingId: recordIdStr,
+          urlCount: imageUrls.length,
+        },
+        "Failed to enqueue orphan R2 files — manual cleanup needed",
+      );
+      // НЕ throw — основная операция (delete) уже прошла успешно.
+      // Падение очереди — это deferred problem, не должно фейлить запрос.
+    }
+  }
+
+  log.info(
     {
       imagingId: recordIdStr,
       deletedBy: String(userId),
       orphanedImages: imageUrls.length,
+      queuedForCleanup: queuedCount,
     },
-    "Imaging study deleted — R2 files NOT removed (tech debt: orphan cleanup)",
+    "Imaging study deleted",
   );
 
-  return { recordId: recordIdStr, deleted: true, orphanedImages: imageUrls };
+  return {
+    recordId: recordIdStr,
+    deleted: true,
+    orphanedImages: imageUrls,
+    queuedForCleanup: queuedCount,
+  };
 }
