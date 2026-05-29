@@ -27,6 +27,17 @@ import SpirometryScan from "../../../common/models/Polyclinic/ExamenationsTempla
 import USMscan from "../../../common/models/Polyclinic/ExamenationsTemplates/USMscanTemplates/USMscan.js";
 import XRayScan from "../../../common/models/Polyclinic/ExamenationsTemplates/XRayScansTemplates/XRayScan.js";
 
+/**
+ * UMR fix (Sprint 2 Phase 1):
+ *   medicalHistoryRecords и compactHistory — поле h.diagnosis (legacy String)
+ *   заменено на h.mainDiagnosis.text (структурный объект).
+ *   Добавлены diagnosisCode (ICD-10) и diagnosisTitle — AI получает больше
+ *   контекста для summary.
+ *
+ *   ImagingStudy/CTScan/MRIScan/LabTest и пр. — их собственные .diagnosis
+ *   НЕ ТРОГАЕМ. У них своя схема, своё поле.
+ */
+
 const generateClinicalSummary = async (req, res) => {
   try {
     const { id } = req.params;
@@ -159,13 +170,14 @@ const generateClinicalSummary = async (req, res) => {
         patientRef: polyPatient._id,
       }).sort({ createdAt: -1 });
     } else if (privatePatient) {
-      // 🔥 Истории болезни по приватному пациенту (УТОЧНИ имя patientTypeModel, если другое)
+      // 🔥 Истории болезни по приватному пациенту
       medicalHistories = await NewPatientMedicalHistory.find({
         patientTypeModel: "DoctorPrivatePatient",
         patientRef: privatePatient._id,
       }).sort({ createdAt: -1 });
     }
 
+    // UMR: было h.diagnosis (String). Теперь читаем структурный mainDiagnosis.
     const medicalHistoryRecords = medicalHistories.map((h) => ({
       id: h._id.toString(),
       createdAt: h.createdAt,
@@ -175,7 +187,9 @@ const generateClinicalSummary = async (req, res) => {
       statusPreasens: h.statusPreasens,
       statusLocalis: h.statusLocalis,
       recommendations: h.recommendations,
-      diagnosis: h.diagnosis,
+      diagnosis: h.mainDiagnosis?.text || null,
+      diagnosisCode: h.mainDiagnosis?.code || null,
+      diagnosisTitle: h.mainDiagnosis?.codeTitle || null,
       additionalDiagnosis: h.additionalDiagnosis,
       ctScanResults: h.ctScanResults,
       mriResults: h.mriResults,
@@ -280,7 +294,9 @@ const generateClinicalSummary = async (req, res) => {
 
     const core = patientCore.toObject();
 
-    /* 🔹 Универсальная функция очистки обследований */
+    /* 🔹 Универсальная функция очистки обследований
+       ImagingStudy/CTScan/MRIScan и пр. — у каждого есть СВОЁ поле diagnosis,
+       это НЕ legacy newPatientMedicalHistory.diagnosis. НЕ трогаем. */
     const compactScans = (arr = []) =>
       arr.map((s) => ({
         id: s._id?.toString() || null,
@@ -292,7 +308,7 @@ const generateClinicalSummary = async (req, res) => {
         conclusion: s.conclusion || null,
       }));
 
-    /* 🔹 Компактная версия лаборатории */
+    /* 🔹 Компактная версия лаборатории — LabTest.diagnosis, не legacy */
     const compactLabs = (arr = []) =>
       arr.map((l) => ({
         id: l._id?.toString() || null,
@@ -303,7 +319,9 @@ const generateClinicalSummary = async (req, res) => {
         diagnosis: l.diagnosis || null,
       }));
 
-    /* 🔹 Компактная история болезни */
+    /* 🔹 Компактная история болезни
+       UMR: diagnosis приходит из mainDiagnosis.text (см. medicalHistoryRecords выше).
+       Добавлены diagnosisCode/Title — AI получает ICD-10 контекст. */
     const compactHistory = medicalHistoryRecords.map((h) => ({
       id: h.id,
       createdAt: h.createdAt,
@@ -313,13 +331,15 @@ const generateClinicalSummary = async (req, res) => {
       statusPreasens: h.statusPreasens || null,
       statusLocalis: h.statusLocalis || null,
       diagnosis: h.diagnosis || null,
+      diagnosisCode: h.diagnosisCode || null,
+      diagnosisTitle: h.diagnosisTitle || null,
       additionalDiagnosis: h.additionalDiagnosis || null,
       recommendations: h.recommendations || null,
     }));
 
     /* 🔹 Финальная структура для AI */
     const patientDataForAI = {
-      patientId: patientCore._id.toString(), // ← добавить первой строкой
+      patientId: patientCore._id.toString(),
       birthDate: core.birthDate || null,
       gender: core.gender || null,
 

@@ -1,75 +1,119 @@
 import mongoose from "mongoose";
 
-// Определение схемы для хранения информации о пациенте в поликлинике
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  newPatientMedicalHistory — основная схема ENCOUNTER (визит / приём)
+ *  Sprint 2 Phase 1 (UMR) — итерация v2
+ *
+ *  UMR-поля:
+ *   - createdByEmployee, createdByClinicId — мульти-tenancy
+ *   - status (draft/preliminary/signed/amended) — машина состояний
+ *   - signedByUserId / signedByEmployeeId / signedAt — подпись
+ *   - sharedWith — клиники, которым пациент дал доступ к этой записи
+ *
+ *  ⚠️ LEGACY MIRROR ПОЛЕ:
+ *   - diagnosis (String) — зеркало mainDiagnosis.text для compat с фронтом.
+ *     Pre-save hook автоматически синхронизирует diagnosis ← mainDiagnosis.text
+ *     при каждом save. Контроллеры НЕ заполняют его вручную.
+ *
+ *     План на Phase 2: переучить фронт на mainDiagnosis.text, удалить mirror.
+ *
+ *  УДАЛЕНО:
+ *   - isConsentGiven (Boolean) → заменено моделью PatientConsent (Day 3)
+ *
+ *  Валидация:
+ *   - Ровно один создатель: createdBy (User) ИЛИ createdByEmployee
+ *   - Employee-автор обязан иметь createdByClinicId
+ *   - mainDiagnosis обязателен только для status ∈ {signed, amended}
+ *   - signedAt + signedBy* обязательны для status ∈ {signed, amended}
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 const newPatientMedicalHistorySchema = new mongoose.Schema(
   {
-    // Врач, создавший запись (Автор истории болезни)
+    // ── АВТОРСТВО (UMR) ───────────────────────────────────────────
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
-    // metaDescription слова для SEO
+    createdByEmployee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClinicEmployee",
+      default: null,
+    },
+    createdByClinicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Clinic",
+      default: null,
+      index: true,
+    },
+
+    // ── STATUS MACHINE (UMR) ──────────────────────────────────────
+    status: {
+      type: String,
+      enum: ["draft", "preliminary", "signed", "amended"],
+      default: "draft",
+      index: true,
+    },
+    signedByUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    signedByEmployeeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClinicEmployee",
+      default: null,
+    },
+    signedAt: { type: Date, default: null },
+
+    // ── CONSENT (UMR) ─────────────────────────────────────────────
+    sharedWith: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Clinic" }],
+      default: [],
+    },
+
+    // ── СОДЕРЖИМОЕ ────────────────────────────────────────────────
     metaDescription: { type: [String], default: [] },
-    // Ключевые слова для SEO
     metaKeywords: { type: [String], default: [] },
-    // Статус публикации
     isPublished: { type: Boolean, default: false },
-    // Ссылка на лечащего врача
+
     doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    // Профиль лечащего врача
     doctorProfileId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "DoctorProfile",
     },
 
-    // Количество просмотров профиля пациента
     views: { type: Number, default: 0 },
-    // Примерное время чтения данных о пациенте
     readTime: { type: Number, default: 0 },
-    // Жалобы пациента
+
     complaints: { type: String, trim: true },
-    // Анамнез болезни
     anamnesisMorbi: { type: String, trim: true },
-    // Анамнез жизни
     anamnesisVitae: { type: String, trim: true },
-    // Общий статус пациента
     statusPreasens: { type: String, trim: true },
-    // Локальный статус пациента
     statusLocalis: { type: String, trim: true },
-    // Рекомендации врача
     recommendations: { type: String, trim: true },
-    // Результаты КТ-сканирования
     ctScanResults: { type: String, trim: true },
-    // Результаты МРТ
     mriResults: { type: String, trim: true },
-    // Результаты УЗИ
     ultrasoundResults: { type: String, trim: true },
-    // Результаты лабораторных исследований
     laboratoryTestResults: { type: String, trim: true },
 
-    // ─────────────────────────────────────────────
-    // ОСНОВНОЙ ДИАГНОЗ ПО МКБ-10
-    // code      — код МКБ (например "J45.1") для аналитики/статистики
-    // codeTitle — официальное англ. название из NLM (на момент выбора)
-    // text      — диагноз на родном языке врача (свободно редактируется)
-    // ─────────────────────────────────────────────
+    // Структурный диагноз (новый, основной)
     mainDiagnosis: {
       code: { type: String, trim: true, default: "" },
       codeTitle: { type: String, trim: true, default: "" },
       text: { type: String, trim: true, default: "" },
     },
 
-    // Старое поле — оставлено для обратной совместимости со старыми записями.
-    // Новые записи его не используют. Можно удалить после полной миграции.
-    diagnosis: { type: String, trim: true },
+    // ⚠️ LEGACY MIRROR — синхронизируется автоматически из mainDiagnosis.text
+    // через pre-save hook. НЕ заполнять вручную!
+    diagnosis: { type: String, trim: true, default: "" },
 
-    // Дополнительный уточняющий диагноз — без изменений
     additionalDiagnosis: { type: String, trim: true },
 
-    // Файлы пациента
     files: [{ type: mongoose.Schema.Types.ObjectId, ref: "File", default: [] }],
-    // История посещений пациента
+
     history: [
       {
         updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -81,7 +125,7 @@ const newPatientMedicalHistorySchema = new mongoose.Schema(
         },
       },
     ],
-    // Документы пациента
+
     documents: [
       {
         name: { type: String, trim: true },
@@ -89,36 +133,26 @@ const newPatientMedicalHistorySchema = new mongoose.Schema(
         uploadedAt: { type: Date, default: Date.now },
       },
     ],
-    // Согласие на обработку данных
-    isConsentGiven: { type: Boolean, default: false },
-    // Аллергический статус
+
     allergies: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "allergiesPatient",
-      },
+      { type: mongoose.Schema.Types.ObjectId, ref: "allergiesPatient" },
     ],
-    // Наследственные заболевания
     familyHistoryOfDisease: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "familyHistoryOfDiseasePatient",
       },
     ],
-    // Перенесенные операции
     operations: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "operationsPatient",
-      },
+      { type: mongoose.Schema.Types.ObjectId, ref: "operationsPatient" },
     ],
-    // Хронические заболевания
     chronicDiseases: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "chronicDiseasesPatient",
-      },
+      { type: mongoose.Schema.Types.ObjectId, ref: "chronicDiseasesPatient" },
     ],
+    immunization: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "immunizationPatient" },
+    ],
+
     patientType: {
       type: String,
       enum: ["registered", "private"],
@@ -133,15 +167,8 @@ const newPatientMedicalHistorySchema = new mongoose.Schema(
     patientTypeModel: {
       type: String,
       required: true,
-      enum: ["DoctorPrivatePatient", "NewPatientPolyclinic"],
+      enum: ["DoctorPrivatePatient", "NewPatientPolyclinic", "ClinicPatient"],
     },
-    // Прививочный статус
-    immunization: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "immunizationPatient",
-      },
-    ],
   },
   {
     timestamps: true,
@@ -150,40 +177,75 @@ const newPatientMedicalHistorySchema = new mongoose.Schema(
   },
 );
 
-// ─────────────────────────────────────────────
-// ИНДЕКСЫ
-// ─────────────────────────────────────────────
-
-// Существующий составной индекс — не трогаем
-newPatientMedicalHistorySchema.index({
-  patientType: 1,
-  patientRef: 1,
-});
-
-// Новый индекс для аналитики по МКБ-кодам
-// (быстрая выборка "все пациенты с диагнозом J45.*", статистика и т.д.)
+// ── ИНДЕКСЫ ──────────────────────────────────────────────────────
+newPatientMedicalHistorySchema.index({ patientType: 1, patientRef: 1 });
 newPatientMedicalHistorySchema.index({ "mainDiagnosis.code": 1 });
+newPatientMedicalHistorySchema.index({ createdByClinicId: 1, createdAt: -1 });
+newPatientMedicalHistorySchema.index({ sharedWith: 1 });
 
-// ─────────────────────────────────────────────
-// ВАЛИДАЦИЯ ОСНОВНОГО ДИАГНОЗА
-// Применяется только к новым записям, чтобы не сломать существующие
-// (у которых mainDiagnosis ещё не заполнен — есть только старое поле diagnosis).
-// ─────────────────────────────────────────────
+// ── ВАЛИДАЦИЯ ────────────────────────────────────────────────────
 newPatientMedicalHistorySchema.pre("validate", function (next) {
-  if (this.isNew) {
+  const hasUser = !!this.createdBy;
+  const hasEmployee = !!this.createdByEmployee;
+
+  if (!hasUser && !hasEmployee) {
+    return next(
+      new Error(
+        "Author is required: either createdBy (User) or createdByEmployee (ClinicEmployee) must be set.",
+      ),
+    );
+  }
+  if (hasUser && hasEmployee) {
+    return next(
+      new Error(
+        "Only one author allowed: createdBy and createdByEmployee are mutually exclusive.",
+      ),
+    );
+  }
+  if (hasEmployee && !this.createdByClinicId) {
+    return next(
+      new Error(
+        "createdByClinicId is required when record is created by ClinicEmployee.",
+      ),
+    );
+  }
+
+  if (this.isNew && (this.status === "signed" || this.status === "amended")) {
     const md = this.mainDiagnosis;
-    if (!md || !md.code?.trim() || !md.text?.trim()) {
+    if (!md?.code?.trim() || !md?.text?.trim()) {
       return next(
         new Error(
-          "Main diagnosis is required: ICD-10 code and diagnosis text must be filled.",
+          "Signed/amended records require ICD-10 code and diagnosis text in mainDiagnosis.",
+        ),
+      );
+    }
+    if (!this.signedAt) {
+      return next(
+        new Error("signedAt is required for signed/amended records."),
+      );
+    }
+    if (!this.signedByUserId && !this.signedByEmployeeId) {
+      return next(
+        new Error(
+          "signedByUserId or signedByEmployeeId is required for signed/amended records.",
         ),
       );
     }
   }
+
   next();
 });
 
-// Создаем и экспортируем модель
+// ── AUTO-MIRROR: diagnosis ← mainDiagnosis.text ──────────────────
+// Срабатывает на каждом save (create + update через .save()).
+// Контроллеры пишут только в mainDiagnosis, mirror обновляется сам.
+newPatientMedicalHistorySchema.pre("save", function (next) {
+  if (this.mainDiagnosis?.text) {
+    this.diagnosis = this.mainDiagnosis.text;
+  }
+  next();
+});
+
 const newPatientMedicalHistoryModel = mongoose.model(
   "newPatientMedicalHistory",
   newPatientMedicalHistorySchema,

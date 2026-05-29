@@ -15,6 +15,16 @@ import PETScan from "../../../common/models/Polyclinic/ExamenationsTemplates/PET
  * @route   GET /admin/polyclinic-patient-detail-get/:id
  * @desc    Получить полную информацию о пациенте (врачи, истории, обследования)
  * @access  Admin / Doctor
+ *
+ * UMR fix (Sprint 2 Phase 1):
+ *   - h.diagnosis (legacy String) → h.mainDiagnosis.text (структурный объект)
+ *   - Добавлены diagnosisCode (ICD-10) и diagnosisTitle для админки/аналитики
+ *
+ * ⚠️ ПРЕДСУЩЕСТВУЮЩИЙ БАГ — НЕ В СКОУПЕ UMR:
+ *   Запрос NewPatientMedicalHistory.find({ patientId: id }) использует поле
+ *   patientId, которого в схеме НЕТ. Правильно: patientRef + patientTypeModel.
+ *   Из-за этого админка УЖЕ ДАВНО возвращает пустой массив histories для всех
+ *   пациентов. Фиксим отдельно в Sprint 2 Day 2 или 2.5.
  */
 export const PolyclinicPatientDetailGetController = async (req, res) => {
   try {
@@ -65,11 +75,15 @@ export const PolyclinicPatientDetailGetController = async (req, res) => {
       email: decryptSafe(patient.emailEncrypted),
       phoneNumber: decryptSafe(patient.phoneEncrypted),
       fullName: `${decryptSafe(patient.firstNameEncrypted)} ${decryptSafe(
-        patient.lastNameEncrypted
+        patient.lastNameEncrypted,
       )}`.trim(),
     };
 
     // === 2️⃣ Истории болезней ===
+    // ⚠️ TODO Sprint 2 Day 2: { patientId: id } — поля patientId в схеме нет.
+    // Правильный запрос:
+    //   { patientRef: id, patientTypeModel: "NewPatientPolyclinic" }
+    // Сейчас просто оставляю как было — фиксим отдельно, чтобы не смешивать со UMR.
     const histories = await NewPatientMedicalHistory.find({ patientId: id })
       .populate({
         path: "doctorId",
@@ -83,7 +97,10 @@ export const PolyclinicPatientDetailGetController = async (req, res) => {
 
     const decryptedHistories = histories.map((h) => ({
       _id: h._id,
-      diagnosis: h.diagnosis || "—",
+      // UMR: было h.diagnosis (legacy String), стало mainDiagnosis (структурный объект)
+      diagnosis: h.mainDiagnosis?.text || "—",
+      diagnosisCode: h.mainDiagnosis?.code || null,
+      diagnosisTitle: h.mainDiagnosis?.codeTitle || null,
       description: h.description || h.notes || "—",
       createdAt: h.createdAt,
       doctorId: h.doctorId
@@ -94,7 +111,7 @@ export const PolyclinicPatientDetailGetController = async (req, res) => {
             firstName: decryptSafe(h.doctorId.firstNameEncrypted),
             lastName: decryptSafe(h.doctorId.lastNameEncrypted),
             fullName: `${decryptSafe(
-              h.doctorId.firstNameEncrypted
+              h.doctorId.firstNameEncrypted,
             )} ${decryptSafe(h.doctorId.lastNameEncrypted)}`.trim(),
           }
         : null,
@@ -127,7 +144,7 @@ export const PolyclinicPatientDetailGetController = async (req, res) => {
               firstName: decryptSafe(ex.doctorId.firstNameEncrypted),
               lastName: decryptSafe(ex.doctorId.lastNameEncrypted),
               fullName: `${decryptSafe(
-                ex.doctorId.firstNameEncrypted
+                ex.doctorId.firstNameEncrypted,
               )} ${decryptSafe(ex.doctorId.lastNameEncrypted)}`.trim(),
             }
           : null,

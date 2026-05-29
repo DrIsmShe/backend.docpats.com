@@ -1,21 +1,60 @@
 import mongoose from "mongoose";
 
-// Определение схемы для хранения информации о пациенте в поликлинике
+/**
+ * 🔪 operationsPatient — перенесённые операции пациента
+ *  Sprint 2 Phase 1 (UMR) — patient-attribute шаблон
+ *
+ *  ⚠️ ИСПРАВЛЕНО ПРИ РЕВЬЮ:
+ *
+ *  БАГ #1 — имя модели:
+ *    Было:  mongoose.model("operationsPatientModel", schema)
+ *    Стало: mongoose.model("operationsPatient", schema)
+ *    Причина: в newPatientMedicalHistory ссылка `ref: "operationsPatient"`,
+ *    а модель регистрировалась под именем "operationsPatientModel".
+ *    .populate("operations") тихо ломался — возвращал [].
+ *    → НУЖЕН GREP по коду: grep -rn '"operationsPatientModel"' server/
+ *
+ *  БАГ #2 — некорректный индекс:
+ *    Было:  schema.index({ fullName: "text", phone: 1 })
+ *    Полей fullName и phone в схеме НЕТ — копипаст из patient-схемы.
+ *    Удалено. Заменено на text-индекс по content (как у остальных).
+ *
+ *  UMR-поля: createdByEmployee, createdByClinicId, sharedWith
+ */
+
 const operationsPatientSchema = new mongoose.Schema(
   {
-    // ID пациента (если пациент может иметь несколько записей, оставь массив [])
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "NewPatientPolyclinic",
       required: true,
     },
-    // Ссылка на лечащего врача
+
+    // ── АВТОРСТВО (UMR) ──────────────────────────────────────────
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
-    // Описание аллергии
+    createdByEmployee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClinicEmployee",
+      default: null,
+    },
+    createdByClinicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Clinic",
+      default: null,
+      index: true,
+    },
+
+    // ── CONSENT (UMR) ────────────────────────────────────────────
+    sharedWith: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Clinic" }],
+      default: [],
+    },
+
+    // ── СОДЕРЖИМОЕ ───────────────────────────────────────────────
     content: {
       type: String,
       trim: true,
@@ -23,15 +62,46 @@ const operationsPatientSchema = new mongoose.Schema(
     },
   },
   {
-    // Автоматическое добавление createdAt и updatedAt
     timestamps: true,
-  }
+  },
 );
-// Индексы для быстрого поиска по имени и телефону
-operationsPatientSchema.index({ fullName: "text", phone: 1 });
 
-const operationsPatientModel =
-  mongoose.models.operationsPatientModel ||
-  mongoose.model("operationsPatientModel", operationsPatientSchema);
+operationsPatientSchema.index({ patientId: 1, doctorId: 1 });
+operationsPatientSchema.index({ content: "text" });
+operationsPatientSchema.index({ createdByClinicId: 1, createdAt: -1 });
+operationsPatientSchema.index({ sharedWith: 1 });
 
-export default operationsPatientModel;
+operationsPatientSchema.pre("validate", function (next) {
+  const hasUser = !!this.doctorId;
+  const hasEmployee = !!this.createdByEmployee;
+
+  if (!hasUser && !hasEmployee) {
+    return next(
+      new Error(
+        "Author is required: either doctorId (User) or createdByEmployee (ClinicEmployee) must be set.",
+      ),
+    );
+  }
+  if (hasUser && hasEmployee) {
+    return next(
+      new Error(
+        "Only one author allowed: doctorId and createdByEmployee are mutually exclusive.",
+      ),
+    );
+  }
+  if (hasEmployee && !this.createdByClinicId) {
+    return next(
+      new Error(
+        "createdByClinicId is required when record is created by ClinicEmployee.",
+      ),
+    );
+  }
+  next();
+});
+
+// ⚠️ ИСПРАВЛЕНО: имя модели "operationsPatient" — совпадает с ref в encounter
+const operationsPatient =
+  mongoose.models.operationsPatient ||
+  mongoose.model("operationsPatient", operationsPatientSchema);
+
+export default operationsPatient;

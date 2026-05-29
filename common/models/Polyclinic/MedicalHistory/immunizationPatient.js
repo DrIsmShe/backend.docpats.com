@@ -1,48 +1,58 @@
 import mongoose from "mongoose";
 
 /**
- * 💉 Схема иммунизации пациента в поликлинике
+ * 💉 immunizationPatient — иммунизация пациента
+ *  Sprint 2 Phase 1 (UMR) — patient-attribute шаблон
+ *
+ *  UMR-поля: createdByEmployee, createdByClinicId, sharedWith
+ *
+ *  Валидация:
+ *   - Ровно один создатель: doctorId (User) ИЛИ createdByEmployee
+ *   - Если createdByEmployee — обязателен createdByClinicId
  */
+
 const immunizationPatientSchema = new mongoose.Schema(
   {
-    /**
-     * 🔗 ID пациента (если пациент может иметь несколько записей)
-     */
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "NewPatientPolyclinic",
       required: true,
     },
 
-    /**
-     * 👨‍⚕️ Ссылка на лечащего врача
-     */
+    // ── АВТОРСТВО (UMR) ──────────────────────────────────────────
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
+    },
+    createdByEmployee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClinicEmployee",
+      default: null,
+    },
+    createdByClinicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Clinic",
+      default: null,
+      index: true,
     },
 
-    /**
-     * 💊 Название вакцины или иммунизации
-     */
+    // ── CONSENT (UMR) ────────────────────────────────────────────
+    sharedWith: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Clinic" }],
+      default: [],
+    },
+
+    // ── СОДЕРЖИМОЕ ───────────────────────────────────────────────
     vaccineName: {
       type: String,
       trim: true,
       required: true,
     },
-
-    /**
-     * 📅 Дата проведения иммунизации
-     */
     dateGiven: {
       type: Date,
       default: Date.now,
     },
-
-    /**
-     * 🧾 Дополнительное описание или комментарии
-     */
     content: {
       type: String,
       trim: true,
@@ -50,20 +60,43 @@ const immunizationPatientSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // ⏰ createdAt, updatedAt
-  }
+    timestamps: true,
+  },
 );
 
-/**
- * ⚡ Индексы для быстрого поиска по пациенту и врачу
- */
 immunizationPatientSchema.index({ patientId: 1, doctorId: 1 });
 immunizationPatientSchema.index({ vaccineName: "text" });
+immunizationPatientSchema.index({ createdByClinicId: 1, createdAt: -1 });
+immunizationPatientSchema.index({ sharedWith: 1 });
 
-/**
- * 🧩 Безопасная регистрация модели:
- * предотвращает ошибку "Cannot overwrite model once compiled"
- */
+immunizationPatientSchema.pre("validate", function (next) {
+  const hasUser = !!this.doctorId;
+  const hasEmployee = !!this.createdByEmployee;
+
+  if (!hasUser && !hasEmployee) {
+    return next(
+      new Error(
+        "Author is required: either doctorId (User) or createdByEmployee (ClinicEmployee) must be set.",
+      ),
+    );
+  }
+  if (hasUser && hasEmployee) {
+    return next(
+      new Error(
+        "Only one author allowed: doctorId and createdByEmployee are mutually exclusive.",
+      ),
+    );
+  }
+  if (hasEmployee && !this.createdByClinicId) {
+    return next(
+      new Error(
+        "createdByClinicId is required when record is created by ClinicEmployee.",
+      ),
+    );
+  }
+  next();
+});
+
 const immunizationPatient =
   mongoose.models.immunizationPatient ||
   mongoose.model("immunizationPatient", immunizationPatientSchema);

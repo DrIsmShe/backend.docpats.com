@@ -185,6 +185,85 @@ export const ACTION_ENUM = [
   "appointment.update",
   "appointment.cancel",
 
+  // ═══════════ CLINIC MEDICAL — UMR (Sprint 2 Phase 1) ═══════════
+  // Unified Medical Records внутри clinic-domain.
+  // Аудит ВСЕХ операций с медицинскими данными внутри клиники.
+  // Покрывает: encounter (история болезни) + 6 patient-attribute моделей.
+  //
+  // Resource type: clinic-medical-{encounter|allergy|chronic-disease|operation|family-history|immunization|imaging-study}
+  //
+  // Important: cross-clinic чтения (когда клиника B читает запись созданную
+  // клиникой A через consent или sharedWith) — пишутся с metadata.isCrossClinic=true.
+
+  // Encounter (newPatientMedicalHistory)
+  "clinic.medical.encounter.create",
+  "clinic.medical.encounter.read",
+  "clinic.medical.encounter.list",
+  "clinic.medical.encounter.update",
+  "clinic.medical.encounter.sign", // переход status → "signed"
+  "clinic.medical.encounter.amend", // переход status → "amended"
+  "clinic.medical.encounter.delete",
+  "clinic.medical.encounter.export",
+
+  // Allergies (allergiesPatient)
+  "clinic.medical.allergy.create",
+  "clinic.medical.allergy.read",
+  "clinic.medical.allergy.list",
+  "clinic.medical.allergy.update",
+  "clinic.medical.allergy.delete",
+
+  // Chronic diseases (chronicDiseasesPatient)
+  "clinic.medical.chronic_disease.create",
+  "clinic.medical.chronic_disease.read",
+  "clinic.medical.chronic_disease.list",
+  "clinic.medical.chronic_disease.update",
+  "clinic.medical.chronic_disease.delete",
+
+  // Operations history (operationsPatient — перенесённые операции)
+  "clinic.medical.operation.create",
+  "clinic.medical.operation.read",
+  "clinic.medical.operation.list",
+  "clinic.medical.operation.update",
+  "clinic.medical.operation.delete",
+
+  // Family history of disease
+  "clinic.medical.family_history.create",
+  "clinic.medical.family_history.read",
+  "clinic.medical.family_history.list",
+  "clinic.medical.family_history.update",
+  "clinic.medical.family_history.delete",
+
+  // Immunization
+  "clinic.medical.immunization.create",
+  "clinic.medical.immunization.read",
+  "clinic.medical.immunization.list",
+  "clinic.medical.immunization.update",
+  "clinic.medical.immunization.delete",
+
+  // Imaging studies (ImagingStudy — CT/MRI/USG/etc unified)
+  "clinic.medical.imaging.create",
+  "clinic.medical.imaging.read",
+  "clinic.medical.imaging.list",
+  "clinic.medical.imaging.update",
+  "clinic.medical.imaging.delete",
+  "clinic.medical.imaging.export",
+
+  // ═══════════ PATIENT CONSENT (UMR Sprint 2 Phase 1) ═══════════
+  // Глобальное согласие пациента на доступ конкретной клиники к его
+  // медицинским данным. Отдельно от case.consent_* (anthropometry).
+  // resourceType: "patient-consent", resourceId: PatientConsent._id.
+  //
+  // grant   — пациент дал клинике consent (новая запись)
+  // revoke  — пациент отозвал consent (revokedAt set)
+  // update  — изменены scopes у активного consent
+  // check   — клиника запросила проверку (security-relevant: кто/когда сверялся)
+  "patient.consent.grant",
+  "patient.consent.revoke",
+  "patient.consent.update_scopes",
+  "patient.consent.check",
+  "patient.consent.list",
+  "patient.consent.expire", // авто-истечение по expiresAt (cron)
+
   // ═══════════ AI ═══════════
   "ai.consultation.create",
   "ai.consultation.read",
@@ -258,6 +337,23 @@ export const RESOURCE_TYPE_ENUM = [
   //   шифруется; tenant-scoped)
   "clinic-doctor-schedule",
   "clinic-appointment",
+
+  // Clinic medical / UMR (Sprint 2 Phase 1)
+  // Все ресурсы единой медицинской истории. Аудитим каждый тип отдельно
+  // чтобы можно было делать выборки "все аллергии созданные клиникой X"
+  // или "кто читал имаджинг пациента Y".
+  "clinic-medical-encounter", // newPatientMedicalHistory (история болезни / визит)
+  "clinic-medical-allergy", // allergiesPatient
+  "clinic-medical-chronic-disease", // chronicDiseasesPatient
+  "clinic-medical-operation", // operationsPatient (перенесённые операции)
+  "clinic-medical-family-history", // familyHistoryOfDiseasePatient
+  "clinic-medical-immunization", // immunizationPatient
+  "clinic-medical-imaging-study", // ImagingStudy
+
+  // Patient consent (UMR Sprint 2 Phase 1)
+  // Глобальное согласие пациент↔клиника. resourceId = PatientConsent._id.
+  // resourceOwnerId = User._id пациента (для запроса "все consent'ы пациента").
+  "patient-consent",
 
   // Profiles
   "doctor-profile",

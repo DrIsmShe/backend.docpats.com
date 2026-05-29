@@ -3,6 +3,24 @@ import NewPatientPolyclinicMedical from "../../../common/models/Polyclinic/Medic
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 
+/**
+ * UMR rewrite (Sprint 2 Phase 1):
+ *
+ *  Что изменилось:
+ *   - Удалены legacy поля из payload:
+ *       • patientId        — в схеме нет, Mongoose игнорировал, ломал админ-запросы
+ *       • diagnosis        — удалено из схемы вместе с UMR, не пишем
+ *       • isConsentGiven   — удалено, заменено моделью PatientConsent (Day 3)
+ *   - status: "signed" пишется явно — старая семантика "сохраняю значит подписал".
+ *     Когда фронт добавит drafts (Phase 2), будем брать из req.body.status.
+ *   - signedAt + signedByUserId — обязательны для signed (UMR-валидатор)
+ *
+ *  Что НЕ изменилось:
+ *   - createdBy: doctorUserId — продолжает работать для фрилансера
+ *   - createdByEmployee / createdByClinicId — оставляем null
+ *     (этот контроллер — myClinic flow, не clinic-medical)
+ */
+
 const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
   /* ─────────────── 1) AUTH ─────────────── */
   if (!req.session?.userId) {
@@ -62,23 +80,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     }
   }
 
-  /* ─────────────── 4) STABLE patientId ─────────────── */
-  const patientId =
-    patient.patientId?.toString?.() || patient._id?.toString?.();
-
-  if (!patientId) {
-    console.error("[MedicalHistory] patientId resolve failed", {
-      patientType,
-      patient,
-    });
-
-    return res.status(400).json({
-      success: false,
-      message: "Не удалось определить patientId.",
-    });
-  }
-
-  /* ─────────────── 5) BODY ─────────────── */
+  /* ─────────────── 4) BODY ─────────────── */
   const {
     metaDescription,
     metaKeywords,
@@ -88,15 +90,13 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     anamnesisVitae,
     statusPreasens,
     statusLocalis,
-    mainDiagnosis: rawMainDiagnosis, // ← НОВОЕ: приходит как JSON-строка
-    diagnosis, // ← старое поле, оставлено для обратной совместимости
+    mainDiagnosis: rawMainDiagnosis,
     additionalDiagnosis,
     recommendations,
     ctScanResults,
     mriResults,
     ultrasoundResults,
     laboratoryTestResults,
-    isConsentGiven,
   } = req.body ?? {};
 
   const trimOrNull = (v) => (typeof v === "string" ? v.trim() : (v ?? null));
@@ -104,8 +104,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
   const patientTypeModel =
     patientType === "private" ? "DoctorPrivatePatient" : "NewPatientPolyclinic";
 
-  /* ─── 5.1) Парсинг и валидация mainDiagnosis ─── */
-  // FormData не умеет передавать вложенные объекты, поэтому фронт шлёт JSON-строкой.
+  /* ─── 4.1) Парсинг и валидация mainDiagnosis ─── */
   let mainDiagnosis = null;
 
   if (rawMainDiagnosis) {
@@ -119,12 +118,10 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
         });
       }
     } else if (typeof rawMainDiagnosis === "object") {
-      // На случай, если придёт уже как объект (например, JSON-запрос вместо FormData)
       mainDiagnosis = rawMainDiagnosis;
     }
   }
 
-  // Проверяем обязательные поля диагноза
   if (
     !mainDiagnosis ||
     !mainDiagnosis.code?.toString().trim() ||
@@ -137,22 +134,37 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     });
   }
 
-  // Чистим перед сохранением
   const cleanMainDiagnosis = {
     code: mainDiagnosis.code.toString().trim(),
     codeTitle: (mainDiagnosis.codeTitle || "").toString().trim(),
     text: mainDiagnosis.text.toString().trim(),
   };
 
-  /* ─────────────── 6) PAYLOAD ─────────────── */
+  /* ─────────────── 5) PAYLOAD (UMR) ─────────────── */
+  const now = new Date();
+
   const docPayload = {
-    patientId,
+    // Полиморфная связь с пациентом
     patientType,
     patientTypeModel,
     patientRef: patient._id,
+
+    // UMR — авторство фрилансера
     doctorId: doctorUserId,
     createdBy: doctorUserId,
+    createdByEmployee: null,
+    createdByClinicId: null,
 
+    // UMR — статус (для myClinic flow сразу signed)
+    status: "signed",
+    signedAt: now,
+    signedByUserId: doctorUserId,
+    signedByEmployeeId: null,
+
+    // UMR — consent (per-record sharing пустой по умолчанию)
+    sharedWith: [],
+
+    // Содержимое
     metaDescription: trimOrNull(metaDescription),
     metaKeywords: trimOrNull(metaKeywords),
     readTime,
@@ -163,13 +175,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     statusPreasens: trimOrNull(statusPreasens),
     statusLocalis: trimOrNull(statusLocalis),
 
-    // ─── Новый структурированный диагноз ───
     mainDiagnosis: cleanMainDiagnosis,
-
-    // ─── Старое поле — заполняем из text для обратной совместимости ───
-    // Это нужно, чтобы старые места кода, которые читают `diagnosis`
-    // (списки, экспорт, отчёты), продолжали работать без изменений.
-    diagnosis: cleanMainDiagnosis.text,
 
     additionalDiagnosis: trimOrNull(additionalDiagnosis),
     recommendations: trimOrNull(recommendations),
@@ -178,11 +184,9 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     mriResults: trimOrNull(mriResults),
     ultrasoundResults: trimOrNull(ultrasoundResults),
     laboratoryTestResults: trimOrNull(laboratoryTestResults),
-
-    isConsentGiven: !!isConsentGiven,
   };
 
-  /* ─────────────── 7) SAVE ─────────────── */
+  /* ─────────────── 6) SAVE ─────────────── */
   try {
     const history = new NewPatientPolyclinicMedical(docPayload);
     await history.save();
@@ -195,7 +199,6 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
   } catch (err) {
     console.error("[MedicalHistory] Ошибка сохранения:", err);
 
-    // Mongoose ValidationError → 400, читаемое сообщение
     if (err.name === "ValidationError") {
       return res.status(400).json({
         success: false,
@@ -203,8 +206,13 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
       });
     }
 
-    // Кастомная ошибка из pre('validate') хука
-    if (err.message?.includes("Main diagnosis")) {
+    // Кастомные ошибки из pre('validate') хуков (UMR)
+    if (
+      err.message?.includes("Main diagnosis") ||
+      err.message?.includes("Author is required") ||
+      err.message?.includes("createdByClinicId is required") ||
+      err.message?.includes("Signed/amended records require")
+    ) {
       return res.status(400).json({
         success: false,
         message: err.message,

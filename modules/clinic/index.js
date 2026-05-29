@@ -11,6 +11,10 @@ import clinicInvitationRouter from "./clinic-staff/routes/invitation.routes.js";
 import clinicEmployeeAuthRouter from "./clinic-staff/routes/employeeAuth.routes.js";
 import clinicPatientRouter from "./clinic-patients/routes/patient.routes.js";
 import clinicAppointmentsRouter from "./clinic-appointments/index.js";
+// ─── UMR / clinic-medical (Sprint 2 Phase 2B + 2C) ───────────────────
+// Aggregator: encounter CRUD + 5 sub-record routers (allergies, chronic,
+// operations, family history, immunization). imaging deferred to 2C.2.
+import clinicMedicalRouter from "./clinic-medical/index.js";
 import { tenantMiddleware } from "../../common/middlewares/tenantMiddleware.js";
 import {
   errorHandler,
@@ -174,6 +178,8 @@ router.use("/", clinicStaffRouter);
 router.use("/", clinicInvitationRouter);
 router.use("/", clinicPatientRouter);
 router.use("/appointments", clinicAppointmentsRouter);
+// UMR / clinic-medical — encounter + sub-records, mounted under /medical
+router.use("/medical", clinicMedicalRouter);
 
 // ═══════════════════════════════════════════════════════════════
 // 5. 404 + error handler

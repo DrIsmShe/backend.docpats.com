@@ -1,32 +1,52 @@
 import mongoose from "mongoose";
 
 /**
- * 📋 Схема хронических заболеваний пациента в поликлинике
+ * 📋 chronicDiseasesPatient — хронические заболевания пациента
+ *  Sprint 2 Phase 1 (UMR) — стандартный patient-attribute шаблон
+ *
+ *  UMR-поля:
+ *   - createdByEmployee   — автор-сотрудник клиники
+ *   - createdByClinicId   — клиника-автор. null = фрилансер
+ *   - sharedWith          — клиники с доступом
+ *
+ *  Валидация:
+ *   - Ровно один создатель: doctorId (User) ИЛИ createdByEmployee
+ *   - Если createdByEmployee — обязателен createdByClinicId
  */
+
 const chronicDiseasesPatientSchema = new mongoose.Schema(
   {
-    /**
-     * 🔗 ID пациента
-     * (если пациент может иметь несколько записей, можно оставить массив [])
-     */
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "NewPatientPolyclinic",
       required: true,
     },
 
-    /**
-     * 👨‍⚕️ Ссылка на лечащего врача
-     */
+    // ── АВТОРСТВО (UMR) ──────────────────────────────────────────
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
+    },
+    createdByEmployee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClinicEmployee",
+      default: null,
+    },
+    createdByClinicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Clinic",
+      default: null,
+      index: true,
     },
 
-    /**
-     * 🧠 Описание хронического заболевания
-     */
+    // ── CONSENT (UMR) ────────────────────────────────────────────
+    sharedWith: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Clinic" }],
+      default: [],
+    },
+
+    // ── СОДЕРЖИМОЕ ───────────────────────────────────────────────
     content: {
       type: String,
       trim: true,
@@ -34,21 +54,43 @@ const chronicDiseasesPatientSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // ⏰ createdAt и updatedAt
-  }
+    timestamps: true,
+  },
 );
 
-/**
- * ⚡ Индексы для оптимизации поиска
- * (если понадобится поиск по пациенту и контенту)
- */
 chronicDiseasesPatientSchema.index({ patientId: 1, doctorId: 1 });
 chronicDiseasesPatientSchema.index({ content: "text" });
+chronicDiseasesPatientSchema.index({ createdByClinicId: 1, createdAt: -1 });
+chronicDiseasesPatientSchema.index({ sharedWith: 1 });
 
-/**
- * 🧩 Безопасная регистрация модели:
- * если уже зарегистрирована — повторно не создаём
- */
+chronicDiseasesPatientSchema.pre("validate", function (next) {
+  const hasUser = !!this.doctorId;
+  const hasEmployee = !!this.createdByEmployee;
+
+  if (!hasUser && !hasEmployee) {
+    return next(
+      new Error(
+        "Author is required: either doctorId (User) or createdByEmployee (ClinicEmployee) must be set.",
+      ),
+    );
+  }
+  if (hasUser && hasEmployee) {
+    return next(
+      new Error(
+        "Only one author allowed: doctorId and createdByEmployee are mutually exclusive.",
+      ),
+    );
+  }
+  if (hasEmployee && !this.createdByClinicId) {
+    return next(
+      new Error(
+        "createdByClinicId is required when record is created by ClinicEmployee.",
+      ),
+    );
+  }
+  next();
+});
+
 const chronicDiseasesPatient =
   mongoose.models.chronicDiseasesPatient ||
   mongoose.model("chronicDiseasesPatient", chronicDiseasesPatientSchema);

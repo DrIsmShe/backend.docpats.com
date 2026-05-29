@@ -1,50 +1,59 @@
 import mongoose from "mongoose";
 
 /**
- * 🧬 Семейная история заболеваний пациента
- * (для хранения данных о наследственных болезнях и рисках)
+ * 🧬 familyHistoryOfDiseasePatient — наследственные заболевания
+ *  Sprint 2 Phase 1 (UMR) — patient-attribute шаблон
+ *
+ *  UMR-поля: createdByEmployee, createdByClinicId, sharedWith
+ *
+ *  Валидация:
+ *   - Ровно один создатель: doctorId (User) ИЛИ createdByEmployee
+ *   - Если createdByEmployee — обязателен createdByClinicId
  */
+
 const familyHistoryOfDiseasePatientSchema = new mongoose.Schema(
   {
-    /**
-     * 🔗 ID пациента (может иметь несколько записей)
-     */
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "NewPatientPolyclinic",
       required: true,
     },
 
-    /**
-     * 👨‍⚕️ Ссылка на лечащего врача
-     */
+    // ── АВТОРСТВО (UMR) ──────────────────────────────────────────
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
+    },
+    createdByEmployee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClinicEmployee",
+      default: null,
+    },
+    createdByClinicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Clinic",
+      default: null,
+      index: true,
     },
 
-    /**
-     * 👪 Родственник, у которого было заболевание (например, мать, отец)
-     */
+    // ── CONSENT (UMR) ────────────────────────────────────────────
+    sharedWith: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Clinic" }],
+      default: [],
+    },
+
+    // ── СОДЕРЖИМОЕ ───────────────────────────────────────────────
     relative: {
       type: String,
       trim: true,
       required: true,
     },
-
-    /**
-     * 🧠 Название или описание заболевания
-     */
     diseaseName: {
       type: String,
       trim: true,
       required: true,
     },
-
-    /**
-     * 📝 Дополнительная информация
-     */
     content: {
       type: String,
       trim: true,
@@ -52,28 +61,54 @@ const familyHistoryOfDiseasePatientSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // createdAt, updatedAt
-  }
+    timestamps: true,
+  },
 );
 
-/**
- * ⚡ Индексы для ускоренного поиска по пациенту, врачу и родственнику
- */
 familyHistoryOfDiseasePatientSchema.index({
   patientId: 1,
   doctorId: 1,
   relative: 1,
 });
+familyHistoryOfDiseasePatientSchema.index({
+  createdByClinicId: 1,
+  createdAt: -1,
+});
+familyHistoryOfDiseasePatientSchema.index({ sharedWith: 1 });
 
-/**
- * 🧩 Безопасная регистрация модели
- * (исключает ошибку "Cannot overwrite model once compiled")
- */
+familyHistoryOfDiseasePatientSchema.pre("validate", function (next) {
+  const hasUser = !!this.doctorId;
+  const hasEmployee = !!this.createdByEmployee;
+
+  if (!hasUser && !hasEmployee) {
+    return next(
+      new Error(
+        "Author is required: either doctorId (User) or createdByEmployee (ClinicEmployee) must be set.",
+      ),
+    );
+  }
+  if (hasUser && hasEmployee) {
+    return next(
+      new Error(
+        "Only one author allowed: doctorId and createdByEmployee are mutually exclusive.",
+      ),
+    );
+  }
+  if (hasEmployee && !this.createdByClinicId) {
+    return next(
+      new Error(
+        "createdByClinicId is required when record is created by ClinicEmployee.",
+      ),
+    );
+  }
+  next();
+});
+
 const familyHistoryOfDiseasePatient =
   mongoose.models.familyHistoryOfDiseasePatient ||
   mongoose.model(
     "familyHistoryOfDiseasePatient",
-    familyHistoryOfDiseasePatientSchema
+    familyHistoryOfDiseasePatientSchema,
   );
 
 export default familyHistoryOfDiseasePatient;

@@ -1,21 +1,78 @@
 import mongoose from "mongoose";
 
-// Определение схемы для хранения информации о пациенте в поликлинике
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  allergiesPatient — атрибут пациента (аллергия)
+ *  Sprint 2 Phase 1 (UMR)
+ *
+ *  Шаблон одинаковый для всех patient-attribute моделей:
+ *    chronicDiseasesPatient, familyHistoryOfDiseasePatient,
+ *    operationsPatient, immunizationPatient
+ *
+ *  Что добавлено:
+ *   - createdByEmployee   — автор-сотрудник клиники, альтернатива doctorId
+ *   - createdByClinicId   — клиника-автор. null = фрилансер.
+ *   - sharedWith          — клиники, которым пациент открыл доступ
+ *
+ *  ⚠️ status / signedBy НЕ добавляются — это не encounter,
+ *     атрибуты пациента не подписывают.
+ *
+ *  Валидация:
+ *   - Ровно один создатель: doctorId (User) ИЛИ createdByEmployee (Employee)
+ *   - Если createdByEmployee — обязателен createdByClinicId
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 const allergiesPatientSchema = new mongoose.Schema(
   {
-    // ID пациента (если пациент может иметь несколько записей, оставь массив [])
+    // Пациент
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "NewPatientPolyclinic",
       required: true,
+      index: true,
     },
-    // Ссылка на лечащего врача
+
+    // ──────────────────────────────────────────────────────────────
+    //  АВТОРСТВО (UMR)
+    // ──────────────────────────────────────────────────────────────
+
+    // Автор-фрилансер (User-врач). Legacy-имя doctorId сохранено.
+    // Обязателен ТОЛЬКО если createdByEmployee нет.
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
-    // Описание аллергии
+
+    // Автор-сотрудник клиники.
+    createdByEmployee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClinicEmployee",
+      default: null,
+    },
+
+    // Клиника-автор. null = фрилансер.
+    createdByClinicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Clinic",
+      default: null,
+      index: true,
+    },
+
+    // ──────────────────────────────────────────────────────────────
+    //  CONSENT (UMR)
+    // ──────────────────────────────────────────────────────────────
+
+    sharedWith: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Clinic" }],
+      default: [],
+    },
+
+    // ──────────────────────────────────────────────────────────────
+    //  СОДЕРЖИМОЕ
+    // ──────────────────────────────────────────────────────────────
+
     content: {
       type: String,
       trim: true,
@@ -23,15 +80,52 @@ const allergiesPatientSchema = new mongoose.Schema(
     },
   },
   {
-    // Автоматическое добавление createdAt и updatedAt
     timestamps: true,
-  }
+  },
 );
 
-// Создаем и экспортируем модель
+// ─────────────────────────────────────────────────────────────────────────────
+//  ИНДЕКСЫ
+// ─────────────────────────────────────────────────────────────────────────────
+
+allergiesPatientSchema.index({ createdByClinicId: 1, createdAt: -1 });
+allergiesPatientSchema.index({ sharedWith: 1 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  ВАЛИДАЦИЯ — ровно один создатель
+// ─────────────────────────────────────────────────────────────────────────────
+
+allergiesPatientSchema.pre("validate", function (next) {
+  const hasUser = !!this.doctorId;
+  const hasEmployee = !!this.createdByEmployee;
+
+  if (!hasUser && !hasEmployee) {
+    return next(
+      new Error(
+        "Author is required: either doctorId (User) or createdByEmployee (ClinicEmployee) must be set.",
+      ),
+    );
+  }
+  if (hasUser && hasEmployee) {
+    return next(
+      new Error(
+        "Only one author allowed: doctorId and createdByEmployee are mutually exclusive.",
+      ),
+    );
+  }
+  if (hasEmployee && !this.createdByClinicId) {
+    return next(
+      new Error(
+        "createdByClinicId is required when record is created by ClinicEmployee.",
+      ),
+    );
+  }
+  next();
+});
+
 const allergiesPatientModel = mongoose.model(
   "AllergiesPatient",
-  allergiesPatientSchema
+  allergiesPatientSchema,
 );
 
 export default allergiesPatientModel;

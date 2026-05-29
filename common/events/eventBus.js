@@ -83,6 +83,10 @@ export const eventBus = new TypedEventBus();
  *
  * Naming convention: <domain>.<past_tense_verb>
  * Examples: "appointment.created", "payment.received"
+ *
+ * Sprint 2 Phase 2B (27.05.2026): cleaned up duplicate APPOINTMENT_*
+ * keys at the bottom of the original file (overrode same values),
+ * added MEDICAL_ENCOUNTER_* for UMR workflow.
  */
 export const EVENTS = Object.freeze({
   // Clinic core
@@ -106,6 +110,7 @@ export const EVENTS = Object.freeze({
   APPOINTMENT_STARTED: "appointment.started",
   APPOINTMENT_COMPLETED: "appointment.completed",
   APPOINTMENT_NO_SHOW: "appointment.no_show",
+  APPOINTMENT_STATUS_CHANGED: "appointment.status_changed",
 
   // Patient flow
   PATIENT_CHECKED_IN: "patient.checked_in",
@@ -117,6 +122,15 @@ export const EVENTS = Object.freeze({
   PATIENT_UPDATED: "patient.updated",
   PATIENT_LINKED: "patient.linked",
   PATIENT_DELETED: "patient.deleted",
+
+  // ── UMR / Medical Encounters (Sprint 2 Phase 2) ───────────────
+  // Encounter lifecycle for clinic-medical module.
+  // patientId in payloads refers to ClinicPatient._id.
+  MEDICAL_ENCOUNTER_CREATED: "medical.encounter.created",
+  MEDICAL_ENCOUNTER_UPDATED: "medical.encounter.updated",
+  MEDICAL_ENCOUNTER_SIGNED: "medical.encounter.signed",
+  MEDICAL_ENCOUNTER_AMENDED: "medical.encounter.amended",
+  MEDICAL_ENCOUNTER_DELETED: "medical.encounter.deleted",
 
   // Billing
   INVOICE_CREATED: "invoice.created",
@@ -153,8 +167,4 @@ export const EVENTS = Object.freeze({
 
   // Analytics & misc
   KPI_CALCULATED: "kpi.calculated",
-  APPOINTMENT_CREATED: "appointment.created",
-  APPOINTMENT_RESCHEDULED: "appointment.rescheduled",
-  APPOINTMENT_STATUS_CHANGED: "appointment.status_changed",
-  APPOINTMENT_CANCELLED: "appointment.cancelled",
 });
