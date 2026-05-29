@@ -1,0 +1,17 @@
+# Force LF line endings for all text files.
+# Prevents CRLF creep on Windows checkouts that breaks code review
+# diffs and produces noisy commits.
+
+* text=auto eol=lf
+
+# Binary files - leave untouched
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
