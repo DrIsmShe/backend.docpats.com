@@ -49,6 +49,21 @@ import getMyEKGScanFilesDetailsRoute from "./routes/getMyEKGScanFilesDetailsRout
 import getMyECHOEKGScanFilesDetailsRoute from "./routes/getMyECHOEKGScanFilesDetailsRoute.js";
 import getMyCoronographyScanFilesDetailsRoute from "./routes/getMyCoronographyScanFilesDetailsRoute.js";
 
+//clinic start
+// Sprint 3.1 — PatientConsent UI
+import getMyClinicsRoute from "./routes/getMyClinicsRoute.js";
+import grantConsentRoute from "./routes/grantConsentRoute.js";
+import updateConsentScopesRoute from "./routes/updateConsentScopesRoute.js";
+import revokeConsentRoute from "./routes/revokeConsentRoute.js";
+
+// Sprint 3.1 — PatientConsent UI
+router.use("/my-clinics", getMyClinicsRoute);
+router.use("/grant-consent", grantConsentRoute);
+router.use("/update-consent-scopes", updateConsentScopesRoute);
+router.use("/revoke-consent", revokeConsentRoute);
+
+//clinic end
+
 router.use("/get-my-medical-files", getMyMedicalFilesDetailsRoute);
 
 //exams details start
