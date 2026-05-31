@@ -39,7 +39,8 @@ const notificationSchema = new mongoose.Schema(
         "doctorProfile.commented",
         "doctorProfile.replied",
         "doctorProfile.commentSent",
-        "chat_message", // ← новый тип для сообщений чата
+        "chat_message",
+        "consent_request_new",
       ],
       default: "system_message",
       required: true,

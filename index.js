@@ -34,6 +34,7 @@ import { initCommunicationGateway } from "./modules/communication/gateway/socket
 // ✅ ИСПРАВЛЕНО: импорт на верхнем уровне, НЕ внутри функции
 import { initCallGateway } from "./modules/communication/calls/call.gateway.js";
 import { startR2OrphanCleanupCron } from "./jobs/r2OrphanCleanup.cron.js";
+import { startExpireConsentRequestsCron } from "./jobs/expireConsentRequests.cron.js";
 import sitemapRoutes from "./common/sitemap/routes/sitemap.routes.js";
 import { setSimulationIo } from "./modules/surgery/simulationIo.js";
 import "./jobs/prefetch.job.js";
@@ -364,6 +365,10 @@ async function bootstrap(startPort = PORT) {
     );
     startR2OrphanCleanupCron();
     console.log("🗑️  R2 orphan cleanup cron активен (каждые 15 минут)");
+    startExpireConsentRequestsCron();
+    console.log(
+      "🕓 Expire consent-requests cron активен (ежедневно в 04:00 UTC)",
+    );
   } catch (err) {
     console.error("❌ Ошибка запуска сервера:", err);
     process.exit(1);

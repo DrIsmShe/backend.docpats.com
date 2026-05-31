@@ -10,6 +10,7 @@ import clinicStaffRouter from "./clinic-staff/routes/staff.routes.js";
 import clinicInvitationRouter from "./clinic-staff/routes/invitation.routes.js";
 import clinicEmployeeAuthRouter from "./clinic-staff/routes/employeeAuth.routes.js";
 import clinicPatientRouter from "./clinic-patients/routes/patient.routes.js";
+import clinicConsentRequestRouter from "./clinic-patients/routes/consentRequest.routes.js";
 import clinicAppointmentsRouter from "./clinic-appointments/index.js";
 // ─── UMR / clinic-medical (Sprint 2 Phase 2B + 2C) ───────────────────
 // Aggregator: encounter CRUD + 5 sub-record routers (allergies, chronic,
@@ -177,6 +178,7 @@ router.use("/", clinicCoreRouter);
 router.use("/", clinicStaffRouter);
 router.use("/", clinicInvitationRouter);
 router.use("/", clinicPatientRouter);
+router.use("/", clinicConsentRequestRouter);
 router.use("/appointments", clinicAppointmentsRouter);
 // UMR / clinic-medical — encounter + sub-records, mounted under /medical
 router.use("/medical", clinicMedicalRouter);

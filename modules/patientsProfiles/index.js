@@ -62,6 +62,16 @@ router.use("/grant-consent", grantConsentRoute);
 router.use("/update-consent-scopes", updateConsentScopesRoute);
 router.use("/revoke-consent", revokeConsentRoute);
 
+// Sprint 3.2 — Pull Consent (clinic-initiated requests)
+import listConsentRequestsRoute from "./routes/listConsentRequestsRoute.js";
+import approveConsentRequestRoute from "./routes/approveConsentRequestRoute.js";
+import rejectConsentRequestRoute from "./routes/rejectConsentRequestRoute.js";
+
+// Sprint 3.2 — Pull Consent
+router.use("/consent-requests", listConsentRequestsRoute);
+router.use("/consent-requests", approveConsentRequestRoute);
+router.use("/consent-requests", rejectConsentRequestRoute);
+
 //clinic end
 
 router.use("/get-my-medical-files", getMyMedicalFilesDetailsRoute);
