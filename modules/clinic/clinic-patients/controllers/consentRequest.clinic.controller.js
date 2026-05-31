@@ -3,6 +3,10 @@
 // Express controllers for CLINIC-SIDE consent request management.
 // Sprint 3.2 (Pull Consent, 31 May 2026).
 //
+// FIXED 31 May 2026 — auth check теперь принимает И User-owner (session.userId
+// с активной ClinicMembership), И ClinicEmployee (session.employeeId).
+// Делегируем tenantMiddleware который уже разрешает обе ветки.
+//
 // Endpoints (mounted in modules/clinic/index.js):
 //   POST   /api/v1/clinic/patients/:cardId/consent-requests   → createRequest
 //   GET    /api/v1/clinic/patients/:cardId/consent-requests   → listRequestsForPatient
@@ -12,14 +16,13 @@
 //  PATTERNS
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// • Auth: session+tenantMiddleware applied at parent router (modules/clinic/index.js).
-//   Here we require req.session.employeeId (set by tenantMiddleware for clinic side).
+// • Auth: session + tenantMiddleware applied at parent router.
+//   Здесь проверяем что req.tenantContext.clinicId существует — это уже значит
+//   что юзер либо имеет membership (User-owner), либо активный employee.
 //
-// • Audit: writen inside service. On POST we use the same pattern as
-//   patient.controller.createPatient — audit recorded after service.create()
-//   so resourceId is real instead of null.
+// • Audit: written inside service after the request._id is generated.
 //
-// • Tenant scope: ConsentRequest.clinicId MUST be currentClinic._id (verified here).
+// • Tenant scope: ConsentRequest.clinicId MUST equal req.tenantContext.clinicId.
 
 import mongoose from "mongoose";
 import consentRequestService from "../../clinic-consent/services/consentRequest.service.js";
@@ -27,28 +30,46 @@ import ClinicPatient from "../models/clinicPatient.model.js";
 
 // ─── Auth + tenant guard ──────────────────────────────────────────────
 
-function requireEmployee(req, res) {
-  if (!req.session?.employeeId) {
-    res.status(401).json({ message: "Employee authentication required" });
+function requireClinicActor(req, res) {
+  const clinicId = req.tenantContext?.clinicId;
+  if (!clinicId) {
+    res.status(401).json({
+      message: "Clinic authentication required",
+      code: "NO_CLINIC_CONTEXT",
+    });
     return null;
   }
-  if (!req.tenantContext?.clinicId) {
-    res.status(403).json({ message: "Clinic context required" });
+  const employeeId = req.session?.employeeId || null;
+  const userId = req.session?.userId || null;
+  if (!employeeId && !userId) {
+    res.status(401).json({
+      message: "Authentication required",
+      code: "UNAUTHENTICATED",
+    });
     return null;
   }
   return {
-    employeeId: req.session.employeeId,
-    userId: req.session.userId, // employee's User._id
-    clinicId: req.tenantContext.clinicId,
+    clinicId,
+    employeeId,
+    userId,
+    actorType: employeeId ? "employee" : "user",
   };
 }
 
 function actorFromSession(req) {
   return {
-    userId: req.session.userId,
-    employeeId: req.session.employeeId || null,
-    email: req.session.email || null,
-    role: req.session.role || "employee",
+    userId: req.session?.userId || null,
+    employeeId: req.session?.employeeId || null,
+    email:
+      req.session?.email ||
+      req.session?.userEmail ||
+      req.session?.employeeEmail ||
+      null,
+    role:
+      req.session?.role ||
+      req.session?.userRole ||
+      req.session?.employeeRole ||
+      "user",
   };
 }
 
@@ -89,10 +110,9 @@ async function resolveCard(cardId, clinicId, res) {
 }
 
 // ─── POST /clinic/patients/:cardId/consent-requests ───────────────────
-// Body: { requestedScopes: {encounters, allergies, ...}, message?: "..." }
 
 export async function createConsentRequest(req, res) {
-  const auth = requireEmployee(req, res);
+  const auth = requireClinicActor(req, res);
   if (!auth) return;
 
   const { cardId } = req.params;
@@ -113,7 +133,7 @@ export async function createConsentRequest(req, res) {
 
   try {
     const card = await resolveCard(cardId, auth.clinicId, res);
-    if (!card) return; // resolveCard already responded
+    if (!card) return;
 
     const request = await consentRequestService.createRequest({
       payload: {
@@ -149,10 +169,9 @@ export async function createConsentRequest(req, res) {
 }
 
 // ─── GET /clinic/patients/:cardId/consent-requests ────────────────────
-// History всех запросов этой клиники к этому пациенту.
 
 export async function listConsentRequestsForPatient(req, res) {
-  const auth = requireEmployee(req, res);
+  const auth = requireClinicActor(req, res);
   if (!auth) return;
 
   const { cardId } = req.params;
@@ -174,10 +193,9 @@ export async function listConsentRequestsForPatient(req, res) {
 }
 
 // ─── DELETE /clinic/consent-requests/:id ──────────────────────────────
-// Клиника отменяет свой pending запрос (до решения пациента).
 
 export async function cancelConsentRequest(req, res) {
-  const auth = requireEmployee(req, res);
+  const auth = requireClinicActor(req, res);
   if (!auth) return;
 
   const { id } = req.params;
@@ -186,7 +204,6 @@ export async function cancelConsentRequest(req, res) {
   }
 
   try {
-    // Verify ownership: request must belong to this clinic
     const existing = await consentRequestService.findById(id);
     if (!existing) {
       return res.status(404).json({ message: "Consent request not found" });

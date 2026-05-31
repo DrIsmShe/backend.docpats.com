@@ -264,7 +264,11 @@ export async function createRequest({ payload, actor, context }) {
       employeeId: requestedBy.employeeId || null,
     },
     message: message ? String(message).slice(0, 500) : null,
-    expiresAt: expiresAt || undefined, // pre-save выставит +30 days
+    expiresAt:
+      expiresAt ||
+      new Date(
+        Date.now() + CONSENT_REQUEST_DEFAULT_TTL_DAYS * 24 * 60 * 60 * 1000,
+      ),
     status: "pending",
     requestedAt: new Date(),
   });
