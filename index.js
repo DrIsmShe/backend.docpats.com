@@ -7,7 +7,6 @@ import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-import xss from "xss-clean";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import MongoStore from "connect-mongo";
@@ -87,7 +86,6 @@ app.use(
   }),
 );
 
-app.use(xss());
 app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));

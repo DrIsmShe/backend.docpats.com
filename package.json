@@ -67,7 +67,6 @@
     "socket.io": "^4.8.3",
     "twilio": "^5.4.0",
     "uuid": "^11.1.0",
-    "xss-clean": "^0.1.4",
     "zod": "^3.25.76"
   },
   "devDependencies": {
