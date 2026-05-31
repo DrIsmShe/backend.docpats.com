@@ -16,7 +16,6 @@ const DialogParticipantSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "ChatDialog",
       required: true,
-      index: true,
     },
 
     userId: {

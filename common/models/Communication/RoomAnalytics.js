@@ -82,11 +82,10 @@ const roomAnalyticsSchema = new Schema(
     // 🧮 Для обучения ML-моделей
     featureVector: [{ type: Number }],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // 🔍 Индексы для быстрой аналитики
-roomAnalyticsSchema.index({ roomId: 1 });
 roomAnalyticsSchema.index({ "sentimentDistribution.positive": -1 });
 roomAnalyticsSchema.index({ doctorEngagement: -1 });
 roomAnalyticsSchema.index({ patientEngagement: -1 });

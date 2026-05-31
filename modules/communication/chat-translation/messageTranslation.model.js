@@ -25,7 +25,6 @@ const MessageTranslationSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "ChatDialog",
       required: true,
-      index: true,
     },
 
     // Оригинальный текст (копируем чтобы не делать join при отдаче)

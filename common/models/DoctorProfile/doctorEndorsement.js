@@ -35,17 +35,14 @@ const doctorEndorsementSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // 🔥 Один доктор может рекомендовать другого только один раз
 doctorEndorsementSchema.index(
   { fromDoctorId: 1, toDoctorId: 1 },
-  { unique: true }
+  { unique: true },
 );
-
-// 🔥 Быстрый запрос "сколько рекомендаций получил доктор"
-doctorEndorsementSchema.index({ toDoctorId: 1 });
 
 const DoctorEndorsement =
   mongoose.models.DoctorEndorsement ||

@@ -84,8 +84,6 @@ const appointmentAuditSchema = new mongoose.Schema(
 
 /* Индексы */
 appointmentAuditSchema.index({ appointmentId: 1, createdAt: -1 });
-appointmentAuditSchema.index({ byUserId: 1 });
-appointmentAuditSchema.index({ targetPatientId: 1 });
 appointmentAuditSchema.index({ action: 1 });
 appointmentAuditSchema.index({ isSystem: 1 });
 

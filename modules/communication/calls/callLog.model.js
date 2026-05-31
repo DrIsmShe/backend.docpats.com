@@ -12,7 +12,6 @@ const CallLogSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "ChatDialog",
       required: true,
-      index: true,
     },
     callerId: {
       type: Schema.Types.ObjectId,
