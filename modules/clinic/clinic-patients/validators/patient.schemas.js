@@ -72,6 +72,9 @@ export const createPatientSchema = z
     dateOfBirth: dobField.optional().nullable(),
     gender: genderField.optional().nullable(),
     notes: notesField.optional().nullable(),
+    // Optional primary department. Validated against the clinic's ACTIVE
+    // departments in the service layer (assertDepartmentInClinic).
+    departmentId: objectIdField.optional().nullable(),
     // linkedUserId is set via separate endpoint (POST /:id/link), not on create
 
     // Provisional User flag (v2, May 2026):
@@ -126,6 +129,7 @@ export const updatePatientSchema = z
     dateOfBirth: dobField.nullable().optional(),
     gender: genderField.nullable().optional(),
     notes: notesField.nullable().optional(),
+    departmentId: objectIdField.nullable().optional(),
   })
   .refine(
     (obj) => Object.keys(obj).length > 0,

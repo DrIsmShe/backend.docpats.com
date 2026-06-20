@@ -4,6 +4,7 @@
 // Sprint 2 Phase 2A — PATCHED in 2B:
 //   admin no longer has ENCOUNTER.DELETE — aligned with ROLE_PERMISSIONS
 //   where medical_record.delete is owner-only.
+//   PATCHED: lab_technician role added to the matrix (10 roles total).
 //
 // Goal: catch matrix typos at CI time, BEFORE wrong permissions ship.
 // HIPAA-critical: if matrix grants wrong access, real patient data leaks.
@@ -19,12 +20,13 @@ import {
 } from "../../modules/clinic/clinic-medical/rbac/clinicMedicalRBAC.js";
 
 describe("clinic-medical RBAC matrix — structure", () => {
-  it("has all 9 roles", () => {
+  it("has all 10 roles", () => {
     const roles = Object.keys(RBAC_MATRIX).sort();
     expect(roles).toEqual([
       "accountant",
       "admin",
       "doctor",
+      "lab_technician",
       "manager",
       "marketer",
       "nurse",

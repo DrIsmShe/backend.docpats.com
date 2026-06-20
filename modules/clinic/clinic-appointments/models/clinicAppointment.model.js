@@ -28,11 +28,20 @@
 //     trusted from the client.
 //
 // PHI:
-//   reasonEncrypted � patient's reason for visit / chief complaint.
+//   reasonEncrypted — patient's reason for visit / chief complaint.
 //   Encrypted at-rest with ENCRYPTION_KEY (AES-256-CBC,
 //   "iv:ciphertext" hex format) via encryptValue/decryptValue imported
-//   from clinicPatient.model.js � single canonical crypto helper
+//   from clinicPatient.model.js — single canonical crypto helper
 //   (Sprint Cleanup 17.05.2026, unified across all clinic modules).
+//
+// Org structure:
+//   departmentId — optional link to a ClinicDepartment. Nullable: legacy
+//   records and quick bookings may have none. NON-PHI (org metadata),
+//   so it is not encrypted and not stripped from the DTO. Validated for
+//   clinic-ownership in the service via assertDepartmentInClinic.
+//   roomId — optional link to a ClinicRoom (cabinet). Same rules; validated
+//   via assertRoomInClinic (rejects foreign / archived rooms). Independent
+//   of departmentId.
 //
 // Multi-tenancy:
 //   tenantScopedPlugin auto-attaches clinicId to all queries — appointments
@@ -126,7 +135,20 @@ const clinicAppointmentSchema = new Schema(
       type: Date,
       required: true,
     },
-
+    departmentId: {
+      type: Schema.Types.ObjectId,
+      ref: "ClinicDepartment",
+      default: null, // nullable — старые записи указывают на "General" или остаются null
+    },
+    // Optional room (cabinet) where the appointment takes place. Nullable;
+    // many bookings don't pin a room. NON-PHI org metadata — validated for
+    // clinic-ownership (and not-archived) in the service via
+    // assertRoomInClinic. Independent of departmentId for now.
+    roomId: {
+      type: Schema.Types.ObjectId,
+      ref: "ClinicRoom",
+      default: null,
+    },
     // ─── Timing — clinic-local calendar coords (derived, denormalised) ───
     // Authoritative source is startUTC/endUTC; these are filled by the
     // service on write so day-grouping queries are cheap.
@@ -189,15 +211,21 @@ const clinicAppointmentSchema = new Schema(
 
 // ─── Indexes ──────────────────────────────────────────────────
 //
-// Goal: cheap queries for the three hot read paths.
-//   1. doctor's day:     clinicId + doctorId + localDate
-//   2. patient history:  clinicId + patientId + startUTC (most recent first)
-//   3. conflict check:   clinicId + doctorId + startUTC + status
+// Goal: cheap queries for the hot read paths.
+//   1. doctor's day:       clinicId + doctorId + localDate
+//   2. patient history:    clinicId + patientId + startUTC (most recent first)
+//   3. conflict check:     clinicId + doctorId + startUTC + status
+//   4. department's day:   clinicId + departmentId + startUTC
 //
 // clinicId is auto-prepended by tenantScopedPlugin on queries; included
 // explicitly in the compound indexes so the index serves the actual query
 // shape sent to Mongo.
-
+//
+// FIX: the department index previously referenced `startAt`, a field that
+// does not exist on this schema (the timing field is `startUTC`). That made
+// the index dead weight. Corrected to startUTC.
+clinicAppointmentSchema.index({ clinicId: 1, departmentId: 1, startUTC: 1 });
+clinicAppointmentSchema.index({ clinicId: 1, roomId: 1, startUTC: 1 });
 clinicAppointmentSchema.index({ clinicId: 1, doctorId: 1, localDate: 1 });
 clinicAppointmentSchema.index({ clinicId: 1, patientId: 1, startUTC: -1 });
 // Partial: only active appointments need to participate in conflict

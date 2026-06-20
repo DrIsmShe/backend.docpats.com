@@ -27,6 +27,10 @@ import getMyDoctorsRoute from "./routes/getMyDoctorsRoute.js";
 import getMyMedicalHistoryRoute from "./routes/getMyMedicalHistoryRoute.js";
 import getMyMedicalHistoryDetailsRoute from "./routes/getMyMedicalHistoryDetailsRoute.js";
 import getMyMedicalFilesDetailsRoute from "./routes/getMyMedicalFilesDetailsRoute.js";
+import getMyClinicImagingDetailsRoute from "./routes/getMyClinicImagingDetailsRoute.js";
+
+import clinicReviewRoute from "./routes/clinicReviewRoute.js";
+
 import UpdatePatientChangePhoneRoute from "./routes/UpdatePatientChangePhoneRoute.js";
 import DoctorRecommendRoute from "./routes/patient-profile.js";
 //exams details
@@ -61,7 +65,7 @@ router.use("/my-clinics", getMyClinicsRoute);
 router.use("/grant-consent", grantConsentRoute);
 router.use("/update-consent-scopes", updateConsentScopesRoute);
 router.use("/revoke-consent", revokeConsentRoute);
-
+router.use("/clinic-reviews", clinicReviewRoute);
 // Sprint 3.2 — Pull Consent (clinic-initiated requests)
 import listConsentRequestsRoute from "./routes/listConsentRequestsRoute.js";
 import approveConsentRequestRoute from "./routes/approveConsentRequestRoute.js";
@@ -75,7 +79,7 @@ router.use("/consent-requests", rejectConsentRequestRoute);
 //clinic end
 
 router.use("/get-my-medical-files", getMyMedicalFilesDetailsRoute);
-
+router.use("/get-my-clinic-imaging-details", getMyClinicImagingDetailsRoute);
 //exams details start
 router.use("/get-my-lab-file-details", getMyLablFilesDetailsRoute);
 router.use("/get-my-ct-file-details", getMyCTFilesDetailsRoute);
@@ -107,6 +111,17 @@ router.use(
   "/get-my-coronography-file-details",
   getMyCoronographyScanFilesDetailsRoute,
 );
+import getMyLabResultsRoute, {
+  labResultPdfRouter,
+} from "./routes/getMyLabResultsRoute.js";
+import getMyPrescriptionsRoute, {
+  prescriptionPdfRouter,
+} from "./routes/getMyPrescriptionsRoute.js";
+
+router.use("/get-my-lab-results", getMyLabResultsRoute);
+router.use("/get-my-lab-result-pdf", labResultPdfRouter);
+router.use("/get-my-prescriptions", getMyPrescriptionsRoute);
+router.use("/get-my-prescription-pdf", prescriptionPdfRouter);
 //exams details end
 
 router.use("/get-my-medical-history-details", getMyMedicalHistoryDetailsRoute);

@@ -3,6 +3,10 @@
 // Role-Based Access Control matrix for clinic-medical (UMR) module.
 // Sprint 2 Phase 2A — patched in 2B to align with ROLE_PERMISSIONS:
 //   admin no longer has ENCOUNTER.DELETE — only owner can delete encounters.
+// Stage 2 #4 — added PRESCRIPTION actions (admin/doctor issue, owner deletes,
+//   nurse/pharmacist read-only).
+// Stage 2 #A — added LAB_RESULT actions (doctor/admin create+update+export,
+//   owner deletes, nurse read, pharmacist read, lab_technician create+read).
 
 const ENCOUNTER = {
   CREATE: "clinic.medical.encounter.create",
@@ -64,6 +68,27 @@ const IMAGING = {
   EXPORT: "clinic.medical.imaging.export",
 };
 
+// ── Stage 2 #4 — Prescriptions ───────────────────────────────────
+const PRESCRIPTION = {
+  CREATE: "clinic.medical.prescription.create",
+  READ: "clinic.medical.prescription.read",
+  LIST: "clinic.medical.prescription.list",
+  CANCEL: "clinic.medical.prescription.cancel",
+  COMPLETE: "clinic.medical.prescription.complete",
+  DELETE: "clinic.medical.prescription.delete",
+  EXPORT: "clinic.medical.prescription.export", // PDF
+};
+
+// ── Stage 2 #A — Lab Results ─────────────────────────────────────
+const LAB_RESULT = {
+  CREATE: "clinic.medical.lab_result.create",
+  READ: "clinic.medical.lab_result.read",
+  LIST: "clinic.medical.lab_result.list",
+  UPDATE: "clinic.medical.lab_result.update", // status FSM + comments
+  DELETE: "clinic.medical.lab_result.delete",
+  EXPORT: "clinic.medical.lab_result.export", // PDF
+};
+
 export const ALL_CLINIC_MEDICAL_ACTIONS = [
   ...Object.values(ENCOUNTER),
   ...Object.values(ALLERGY),
@@ -72,6 +97,8 @@ export const ALL_CLINIC_MEDICAL_ACTIONS = [
   ...Object.values(FAMILY),
   ...Object.values(IMMUNIZATION),
   ...Object.values(IMAGING),
+  ...Object.values(PRESCRIPTION),
+  ...Object.values(LAB_RESULT),
 ];
 
 const DOCTOR_FULL = [
@@ -113,10 +140,28 @@ const DOCTOR_FULL = [
   IMAGING.UPDATE,
   IMAGING.DELETE,
   IMAGING.EXPORT,
+  // Prescriptions — врач выписывает полностью, кроме DELETE (только owner)
+  PRESCRIPTION.CREATE,
+  PRESCRIPTION.READ,
+  PRESCRIPTION.LIST,
+  PRESCRIPTION.CANCEL,
+  PRESCRIPTION.COMPLETE,
+  PRESCRIPTION.EXPORT,
+  // Lab Results — врач выписывает полностью, кроме DELETE (только owner)
+  LAB_RESULT.CREATE,
+  LAB_RESULT.READ,
+  LAB_RESULT.LIST,
+  LAB_RESULT.UPDATE,
+  LAB_RESULT.EXPORT,
 ];
 
 export const RBAC_MATRIX = Object.freeze({
-  owner: new Set([...DOCTOR_FULL, ENCOUNTER.DELETE]),
+  owner: new Set([
+    ...DOCTOR_FULL,
+    ENCOUNTER.DELETE,
+    PRESCRIPTION.DELETE,
+    LAB_RESULT.DELETE,
+  ]),
   admin: new Set(DOCTOR_FULL),
   doctor: new Set(DOCTOR_FULL),
   manager: new Set([ENCOUNTER.READ, ENCOUNTER.LIST]),
@@ -143,6 +188,12 @@ export const RBAC_MATRIX = Object.freeze({
     OPERATION.LIST,
     IMAGING.READ,
     IMAGING.LIST,
+    // Рецепты — медсестра видит назначения пациента, но не выписывает
+    PRESCRIPTION.READ,
+    PRESCRIPTION.LIST,
+    // Анализы — медсестра видит результаты
+    LAB_RESULT.READ,
+    LAB_RESULT.LIST,
   ]),
   receptionist: new Set([ENCOUNTER.LIST]),
   accountant: new Set(),
@@ -151,6 +202,22 @@ export const RBAC_MATRIX = Object.freeze({
     ALLERGY.LIST,
     CHRONIC.READ,
     CHRONIC.LIST,
+    ENCOUNTER.READ,
+    ENCOUNTER.LIST,
+    // Рецепты — основная работа фармацевта (отпуск препаратов)
+    PRESCRIPTION.READ,
+    PRESCRIPTION.LIST,
+    // Анализы — фармацевт может видеть (взаимодействия/дозировки)
+    LAB_RESULT.READ,
+    LAB_RESULT.LIST,
+  ]),
+  // Лаборант — заносит и читает анализы; ничего больше из медкарты
+  lab_technician: new Set([
+    LAB_RESULT.CREATE,
+    LAB_RESULT.READ,
+    LAB_RESULT.LIST,
+    LAB_RESULT.UPDATE,
+    LAB_RESULT.EXPORT,
     ENCOUNTER.READ,
     ENCOUNTER.LIST,
   ]),
@@ -182,6 +249,8 @@ export const ACTIONS = Object.freeze({
   FAMILY,
   IMMUNIZATION,
   IMAGING,
+  PRESCRIPTION,
+  LAB_RESULT,
 });
 
 export default {

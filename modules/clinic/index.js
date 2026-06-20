@@ -12,6 +12,7 @@ import clinicEmployeeAuthRouter from "./clinic-staff/routes/employeeAuth.routes.
 import clinicPatientRouter from "./clinic-patients/routes/patient.routes.js";
 import clinicConsentRequestRouter from "./clinic-patients/routes/consentRequest.routes.js";
 import clinicAppointmentsRouter from "./clinic-appointments/index.js";
+import clinicReviewModerationRouter from "./clinic-core/routes/clinicReviewModeration.routes.js";
 // ─── UMR / clinic-medical (Sprint 2 Phase 2B + 2C) ───────────────────
 // Aggregator: encounter CRUD + 5 sub-record routers (allergies, chronic,
 // operations, family history, immunization). imaging deferred to 2C.2.
@@ -35,7 +36,17 @@ import {
 import { listUserMemberships } from "../../common/services/clinicResolver.service.js";
 import { getEnabledFeatures } from "../../common/services/featureFlag.service.js";
 import { ROLE_PERMISSIONS } from "../../common/auth/permissions.js";
-
+import clinicDepartmentRouter from "./clinic-departments/index.js";
+import clinicRoomRouter from "./clinic-rooms/index.js";
+import clinicEquipmentRouter from "./clinic-equipment/index.js";
+import clinicKnowledgeRouter from "./clinic-knowledge/index.js";
+import clinicAnnouncementsRouter from "./clinic-announcements/index.js";
+import myMembershipsRouter from "./clinic-staff/myMemberships.js";
+import "./clinic-staff/events/staff.listeners.js";
+import clinicConsiliumRouter from "./clinic-consilium/index.js";
+import clinicTelemedRouter from "./clinic-telemed/index.js";
+import membershipRequestRouter from "./clinic-staff/routes/membershipRequest.routes.js";
+import clinicMediaRouter from "./clinic-core/routes/clinicMedia.routes.js";
 const router = express.Router();
 
 // ═══════════════════════════════════════════════════════════════
@@ -73,6 +84,7 @@ router.get(
         authenticated: true,
         hasClinic: false,
         userId: String(userId),
+        role: req.session?.role || null,
       });
     }
 
@@ -97,7 +109,7 @@ router.get(
 
     const clinic = await Clinic.findById(clinicId)
       .select(
-        "name slug tier timezone defaultCurrency defaultLanguage supportedLanguages isVerified",
+        "name slug tier timezone defaultCurrency defaultLanguage supportedLanguages isVerified description isPublished logo gallery",
       )
       .lean();
 
@@ -121,6 +133,20 @@ router.get(
             defaultLanguage: clinic.defaultLanguage,
             supportedLanguages: clinic.supportedLanguages,
             isVerified: clinic.isVerified,
+            description: clinic.description || "",
+            isPublished: clinic.isPublished === true,
+            logo: clinic.logo || null,
+            gallery: Array.isArray(clinic.gallery)
+              ? clinic.gallery
+                  .slice()
+                  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                  .map((g) => ({
+                    id: String(g._id),
+                    url: g.url,
+                    caption: g.caption || "",
+                    order: g.order ?? 0,
+                  }))
+              : [],
           }
         : null,
     });
@@ -173,12 +199,22 @@ router.get("/health", (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 // 4. Submodule routes (protected by tenantMiddleware above)
 // ═══════════════════════════════════════════════════════════════
-
+router.use("/", clinicReviewModerationRouter);
 router.use("/", clinicCoreRouter);
+router.use("/", clinicMediaRouter);
 router.use("/", clinicStaffRouter);
+router.use("/", clinicDepartmentRouter);
+router.use("/", clinicRoomRouter);
+router.use("/", clinicEquipmentRouter);
+router.use("/", clinicKnowledgeRouter);
+router.use("/", clinicAnnouncementsRouter);
+router.use("/", myMembershipsRouter);
 router.use("/", clinicInvitationRouter);
 router.use("/", clinicPatientRouter);
+router.use("/", clinicConsiliumRouter);
+router.use("/", clinicTelemedRouter);
 router.use("/", clinicConsentRequestRouter);
+router.use("/", membershipRequestRouter);
 router.use("/appointments", clinicAppointmentsRouter);
 // UMR / clinic-medical — encounter + sub-records, mounted under /medical
 router.use("/medical", clinicMedicalRouter);

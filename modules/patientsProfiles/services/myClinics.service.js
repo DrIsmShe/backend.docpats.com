@@ -40,7 +40,7 @@ export async function listMyClinics({ userId }) {
   // 2. Load Clinic docs for all referenced clinics in one query.
   const clinicIds = cards.map((c) => c.clinicId).filter(Boolean);
   const clinics = await Clinic.find({ _id: { $in: clinicIds } })
-    .select("_id name slug address city country logo timezone")
+    .select("_id name slug address city country logo timezone isPublished")
     .lean();
   const clinicById = new Map(clinics.map((c) => [String(c._id), c]));
 
@@ -59,6 +59,7 @@ export async function listMyClinics({ userId }) {
               _id: String(clinic._id),
               name: clinic.name,
               slug: clinic.slug,
+              isPublished: clinic.isPublished === true,
               address: clinic.address || null,
               city: clinic.city || null,
               country: clinic.country || null,

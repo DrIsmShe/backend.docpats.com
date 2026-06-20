@@ -248,6 +248,15 @@ export const ACTION_ENUM = [
   "clinic.medical.imaging.delete",
   "clinic.medical.imaging.export",
 
+  // Prescriptions (Prescription — Rx blanks with items[]) — Stage 2 #4
+  "clinic.medical.prescription.create",
+  "clinic.medical.prescription.read",
+  "clinic.medical.prescription.list",
+  "clinic.medical.prescription.cancel",
+  "clinic.medical.prescription.complete",
+  "clinic.medical.prescription.delete",
+  "clinic.medical.prescription.export",
+
   // ═══════════ PATIENT CONSENT (UMR Sprint 2 Phase 1) ═══════════
   // Глобальное согласие пациента на доступ конкретной клиники к его
   // медицинским данным. Отдельно от case.consent_* (anthropometry).
@@ -350,6 +359,7 @@ export const RESOURCE_TYPE_ENUM = [
   "clinic-medical-family-history", // familyHistoryOfDiseasePatient
   "clinic-medical-immunization", // immunizationPatient
   "clinic-medical-imaging-study", // ImagingStudy
+  "clinic-medical-prescription", // Prescription (Rx blanks) — Stage 2 #4
 
   // Patient consent (UMR Sprint 2 Phase 1)
   // Глобальное согласие пациент↔клиника. resourceId = PatientConsent._id.

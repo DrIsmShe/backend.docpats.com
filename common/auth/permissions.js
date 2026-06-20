@@ -17,6 +17,14 @@ export const RESOURCES = Object.freeze({
   STAFF: "staff",
   STAFF_INVITE: "staff_invite",
 
+  // org structure
+  DEPARTMENT: "department",
+  ROOM: "room",
+  EQUIPMENT: "equipment",
+  KNOWLEDGE: "knowledge",
+  CONSILIUM: "consilium",
+  TELEMED: "telemed",
+
   // patients & medical records
   PATIENT: "patient",
   MEDICAL_RECORD: "medical_record",
@@ -103,12 +111,23 @@ const NONE = Object.freeze({ read: false, write: false, delete: false });
  * These are the "starting point" — admin can override per-user via UI.
  *
  * Special role "owner" gets full permissions on EVERYTHING (computed below).
+ *
+ * ORG STRUCTURE (department, room):
+ *   write — admin, manager (owner gets it via _ownerPermissions)
+ *   read  — every clinical role that needs to pick a department/room
+ *           (doctor, nurse, receptionist) + manager + admin
  */
 const _basePermissions = {
   [ROLES.ADMIN]: {
     [RESOURCES.CLINIC]: RW,
     [RESOURCES.STAFF]: FULL,
     [RESOURCES.STAFF_INVITE]: FULL,
+    [RESOURCES.DEPARTMENT]: FULL,
+    [RESOURCES.ROOM]: FULL,
+    [RESOURCES.EQUIPMENT]: FULL,
+    [RESOURCES.KNOWLEDGE]: FULL,
+    [RESOURCES.CONSILIUM]: FULL,
+    [RESOURCES.TELEMED]: FULL,
     [RESOURCES.PATIENT]: FULL,
     [RESOURCES.MEDICAL_RECORD]: RW,
     [RESOURCES.PRESCRIPTION]: RO,
@@ -141,6 +160,12 @@ const _basePermissions = {
 
   [ROLES.MANAGER]: {
     [RESOURCES.STAFF]: RW,
+    [RESOURCES.DEPARTMENT]: RW,
+    [RESOURCES.ROOM]: RW,
+    [RESOURCES.EQUIPMENT]: RW,
+    [RESOURCES.KNOWLEDGE]: RW,
+    [RESOURCES.CONSILIUM]: RW,
+    [RESOURCES.TELEMED]: RW,
     [RESOURCES.PATIENT]: RO,
     [RESOURCES.SCHEDULE]: FULL,
     [RESOURCES.APPOINTMENT]: FULL,
@@ -157,6 +182,12 @@ const _basePermissions = {
   },
 
   [ROLES.DOCTOR]: {
+    [RESOURCES.DEPARTMENT]: RO,
+    [RESOURCES.ROOM]: RO,
+    [RESOURCES.EQUIPMENT]: RO,
+    [RESOURCES.KNOWLEDGE]: RO,
+    [RESOURCES.CONSILIUM]: RW,
+    [RESOURCES.TELEMED]: RW,
     [RESOURCES.PATIENT]: RO,
     [RESOURCES.MEDICAL_RECORD]: RW,
     [RESOURCES.PRESCRIPTION]: RW,
@@ -168,6 +199,12 @@ const _basePermissions = {
   },
 
   [ROLES.NURSE]: {
+    [RESOURCES.DEPARTMENT]: RO,
+    [RESOURCES.ROOM]: RO,
+    [RESOURCES.EQUIPMENT]: RO,
+    [RESOURCES.KNOWLEDGE]: RO,
+    [RESOURCES.CONSILIUM]: RO,
+    [RESOURCES.TELEMED]: RO,
     [RESOURCES.PATIENT]: RO,
     [RESOURCES.MEDICAL_RECORD]: { read: true, write: true, delete: false },
     [RESOURCES.APPOINTMENT]: RO,
@@ -177,6 +214,11 @@ const _basePermissions = {
   },
 
   [ROLES.RECEPTIONIST]: {
+    [RESOURCES.DEPARTMENT]: RO,
+    [RESOURCES.ROOM]: RO,
+    [RESOURCES.EQUIPMENT]: RO,
+    [RESOURCES.KNOWLEDGE]: RO,
+    [RESOURCES.TELEMED]: RW,
     [RESOURCES.PATIENT]: RW,
     [RESOURCES.APPOINTMENT]: FULL,
     [RESOURCES.SCHEDULE]: RO,

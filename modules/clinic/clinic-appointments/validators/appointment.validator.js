@@ -43,6 +43,19 @@ function requireObjectId(raw, fieldPath) {
   return String(raw);
 }
 
+// Optional ObjectId: undefined / null / "" → null (field omitted).
+// Anything present must be a valid ObjectId.
+function optionalObjectId(raw, fieldPath) {
+  if (raw === undefined || raw === null || raw === "") return null;
+  if (!mongoose.isValidObjectId(raw)) {
+    throw new ValidationError(`${fieldPath} is not a valid id`, {
+      field: fieldPath,
+      received: raw,
+    });
+  }
+  return String(raw);
+}
+
 function requireDateInstant(raw, fieldPath) {
   if (raw === undefined || raw === null || raw === "") {
     throw new ValidationError(`${fieldPath} is required`, {
@@ -157,6 +170,10 @@ function assertSaneInterval(startUTC, endUTC, label = "") {
  *   {
  *     doctorId, patientId,
  *     startUTC, endUTC,                  // ISO strings or Date
+ *     departmentId? : ObjectId | null,   // optional org link (validated
+ *                                         // for clinic-ownership in service)
+ *     roomId?       : ObjectId | null,   // optional room link (validated
+ *                                         // for clinic-ownership in service)
  *     reason?    : string (PHI; will be encrypted by the service)
  *   }
  *
@@ -176,6 +193,9 @@ export function validateCreateAppointment(raw) {
   const endUTC = requireDateInstant(raw.endUTC, "endUTC");
   assertSaneInterval(startUTC, endUTC);
 
+  const departmentId = optionalObjectId(raw.departmentId, "departmentId");
+  const roomId = optionalObjectId(raw.roomId, "roomId");
+
   const reason = optionalString(raw.reason, "reason", {
     maxLength: REASON_MAX_LENGTH,
   });
@@ -185,6 +205,8 @@ export function validateCreateAppointment(raw) {
     patientId,
     startUTC,
     endUTC,
+    departmentId, // service validates ownership + writes (null = no department)
+    roomId, // service validates ownership + writes (null = no room)
     reason, // service encrypts → reasonEncrypted
   };
 }
@@ -192,11 +214,16 @@ export function validateCreateAppointment(raw) {
 /**
  * Validate input for PATCH /appointments/:id/reschedule
  *
- * Reschedule moves the time and (optionally) updates the reason; identity
- * fields (doctorId/patientId) are NOT mutable here — that would be a new
- * appointment, not a reschedule.
+ * Reschedule moves the time and (optionally) updates the reason and/or
+ * department; identity fields (doctorId/patientId) are NOT mutable here —
+ * that would be a new appointment, not a reschedule.
  *
- *   { startUTC, endUTC, reason? }
+ *   { startUTC, endUTC, reason?, departmentId? }
+ *
+ * departmentId semantics on reschedule:
+ *   - omitted        → department left unchanged
+ *   - null / ""      → department cleared
+ *   - valid ObjectId → department set (service validates ownership)
  */
 export function validateRescheduleAppointment(raw) {
   if (!raw || typeof raw !== "object") {
@@ -212,6 +239,15 @@ export function validateRescheduleAppointment(raw) {
     out.reason = optionalString(raw.reason, "reason", {
       maxLength: REASON_MAX_LENGTH,
     });
+  }
+  // Only include departmentId in the output if the caller mentioned it,
+  // so an omitted field leaves the existing value untouched.
+  if (raw.departmentId !== undefined) {
+    out.departmentId = optionalObjectId(raw.departmentId, "departmentId");
+  }
+  // Same omitted-leaves-unchanged semantics for roomId.
+  if (raw.roomId !== undefined) {
+    out.roomId = optionalObjectId(raw.roomId, "roomId");
   }
   return out;
 }

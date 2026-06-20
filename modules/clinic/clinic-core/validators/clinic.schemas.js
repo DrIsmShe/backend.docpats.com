@@ -17,6 +17,16 @@ const SUPPORTED_CURRENCIES = [
 ];
 const TIERS = ["starter", "pro", "medical_tourism", "enterprise"];
 
+// ───────────────────────────────────────────────────────────────────────────
+// Clinic-as-Brand (этап A): публичный профиль клиники.
+// Элемент галереи. url — R2-ключ или абсолютный CDN-URL (загрузка — этап B).
+// ───────────────────────────────────────────────────────────────────────────
+const galleryItemSchema = z.object({
+  url: z.string().trim().min(1).max(1000),
+  caption: z.string().trim().max(300).optional(),
+  order: z.number().int().optional(),
+});
+
 /**
  * Schema for POST /clinics
  */
@@ -67,15 +77,35 @@ export const createClinicSchema = z.object({
 
   specializations: z.array(z.string().trim()).optional(),
 
+  // ── Clinic-as-Brand (этап A): публичные brand-поля ──
+  // Описание — публичное, до 5000 символов. Пустая строка = очистить.
+  description: z.string().trim().max(5000).optional(),
+  // Логотип — R2-ключ/URL (загрузка на этапе B). null = убрать.
+  logo: z.string().trim().max(1000).nullable().optional(),
+  // Галерея фото (наполняется на этапе B).
+  gallery: z.array(galleryItemSchema).optional(),
+
   tier: z.enum(TIERS).default("starter"),
 });
 
 /**
  * Schema for PATCH /clinics/:id
  * All fields optional, but at least one must be provided.
+ *
+ * Наследует brand-поля (description/logo/gallery) из createClinicSchema.
+ * Заметь: isPublished СЮДА НЕ входит — публикация идёт через отдельный
+ * эндпоинт PATCH /clinics/:id/publish (publishClinicSchema).
  */
 export const updateClinicSchema = createClinicSchema
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided",
   });
+
+/**
+ * Schema for PATCH /clinics/:id/publish
+ * Тумблер видимости публичной страницы /clinic/:slug.
+ */
+export const publishClinicSchema = z.object({
+  isPublished: z.boolean(),
+});

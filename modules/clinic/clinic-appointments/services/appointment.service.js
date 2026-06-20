@@ -18,9 +18,14 @@
 //     defines every legal edge. Anything else throws ConflictError.
 //   - Conflict detection is a single MongoDB query against the
 //     partial index "doctor_active_overlap" defined in the model.
+//   - departmentId (optional org link) is validated for clinic-ownership
+//     via assertDepartmentInClinic from the departments service. A null /
+//     omitted department is allowed (assertDepartmentInClinic returns null
+//     for an empty id). Departments must be ACTIVE to be assignable.
 
 import mongoose from "mongoose";
-
+import { assertDepartmentInClinic } from "../../clinic-departments/services/department.service.js";
+import { assertRoomInClinic } from "../../clinic-rooms/services/room.service.js";
 import ClinicAppointment, {
   APPOINTMENT_STATUSES,
   ACTIVE_STATUSES,
@@ -316,6 +321,9 @@ function toDTO(doc) {
     clinicId: String(obj.clinicId),
     doctorId: String(obj.doctorId),
     patientId: String(obj.patientId),
+    // Org link — non-PHI; null when no department is assigned.
+    departmentId: obj.departmentId ? String(obj.departmentId) : null,
+    roomId: obj.roomId ? String(obj.roomId) : null,
     startUTC: obj.startUTC,
     endUTC: obj.endUTC,
     localDate: obj.localDate,
@@ -394,7 +402,8 @@ async function enrichDTOsWithPatientName(dtos) {
  * Create a new appointment.
  *
  * Input (already normalized by validateCreateAppointment):
- *   { doctorId, patientId, startUTC: Date, endUTC: Date, reason: string|null }
+ *   { doctorId, patientId, startUTC: Date, endUTC: Date,
+ *     departmentId: ObjectId|null, roomId: ObjectId|null, reason: string|null }
  *
  * Side effects: emits APPOINTMENT_CREATED on success.
  */
@@ -403,10 +412,23 @@ export async function createAppointment(input) {
   const clinicId = requireClinicId();
   const { userId, actorType, role } = requireActor();
 
-  const { doctorId, patientId, startUTC, endUTC, reason } = input;
+  const {
+    doctorId,
+    patientId,
+    startUTC,
+    endUTC,
+    departmentId,
+    roomId,
+    reason,
+  } = input;
 
   await assertDoctorOfClinic(doctorId, clinicId);
   await assertPatientOfClinic(patientId);
+  // Validate the optional department belongs to this clinic and is active.
+  // Returns null for an empty id; throws ValidationError for a bad/foreign one.
+  await assertDepartmentInClinic(clinicId, departmentId);
+  // Validate the optional room belongs to this clinic and is not archived.
+  await assertRoomInClinic(clinicId, roomId);
 
   const timeZone = await resolveClinicTimezone(clinicId);
   const { localDate, startMinute, endMinute } = deriveLocalCoords(
@@ -421,6 +443,8 @@ export async function createAppointment(input) {
     clinicId,
     doctorId,
     patientId,
+    departmentId: departmentId || null,
+    roomId: roomId || null,
     startUTC,
     endUTC,
     localDate,
@@ -436,6 +460,7 @@ export async function createAppointment(input) {
       appointmentId: String(doc._id),
       doctorId: String(doctorId),
       patientId: String(patientId),
+      departmentId: departmentId ? String(departmentId) : null,
       localDate,
       startMinute,
     },
@@ -447,6 +472,7 @@ export async function createAppointment(input) {
     clinicId: String(clinicId),
     doctorId: String(doctorId),
     patientId: String(patientId),
+    departmentId: departmentId ? String(departmentId) : null,
     localDate,
     createdBy: String(userId),
     createdByRole: role,
@@ -542,11 +568,15 @@ export async function listAppointments(query) {
 }
 
 /**
- * Reschedule (move time, optionally update reason).
+ * Reschedule (move time, optionally update reason and/or department).
  *
  * Only legal while the appointment is still ACTIVE (scheduled or
  * checked_in). Terminal statuses (completed/cancelled/no_show) cannot be
  * rescheduled — use updateAppointmentReason for note corrections instead.
+ *
+ * departmentId / roomId: only touched if the caller included the key.
+ *   - null  → cleared
+ *   - id    → validated for clinic-ownership, then set
  */
 export async function rescheduleAppointment(id, input) {
   requireWriteAccess();
@@ -583,6 +613,17 @@ export async function rescheduleAppointment(id, input) {
     endUTC: input.endUTC,
     excludeId: existing._id,
   });
+
+  // Optional department change — only if the caller supplied the key.
+  if (Object.prototype.hasOwnProperty.call(input, "departmentId")) {
+    await assertDepartmentInClinic(clinicId, input.departmentId);
+    existing.departmentId = input.departmentId || null;
+  }
+  // Optional room change — only if the caller supplied the key.
+  if (Object.prototype.hasOwnProperty.call(input, "roomId")) {
+    await assertRoomInClinic(clinicId, input.roomId);
+    existing.roomId = input.roomId || null;
+  }
 
   existing.startUTC = input.startUTC;
   existing.endUTC = input.endUTC;

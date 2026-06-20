@@ -79,11 +79,33 @@ const notificationSchema = new mongoose.Schema(
   },
 );
 
-notificationSchema.index(
-  { userId: 1, senderId: 1, type: 1, message: 1 },
-  { unique: true, sparse: true },
-);
+// ─── Indexes ─────────────────────────────────────────────────────────────
+//
+// IMPORTANT — history:
+//   This schema USED to carry
+//     index({ userId, senderId, type, message }, { unique: true, sparse: true })
+//   as a "dedupe" guard. It was wrong and silently LOST notifications:
+//   userId/type/message are required and senderId has a default, so the keys
+//   are always present → `sparse` never excludes anything → the index behaved
+//   as a FULL unique. Any two legitimately-distinct notifications that happened
+//   to share (userId, senderId, type, message) — e.g. two "lab result ready"
+//   on the same day, or two short "ok" chat pings — collided with E11000 and,
+//   if the error was swallowed, the second one was never created.
+//
+//   A notification is an EVENT LOG entry, not a unique entity: the same text
+//   can legitimately arrive many times. So uniqueness is removed. If a specific
+//   caller needs anti-double-fire, it does an explicit recent-window check in
+//   notify() (see notification.service.js) — that is intentional and scoped,
+//   not a blanket DB constraint.
+//
+//   The old unique index must be DROPPED in the DB by migration — Mongoose
+//   does NOT drop removed indexes automatically. See the migration note below.
+
+// Fast unread-list / list-by-recipient queries: recipient + recency.
+notificationSchema.index({ userId: 1, createdAt: -1 });
+// Unread filter per recipient.
 notificationSchema.index({ userId: 1, isRead: 1 });
+// Global recency (admin / cleanup).
 notificationSchema.index({ createdAt: -1 });
 
 notificationSchema.statics.markAsRead = async function (userId, id = null) {

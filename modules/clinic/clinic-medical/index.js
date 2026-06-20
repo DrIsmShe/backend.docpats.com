@@ -30,9 +30,10 @@ import operationRoutes from "./routes/operation.routes.js";
 import familyRoutes from "./routes/family.routes.js";
 import immunizationRoutes from "./routes/immunization.routes.js";
 import imagingRoutes from "./routes/imaging.routes.js";
-
+import prescriptionRoutes from "./routes/prescription.routes.js";
 const router = express.Router();
-
+import labResultRoutes from "./routes/labResult.routes.js";
+router.use("/", labResultRoutes);
 // All mounted at the same root — each sub-router defines its own
 // path prefixes (patients/:patientId/<resource> + <resource>/:recordId),
 // so there are no collisions between them.
@@ -43,5 +44,5 @@ router.use("/", operationRoutes);
 router.use("/", familyRoutes);
 router.use("/", immunizationRoutes);
 router.use("/", imagingRoutes);
-
+router.use("/", prescriptionRoutes);
 export default router;

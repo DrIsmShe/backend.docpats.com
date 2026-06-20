@@ -14,6 +14,21 @@ import slugify from "slugify";
 const ALLOWED_TIERS = ["starter", "pro", "medical_tourism", "enterprise"];
 const SUPPORTED_LANGUAGES = ["ru", "en", "tr", "az", "ar"];
 
+// ───────────────────────────────────────────────────────────────────────────
+// Clinic-as-Brand (этап A): публичный мини-сайт клиники.
+// Галерея фото — отдельный сабдокумент, _id сохраняем (нужен для точечного
+// удаления/переупорядочивания на этапе B при загрузке медиа в R2).
+// ───────────────────────────────────────────────────────────────────────────
+const galleryItemSchema = new mongoose.Schema(
+  {
+    // R2-ключ или абсолютный CDN-URL (https://media.docpats.com/...)
+    url: { type: String, required: true, trim: true },
+    caption: { type: String, trim: true, maxlength: 300, default: "" },
+    order: { type: Number, default: 0 },
+  },
+  { _id: true },
+);
+
 const clinicSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 200 },
@@ -76,6 +91,22 @@ const clinicSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Public profile (Clinic-as-Brand, этап A). Не PHI — шифрование не нужно.
+    // ─────────────────────────────────────────────────────────────────────
+    // Логотип: R2-ключ или абсолютный CDN-URL. Загрузка — этап B.
+    logo: { type: String, trim: true, default: null },
+
+    // Публичное описание клиники (markdown/plain). Показывается гостям.
+    description: { type: String, maxlength: 5000, default: "" },
+
+    // Фото-галерея. Наполняется на этапе B (загрузка в R2 docpats-media).
+    gallery: { type: [galleryItemSchema], default: [] },
+
+    // Видимость публичной страницы /clinic/:slug.
+    // false по умолчанию: пока владелец не заполнил профиль — страница скрыта.
+    isPublished: { type: Boolean, default: false, index: true },
 
     // Owner — required, at least one person must own the clinic
     ownerId: {

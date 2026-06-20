@@ -44,6 +44,7 @@ import { routes as anthropometryRoutes } from "./modules/anthropometry/index.js"
 import { auditRoutes } from "./modules/audit/index.js";
 import clinicRoutes from "./modules/clinic/index.js";
 import blockUnfinishedRegistration from "./common/middlewares/blockUnfinishedRegistration.middleware.js";
+import clinicPublicRouter from "./modules/clinic/clinic-public/clinic-public.routes.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -91,7 +92,9 @@ app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
+// Clinic-as-Brand (этап A) — публичная страница клиники.
+// Вне session/auth/tenant: гость/потенциальный пациент.
+app.use("/api/v1/public", clinicPublicRouter);
 // ======================= SESSION =======================
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URL;
 

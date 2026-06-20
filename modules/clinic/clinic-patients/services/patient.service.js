@@ -43,6 +43,13 @@
 //            is false).
 //      Without consent, (a) and (b) return 409 with the found user's
 //      identity in details, prompting UI to show a consent modal.
+//
+//   7. DEPARTMENT (Jun 2026) — optional departmentId on create/update.
+//      Validated against the clinic's ACTIVE departments via
+//      assertDepartmentInClinic (cross-module guard exported by the
+//      clinic-departments service). null = unassigned. Validated up
+//      front in createPatient — BEFORE any provisional/User work — so a
+//      bad departmentId never leaves an orphan provisional account.
 
 import ClinicPatient, {
   encryptValue,
@@ -68,6 +75,7 @@ import {
   wipeProvisionalUser,
 } from "./provisional.service.js";
 import { require as requirePerm } from "../../../../common/auth/can.js";
+import { assertDepartmentInClinic } from "../../clinic-departments/services/department.service.js";
 import auditService from "../../../audit/services/audit.service.js";
 import logger from "../../../../common/logger.js";
 
@@ -132,6 +140,7 @@ function toApiShape(doc) {
     notes: decryptValue(doc.notesEncrypted),
     dateOfBirth: doc.dateOfBirth || null,
     gender: doc.gender || null,
+    departmentId: doc.departmentId ? String(doc.departmentId) : null,
     linkedUserId: doc.linkedUserId ? String(doc.linkedUserId) : null,
     createdBy: doc.createdBy ? String(doc.createdBy) : null,
     createdByType: doc.createdByType,
@@ -287,6 +296,15 @@ export async function createPatient(input) {
   const clinicId = requireClinicId();
   const { userId, actorType } = requireActor();
 
+  // Validate optional department against this clinic's ACTIVE departments
+  // BEFORE any provisional user/account work — fail fast so a bad
+  // departmentId never leaves an orphan provisional User behind.
+  // Returns the department ObjectId, or null when none was provided.
+  const departmentId = await assertDepartmentInClinic(
+    clinicId,
+    input.departmentId,
+  );
+
   // Normalize phone/email BEFORE encrypting so hash matches future searches
   const normalizedPhone = normalizePhone(input.phone);
   const normalizedEmail = input.email ? input.email.trim().toLowerCase() : null;
@@ -398,6 +416,7 @@ export async function createPatient(input) {
     try {
       doc = await ClinicPatient.create({
         clinicId,
+        departmentId,
         firstNameEncrypted: encryptValue(input.firstName),
         lastNameEncrypted: encryptValue(input.lastName),
         phoneEncrypted: normalizedPhone ? encryptValue(normalizedPhone) : null,
@@ -550,6 +569,11 @@ export async function createPatient(input) {
       }
       if (input.dateOfBirth) existingInClinic.dateOfBirth = input.dateOfBirth;
       if (input.gender) existingInClinic.gender = input.gender;
+      // Only touch department if the caller explicitly sent the field
+      // (departmentId here is the validated value — null if cleared).
+      if (input.departmentId !== undefined) {
+        existingInClinic.departmentId = departmentId;
+      }
       if (input.notes !== undefined) {
         existingInClinic.notesEncrypted = input.notes
           ? encryptValue(input.notes)
@@ -574,6 +598,7 @@ export async function createPatient(input) {
       // the same User._id.
       patientDoc = await ClinicPatient.create({
         clinicId,
+        departmentId,
         firstNameEncrypted: encryptValue(input.firstName),
         lastNameEncrypted: encryptValue(input.lastName),
         phoneEncrypted: normalizedPhone ? encryptValue(normalizedPhone) : null,
@@ -683,6 +708,7 @@ export async function createPatient(input) {
   try {
     doc = await ClinicPatient.create({
       clinicId,
+      departmentId,
       firstNameEncrypted: encryptValue(input.firstName),
       lastNameEncrypted: encryptValue(input.lastName),
       phoneEncrypted: normalizedPhone ? encryptValue(normalizedPhone) : null,
@@ -795,11 +821,15 @@ export async function listPatients(query = {}) {
     before,
     sortBy = "createdAt",
     includeLinked = false,
+    departmentId,
   } = query;
 
   const filter = {};
   if (before) {
     filter[sortBy] = { $lt: before };
+  }
+  if (departmentId) {
+    filter.departmentId = departmentId;
   }
   if (includeLinked === false) {
     // omit: include both linked and unlinked
@@ -844,7 +874,7 @@ export async function getPatientById(id) {
 
 export async function updatePatient(id, input) {
   requirePerm("patient", "write");
-  requireClinicId();
+  const clinicId = requireClinicId();
   const { userId } = requireActor();
 
   const existing = await ClinicPatient.findById(id);
@@ -901,6 +931,14 @@ export async function updatePatient(id, input) {
   }
   if (Object.prototype.hasOwnProperty.call(input, "gender")) {
     update.gender = input.gender || null;
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "departmentId")) {
+    // null clears assignment; a real id is validated against this clinic's
+    // active departments (throws ValidationError on mismatch/archived).
+    update.departmentId = await assertDepartmentInClinic(
+      clinicId,
+      input.departmentId,
+    );
   }
 
   // Apply update — relies on tenantScoped plugin to enforce clinicId
@@ -1006,7 +1044,7 @@ export async function searchPatients(query) {
     const needle = lastName.trim().toLowerCase();
     const candidates = await ClinicPatient.find()
       .select(
-        "_id clinicId firstNameEncrypted lastNameEncrypted phoneEncrypted emailEncrypted dateOfBirth gender linkedUserId createdAt updatedAt createdBy createdByType lastVisitAt",
+        "_id clinicId firstNameEncrypted lastNameEncrypted phoneEncrypted emailEncrypted dateOfBirth gender departmentId linkedUserId createdAt updatedAt createdBy createdByType lastVisitAt",
       )
       .sort({ createdAt: -1 })
       .limit(LAST_NAME_SCAN_CAP)

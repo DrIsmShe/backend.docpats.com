@@ -121,6 +121,17 @@ const clinicPatientSchema = new Schema(
       default: null,
     },
 
+    // ─── Org structure ───
+    // Primary department this patient is attached to (optional).
+    // Validated against the clinic's active departments in the service
+    // layer (assertDepartmentInClinic). null = unassigned.
+    departmentId: {
+      type: Schema.Types.ObjectId,
+      ref: "ClinicDepartment",
+      default: null,
+      index: true,
+    },
+
     // ─── Link to existing DocPats user account (optional) ───
     // If the patient is a registered DocPats user, we link by _id.
     // This enables future features: shared dialogs, patient-side portal, etc.
@@ -161,6 +172,9 @@ clinicPatientSchema.index({ clinicId: 1, phoneHash: 1 });
 
 // Compound: email lookup within a clinic
 clinicPatientSchema.index({ clinicId: 1, emailHash: 1 });
+
+// Compound: list patients attached to a department within a clinic
+clinicPatientSchema.index({ clinicId: 1, departmentId: 1 });
 
 // Compound: find linked patients (e.g. when a DocPats user logs in,
 // show them which clinics they're registered at)

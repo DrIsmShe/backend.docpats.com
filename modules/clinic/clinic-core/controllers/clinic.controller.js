@@ -4,6 +4,7 @@ import * as service from "../services/clinic.service.js";
 import {
   createClinicSchema,
   updateClinicSchema,
+  publishClinicSchema,
 } from "../validators/clinic.schemas.js";
 import {
   UnauthorizedError,
@@ -16,12 +17,6 @@ import {
 } from "../../../../common/context/tenantContext.js";
 import { can } from "../../../../common/auth/can.js";
 
-/**
- * POST /api/v1/clinic/clinics
- *
- * Anyone authenticated can create a clinic and become its owner.
- * No tenant context required (this IS the bootstrap of a tenant).
- */
 /**
  * POST /api/v1/clinic/clinics
  *
@@ -91,6 +86,7 @@ export async function createClinic(req, res, next) {
     next(err);
   }
 }
+
 /**
  * GET /api/v1/clinic/clinics/me
  *
@@ -114,6 +110,7 @@ export async function getMyClinic(req, res, next) {
  * PATCH /api/v1/clinic/clinics/:id
  *
  * Update clinic profile. Requires "clinic.write" permission.
+ * Поддерживает brand-поля (description/logo/gallery) — см. updateClinicSchema.
  */
 export async function updateClinic(req, res, next) {
   try {
@@ -144,9 +141,48 @@ export async function updateClinic(req, res, next) {
 }
 
 /**
+ * PATCH /api/v1/clinic/clinics/:id/publish
+ *
+ * Clinic-as-Brand (этап A): тумблер видимости публичной страницы /clinic/:slug.
+ * Те же guard'ы, что и updateClinic: cross-tenant + clinic.write (owner/admin).
+ * body: { isPublished: boolean }
+ */
+export async function setClinicPublished(req, res, next) {
+  try {
+    const { id } = req.params;
+    const currentClinicId = getCurrentClinicId();
+
+    if (String(currentClinicId) !== String(id)) {
+      throw new ForbiddenError("Cannot modify another clinic");
+    }
+
+    if (!can("clinic", "write")) {
+      throw new ForbiddenError("clinic.write permission required");
+    }
+
+    const parsed = publishClinicSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new ValidationError("Invalid publish data", {
+        issues: parsed.error.issues,
+      });
+    }
+
+    const updated = await service.updateClinic(id, {
+      isPublished: parsed.data.isPublished,
+    });
+    res.json({ clinic: updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
  * GET /api/v1/clinic/public/:slug
  *
- * Public-facing clinic page (no auth needed).
+ * ⚠ LEGACY: устаревший публичный эндпоинт (урезанный clinic, без врачей/галереи).
+ * Новый публичный путь — GET /api/v1/public/clinics/:slug (модуль clinic-public).
+ * Оставлен временно; удалить на этапе cleanup (сверить, что getClinicBySlug
+ * больше нигде не используется).
  */
 export async function getPublicClinic(req, res, next) {
   try {
