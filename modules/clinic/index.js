@@ -47,6 +47,9 @@ import clinicConsiliumRouter from "./clinic-consilium/index.js";
 import clinicTelemedRouter from "./clinic-telemed/index.js";
 import membershipRequestRouter from "./clinic-staff/routes/membershipRequest.routes.js";
 import clinicMediaRouter from "./clinic-core/routes/clinicMedia.routes.js";
+import clinicServiceRouter from "./clinic-services/index.js";
+// V4.2 — модель услуг (для /me: чекбокс «Услуги» в редакторе витрины).
+import ClinicService from "./clinic-services/models/clinicService.model.js";
 const router = express.Router();
 
 // ═══════════════════════════════════════════════════════════════
@@ -109,8 +112,18 @@ router.get(
 
     const clinic = await Clinic.findById(clinicId)
       .select(
-        "name slug tier timezone defaultCurrency defaultLanguage supportedLanguages isVerified description isPublished logo gallery",
+        "name slug tier timezone defaultCurrency defaultLanguage supportedLanguages isVerified description isPublished logo gallery theme layout coverImage slogan callCenterPhone callCenterHours faq pageBackground",
       )
+      .lean();
+
+    // V4.2 — услуги клиники (для редактора витрины: чекбокс «Услуги» в NavForm
+    // показывается только когда у клиники есть хотя бы одна услуга).
+    const clinicServices = await ClinicService.find({
+      clinicId,
+      status: "active",
+      isSystem: { $ne: true },
+    })
+      .select("_id name departmentId priceType price")
       .lean();
 
     res.json({
@@ -146,6 +159,24 @@ router.get(
                     caption: g.caption || "",
                     order: g.order ?? 0,
                   }))
+              : [],
+            theme: clinic.theme || {},
+            layout: clinic.layout || { blocks: [] },
+            coverImage: clinic.coverImage || null,
+            pageBackground: clinic.pageBackground || null,
+            slogan: clinic.slogan || "",
+            callCenterPhone: clinic.callCenterPhone || "",
+            callCenterHours: clinic.callCenterHours || "",
+            faq: Array.isArray(clinic.faq) ? clinic.faq : [],
+            // V4.2 — услуги (для редактора витрины и nav). Облегчённый DTO.
+            services: Array.isArray(clinicServices)
+              ? clinicServices.map((s) => ({
+                  id: String(s._id),
+                  name: s.name,
+                  departmentId: s.departmentId ? String(s.departmentId) : null,
+                  priceType: s.priceType,
+                  price: typeof s.price === "number" ? s.price : null,
+                }))
               : [],
           }
         : null,
@@ -204,6 +235,7 @@ router.use("/", clinicCoreRouter);
 router.use("/", clinicMediaRouter);
 router.use("/", clinicStaffRouter);
 router.use("/", clinicDepartmentRouter);
+router.use("/", clinicServiceRouter);
 router.use("/", clinicRoomRouter);
 router.use("/", clinicEquipmentRouter);
 router.use("/", clinicKnowledgeRouter);

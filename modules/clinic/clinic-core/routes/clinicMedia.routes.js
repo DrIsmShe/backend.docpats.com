@@ -1,7 +1,8 @@
 // modules/clinic/clinic-core/routes/clinicMedia.routes.js
 //
-// Clinic-as-Brand (этап B) — роуты медиа клиники (логотип + галерея).
-// Монтируются в clinic-core роутере → под tenantMiddleware.
+// Clinic-as-Brand (этап B) + ВИТРИНА 2.0 (V4) — роуты медиа клиники
+// (логотип + обложка + галерея). Монтируются в clinic-core роутере →
+// под tenantMiddleware.
 //
 // ⚠ ALS + multer: multer-стримы рвут AsyncLocalStorage-контекст. После
 // upload.* контекст восстанавливаем через req.tenantContext snapshot
@@ -35,6 +36,40 @@ router.post(
 
 // DELETE /api/v1/clinic/clinics/:id/logo
 router.delete("/clinics/:id/logo", media.deleteClinicLogo);
+
+// ─── COVER (ВИТРИНА 2.0 V4: обложка hero) ───────────────────────────
+// POST /api/v1/clinic/clinics/:id/cover   (multipart, field "cover")
+router.post(
+  "/clinics/:id/cover",
+  upload.single("cover"),
+  rebindTenantContext,
+  media.uploadClinicCover,
+);
+
+// DELETE /api/v1/clinic/clinics/:id/cover
+router.delete("/clinics/:id/cover", media.deleteClinicCover);
+
+// ─── PAGE BACKGROUND (ВИТРИНА 2.0: фон всей страницы) ───────────────
+// POST /api/v1/clinic/clinics/:id/page-bg   (multipart, field "pageBg")
+router.post(
+  "/clinics/:id/page-bg",
+  upload.single("pageBg"),
+  rebindTenantContext,
+  media.uploadClinicPageBg,
+);
+
+// DELETE /api/v1/clinic/clinics/:id/page-bg
+router.delete("/clinics/:id/page-bg", media.deleteClinicPageBg);
+
+// ─── GENERIC ASSET (ВИТРИНА 2.0 Путь 1: баннеры страниц и пр.) ──────
+// POST /api/v1/clinic/clinics/:id/asset   (multipart, field "asset")
+// Грузит картинку в R2, возвращает { url }. URL хранит фронт в config блока.
+router.post(
+  "/clinics/:id/asset",
+  upload.single("asset"),
+  rebindTenantContext,
+  media.uploadClinicAsset,
+);
 
 // ─── GALLERY ────────────────────────────────────────────────────────
 // POST /api/v1/clinic/clinics/:id/gallery   (multipart, field "images")

@@ -3,6 +3,14 @@
 // Zod schemas for request validation.
 
 import { z } from "zod";
+import {
+  PALETTES,
+  FONT_PAIRS,
+  HERO_STYLES,
+  CARD_STYLES,
+  PRESETS,
+  PAGE_BG_STYLES,
+} from "../themePresets.js";
 
 const SUPPORTED_LANGUAGES = ["ru", "en", "tr", "az", "ar"];
 const SUPPORTED_CURRENCIES = [
@@ -17,6 +25,15 @@ const SUPPORTED_CURRENCIES = [
 ];
 const TIERS = ["starter", "pro", "medical_tourism", "enterprise"];
 
+// ВИТРИНА 2.0 — допустимые ключи темы берём из словарей themePresets.js
+// (единый источник). Так enum не разъезжается со словарями при их расширении.
+const PALETTE_KEYS = Object.keys(PALETTES);
+const FONT_PAIR_KEYS = Object.keys(FONT_PAIRS);
+const HERO_STYLE_KEYS = Object.keys(HERO_STYLES);
+const CARD_STYLE_KEYS = Object.keys(CARD_STYLES);
+const PRESET_KEYS = Object.keys(PRESETS);
+const PAGE_BG_STYLE_KEYS = Object.keys(PAGE_BG_STYLES);
+
 // ───────────────────────────────────────────────────────────────────────────
 // Clinic-as-Brand (этап A): публичный профиль клиники.
 // Элемент галереи. url — R2-ключ или абсолютный CDN-URL (загрузка — этап B).
@@ -26,6 +43,52 @@ const galleryItemSchema = z.object({
   caption: z.string().trim().max(300).optional(),
   order: z.number().int().optional(),
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// ВИТРИНА 2.0 (V2): тема оформления — ТОЛЬКО ключи (значения живут в словарях).
+// .strict() — лишние ключи отвергаются (чистый theme). .partial() — все
+// необязательны (частичное обновление палитры/шрифта и т.д.).
+// ───────────────────────────────────────────────────────────────────────────
+const themeSchema = z
+  .object({
+    preset: z.enum(PRESET_KEYS),
+    palette: z.enum(PALETTE_KEYS),
+    fontPair: z.enum(FONT_PAIR_KEYS),
+    heroStyle: z.enum(HERO_STYLE_KEYS),
+    cardStyle: z.enum(CARD_STYLE_KEYS),
+    pageBgStyle: z.enum(PAGE_BG_STYLE_KEYS),
+    pageBgDim: z.number().int().min(0).max(92),
+    contentWidth: z.number().int().min(380).max(1600),
+    heroHeight: z
+      .number()
+      .int()
+      .refine((v) => v === 0 || (v >= 100 && v <= 850), {
+        message: "heroHeight must be 0 (auto) or between 100 and 850",
+      }),
+  })
+  .partial()
+  .strict();
+
+// ───────────────────────────────────────────────────────────────────────────
+// ВИТРИНА 2.0 (V3): layout — раскладка блоков витрины.
+// Редактор присылает ПОЛНЫЙ упорядоченный список блоков → на сервисе
+// заменяется целиком ($set: { layout }). type валидируем мягко (строка):
+// неизвестные типы рендерер игнорирует, схему со списком блоков не связываем.
+// config — произвольный объект конфигурации блока (passthrough).
+// ───────────────────────────────────────────────────────────────────────────
+const layoutBlockSchema = z.object({
+  id: z.string().optional(), // _id сабдока (если редактор шлёт обратно)
+  type: z.string().trim().min(1).max(40),
+  visible: z.boolean().optional(),
+  order: z.number().int().min(0).optional(),
+  config: z.object({}).passthrough().optional(),
+});
+
+const layoutSchema = z
+  .object({
+    blocks: z.array(layoutBlockSchema).max(50),
+  })
+  .strict();
 
 /**
  * Schema for POST /clinics
@@ -85,6 +148,29 @@ export const createClinicSchema = z.object({
   // Галерея фото (наполняется на этапе B).
   gallery: z.array(galleryItemSchema).optional(),
 
+  // ── ВИТРИНА 2.0 (V4.1): brand-поля уровня клиники ──
+  // Обложка hero — R2-ключ/URL (загрузка отдельным шагом). null = убрать.
+  coverImage: z.string().trim().max(1000).nullable().optional(),
+  pageBackground: z.string().trim().max(1000).nullable().optional(),
+  slogan: z.string().trim().max(200).optional(),
+  callCenterPhone: z.string().trim().max(40).optional(),
+  callCenterHours: z.string().trim().max(120).optional(),
+  faq: z
+    .array(
+      z.object({
+        q: z.string().trim().max(300),
+        a: z.string().trim().max(2000),
+      }),
+    )
+    .max(30)
+    .optional(),
+
+  // ── ВИТРИНА 2.0 (V2): тема оформления (ключи) ──
+  theme: themeSchema.optional(),
+
+  // ── ВИТРИНА 2.0 (V3): раскладка блоков ──
+  layout: layoutSchema.optional(),
+
   tier: z.enum(TIERS).default("starter"),
 });
 
@@ -92,7 +178,7 @@ export const createClinicSchema = z.object({
  * Schema for PATCH /clinics/:id
  * All fields optional, but at least one must be provided.
  *
- * Наследует brand-поля (description/logo/gallery) из createClinicSchema.
+ * Наследует brand-поля (description/logo/gallery) и theme из createClinicSchema.
  * Заметь: isPublished СЮДА НЕ входит — публикация идёт через отдельный
  * эндпоинт PATCH /clinics/:id/publish (publishClinicSchema).
  */

@@ -19,6 +19,11 @@ import polyclinicStaticGetRoute from "./routes/polyclinicStaticGetRoute.js";
 import PolyclinicPatientDetailGetRoute from "./routes/PolyclinicPatientDetailGetRoute.js";
 
 import PolyclinicPatientDeleteRoute from "./routes/PolyclinicPatientDeleteRoute.js";
+
+import patchVerificationyDoctorRoute from "./routes/patchVerificationyDoctorRoute.js";
+
+import clinicArticlesModerationRoute from "./routes/clinicArticlesModerationRoute.js";
+
 // system ADMIN end
 // system ADMIN start
 // import { isAdmin } from "./middlewares/admin/isAdmin.js";
@@ -48,10 +53,9 @@ router.use("/block-user-from-admin", blockUserRoute);
 router.use("/delete-user", deleteUserRoute);
 router.use("/my-articles-categories", categoryRoute);
 
-import patchVerificationyDoctorRoute from "./routes/patchVerificationyDoctorRoute.js";
-
 router.use("/verification", patchVerificationyDoctorRoute);
-
+// ВИТРИНА 2.0 (Часть 3) — модерация статей клиник (рубильник проекта)
+router.use("/clinic-articles", clinicArticlesModerationRoute);
 //router.use("/admin-panel", isAdminRoute);
 // system ADMIN end
 export default router;

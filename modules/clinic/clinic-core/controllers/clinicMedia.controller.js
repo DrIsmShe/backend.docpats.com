@@ -1,6 +1,7 @@
 // modules/clinic/clinic-core/controllers/clinicMedia.controller.js
 //
-// Clinic-as-Brand (этап B) — загрузка медиа клиники в R2 (docpats-media).
+// Clinic-as-Brand (этап B) + ВИТРИНА 2.0 (V4) — загрузка медиа клиники в R2
+// (docpats-media).
 //
 // uploadFile() сжимает изображения в webp и возвращает АБСОЛЮТНЫЙ CDN-URL
 // (${R2_PUBLIC_URL}/uploads/images/<uuid>.webp), поэтому в модель пишем
@@ -99,6 +100,136 @@ export async function deleteClinicLogo(req, res, next) {
 }
 
 /**
+ * POST /api/v1/clinic/clinics/:id/cover
+ * multipart, поле "cover" (один файл). ВИТРИНА 2.0 (V4): обложка hero
+ * (photo/split-стили). Заменяет coverImage, старый удаляет из R2.
+ */
+export async function uploadClinicCover(req, res, next) {
+  try {
+    const { id } = req.params;
+    assertCanEdit(id);
+
+    if (!req.file) {
+      throw new ValidationError("No cover file provided (field 'cover')");
+    }
+
+    const clinic = await Clinic.findById(id);
+    if (!clinic) throw new NotFoundError("Clinic");
+
+    const newUrl = await uploadFile(req.file); // абсолютный CDN-URL
+    const oldUrl = clinic.coverImage;
+
+    clinic.coverImage = newUrl;
+    await clinic.save();
+
+    // подчистить старую обложку (не блокируем ответ ошибкой удаления)
+    if (oldUrl && oldUrl !== newUrl) {
+      deleteFile(oldUrl).catch((e) =>
+        console.warn("[clinic-media] old cover delete failed:", e?.message),
+      );
+    }
+
+    res.json({ coverImage: clinic.coverImage });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * DELETE /api/v1/clinic/clinics/:id/cover
+ * Убрать обложку hero.
+ */
+export async function deleteClinicCover(req, res, next) {
+  try {
+    const { id } = req.params;
+    assertCanEdit(id);
+
+    const clinic = await Clinic.findById(id);
+    if (!clinic) throw new NotFoundError("Clinic");
+
+    const oldUrl = clinic.coverImage;
+    clinic.coverImage = null;
+    await clinic.save();
+
+    if (oldUrl) {
+      deleteFile(oldUrl).catch((e) =>
+        console.warn("[clinic-media] cover delete failed:", e?.message),
+      );
+    }
+
+    res.json({ coverImage: null });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * POST /api/v1/clinic/clinics/:id/page-bg
+ * multipart, поле "pageBg" (один файл). ВИТРИНА 2.0: фоновое фото ВСЕЙ
+ * страницы (theme.pageBgStyle === "photo"). Отдельно от обложки hero.
+ * Заменяет pageBackground, старый удаляет из R2.
+ */
+export async function uploadClinicPageBg(req, res, next) {
+  try {
+    const { id } = req.params;
+    assertCanEdit(id);
+
+    if (!req.file) {
+      throw new ValidationError(
+        "No page background file provided (field 'pageBg')",
+      );
+    }
+
+    const clinic = await Clinic.findById(id);
+    if (!clinic) throw new NotFoundError("Clinic");
+
+    const newUrl = await uploadFile(req.file); // абсолютный CDN-URL
+    const oldUrl = clinic.pageBackground;
+
+    clinic.pageBackground = newUrl;
+    await clinic.save();
+
+    if (oldUrl && oldUrl !== newUrl) {
+      deleteFile(oldUrl).catch((e) =>
+        console.warn("[clinic-media] old page-bg delete failed:", e?.message),
+      );
+    }
+
+    res.json({ pageBackground: clinic.pageBackground });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * DELETE /api/v1/clinic/clinics/:id/page-bg
+ * Убрать фоновое фото страницы.
+ */
+export async function deleteClinicPageBg(req, res, next) {
+  try {
+    const { id } = req.params;
+    assertCanEdit(id);
+
+    const clinic = await Clinic.findById(id);
+    if (!clinic) throw new NotFoundError("Clinic");
+
+    const oldUrl = clinic.pageBackground;
+    clinic.pageBackground = null;
+    await clinic.save();
+
+    if (oldUrl) {
+      deleteFile(oldUrl).catch((e) =>
+        console.warn("[clinic-media] page-bg delete failed:", e?.message),
+      );
+    }
+
+    res.json({ pageBackground: null });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
  * POST /api/v1/clinic/clinics/:id/gallery
  * multipart, поле "images" (несколько). Добавляет фото в галерею.
  */
@@ -188,6 +319,33 @@ export async function deleteClinicGalleryItem(req, res, next) {
           order: g.order ?? 0,
         })),
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * POST /api/v1/clinic/clinics/:id/asset   (multipart, field "asset")
+ *
+ * ВИТРИНА 2.0 (Путь 1) — универсальная загрузка картинки в R2 для нужд
+ * оформления (баннеры страниц-разделов и т.п.). НЕ пишет в модель: возвращает
+ * готовый CDN-URL, который фронт сохраняет в config блока (pageBannerUrl).
+ *
+ * Без модели → нет «старого» файла для удаления. Осиротевшие ассеты (если
+ * клиника сменила баннер) подчищаются отдельной ревизией позже; здесь
+ * приоритет — простота (одна ручка под любые config-картинки).
+ */
+export async function uploadClinicAsset(req, res, next) {
+  try {
+    const { id } = req.params;
+    assertCanEdit(id);
+
+    if (!req.file) {
+      throw new ValidationError("No asset file provided (field 'asset')");
+    }
+
+    const url = await uploadFile(req.file); // абсолютный CDN-URL
+    res.json({ url });
   } catch (err) {
     next(err);
   }

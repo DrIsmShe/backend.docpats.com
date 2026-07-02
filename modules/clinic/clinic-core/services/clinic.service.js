@@ -130,6 +130,21 @@ export async function updateClinic(clinicId, updates) {
   const safe = { ...updates };
   forbidden.forEach((k) => delete safe[k]);
 
+  // $set-объект. theme (ВИТРИНА 2.0) мержим по ВЛОЖЕННЫМ путям, чтобы частичное
+  // обновление (например только palette) не затёрло остальные подполя темы.
+  // Ключи уже провалидированы Zod (updateClinicSchema → themeSchema).
+  const set = {};
+  if (
+    safe.theme &&
+    typeof safe.theme === "object" &&
+    !Array.isArray(safe.theme)
+  ) {
+    for (const [k, v] of Object.entries(safe.theme)) {
+      set[`theme.${k}`] = v;
+    }
+    delete safe.theme;
+  }
+
   // If slug is being changed, ensure uniqueness
   if (safe.slug) {
     const exists = await Clinic.findOne({
@@ -145,21 +160,24 @@ export async function updateClinic(clinicId, updates) {
     }
   }
 
+  // Остальные поля — как есть (верхнеуровневый $set)
+  Object.assign(set, safe);
+
   const updated = await Clinic.findByIdAndUpdate(
     clinicId,
-    { $set: safe },
+    { $set: set },
     { new: true, runValidators: true },
   );
   if (!updated) throw new NotFoundError("Clinic");
 
   log.info(
-    { clinicId: String(clinicId), updates: Object.keys(safe) },
+    { clinicId: String(clinicId), updates: Object.keys(set) },
     "Clinic updated",
   );
 
   eventBus.emitSafe(EVENTS.CLINIC_UPDATED, {
     clinicId: String(clinicId),
-    fields: Object.keys(safe),
+    fields: Object.keys(set),
   });
 
   return updated;
