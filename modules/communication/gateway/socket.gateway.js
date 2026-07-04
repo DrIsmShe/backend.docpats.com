@@ -38,20 +38,30 @@ const dialogJoinLimiter = createSocketRateLimiter("dialog:join", {
 });
 
 // ─── Audit context helper ─────────────────────────────────────────────
-// Вытаскивает actor info из socket для аудита.
-// Email/role могут отсутствовать — если так, audit запишется только с userId.
+// Возвращает ФОРМУ, которую ждёт auditService.recordAction:
+//   { actor: { userId, email, role }, context: { ipAddress, userAgent, sessionId } }
+//
+// ⚠️ КРИТИЧНО: раньше возвращался плоский объект (userId/actorEmail/... на
+// верхнем уровне). recordAction читает params.actor.userId — при плоской
+// форме actor === undefined, срабатывал throw "actor.userId is required",
+// recordActionAsync глотал ошибку → НИ ОДНА socket-запись аудита не
+// сохранялась. Теперь форма вложенная — аудит из WebSocket реально пишется.
 function _auditContext(socket) {
   const session = socket.request?.session || {};
   return {
-    userId: socket.user?.id,
-    actorEmail: session.email || null,
-    actorRole: session.role || null,
-    sessionId: socket.request?.sessionID || null,
-    ipAddress:
-      socket.handshake?.address ||
-      socket.request?.connection?.remoteAddress ||
-      null,
-    userAgent: socket.handshake?.headers?.["user-agent"] || null,
+    actor: {
+      userId: socket.user?.id,
+      email: session.email || null,
+      role: session.role || null,
+    },
+    context: {
+      sessionId: socket.request?.sessionID || null,
+      ipAddress:
+        socket.handshake?.address ||
+        socket.request?.connection?.remoteAddress ||
+        null,
+      userAgent: socket.handshake?.headers?.["user-agent"] || null,
+    },
   };
 }
 
@@ -131,9 +141,7 @@ export function initCommunicationGateway(nsp) {
 
         socket.join(`room:dialog:${dialogId}`);
         console.log("✅ JOIN:", dialogId);
-        console.log(
-          "🔍 [AUDIT-DEBUG] about to call recordActionAsync from dialog:join",
-        );
+
         // ✅ AUDIT — join success
         recordActionAsync({
           ..._auditContext(socket),
@@ -264,7 +272,7 @@ export function initCommunicationGateway(nsp) {
           ..._auditContext(socket),
           action: "chat.message.create",
           resourceType: "chat-message",
-          resourceId: message?._id ? String(message._id) : dialogId,
+          resourceId: message?.id ? String(message.id) : dialogId,
           resourceOwnerId: peerId ? String(peerId) : null,
           outcome: "success",
           metadata: {
@@ -289,7 +297,6 @@ export function initCommunicationGateway(nsp) {
         // сидит в room:dialog (иначе он уже получил выше — дубль не нужен)
         if (peerId) {
           const roomName = `room:dialog:${dialogId}`;
-          const room = nsp.adapter.rooms.get(roomName);
           // Ищем сокеты peerId в этой room
           const peerSockets = await nsp.in(`user:${peerId}`).fetchSockets();
           const peerInRoom = peerSockets.some((s) => s.rooms.has(roomName));
@@ -365,7 +372,10 @@ export function initCommunicationGateway(nsp) {
         message.isDeleted = true;
         message.deletedAt = new Date();
         message.deletedBy = userId;
+        // Чистим и legacy plaintext, и зашифрованный текст — иначе PHI
+        // удалённого сообщения остаётся в БД в textEncrypted.
         message.text = "";
+        message.textEncrypted = null;
         message.reactions = [];
 
         await message.save();
@@ -530,16 +540,22 @@ export function initCommunicationGateway(nsp) {
           return;
         }
 
-        // Загружаем сообщение
+        // Загружаем сообщение.
+        // ВАЖНО: тянем textEncrypted и используем virtual decryptedText —
+        // после шифрования (#1) поле text у новых сообщений пустое, весь
+        // текст лежит в textEncrypted. Без этого перевод новых сообщений
+        // всегда падал в "недоступно для перевода".
         const message = await ChatMessageModel.findById(messageId).select(
-          "text dialogId isDeleted type",
+          "text textEncrypted dialogId isDeleted type",
         );
+
+        const plainText = message?.decryptedText;
 
         if (
           !message ||
           message.isDeleted ||
           message.type !== "text" ||
-          !message.text
+          !plainText
         ) {
           socket.emit("translation:error", {
             messageId,
@@ -554,16 +570,47 @@ export function initCommunicationGateway(nsp) {
           userId: new mongoose.Types.ObjectId(userId),
           isRemoved: { $ne: true },
         });
-        if (!isParticipant) return;
+        if (!isParticipant) {
+          // ✅ AUDIT — denied (перевод в чужом диалоге)
+          recordActionAsync({
+            ..._auditContext(socket),
+            action: "chat.message.translate",
+            resourceType: "chat-message",
+            resourceId: messageId,
+            outcome: "denied",
+            failureReason: "not_a_participant",
+            metadata: {
+              via: "websocket",
+              dialogId: String(message.dialogId),
+              targetLang,
+            },
+          });
+          return;
+        }
 
-        // Переводим (MongoDB кэш → GPT)
+        // Переводим (MongoDB кэш → GPT). Передаём ДЕШИФРОВАННЫЙ текст.
         const result = await translateMessage({
           messageId: String(message._id),
           dialogId: String(message.dialogId),
-          text: message.text,
+          text: plainText,
           targetLang,
           requestedBy: userId,
           isPrefetch: false,
+        });
+
+        // ✅ AUDIT — перевод = доступ к PHI сообщения, логируем.
+        recordActionAsync({
+          ..._auditContext(socket),
+          action: "chat.message.translate",
+          resourceType: "chat-message",
+          resourceId: messageId,
+          outcome: "success",
+          metadata: {
+            via: "websocket",
+            dialogId: String(message.dialogId),
+            targetLang,
+            fromDb: Boolean(result.fromDb),
+          },
         });
 
         socket.emit("translation:result", {
@@ -576,6 +623,17 @@ export function initCommunicationGateway(nsp) {
         });
       } catch (err) {
         console.error("translation:request error:", err.message);
+
+        recordActionAsync({
+          ..._auditContext(socket),
+          action: "chat.message.translate",
+          resourceType: "chat-message",
+          resourceId: messageId,
+          outcome: "failure",
+          failureReason: err.message,
+          metadata: { via: "websocket", targetLang },
+        });
+
         socket.emit("translation:error", {
           messageId,
           error:

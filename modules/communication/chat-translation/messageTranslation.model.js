@@ -1,15 +1,25 @@
 // server/modules/communication/chat-translation/messageTranslation.model.js
+//
+// Stores one message translated into one language.
+// One document = one message × one target language.
+//
+// HIPAA §164.312(a)(2)(iv): translation cache holds the SAME PHI as the
+// source message (full original text + its translation), so both are now
+// encrypted at rest with the canonical helper from message.model.js
+// (AES-256-CBC / ENCRYPTION_KEY, "iv:ciphertext" hex).
+//
+//   originalTextEncrypted   ← full source text, encrypted
+//   translatedTextEncrypted ← translated text, encrypted
+//
+// Legacy plaintext fields (originalText / translatedText) are kept OPTIONAL
+// for read back-compat with pre-migration docs; new docs never write them.
+// Crypto is applied in the service layer (see messageTranslation.service.js),
+// because .select() projections here would otherwise break virtual getters.
 
 import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-/**
- * Хранит переведённый текст одного сообщения на один язык.
- * Один документ = одно сообщение × один целевой язык.
- *
- * Пример: сообщение "Как вы себя чувствуете?" переведено на "en" → "How are you feeling?"
- */
 const MessageTranslationSchema = new Schema(
   {
     // Ссылка на оригинальное сообщение
@@ -27,10 +37,16 @@ const MessageTranslationSchema = new Schema(
       required: true,
     },
 
-    // Оригинальный текст (копируем чтобы не делать join при отдаче)
+    // ── Legacy plaintext (pre-migration). НЕ required — новые доки сюда не пишут.
     originalText: {
       type: String,
-      required: true,
+      default: null,
+    },
+
+    // ── Зашифрованный оригинал (HIPAA at-rest). "iv:ciphertext" hex, AES-256-CBC.
+    originalTextEncrypted: {
+      type: String,
+      default: null,
     },
 
     // Определённый язык оригинала (ru, en, az, tr, ar, ...)
@@ -48,10 +64,16 @@ const MessageTranslationSchema = new Schema(
       index: true,
     },
 
-    // Переведённый текст
+    // ── Legacy plaintext перевод (pre-migration). НЕ required.
     translatedText: {
       type: String,
-      required: true,
+      default: null,
+    },
+
+    // ── Зашифрованный перевод (HIPAA at-rest). "iv:ciphertext" hex, AES-256-CBC.
+    translatedTextEncrypted: {
+      type: String,
+      default: null,
     },
 
     // Метод перевода
@@ -82,7 +104,6 @@ const MessageTranslationSchema = new Schema(
     },
 
     // TTL — MongoDB автоматически удалит документ через 90 дней
-    // (старые переводы не нужны)
     expiresAt: {
       type: Date,
       default: () => new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),

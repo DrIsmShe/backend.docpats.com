@@ -135,15 +135,16 @@ export async function sendMessage({
   });
 
   // 2️⃣ Обновляем диалог
-  // ВАЖНО: lastMessagePreview раньше брался из message.text — теперь это
-  // virtual, который дешифрует. Используем его явно.
-  // Альтернатива: хранить preview как plain (но это утечка PHI в Dialog
-  // коллекцию — лучше тоже шифровать или не хранить вообще).
-  // СЕЙЧАС: используем оригинальный text из аргумента (он у нас в памяти).
+  // Превью последнего сообщения — тоже PHI (первые ~100 символов текста).
+  // Шифруем его тем же ключом (HIPAA at-rest) и НЕ пишем plaintext.
+  // Для file/voice-сообщений text пустой → encryptMessageText вернёт null.
   await DialogModel.findByIdAndUpdate(dialogId, {
     lastMessageId: message._id,
     lastMessageAt: message.createdAt,
-    lastMessagePreview: text?.slice(0, 100) || null,
+    lastMessagePreviewEncrypted: encryptMessageText(
+      text ? String(text).slice(0, 100) : null,
+    ),
+    lastMessagePreview: null, // очищаем legacy plaintext, если он был
   });
 
   // 3️⃣ Вложения
@@ -190,7 +191,8 @@ export async function sendMessage({
 
   // ── Prefetch переводов для участников (fire-and-forget) ──────────────────
   // Используем оригинальный text (не зашифрованный) — он есть в памяти.
-  // Translation service шифрует свой кэш сам (если умеет).
+  // Translation service шифрует свой кэш сам (originalTextEncrypted /
+  // translatedTextEncrypted).
   if (type === "text" && text?.trim()) {
     (async () => {
       try {

@@ -46,9 +46,20 @@ const DialogSchema = new Schema(
       index: true,
     },
 
+    // ── Legacy plaintext превью (pre-migration). Новые диалоги сюда НЕ пишут.
+    // Оставлено nullable для read back-compat со старыми записями.
     lastMessagePreview: {
       type: String,
       trim: true,
+      default: null,
+    },
+
+    // ── Зашифрованное превью последнего сообщения (HIPAA § 164.312(a)(2)(iv)).
+    // Превью содержит первые ~100 символов текста = PHI, поэтому шифруется
+    // тем же ключом/алгоритмом, что и message.textEncrypted
+    // ("iv:ciphertext" hex, AES-256-CBC / ENCRYPTION_KEY).
+    lastMessagePreviewEncrypted: {
+      type: String,
       default: null,
     },
 

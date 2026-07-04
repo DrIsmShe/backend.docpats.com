@@ -2,12 +2,27 @@
 
 import OpenAI from "openai";
 import MessageTranslationModel from "./messageTranslation.model.js";
+// Canonical crypto helpers — same key/algorithm as chat messages
+// (Sprint Cleanup 17.05.2026, ENCRYPTION_KEY / AES-256-CBC). Reused so the
+// translation cache is encrypted at rest exactly like message.text.
+import { encryptMessageText, safeDecrypt } from "../messages/message.model.js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// ─── Read helper: decrypt a translation's stored text ─────────────────────────
+// New docs store translatedTextEncrypted; legacy docs store plaintext
+// translatedText. Handle both so 90-day-old cache keeps working during
+// the transition window.
+function readTranslated(doc) {
+  if (!doc) return "";
+  if (doc.translatedTextEncrypted) {
+    return safeDecrypt(doc.translatedTextEncrypted, "");
+  }
+  return doc.translatedText || "";
+}
+
 // ─── Все языки мира (100+) ────────────────────────────────────────────────────
 // GPT-4o-mini поддерживает все эти языки без дополнительных настроек.
-// Список используется для UI (LanguageSelector) и валидации кода.
 
 export const SUPPORTED_LANGUAGES = {
   // Европейские
@@ -113,7 +128,6 @@ function getLangName(code) {
 }
 
 // Валидация: принимаем любой корректный ISO-код (2–8 символов)
-// Это позволяет переводить даже на языки не из списка выше
 function isValidLangCode(code) {
   if (!code || typeof code !== "string") return false;
   return /^[a-z]{2,8}(-[A-Za-z]{2,4})?$/.test(code);
@@ -142,11 +156,9 @@ export function detectLanguage(text) {
     latin: (t.match(/[a-zA-Z]/g) || []).length,
   };
 
-  // Находим скрипт с наибольшим процентом символов
   for (const [lang, count] of Object.entries(scores)) {
     if (lang === "cyrillic" || lang === "latin") continue;
     if (count / total > 0.25) {
-      // Различаем японский vs китайский
       if (lang === "zh" && scores.ja / total > 0.1) return "ja";
       return lang;
     }
@@ -267,7 +279,7 @@ export async function translateMessage({
       { $inc: { hitCount: 1 } },
     ).catch(() => {});
     return {
-      translatedText: existing.translatedText,
+      translatedText: readTranslated(existing), // ← дешифруем из кэша
       detectedLang: existing.detectedLang,
       targetLang,
       fromDb: true,
@@ -282,13 +294,14 @@ export async function translateMessage({
     targetLang,
   );
 
+  // Шифруем оба текста ПЕРЕД сохранением (plaintext в БД не пишем).
   await MessageTranslationModel.create({
     messageId,
     dialogId,
-    originalText: text,
+    originalTextEncrypted: encryptMessageText(text),
     detectedLang,
     targetLang,
-    translatedText,
+    translatedTextEncrypted: encryptMessageText(translatedText),
     requestedBy,
     isPrefetch,
   });
@@ -330,13 +343,14 @@ export function prefetchMessageTranslations({
         });
         if (exists) continue;
         const translated = await callGPT(text, detectedLang || "auto", lang);
+        // Шифруем оба текста перед сохранением.
         await MessageTranslationModel.create({
           messageId,
           dialogId,
-          originalText: text,
+          originalTextEncrypted: encryptMessageText(text),
           detectedLang,
           targetLang: lang,
-          translatedText: translated,
+          translatedTextEncrypted: encryptMessageText(translated),
           isPrefetch: true,
         });
         console.log(
@@ -353,9 +367,20 @@ export function prefetchMessageTranslations({
 }
 
 export async function getMessageTranslations(messageId) {
-  return MessageTranslationModel.find({ messageId }).select(
-    "targetLang detectedLang translatedText translationMethod isPrefetch hitCount createdAt",
+  const docs = await MessageTranslationModel.find({ messageId }).select(
+    "targetLang detectedLang translatedTextEncrypted translatedText translationMethod isPrefetch hitCount createdAt",
   );
+  // Отдаём дешифрованный translatedText — контракт с фронтом не меняется,
+  // ciphertext наружу НЕ уходит.
+  return docs.map((d) => ({
+    targetLang: d.targetLang,
+    detectedLang: d.detectedLang,
+    translatedText: readTranslated(d),
+    translationMethod: d.translationMethod,
+    isPrefetch: d.isPrefetch,
+    hitCount: d.hitCount,
+    createdAt: d.createdAt,
+  }));
 }
 
 export async function deleteTranslationsByDialog(dialogId) {

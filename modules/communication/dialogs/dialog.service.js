@@ -1,6 +1,6 @@
 import DialogModel from "./dialog.model.js";
 import DialogParticipant from "./dialogParticipant.model.js";
-import ChatMessage from "../messages/message.model.js";
+import ChatMessage, { safeDecrypt } from "../messages/message.model.js";
 import User from "../../../common/models/Auth/users.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import mongoose from "mongoose";
@@ -12,6 +12,17 @@ const buildAvatarUrl = (path) => {
   if (path.startsWith("http")) return path; // уже полный URL
   if (path.startsWith("/uploads")) return `${BACKEND_URL}${path}`; // локальный файл
   return `${process.env.R2_PUBLIC_URL}/${path}`; // R2 ключ
+};
+
+// ─── Читаемое превью последнего сообщения ─────────────────────────────────────
+// Новые диалоги хранят lastMessagePreviewEncrypted; старые (pre-migration) —
+// plaintext lastMessagePreview. Дешифруем первое, с fallback на второе.
+// Наружу уходит уже расшифрованная строка, ciphertext на клиент НЕ попадает.
+const readPreview = (dialog) => {
+  if (dialog.lastMessagePreviewEncrypted) {
+    return safeDecrypt(dialog.lastMessagePreviewEncrypted, "") || null;
+  }
+  return dialog.lastMessagePreview || null;
 };
 
 // ==========================================
@@ -237,7 +248,7 @@ export async function getDialogsForUser(userId) {
       type: dialog.type,
       displayName,
       avatarUrl: buildAvatarUrl(avatarPath),
-      lastMessagePreview: dialog.lastMessagePreview || null,
+      lastMessagePreview: readPreview(dialog), // ← дешифрованное превью
       lastMessageAt: dialog.lastMessageAt || null,
       unreadCount,
       peerUser: otherUserObj || null,
@@ -256,6 +267,12 @@ export async function getDialogsForUser(userId) {
  * Поиск по диалогам (имя собеседника) и сообщениям (текст)
  * @param {{ userId: string, q: string }} params
  * @returns {{ dialogs: DialogSearchResult[], messages: MessageSearchResult[] }}
+ *
+ * ⚠️ ОГРАНИЧЕНИЕ (после шифрования сообщений): поиск по тексту работает через
+ * regex по полю `text`, но у новых (зашифрованных) сообщений это поле пустое —
+ * они лежат в textEncrypted и regex-ом не ищутся. Поиск по сообщениям сейчас
+ * находит только legacy plaintext. Полноценный поиск по зашифрованным
+ * сообщениям — отдельная задача (decrypt-in-app или blind index).
  */
 export async function searchDialogsAndMessages({ userId, q }) {
   const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -347,6 +364,8 @@ export async function searchDialogsAndMessages({ userId, q }) {
   );
 
   // ── 7. Поиск сообщений по тексту ─────────────────────────────────────────
+  // ⚠️ Только legacy plaintext (см. примечание к функции). Зашифрованные
+  // сообщения через regex не находятся.
   const matchedMessages = await ChatMessage.find({
     dialogId: { $in: dialogIds },
     text: { $regex: regex },
