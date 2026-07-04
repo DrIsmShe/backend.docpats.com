@@ -42,6 +42,7 @@ export const ACTION_ENUM = [
   "chat.dialog.search",
   "chat.dialog.join",
   "chat.dialog.mark_read",
+  "chat.message.list",
   "chat.message.create",
   "chat.message.read",
   "chat.message.react",
