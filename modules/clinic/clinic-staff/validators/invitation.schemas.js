@@ -10,7 +10,6 @@ const INTERNAL_ROLES = ROLE_VALUES.filter(
 
 // Internal staff roles (those who get ClinicEmployee account, not User account)
 const INTERNAL_INVITE_ROLES = [
-  "admin",
   "manager",
   "nurse",
   "receptionist",
