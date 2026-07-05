@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { DateTime } from "luxon";
 
 /* ============================================================
    📅 Справочник дней недели (0 = воскресенье ... 6 = суббота)
@@ -10,12 +11,12 @@ const dayOfWeekEnum = [0, 1, 2, 3, 4, 5, 6];
 ============================================================ */
 const workingIntervalSchema = new mongoose.Schema(
   {
-    start: { type: String, required: true }, // "09:00"
-    end: { type: String, required: true }, // "13:00"
+    start: { type: String, required: true }, // "09:00" — ЛОКАЛЬНОЕ время (см. timezone)
+    end: { type: String, required: true }, // "13:00" — ЛОКАЛЬНОЕ время
     slotMinutes: { type: Number, default: 20, min: 5, max: 240 },
     type: { type: String, enum: ["offline", "video"], default: "offline" },
   },
-  { _id: false }
+  { _id: false },
 );
 
 /* ============================================================
@@ -33,7 +34,7 @@ const exceptionSchema = new mongoose.Schema(
       },
     ],
   },
-  { _id: false }
+  { _id: false },
 );
 
 /* ============================================================
@@ -49,6 +50,8 @@ const doctorScheduleSchema = new mongoose.Schema(
       index: true,
     },
 
+    // ВАРИАНТ B: все "HH:MM" в weekly/exceptions трактуются в ЭТОЙ зоне.
+    // Инстант (UTC) собирается только в момент генерации/создания записи.
     timezone: { type: String, default: "Asia/Baku" },
 
     /* === Еженедельное расписание === */
@@ -78,7 +81,7 @@ const doctorScheduleSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 /* ============================================================
@@ -94,68 +97,70 @@ doctorScheduleSchema.virtual("effectiveSlotMinutes").get(function () {
 });
 
 /* ============================================================
-   🧮 Метод: генерация слотов для конкретной даты
+   🧮 Метод: генерация слотов для конкретной даты (ВАРИАНТ B)
+   Локальные "HH:MM" → UTC через явную this.timezone.
+   Никаких setUTCHours на локальном времени.
 ============================================================ */
 doctorScheduleSchema.methods.generateSlotsForDate = function (dateStr, type) {
   try {
     if (!dateStr) return [];
 
-    const date = new Date(dateStr);
-    if (isNaN(date)) return [];
+    const zone = this.timezone || "Asia/Baku";
 
-    const dayOfWeek = date.getUTCDay();
+    // Локальное "HH:MM" на дату dateStr в зоне расписания → Luxon UTC DateTime
+    const localToUtc = (hhmm) =>
+      DateTime.fromISO(`${dateStr}T${hhmm}`, { zone }).toUTC();
+
+    const dayInZone = DateTime.fromISO(dateStr, { zone });
+    if (!dayInZone.isValid) return [];
+
+    // Модель: dow 0=Вс..6=Сб. Luxon weekday 1=Пн..7=Вс → weekday % 7.
+    const dayOfWeek = dayInZone.weekday % 7;
     const daySchedule = this.weekly.find((d) => d.dow === dayOfWeek);
     if (!daySchedule || !daySchedule.intervals.length) return [];
 
-    // Проверка на выходной день
     const exception = this.exceptions.find((e) => e.date === dateStr);
     if (exception?.isDayOff) return [];
+
+    // Предрассчёт заблокированных отрезков дня → [ms, ms] в UTC
+    const blockedRanges = (exception?.blockedIntervals || [])
+      .filter((b) => b?.start && b?.end)
+      .map((b) => ({
+        start: localToUtc(b.start).toMillis(),
+        end: localToUtc(b.end).toMillis(),
+      }));
 
     const slots = [];
 
     for (const interval of daySchedule.intervals) {
       if (type && interval.type !== type) continue;
 
-      const [startHour, startMin] = interval.start.split(":").map(Number);
-      const [endHour, endMin] = interval.end.split(":").map(Number);
-
       const slotMinutes = this.durationOverrideMinutes || interval.slotMinutes;
       const buffer = this.bufferMinutes || 0;
 
-      let current = new Date(date);
-      current.setUTCHours(startHour, startMin, 0, 0);
+      const endUtc = localToUtc(interval.end);
+      let cursor = localToUtc(interval.start);
 
-      const end = new Date(date);
-      end.setUTCHours(endHour, endMin, 0, 0);
+      while (cursor < endUtc) {
+        const next = cursor.plus({ minutes: slotMinutes });
+        if (next > endUtc) break; // не выходим за конец интервала
 
-      while (current < end) {
-        const next = new Date(current.getTime() + slotMinutes * 60000);
-
-        // Проверка блокировок
-        const isBlocked = exception?.blockedIntervals?.some((b) => {
-          const [bh, bm] = b.start?.split(":").map(Number) || [];
-          const [eh, em] = b.end?.split(":").map(Number) || [];
-          if (bh == null || eh == null) return false;
-
-          const blockStart = new Date(date);
-          blockStart.setUTCHours(bh, bm, 0, 0);
-
-          const blockEnd = new Date(date);
-          blockEnd.setUTCHours(eh, em, 0, 0);
-
-          return current >= blockStart && next <= blockEnd;
-        });
+        const sMs = cursor.toMillis();
+        const eMs = next.toMillis();
+        const isBlocked = blockedRanges.some(
+          (r) => sMs >= r.start && eMs <= r.end,
+        );
 
         if (!isBlocked) {
           slots.push({
-            start: current.toISOString(),
-            end: next.toISOString(),
+            start: cursor.toISO(), // UTC ISO (…Z)
+            end: next.toISO(),
             type: interval.type,
           });
         }
 
         // Следующий слот + буфер
-        current = new Date(next.getTime() + buffer * 60000);
+        cursor = next.plus({ minutes: buffer });
       }
     }
 

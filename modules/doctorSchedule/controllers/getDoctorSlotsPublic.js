@@ -1,6 +1,18 @@
+import { DateTime } from "luxon";
 import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js";
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+
+const DEFAULT_TZ = "Asia/Baku";
+
+/**
+ * Локальное "HH:MM" на конкретную дату в зоне расписания → UTC JS Date.
+ * ВАРИАНТ B: расписание хранится как naive "HH:MM" + timezone.
+ * Инстант собирается ТОЛЬКО здесь, с явной зоной. Никаких `new Date("...Z")`.
+ */
+function localToUtc(dateStr, hhmm, zone) {
+  return DateTime.fromISO(`${dateStr}T${hhmm}`, { zone }).toUTC();
+}
 
 /**
  * @desc Публичный просмотр доступных слотов врача (для пациента)
@@ -25,7 +37,6 @@ export const getDoctorSlotsPublic = async (req, res) => {
     let schedule = await DoctorSchedule.findOne({ doctorId });
 
     if (!schedule) {
-      // пробуем найти по userId
       const profile = await ProfileDoctor.findOne({
         $or: [{ _id: doctorId }, { userId: doctorId }],
       }).lean();
@@ -43,12 +54,14 @@ export const getDoctorSlotsPublic = async (req, res) => {
       });
     }
 
+    // Зона расписания — единственный источник истины для локального времени
+    const zone = schedule.timezone || DEFAULT_TZ;
+
     // ============================================================
     // 📅 2. Проверка исключений (чёрные даты)
     // ============================================================
     const exception = schedule.exceptions?.find((ex) => ex.date === date);
 
-    // Полностью заблокированный день
     if (exception?.isDayOff) {
       return res.status(200).json({
         success: true,
@@ -58,10 +71,18 @@ export const getDoctorSlotsPublic = async (req, res) => {
     }
 
     // ============================================================
-    // 🕘 3. Определяем расписание по дню недели
+    // 🕘 3. День недели — в ЗОНЕ расписания, не в UTC
+    //    Модель: dow 0=Вс..6=Сб (как getDay). Luxon weekday 1=Пн..7=Вс.
+    //    weekday % 7:  Пн1..Сб6 остаются, Вс7 → 0.
     // ============================================================
-    const day = new Date(date);
-    const dayOfWeek = day.getUTCDay();
+    const dayInZone = DateTime.fromISO(date, { zone });
+    if (!dayInZone.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Некорректная дата",
+      });
+    }
+    const dayOfWeek = dayInZone.weekday % 7;
 
     const daySchedule = schedule.weekly.find((d) => d.dow === dayOfWeek);
     if (!daySchedule || !daySchedule.intervals?.length) {
@@ -74,7 +95,7 @@ export const getDoctorSlotsPublic = async (req, res) => {
 
     // фильтрация по типу (offline / video)
     const intervals = daySchedule.intervals.filter(
-      (i) => !i.type || i.type === type
+      (i) => !i.type || i.type === type,
     );
     if (!intervals.length) {
       return res.status(200).json({
@@ -87,52 +108,62 @@ export const getDoctorSlotsPublic = async (req, res) => {
     }
 
     // ============================================================
-    // 🧮 4. Генерация всех возможных слотов
+    // 🧮 4. Генерация всех возможных слотов (в UTC, из локальной зоны)
     // ============================================================
+    // Предрассчёт заблокированных интервалов дня → [ms,ms] в UTC
+    const blockedRanges = (exception?.blockedIntervals || []).map((b) => ({
+      start: localToUtc(date, b.start, zone).toMillis(),
+      end: localToUtc(date, b.end, zone).toMillis(),
+    }));
+
     const allSlots = [];
 
     for (const interval of intervals) {
-      const start = new Date(`${date}T${interval.start}:00Z`);
-      const end = new Date(`${date}T${interval.end}:00Z`);
-      const step = (interval.slotMinutes || 20) * 60 * 1000;
+      const startUtc = localToUtc(date, interval.start, zone);
+      const endUtc = localToUtc(date, interval.end, zone);
+      const stepMin = interval.slotMinutes || 20;
 
-      for (let t = start; t < end; t = new Date(t.getTime() + step)) {
-        const slotEnd = new Date(t.getTime() + step);
+      let cursor = startUtc;
+      while (cursor < endUtc) {
+        const slotEnd = cursor.plus({ minutes: stepMin });
+        if (slotEnd > endUtc) break; // не выходим за конец интервала
 
-        // 🚫 Пропускаем, если попадает в заблокированные интервалы
-        const isBlocked = exception?.blockedIntervals?.some((blocked) => {
-          const bStart = new Date(`${date}T${blocked.start}:00Z`);
-          const bEnd = new Date(`${date}T${blocked.end}:00Z`);
-          return t >= bStart && t < bEnd;
-        });
+        const cursorMs = cursor.toMillis();
+        const isBlocked = blockedRanges.some(
+          (r) => cursorMs >= r.start && cursorMs < r.end,
+        );
 
         if (!isBlocked) {
           allSlots.push({
-            start: t.toISOString(),
-            end: slotEnd.toISOString(),
+            start: cursor.toISO(), // UTC ISO (…Z)
+            end: slotEnd.toISO(),
           });
         }
+        cursor = slotEnd;
       }
     }
 
     // ============================================================
     // 🔒 5. Проверка занятых слотов (pending / confirmed)
+    //    Границы дня — в ЗОНЕ расписания, конвертированные в UTC.
     // ============================================================
+    const dayStartUtc = dayInZone.startOf("day").toUTC().toJSDate();
+    const dayEndUtc = dayInZone.endOf("day").toUTC().toJSDate();
+
     const busy = await Appointment.find({
       doctorId: schedule.doctorId,
       status: { $in: ["pending", "confirmed"] },
-      startsAt: {
-        $gte: new Date(`${date}T00:00:00Z`),
-        $lt: new Date(`${date}T23:59:59Z`),
-      },
+      startsAt: { $gte: dayStartUtc, $lt: dayEndUtc },
     });
 
-    const busySet = new Set(
-      busy.map((a) => `${a.startsAt.toISOString()}_${a.endsAt.toISOString()}`)
+    // Сравнение по мгновению (ms), а не по строковому формату ISO —
+    // устойчивее к различиям сериализации Date/Luxon.
+    const busyStartSet = new Set(
+      busy.map((a) => new Date(a.startsAt).getTime()),
     );
 
     const freeSlots = allSlots.filter(
-      (s) => !busySet.has(`${s.start}_${s.end}`)
+      (s) => !busyStartSet.has(new Date(s.start).getTime()),
     );
 
     // ============================================================
@@ -141,6 +172,7 @@ export const getDoctorSlotsPublic = async (req, res) => {
     return res.status(200).json({
       success: true,
       slots: freeSlots,
+      timezone: zone, // фронт может показать «время по <зоне>»
       total: freeSlots.length,
       message:
         freeSlots.length > 0
