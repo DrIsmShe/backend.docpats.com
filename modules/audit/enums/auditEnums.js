@@ -25,7 +25,17 @@ export const ACTION_ENUM = [
   "delete",
   "export", // Скачивание / экспорт
   "share", // Расшаривание данных другому пользователю
-
+  // ═══════════ CONSENT REQUESTS (Sprint 3.2) ═══════════
+  // Запрос доступа от клиники к пациенту (clinic → patient): клиника
+  // просит разрешение на медданные, пациент одобряет/отклоняет в кабинете.
+  // Отдельно от patient.consent.* (это уже ВЫДАННОЕ согласие).
+  // resourceType: "consent-request", resourceId: ConsentRequest._id.
+  "consent_request.create", // клиника создала запрос
+  "consent_request.list", // клиника смотрит историю запросов пациента
+  "consent_request.cancel", // клиника отменила pending-запрос
+  "consent_request.approve", // пациент одобрил (на будущее)
+  "consent_request.reject", // пациент отклонил (на будущее)
+  "consent_request.expire", // авто-истечение pending (cron)
   // ═══════════ AUTH (отдельно от старого AuditLog в common/) ═══════════
   "auth.login",
   "auth.logout",
@@ -280,7 +290,6 @@ export const ACTION_ENUM = [
   "patient.consent.check",
   "patient.consent.list",
   "patient.consent.expire", // авто-истечение по expiresAt (cron)
-
   // ═══════════ AI ═══════════
   "ai.consultation.create",
   "ai.consultation.read",
@@ -373,7 +382,7 @@ export const RESOURCE_TYPE_ENUM = [
   // Глобальное согласие пациент↔клиника. resourceId = PatientConsent._id.
   // resourceOwnerId = User._id пациента (для запроса "все consent'ы пациента").
   "patient-consent",
-
+  "consent-request",
   // Profiles
   "doctor-profile",
   "patient-profile",

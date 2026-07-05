@@ -121,8 +121,11 @@ export const loginUser = async (req, res) => {
     // Заменяет legacy AuditLog.create() → canonical recordActionAsync()
     // пишущий в hipaa_audit_logs. Те же данные что и раньше.
     recordActionAsync({
-      userId: user._id,
-      actorRole: user.role,
+      actor: {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+      },
       action: "auth.login",
       resourceType: "user-account",
       resourceId: user._id,
