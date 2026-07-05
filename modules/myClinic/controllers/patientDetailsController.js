@@ -123,15 +123,15 @@ const patientDetailsController = async (req, res) => {
     const doctorList = Array.isArray(p.doctorId)
       ? p.doctorId
       : p.doctorId
-      ? [p.doctorId]
-      : [];
+        ? [p.doctorId]
+        : [];
 
     const doctorId = doctorList
       .filter(Boolean)
       .map((d) =>
         typeof d === "object"
           ? { _id: d._id, firstName: d.firstName, lastName: d.lastName }
-          : { _id: d }
+          : { _id: d },
       );
 
     // DTO → теперь фото всегда R2
@@ -139,7 +139,7 @@ const patientDetailsController = async (req, res) => {
       _id: p._id,
       patientId: p.patientId,
       patientUUID: p.patientUUID,
-
+      linkedUserId: p.linkedUserId || null,
       firstName: p.firstName || "",
       lastName: p.lastName || "",
       email: p.email || "",
@@ -180,7 +180,7 @@ const patientDetailsController = async (req, res) => {
     console.error(
       "❌ patientDetailsController error:",
       error?.name,
-      error?.message
+      error?.message,
     );
     return res.status(500).json({ message: "Ошибка сервера." });
   }
