@@ -1,17 +1,19 @@
 // server/modules/clinic/clinic-staff/services/membershipRequest.service.js
 //
-// Variant 2 of "add doctor to clinic": instead of silently creating a
-// membership, the owner sends a MembershipRequest. The doctor accepts/rejects
-// in their cabinet. On accept, the real ClinicMembership is created via the
-// existing addStaff() path (which emits STAFF_JOINED → "you joined clinic X").
+// Variant 2 of "add a User-member to a clinic": instead of silently creating a
+// membership, the owner picks an EXISTING DocPats User (doctor OR patient) and
+// sends a MembershipRequest. The invitee accepts/rejects in their cabinet. On
+// accept, the real ClinicMembership (actorType "user") is created — mirroring
+// addStaff()'s STAFF_JOINED side-effect.
 //
-// Notifications:
-//   - create  → notify the invited doctor ("you have an invitation")
-//   - accept  → addStaff notifies the doctor; we additionally notify the owner
+// Notifications (role-neutral — the invitee may be admin/doctor, and their
+// account may be a doctor OR a patient, so text must not assume "врач"):
+//   - create  → notify the invited user ("you have an invitation")
+//   - accept  → notify the owner (invitee joined)
 //   - reject  → notify the owner
 //
 // Tenant note: createRequest / cancelRequest run in clinic context (owner side,
-// tenant-scoped). listMyRequests / accept / reject run on the DOCTOR side under
+// tenant-scoped). listMyRequests / accept / reject run on the INVITEE side under
 // authMiddleware only (no clinic context), so they query by userId with
 // skipTenantScope and resolve clinicId from the request document itself.
 
@@ -31,6 +33,28 @@ import logger from "../../../../common/logger.js";
 
 const log = logger.child({ module: "clinic-staff/membership-request" });
 
+// Single shared landing route where ANY authenticated User (doctor or patient)
+// reviews and accepts/rejects clinic invitations. Must be a role-neutral
+// authenticated route on the frontend, backed by the /my-membership-requests
+// endpoints. (Variant B: swap for a role-conditional link if doctors and
+// patients get separate cabinets — would require looking up the invitee's
+// account type here.)
+const INVITEE_LANDING = "/clinic/my-invitations";
+
+// Human-readable role label for the invitation message.
+function roleLabel(role) {
+  switch (role) {
+    case "admin":
+      return "администратора";
+    case "doctor":
+      return "врача";
+    case "owner":
+      return "владельца";
+    default:
+      return "сотрудника";
+  }
+}
+
 function requireClinicId() {
   const clinicId = getCurrentClinicId();
   if (!clinicId) throw new ForbiddenError("No active clinic context");
@@ -49,8 +73,7 @@ async function resolveClinicName(clinicId) {
 }
 
 // ─── CREATE (owner side, tenant-scoped) ──────────────────────────
-// Replaces the immediate addStaff for doctors. Creates a pending request and
-// notifies the invited doctor.
+// Creates a pending request and notifies the invited user.
 export async function createRequest({
   userId,
   role,
@@ -104,15 +127,16 @@ export async function createRequest({
     status: "pending",
   });
 
-  // Notify the invited doctor.
+  // Notify the invited user (role-neutral text).
+  const asLabel = roleLabel(role);
   notify({
     userId,
     type: "system_message",
     title: "Приглашение в клинику",
     message: clinicName
-      ? `Клиника «${clinicName}» приглашает вас присоединиться как ${role || "сотрудник"}.`
-      : `Вас приглашают в клинику как ${role || "сотрудник"}.`,
-    link: "/doctor/my-clinics",
+      ? `Клиника «${clinicName}» приглашает вас присоединиться как ${asLabel}.`
+      : `Вас приглашают в клинику как ${asLabel}.`,
+    link: INVITEE_LANDING,
     meta: {
       clinicId: String(clinicId),
       requestId: String(reqDoc._id),
@@ -134,7 +158,7 @@ export async function createRequest({
   return reqDoc.toObject();
 }
 
-// ─── LIST MY REQUESTS (doctor side, authMiddleware only) ─────────
+// ─── LIST MY REQUESTS (invitee side, authMiddleware only) ────────
 export async function listMyRequests(userId) {
   if (!userId) return [];
   const requests = await MembershipRequest.find(
@@ -172,7 +196,7 @@ export async function listMyRequests(userId) {
   });
 }
 
-// ─── ACCEPT (doctor side) ────────────────────────────────────────
+// ─── ACCEPT (invitee side) ───────────────────────────────────────
 export async function acceptRequest(userId, requestId) {
   if (!userId) throw new ForbiddenError("Not authenticated");
 
@@ -195,7 +219,7 @@ export async function acceptRequest(userId, requestId) {
 
   let membership = existing;
   if (!existing) {
-    // Create membership directly — the doctor has no clinic context here, so
+    // Create membership directly — the invitee has no clinic context here, so
     // we must NOT rely on getCurrentClinicId()/addStaff (which read context).
     // clinicId comes from the request document itself.
     membership = await ClinicMembership.create({
@@ -224,12 +248,13 @@ export async function acceptRequest(userId, requestId) {
   reqDoc.membershipId = membership?._id || null;
   await reqDoc.save();
 
-  // Notify the inviter that the doctor accepted.
+  // Notify the inviter that the invitee accepted (role-neutral).
   notify({
     userId: reqDoc.invitedBy,
     type: "system_message",
     title: "Приглашение принято",
-    message: "Врач принял приглашение и присоединился к клинике.",
+    message:
+      "Приглашённый пользователь принял приглашение и присоединился к клинике.",
     link: "/clinic/staff",
     meta: {
       clinicId: String(reqDoc.clinicId),
@@ -246,7 +271,7 @@ export async function acceptRequest(userId, requestId) {
   return { requestId: String(reqDoc._id), status: "accepted" };
 }
 
-// ─── REJECT (doctor side) ────────────────────────────────────────
+// ─── REJECT (invitee side) ───────────────────────────────────────
 export async function rejectRequest(userId, requestId) {
   if (!userId) throw new ForbiddenError("Not authenticated");
 
@@ -265,7 +290,7 @@ export async function rejectRequest(userId, requestId) {
     userId: reqDoc.invitedBy,
     type: "system_message",
     title: "Приглашение отклонено",
-    message: "Врач отклонил приглашение в клинику.",
+    message: "Приглашённый пользователь отклонил приглашение в клинику.",
     link: "/clinic/staff",
     meta: {
       clinicId: String(reqDoc.clinicId),
@@ -300,8 +325,10 @@ export async function cancelRequest(requestId) {
 }
 
 // ─── LIST CLINIC REQUESTS (owner side) ───────────────────────────
-// Enriches each pending request with the invited doctor's decrypted
+// Enriches each pending request with the invited user's decrypted
 // name/email (same approach as listStaff: bulk fetch + decrypt helper).
+// Note: response keys keep the doctor* prefix for frontend-contract
+// compatibility; the invitee may actually be an admin/patient.
 export async function listClinicRequests() {
   const clinicId = requireClinicId();
   const requests = await MembershipRequest.find({

@@ -172,6 +172,20 @@ export const ACTION_ENUM = [
   "clinic.membership_invite.list", // owner listed invites (collection scope — no resourceId)
   "clinic.membership_invite.expire", // lazy/auto expiry of an overdue pending invite
 
+  // ═══════════ CLINIC MEMBERSHIP REQUESTS (invite existing User: admin/doctor) ═══════════
+  // Variant 2 of adding a User-member: owner picks an EXISTING DocPats User
+  // (doctor or patient) and sends a MembershipRequest; the invitee accepts/
+  // rejects in their cabinet → ClinicMembership (actorType "user") is created.
+  // No email/OTP/token (unlike clinic-membership-invite) — same end object,
+  // different reach path. resourceType: "clinic-membership-request",
+  // resourceId: MembershipRequest._id.
+  "clinic.membership_request.create", // owner sent a request (resourceId known only after create)
+  "clinic.membership_request.accept", // invitee accepted → ClinicMembership created
+  "clinic.membership_request.reject", // invitee rejected the request
+  "clinic.membership_request.cancel", // owner cancelled a pending request
+  "clinic.membership_request.list", // owner listed pending requests (collection scope — no resourceId)
+  "clinic.membership_request.expire", // lazy/auto expiry of an overdue pending request
+
   // ═══════════ CLINIC SETTINGS ═══════════
   // На будущее: изменения настроек клиники (название, часовой пояс,
   // валюта, языки, тариф) и сама регистрация клиники.
@@ -374,6 +388,12 @@ export const RESOURCE_TYPE_ENUM = [
   // становится DocPats User + ClinicMembership, а не ClinicEmployee.
   // resourceId = ClinicMembershipInvite._id.
   "clinic-membership-invite",
+
+  // clinic-membership-request: MembershipRequest — приглашение существующего
+  // User (доктор/пациент) стать членом клиники (admin/doctor). Accept →
+  // ClinicMembership (actorType "user"). Без email/OTP/token, в отличие от
+  // clinic-membership-invite. resourceId = MembershipRequest._id.
+  "clinic-membership-request",
 
   // Clinic appointments module (Sprint 1)
   // clinic-doctor-schedule: ClinicDoctorSchedule — недельное расписание
