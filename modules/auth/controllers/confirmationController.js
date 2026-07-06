@@ -1,6 +1,7 @@
 import User from "../../../common/models/Auth/users.js";
 import crypto from "crypto";
 import "dotenv/config";
+import { acceptInvitation } from "../../clinic/clinic-staff/services/clinicMembershipInvite.service.js";
 
 const SECRET_KEY =
   process.env.ENCRYPTION_KEY?.padEnd(32, "0") ||
@@ -41,7 +42,11 @@ const decrypt = (text) => {
 };
 
 export const confirmationRegister = async (req, res) => {
-  const { email, otpPassword } = req.body;
+  // inviteToken (optional): present only when the person is registering via a
+  // clinic membership invite link (?invite=<token>). Variant C — the token is
+  // carried by the frontend across register → confirm and is NEVER stored in
+  // the DB. We bind the membership only AFTER the account is verified.
+  const { email, otpPassword, inviteToken } = req.body;
 
   if (!email || !otpPassword) {
     return res.status(400).json({ message: "All fields are required." });
@@ -62,7 +67,42 @@ export const confirmationRegister = async (req, res) => {
       user.otpPassword = undefined;
       await user.save({ validateModifiedOnly: true });
 
-      return res.status(200).json({ message: "OTP verified successfully" });
+      // ── Optional: bind a pending clinic membership invite ──────────────
+      // Non-blocking: a bad/expired/mismatched invite must NOT fail the
+      // verification. The account is already verified above. The service
+      // enforces variant-2 safeguards (strict token binding + assert the
+      // user's email === invite email), so no extra checks are needed here.
+      // If binding fails, the person can still accept later via the
+      // authenticated accept endpoint using the same link.
+      let inviteResult = null;
+      if (inviteToken) {
+        try {
+          const r = await acceptInvitation({
+            token: inviteToken,
+            userId: user._id,
+          });
+          inviteResult = {
+            accepted: true,
+            clinicId: r.clinicId,
+            role: r.role,
+            alreadyMember: r.alreadyMember,
+          };
+        } catch (inviteErr) {
+          inviteResult = {
+            accepted: false,
+            reason: inviteErr?.message?.slice(0, 200) || "invite bind failed",
+          };
+          console.warn(
+            "[register] membership invite bind failed:",
+            inviteResult.reason,
+          );
+        }
+      }
+
+      return res.status(200).json({
+        message: "OTP verified successfully",
+        ...(inviteResult ? { invite: inviteResult } : {}),
+      });
     } else {
       return res.status(400).json({ message: "Invalid OTP" });
     }

@@ -50,6 +50,8 @@ import clinicMediaRouter from "./clinic-core/routes/clinicMedia.routes.js";
 import clinicServiceRouter from "./clinic-services/index.js";
 // V4.2 — модель услуг (для /me: чекбокс «Услуги» в редакторе витрины).
 import ClinicService from "./clinic-services/models/clinicService.model.js";
+import clinicMembershipInviteRouter from "./clinic-staff/routes/clinicMembershipInvite.routes.js";
+
 const router = express.Router();
 
 // ═══════════════════════════════════════════════════════════════
@@ -250,7 +252,7 @@ router.use("/", membershipRequestRouter);
 router.use("/appointments", clinicAppointmentsRouter);
 // UMR / clinic-medical — encounter + sub-records, mounted under /medical
 router.use("/medical", clinicMedicalRouter);
-
+router.use("/", clinicMembershipInviteRouter);
 // ═══════════════════════════════════════════════════════════════
 // 5. 404 + error handler
 // ═══════════════════════════════════════════════════════════════

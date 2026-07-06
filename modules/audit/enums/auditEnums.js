@@ -160,6 +160,18 @@ export const ACTION_ENUM = [
   "clinic.staff.list",
   "clinic.staff.read",
 
+  // ═══════════ CLINIC MEMBERSHIP INVITES (admin invites — User + Membership) ═══════════
+  // User-backed membership invitations, e.g. inviting an admin ("near-owner").
+  // Distinct from clinic.staff.* (which target ClinicEmployee): here the invitee
+  // becomes a DocPats User + ClinicMembership (actorType "user"), never a
+  // ClinicEmployee. resourceType: "clinic-membership-invite",
+  // resourceId: ClinicMembershipInvite._id.
+  "clinic.membership_invite.create", // owner issued an invite (resourceId known only after create → recordActionAsync in controller)
+  "clinic.membership_invite.accept", // invitee accepted → ClinicMembership created
+  "clinic.membership_invite.revoke", // owner revoked a pending invite
+  "clinic.membership_invite.list", // owner listed invites (collection scope — no resourceId)
+  "clinic.membership_invite.expire", // lazy/auto expiry of an overdue pending invite
+
   // ═══════════ CLINIC SETTINGS ═══════════
   // На будущее: изменения настроек клиники (название, часовой пояс,
   // валюта, языки, тариф) и сама регистрация клиники.
@@ -356,6 +368,12 @@ export const RESOURCE_TYPE_ENUM = [
   "clinic-patient",
   "clinic-employee",
   "clinic",
+
+  // clinic-membership-invite: ClinicMembershipInvite — приглашение стать
+  // User-членом клиники (админом). Отдельно от clinic-employee: приглашённый
+  // становится DocPats User + ClinicMembership, а не ClinicEmployee.
+  // resourceId = ClinicMembershipInvite._id.
+  "clinic-membership-invite",
 
   // Clinic appointments module (Sprint 1)
   // clinic-doctor-schedule: ClinicDoctorSchedule — недельное расписание

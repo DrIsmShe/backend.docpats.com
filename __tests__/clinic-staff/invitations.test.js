@@ -108,7 +108,7 @@ describe("POST /api/v1/clinic/invitations — create", () => {
       .post("/api/v1/clinic/invitations")
       .send({ email: "x@example.com", role: "admin" });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(400);
   });
 
   it("rejects 409 if a pending invitation for same email exists", async () => {
