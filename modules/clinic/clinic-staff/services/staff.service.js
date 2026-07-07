@@ -325,6 +325,48 @@ export async function removeStaff(membershipId, actor) {
   membership.isActive = false;
   await membership.save();
 
+  // When this membership is backed by a ClinicEmployee (internal staff:
+  // nurse, receptionist, marketer, …), also soft-delete the ClinicEmployee.
+  //
+  // Previously removeStaff ended ONLY the membership, leaving
+  // ClinicEmployee.isDeleted = false. That made createInvitation's dedup
+  // (step 3: "already registered as an employee") reject re-inviting the
+  // same email after a removal. Marking the employee isDeleted keeps history
+  // (the record stays, just flagged) and frees the email so a fresh invite
+  // can create a NEW ClinicEmployee. The old invitation stays "accepted"
+  // (honest history) — it does not block, since dedup only checks "pending".
+  //
+  // Best-effort: the membership removal is the primary effect and has already
+  // been persisted. If the employee flag update fails, we log it rather than
+  // failing the whole removal (there is no shared transaction here).
+  if (membership.actorType === "employee") {
+    try {
+      const ClinicEmployee = (await import("../models/clinicEmployee.model.js"))
+        .default;
+      const result = await ClinicEmployee.updateOne(
+        { _id: membership.userId, clinicId },
+        { $set: { isDeleted: true, isActive: false } },
+      );
+      log.info(
+        {
+          employeeId: String(membership.userId),
+          matched: result.matchedCount ?? result.n,
+          modified: result.modifiedCount ?? result.nModified,
+        },
+        "ClinicEmployee soft-deleted during removeStaff",
+      );
+    } catch (err) {
+      log.error(
+        {
+          err: err.message,
+          employeeId: String(membership.userId),
+          clinicId: String(clinicId),
+        },
+        "Failed to soft-delete ClinicEmployee during removeStaff (membership already removed)",
+      );
+    }
+  }
+
   log.info(
     {
       membershipId: String(membershipId),
