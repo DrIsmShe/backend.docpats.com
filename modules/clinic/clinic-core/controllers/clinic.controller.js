@@ -16,6 +16,7 @@ import {
   getCurrentClinicId,
 } from "../../../../common/context/tenantContext.js";
 import { can } from "../../../../common/auth/can.js";
+import { deleteClinicCascade } from "../services/deleteClinicCascade.service.js";
 
 /**
  * POST /api/v1/clinic/clinics
@@ -204,6 +205,52 @@ export async function getPublicClinic(req, res, next) {
         isVerified: clinic.isVerified,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * DELETE /api/v1/clinic/clinics/:id
+ *
+ * Cascade-delete a clinic (OWNER only). Requires a typed confirmation of the
+ * clinic name in the body to guard against accidental deletion.
+ *
+ * Hybrid strategy (see deleteClinicCascade.service.js):
+ *   - HARD delete: construction/public data (departments, rooms, articles, …)
+ *   - SOFT delete: PHI/history (patients, appointments, consilia, memberships,
+ *     the clinic itself) — kept for audit/compliance.
+ *   - Global ClinicEmployee identities are NOT deleted (only their memberships
+ *     to this clinic are ended).
+ *
+ * body: { confirmationName: string }  — must equal the clinic's exact name.
+ */
+export async function deleteClinic(req, res, next) {
+  try {
+    const userId = req.session?.userId;
+    if (!userId) throw new UnauthorizedError();
+
+    const { id } = req.params;
+    const currentClinicId = getCurrentClinicId();
+
+    // Cross-tenant guard: can only delete the clinic you're active in.
+    if (String(currentClinicId) !== String(id)) {
+      throw new ForbiddenError("Cannot delete another clinic");
+    }
+
+    const confirmationName =
+      typeof req.body?.confirmationName === "string"
+        ? req.body.confirmationName
+        : "";
+
+    // Owner-only gate + name confirmation are enforced inside the service.
+    const result = await deleteClinicCascade({
+      clinicId: id,
+      actorUserId: userId,
+      confirmationName,
+    });
+
+    res.json({ success: true, ...result });
   } catch (err) {
     next(err);
   }

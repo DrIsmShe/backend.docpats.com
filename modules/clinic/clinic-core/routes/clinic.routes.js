@@ -19,6 +19,11 @@ router.patch("/clinics/:id/publish", ctrl.setClinicPublished);
 // PATCH /clinics/:id — update clinic
 router.patch("/clinics/:id", ctrl.updateClinic);
 
+// DELETE /clinics/:id — cascade-delete clinic (OWNER only, name confirmation).
+// Hard-deletes construction data, soft-deletes PHI/history, ends memberships,
+// leaves global ClinicEmployee identities intact. body: { confirmationName }.
+router.delete("/clinics/:id", ctrl.deleteClinic);
+
 // GET /public/:slug — LEGACY public clinic page
 router.get("/public/:slug", ctrl.getPublicClinic);
 
