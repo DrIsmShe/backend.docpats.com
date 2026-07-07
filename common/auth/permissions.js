@@ -302,6 +302,47 @@ export function getDefaultPermissionsForRole(role) {
 }
 
 /**
+ * Compute the EFFECTIVE permission map for a role, merging per-user
+ * overrides on top of the role's defaults.
+ *
+ * Resolution per resource (matches the inline logic previously used in
+ * GET /clinic/me — extracted here as the single source of truth):
+ *   1. override for that resource  (admin-set; wins as a whole object)
+ *   2. role default for that resource
+ *   3. { read: false, write: false, delete: false }
+ *
+ * The returned map covers the UNION of resources present in either source.
+ * Send this to the client so the frontend never needs a copy of
+ * ROLE_PERMISSIONS — it just checks `permissions[resource]?.[action]`.
+ *
+ * NOTE: precedence here is per-RESOURCE (an override object replaces the
+ * role default for that resource wholesale). can.js/checkPermission resolves
+ * per-ACTION. For roles without overrides (e.g. marketer defaults) the two
+ * are identical; unifying the two precedence models is a separate cleanup.
+ *
+ * @param {string} role
+ * @param {object} [overridePermissions]  Map<resource, {read,write,delete}>
+ * @returns {object}                      Map<resource, {read,write,delete}>
+ */
+export function getEffectivePermissions(role, overridePermissions = {}) {
+  const rolePermissions = ROLE_PERMISSIONS[role] || {};
+  const overrides = overridePermissions || {};
+
+  const effective = {};
+  const allResources = new Set([
+    ...Object.keys(rolePermissions),
+    ...Object.keys(overrides),
+  ]);
+
+  for (const resource of allResources) {
+    effective[resource] = overrides[resource] ||
+      rolePermissions[resource] || { read: false, write: false, delete: false };
+  }
+
+  return effective;
+}
+
+/**
  * Helper: list all roles.
  * @returns {string[]}
  */
