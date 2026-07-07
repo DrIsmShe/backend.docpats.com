@@ -27,6 +27,7 @@ import {
   ValidationError,
   UnauthorizedError,
 } from "../../../../common/utils/errors.js";
+import { getEffectivePermissions } from "../../../../common/auth/permissions.js";
 
 function parseOrThrow(schema, body) {
   const result = schema.safeParse(body);
@@ -34,6 +35,15 @@ function parseOrThrow(schema, body) {
     throw new ValidationError("Invalid input", { issues: result.error.issues });
   }
   return result.data;
+}
+
+function clinicToDTO(clinic) {
+  return {
+    _id: String(clinic._id),
+    name: clinic.name,
+    slug: clinic.slug,
+    tier: clinic.tier,
+  };
 }
 
 // ─── POST /login ──────────────────────────────────────────────
@@ -59,13 +69,15 @@ export async function login(req, res, next) {
 
     res.json({
       employee: authService.employeeToDTO(employee),
-      clinic: {
-        _id: String(clinic._id),
-        name: clinic.name,
-        slug: clinic.slug,
-        tier: clinic.tier,
-      },
+      clinic: clinicToDTO(clinic),
       role: membership.role,
+      // Effective permissions (role defaults merged with per-user overrides).
+      // Sent so the client can gate UI via permissions[resource][action]
+      // without shipping a copy of ROLE_PERMISSIONS.
+      permissions: getEffectivePermissions(
+        membership.role,
+        membership.permissions,
+      ),
     });
   } catch (err) {
     next(err);
@@ -110,13 +122,15 @@ export async function me(req, res, next) {
 
     res.json({
       employee: authService.employeeToDTO(employee),
-      clinic: {
-        _id: String(clinic._id),
-        name: clinic.name,
-        slug: clinic.slug,
-        tier: clinic.tier,
-      },
+      clinic: clinicToDTO(clinic),
       role: membership.role,
+      // Effective permissions (role defaults merged with per-user overrides).
+      // Flows into the employee outlet context on the client
+      // (ClinicLayout spreads this whole payload), where pages gate on it.
+      permissions: getEffectivePermissions(
+        membership.role,
+        membership.permissions,
+      ),
     });
   } catch (err) {
     next(err);

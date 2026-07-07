@@ -248,13 +248,32 @@ const _basePermissions = {
     [RESOURCES.SUPPLIER]: RW,
   },
 
+  // MARKETER — публичный контур (витрина, свой маркет-контент, лиды, отзывы,
+  // аналитика трафика). НЕ имеет доступа к контенту врача, PHI и финансам.
+  // Всё, что не перечислено ниже, запрещено по умолчанию
+  // (ROLE_PERMISSIONS[role]?.[resource]?.[action] === undefined → deny).
   [ROLES.MARKETER]: {
-    [RESOURCES.ARTICLE]: FULL,
-    [RESOURCES.REVIEW]: RW,
+    // публичный сайт / витрина — ядро роли (создаёт и сносит свои страницы)
     [RESOURCES.SITE_BUILDER]: FULL,
+    // собственный маркетинговый контент: свои статьи, кампании, лендинги
     [RESOURCES.MARKETING]: FULL,
-    [RESOURCES.LEAD]: FULL,
+    // лиды — чужие данные с атрибуцией: работать можно, жёстко удалять нельзя
+    [RESOURCES.LEAD]: RW,
+    // модерация отзывов: публиковать / скрывать / отвечать (write),
+    // но НЕ удалять отзыв пациента и НЕ фабриковать (гейт в сервисе)
+    [RESOURCES.REVIEW]: RW,
+    // только просмотр аналитики трафика/просмотров сайта
     [RESOURCES.ANALYTICS]: RO,
+
+    // --- явные запреты (для читаемости и защиты от будущих правок) ---
+    // контент врача закрыт полностью
+    [RESOURCES.ARTICLE]: NONE,
+    // PHI — никогда
+    [RESOURCES.PATIENT]: NONE,
+    [RESOURCES.MEDICAL_RECORD]: NONE,
+    [RESOURCES.PRESCRIPTION]: NONE,
+    // финансовая аналитика закрыта
+    [RESOURCES.ANALYTICS_FINANCE]: NONE,
   },
 };
 
