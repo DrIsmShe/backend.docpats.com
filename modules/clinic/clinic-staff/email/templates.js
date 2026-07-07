@@ -2,6 +2,13 @@
 //
 // i18n email templates for staff invitations and OTP.
 // Languages: ru, en, tr, az, ar.
+//
+// Invitation has TWO variants (see renderInvitationEmail `isExistingWorker`):
+//   - new      → recipient has no worker account yet: "accept & complete
+//                registration" (they set a password via OTP on the site).
+//   - existing → recipient already has a global clinic-worker account:
+//                "accept to join this clinic; log in with your existing
+//                password" (one click, no new password).
 
 const SUPPORTED_LANGUAGES = ["ru", "en", "tr", "az", "ar"];
 
@@ -19,6 +26,7 @@ const INVITATION_SUBJECTS = {
   ar: (clinicName) => `دعوة للانضمام إلى عيادة ${clinicName} — DocPats`,
 };
 
+// New worker: accept + complete registration (set password via OTP).
 const INVITATION_BODIES = {
   ru: ({ clinicName, role, inviterName, acceptUrl, expiresInDays }) => `
     <div style="font-family:-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a1a18;">
@@ -122,8 +130,123 @@ const INVITATION_BODIES = {
   `,
 };
 
+// Existing worker: they already have a global clinic-worker account.
+// One-click consent; log in with the existing password (no new registration).
+const INVITATION_BODIES_EXISTING = {
+  ru: ({ clinicName, role, inviterName, acceptUrl, expiresInDays }) => `
+    <div style="font-family:-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a1a18;">
+      <h1 style="font-size:24px;margin:0 0 16px;color:#1a1a18;">Приглашение присоединиться к клинике</h1>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 12px;">
+        <strong>${inviterName}</strong> приглашает вас работать в клинике
+        <strong>${clinicName}</strong> на платформе DocPats в роли
+        <strong>${role}</strong>.
+      </p>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">
+        У вас уже есть учётная запись сотрудника DocPats. Нажмите кнопку ниже,
+        чтобы подтвердить — новый пароль задавать не нужно, вы войдёте со своим
+        текущим паролем.
+      </p>
+      <a href="${acceptUrl}" style="display:inline-block;background:#3d7fff;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+        Принять приглашение
+      </a>
+      <p style="font-size:13px;color:#64748b;margin:32px 0 0;line-height:1.5;">
+        Ссылка действительна ${expiresInDays} дней. Если вы не ожидали это
+        приглашение, просто проигнорируйте письмо.
+      </p>
+    </div>
+  `,
+  en: ({ clinicName, role, inviterName, acceptUrl, expiresInDays }) => `
+    <div style="font-family:-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a1a18;">
+      <h1 style="font-size:24px;margin:0 0 16px;">Invitation to join a clinic</h1>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 12px;">
+        <strong>${inviterName}</strong> has invited you to work at
+        <strong>${clinicName}</strong> on DocPats as a
+        <strong>${role}</strong>.
+      </p>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">
+        You already have a DocPats worker account. Click below to accept — no
+        new password needed, just sign in with your existing one.
+      </p>
+      <a href="${acceptUrl}" style="display:inline-block;background:#3d7fff;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+        Accept Invitation
+      </a>
+      <p style="font-size:13px;color:#64748b;margin:32px 0 0;line-height:1.5;">
+        This link is valid for ${expiresInDays} days. If you didn't expect this
+        invitation, you can safely ignore this email.
+      </p>
+    </div>
+  `,
+  tr: ({ clinicName, role, inviterName, acceptUrl, expiresInDays }) => `
+    <div style="font-family:-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a1a18;">
+      <h1 style="font-size:24px;margin:0 0 16px;">Bir kliniğe katılma daveti</h1>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 12px;">
+        <strong>${inviterName}</strong> sizi DocPats üzerinde
+        <strong>${clinicName}</strong> kliniğinde
+        <strong>${role}</strong> olarak çalışmaya davet etti.
+      </p>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">
+        Zaten bir DocPats çalışan hesabınız var. Kabul etmek için aşağıya tıklayın —
+        yeni parola gerekmez, mevcut parolanızla giriş yaparsınız.
+      </p>
+      <a href="${acceptUrl}" style="display:inline-block;background:#3d7fff;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+        Daveti Kabul Et
+      </a>
+      <p style="font-size:13px;color:#64748b;margin:32px 0 0;line-height:1.5;">
+        Bu bağlantı ${expiresInDays} gün geçerlidir. Eğer bu daveti beklemiyorsanız,
+        bu e-postayı yok sayabilirsiniz.
+      </p>
+    </div>
+  `,
+  az: ({ clinicName, role, inviterName, acceptUrl, expiresInDays }) => `
+    <div style="font-family:-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a1a18;">
+      <h1 style="font-size:24px;margin:0 0 16px;">Klinikaya qoşulmaq dəvəti</h1>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 12px;">
+        <strong>${inviterName}</strong> sizi DocPats platformasında
+        <strong>${clinicName}</strong> klinikasında
+        <strong>${role}</strong> kimi işləməyə dəvət etdi.
+      </p>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">
+        DocPats-də artıq işçi hesabınız var. Təsdiq etmək üçün aşağıdakı düyməyə
+        klikləyin — yeni parol lazım deyil, mövcud parolunuzla daxil olacaqsınız.
+      </p>
+      <a href="${acceptUrl}" style="display:inline-block;background:#3d7fff;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+        Dəvəti Qəbul Et
+      </a>
+      <p style="font-size:13px;color:#64748b;margin:32px 0 0;line-height:1.5;">
+        Bu link ${expiresInDays} gün etibarlıdır. Əgər bu dəvəti gözləmirdinizsə,
+        bu məktubu nəzərə almaya bilərsiniz.
+      </p>
+    </div>
+  `,
+  ar: ({ clinicName, role, inviterName, acceptUrl, expiresInDays }) => `
+    <div dir="rtl" style="font-family:-apple-system,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a1a18;">
+      <h1 style="font-size:24px;margin:0 0 16px;">دعوة للانضمام إلى عيادة</h1>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 12px;">
+        قام <strong>${inviterName}</strong> بدعوتك للعمل في عيادة
+        <strong>${clinicName}</strong> على منصة DocPats بصفة
+        <strong>${role}</strong>.
+      </p>
+      <p style="font-size:15px;line-height:1.6;margin:0 0 24px;">
+        لديك بالفعل حساب موظف على DocPats. انقر أدناه للقبول — لا حاجة لكلمة مرور
+        جديدة، فقط سجّل الدخول بكلمة المرور الحالية.
+      </p>
+      <a href="${acceptUrl}" style="display:inline-block;background:#3d7fff;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+        قبول الدعوة
+      </a>
+      <p style="font-size:13px;color:#64748b;margin:32px 0 0;line-height:1.5;">
+        هذا الرابط صالح لمدة ${expiresInDays} أيام. إذا لم تكن تتوقع هذه الدعوة،
+        يمكنك تجاهل هذا البريد.
+      </p>
+    </div>
+  `,
+};
+
 /**
  * Build invitation email HTML and subject.
+ *
+ * @param {object} args
+ * @param {boolean} [args.isExistingWorker] — true → one-click-consent copy for
+ *   a worker who already has a global clinic-worker account.
  */
 export function renderInvitationEmail({
   language = "ru",
@@ -132,11 +255,15 @@ export function renderInvitationEmail({
   inviterName,
   acceptUrl,
   expiresInDays = 7,
+  isExistingWorker = false,
 }) {
   const lang = pickLang(language);
+  const bodies = isExistingWorker
+    ? INVITATION_BODIES_EXISTING
+    : INVITATION_BODIES;
   return {
     subject: INVITATION_SUBJECTS[lang](clinicName),
-    htmlContent: INVITATION_BODIES[lang]({
+    htmlContent: bodies[lang]({
       clinicName,
       role,
       inviterName,

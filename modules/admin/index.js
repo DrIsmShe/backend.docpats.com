@@ -23,6 +23,7 @@ import PolyclinicPatientDeleteRoute from "./routes/PolyclinicPatientDeleteRoute.
 import patchVerificationyDoctorRoute from "./routes/patchVerificationyDoctorRoute.js";
 
 import clinicArticlesModerationRoute from "./routes/clinicArticlesModerationRoute.js";
+import platformClinicEmployeeRoute from "./routes/platformClinicEmployeeRoute.js";
 
 // system ADMIN end
 // system ADMIN start
@@ -56,6 +57,7 @@ router.use("/my-articles-categories", categoryRoute);
 router.use("/verification", patchVerificationyDoctorRoute);
 // ВИТРИНА 2.0 (Часть 3) — модерация статей клиник (рубильник проекта)
 router.use("/clinic-articles", clinicArticlesModerationRoute);
+router.use("/clinic-workers", platformClinicEmployeeRoute);
 //router.use("/admin-panel", isAdminRoute);
 // system ADMIN end
 export default router;

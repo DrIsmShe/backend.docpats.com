@@ -1,13 +1,24 @@
 // modules/clinic/clinic-staff/models/clinicEmployee.model.js
 //
-// Internal clinic staff (non-DocPats users): nurses, receptionists,
-// accountants, pharmacists, marketers, etc.
+// GLOBAL clinic worker identity (non-DocPats-user staff): nurses,
+// receptionists, accountants, pharmacists, marketers, etc.
 //
-// IMPORTANT: ClinicEmployee is a SEPARATE collection from User.
-// - DocPats Users (User collection): doctors, patients — public profile,
-//   visible across the platform.
-// - ClinicEmployees (this collection): visible ONLY within their clinic,
-//   no public profile, login via separate endpoint.
+// IMPORTANT — identity model (Global Clinic Worker):
+// - A ClinicEmployee is ONE global identity across the whole system,
+//   keyed by a globally-unique emailHash. One person = one record = one
+//   login, regardless of how many clinics they work in.
+// - The link to a clinic (which clinic, which role, hire/leave dates) lives
+//   in ClinicMembership (actorType: "employee"), NOT here. Hiring creates a
+//   membership; a clinic "firing" a worker sets membership.leftAt — it does
+//   NOT touch or delete this identity.
+// - Only the PLATFORM OWNER may delete the identity itself
+//   (isPlatformDeleted), never a clinic.
+// - ClinicEmployees are NOT DocPats Users: no public profile, no patient
+//   cabinet, login via the separate staff endpoint only.
+//
+// The SAME email may exist BOTH as a User (patient/doctor) and as a
+// ClinicEmployee — they are deliberately separate identities and are not
+// linked. Uniqueness here is scoped to this collection only.
 //
 // PII fields are encrypted at rest with AES-256-CBC using ENCRYPTION_KEY
 // (same standard as User model).
@@ -65,15 +76,13 @@ const SUPPORTED_LANGUAGES = ["ru", "en", "tr", "az", "ar"];
 
 const clinicEmployeeSchema = new mongoose.Schema(
   {
-    clinicId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Clinic",
-      required: true,
-      index: true,
-    },
+    // NOTE: clinicId and role intentionally REMOVED from the identity.
+    // They now live in ClinicMembership (one per clinic the worker is in).
+    // This identity is clinic-agnostic and globally unique by emailHash.
 
     // Encrypted PII
     emailEncrypted: { type: String, required: true },
+    // Globally unique across the whole system (one identity per email).
     emailHash: { type: String, required: true, unique: true, index: true },
     firstNameEncrypted: { type: String, required: true },
     lastNameEncrypted: { type: String, required: true },
@@ -82,33 +91,19 @@ const clinicEmployeeSchema = new mongoose.Schema(
     // Auth — argon2 hash, NOT encrypted (one-way)
     passwordHash: { type: String, required: true },
 
-    // Role inside the clinic — MUST match one of the internal roles
-    // (not "owner", "doctor", "patient" — those are User-tied)
-    role: {
-      type: String,
-      required: true,
-      enum: [
-        "admin",
-        "manager",
-        "nurse",
-        "receptionist",
-        "accountant",
-        "pharmacist",
-        "marketer",
-      ],
-    },
-
     customTitle: { type: String, trim: true, maxlength: 200 },
 
+    // Identity-level active flag (login enabled). This is NOT per-clinic
+    // employment status — that is ClinicMembership.leftAt.
     isActive: { type: Boolean, default: true, index: true },
     isBlocked: { type: Boolean, default: false },
     blockedReason: { type: String, default: null },
 
-    // Who invited / accepted on which invitation
+    // Who first invited / on which invitation (historical origin)
     invitedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
     invitationId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -127,9 +122,17 @@ const clinicEmployeeSchema = new mongoose.Schema(
       default: "ru",
     },
 
-    // Soft delete
-    isDeleted: { type: Boolean, default: false, index: true },
-    deletedAt: { type: Date, default: null },
+    // PLATFORM-LEVEL delete — only the platform owner may set this.
+    // A clinic firing a worker does NOT touch these (it sets
+    // ClinicMembership.leftAt instead). The identity stays intact so the
+    // worker can still be hired by other clinics and keep their login.
+    isPlatformDeleted: { type: Boolean, default: false, index: true },
+    platformDeletedAt: { type: Date, default: null },
+    platformDeletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   { timestamps: true },
 );

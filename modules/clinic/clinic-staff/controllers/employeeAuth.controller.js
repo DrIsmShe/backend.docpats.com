@@ -1,25 +1,19 @@
 // modules/clinic/clinic-staff/controllers/employeeAuth.controller.js
 //
-// HTTP controllers for ClinicEmployee authentication.
-// Public: login. Authenticated: logout, me.
+// HTTP controllers for ClinicEmployee authentication (Global Clinic Worker).
+// Public: login. Authenticated: logout, me, selectClinic.
 //
-// IMPORTANT — session model (Variant B, path-based MVP):
-// We keep a SINGLE session per browser that can hold BOTH a DocPats user
-// identity (req.session.userId) and a ClinicEmployee identity
-// (req.session.employeeId) at the same time. This is deliberate:
+// Session model (Variant B, path-based MVP):
+// A single browser session can hold BOTH a DocPats user identity
+// (req.session.userId) and a ClinicEmployee identity (req.session.employeeId)
+// side-by-side — they serve different routes and never conflict.
 //
-//   - A DocPats doctor who opens a clinic owns it via userId (clinic admin).
-//   - The same person can ALSO be an employee elsewhere (via employeeId).
-//   - The two identities serve different routes — DocPats routes read
-//     userId, clinic-employee routes read employeeId. No conflict.
-//
-// Employee login therefore ADDS employeeId to the existing session
-// WITHOUT touching userId. We do NOT regenerate the session here, because
-// regenerate would wipe the DocPats user's logged-in state.
-//
-// (Note: in a future Variant A migration to clinic.docpats.com subdomain,
-//  this controller will move to a dedicated clinic_employee_sid cookie
-//  and regenerate will be safe to re-enable.)
+// Multi-clinic: a worker is one global identity that may belong to several
+// clinics. Login authenticates the identity; the ACTIVE clinic is stored in
+// req.session.clinicId. When a worker belongs to exactly one clinic we select
+// it automatically; when several, the client picks one via /select-clinic.
+// Employee login only ADDS employeeId/clinicId to the session (never touches
+// userId), so we do NOT regenerate the session.
 
 import * as authService from "../services/employeeAuth.service.js";
 import { loginSchema } from "../validators/employeeAuth.schemas.js";
@@ -37,12 +31,56 @@ function parseOrThrow(schema, body) {
   return result.data;
 }
 
-function clinicToDTO(clinic) {
+function saveSession(req) {
+  return new Promise((resolve, reject) => {
+    req.session.save((err) => (err ? reject(err) : resolve()));
+  });
+}
+
+// Build the full "you are in this clinic" payload from a membership summary
+// (as returned by listEmployeeMemberships / loginEmployee) — its `clinic`
+// field is already { _id, name, slug, tier }.
+function activeClinicPayload(employeeDTO, membershipSummary) {
   return {
-    _id: String(clinic._id),
-    name: clinic.name,
-    slug: clinic.slug,
-    tier: clinic.tier,
+    employee: employeeDTO,
+    clinic: membershipSummary.clinic,
+    role: membershipSummary.role,
+    permissions: getEffectivePermissions(
+      membershipSummary.role,
+      membershipSummary.permissions,
+    ),
+    needsClinicSelection: false,
+  };
+}
+
+// Build the same payload from full docs (employee doc + clinic doc + membership).
+function activeClinicPayloadFromDocs(employee, clinic, membership) {
+  return {
+    employee: authService.employeeToDTO(employee),
+    clinic: {
+      _id: String(clinic._id),
+      name: clinic.name,
+      slug: clinic.slug,
+      tier: clinic.tier,
+    },
+    role: membership.role,
+    permissions: getEffectivePermissions(
+      membership.role,
+      membership.permissions,
+    ),
+    needsClinicSelection: false,
+  };
+}
+
+function clinicSelectionPayload(employeeDTO, memberships) {
+  return {
+    employee: employeeDTO,
+    needsClinicSelection: true,
+    clinics: memberships.map((m) => ({
+      clinicId: m.clinicId,
+      role: m.role,
+      clinic: m.clinic,
+    })),
   };
 }
 
@@ -52,33 +90,61 @@ export async function login(req, res, next) {
   try {
     const data = parseOrThrow(loginSchema, req.body);
 
-    const { employee, clinic, membership } = await authService.loginEmployee({
+    const { employee, memberships } = await authService.loginEmployee({
       email: data.email,
       password: data.password,
     });
 
-    // Add employee identity to the existing session WITHOUT touching userId.
-    // The DocPats user (if logged in) stays logged in side-by-side.
+    const employeeDTO = authService.employeeToDTO(employee);
+
     if (req.session) {
       req.session.employeeId = String(employee._id);
-
-      await new Promise((resolve, reject) => {
-        req.session.save((err) => (err ? reject(err) : resolve()));
-      });
+      // Auto-select when there is exactly one clinic; otherwise clear any
+      // stale selection so the client is forced to pick.
+      if (memberships.length === 1) {
+        req.session.clinicId = memberships[0].clinicId;
+      } else {
+        delete req.session.clinicId;
+      }
+      await saveSession(req);
     }
 
-    res.json({
-      employee: authService.employeeToDTO(employee),
-      clinic: clinicToDTO(clinic),
-      role: membership.role,
-      // Effective permissions (role defaults merged with per-user overrides).
-      // Sent so the client can gate UI via permissions[resource][action]
-      // without shipping a copy of ROLE_PERMISSIONS.
-      permissions: getEffectivePermissions(
-        membership.role,
-        membership.permissions,
-      ),
-    });
+    if (memberships.length === 1) {
+      return res.json(activeClinicPayload(employeeDTO, memberships[0]));
+    }
+
+    // Multiple clinics → client shows a picker, then calls /select-clinic.
+    return res.json(clinicSelectionPayload(employeeDTO, memberships));
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── POST /select-clinic ──────────────────────────────────────
+//
+// Choose which clinic to work in for this session (multi-clinic workers).
+
+export async function selectClinic(req, res, next) {
+  try {
+    const employeeId = req.session?.employeeId;
+    if (!employeeId) {
+      throw new UnauthorizedError("Not authenticated");
+    }
+
+    const clinicId = req.body?.clinicId;
+    if (!clinicId) {
+      throw new ValidationError("clinicId is required");
+    }
+
+    // getEmployeeWithClinic throws if there is no active membership in that
+    // clinic — so this both validates access and loads the context.
+    const { employee, clinic, membership } =
+      await authService.getEmployeeWithClinic(employeeId, clinicId);
+
+    req.session.clinicId = String(clinicId);
+    await saveSession(req);
+
+    res.json(activeClinicPayloadFromDocs(employee, clinic, membership));
   } catch (err) {
     next(err);
   }
@@ -86,9 +152,8 @@ export async function login(req, res, next) {
 
 // ─── POST /logout ─────────────────────────────────────────────
 //
-// Employee logout: remove ONLY employeeId from the session. Keep userId
-// (the DocPats user identity) intact so the person remains logged in to
-// the main site after logging out of the clinic.
+// Remove ONLY the employee identity (employeeId + selected clinicId) from the
+// session. Keep userId (the DocPats user identity) intact.
 
 export async function logout(req, res, next) {
   try {
@@ -97,10 +162,9 @@ export async function logout(req, res, next) {
     }
 
     delete req.session.employeeId;
+    delete req.session.clinicId;
 
-    await new Promise((resolve, reject) => {
-      req.session.save((err) => (err ? reject(err) : resolve()));
-    });
+    await saveSession(req);
 
     res.json({ success: true });
   } catch (err) {
@@ -117,21 +181,42 @@ export async function me(req, res, next) {
       throw new UnauthorizedError("Not authenticated");
     }
 
-    const { employee, clinic, membership } =
-      await authService.getEmployeeWithClinic(employeeId);
+    let clinicId = req.session?.clinicId;
 
-    res.json({
-      employee: authService.employeeToDTO(employee),
-      clinic: clinicToDTO(clinic),
-      role: membership.role,
-      // Effective permissions (role defaults merged with per-user overrides).
-      // Flows into the employee outlet context on the client
-      // (ClinicLayout spreads this whole payload), where pages gate on it.
-      permissions: getEffectivePermissions(
-        membership.role,
-        membership.permissions,
-      ),
-    });
+    // No clinic chosen yet (fresh multi-clinic session, or selection lost).
+    if (!clinicId) {
+      const memberships = await authService.listEmployeeMemberships(employeeId);
+      if (memberships.length === 0) {
+        throw new UnauthorizedError(
+          "You are not a member of any active clinic",
+        );
+      }
+      if (memberships.length === 1) {
+        // Auto-select the only clinic and persist it.
+        clinicId = memberships[0].clinicId;
+        req.session.clinicId = clinicId;
+        await saveSession(req);
+      } else {
+        // Several clinics → ask the client to pick.
+        // employeeToDTO needs the identity doc; load it via the first clinic
+        // only to decrypt PII (role/permissions are per-clinic, not used here).
+        const { employee } = await authService.getEmployeeWithClinic(
+          employeeId,
+          memberships[0].clinicId,
+        );
+        return res.json(
+          clinicSelectionPayload(
+            authService.employeeToDTO(employee),
+            memberships,
+          ),
+        );
+      }
+    }
+
+    const { employee, clinic, membership } =
+      await authService.getEmployeeWithClinic(employeeId, clinicId);
+
+    res.json(activeClinicPayloadFromDocs(employee, clinic, membership));
   } catch (err) {
     next(err);
   }

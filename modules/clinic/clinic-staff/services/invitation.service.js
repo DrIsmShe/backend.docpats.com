@@ -1,14 +1,25 @@
 // modules/clinic/clinic-staff/services/invitation.service.js
 //
-// Business logic for clinic staff invitations.
+// Business logic for clinic staff invitations (Global Clinic Worker model).
+//
+// A ClinicEmployee is a GLOBAL identity (unique emailHash across the system).
+// Hiring links that identity to a clinic via ClinicMembership; it does NOT
+// duplicate the identity. createInvitation is "smart" (single endpoint):
+//
+//   email entered → is there already a global ClinicEmployee for it?
+//     ├─ NO  → kind:"new"      invitation (OTP + password → create identity)
+//     └─ YES → already active in THIS clinic? → 409
+//              else → kind:"existing" invitation (one-click consent, no OTP,
+//                     no password → just create a membership for this clinic)
 //
 // Functions:
-// - createInvitation: owner/admin invites a new internal employee by email
-// - listInvitations: get pending invitations for current clinic
+// - createInvitation: owner/admin invites by email (auto new/existing)
+// - listInvitations: pending invitations for current clinic
 // - revokeInvitation: cancel a pending invitation
-// - getInvitationPreview: public — show invitation details (clinic, role)
-// - requestOtp: public — generate OTP and send via email
-// - acceptInvitation: public — verify OTP, create ClinicEmployee + ClinicMembership
+// - getInvitationPreview: public — invitation details (incl. kind)
+// - requestOtp: public — OTP for kind:"new" only
+// - acceptInvitation: public — new → create identity+membership;
+//                              existing → one-click membership
 
 import crypto from "crypto";
 import argon2 from "argon2";
@@ -56,13 +67,11 @@ const sha256 = (v) =>
 const normalizeEmail = (v) => String(v).trim().toLowerCase();
 
 function generateOtp() {
-  // Cryptographically secure 6-digit code
   const n = crypto.randomInt(0, 1_000_000);
   return n.toString().padStart(6, "0");
 }
 
 function hashOtp(otp, tokenHash) {
-  // OTP hash is bound to tokenHash so it cannot be replayed across invitations
   return sha256(`${otp}:${tokenHash}`);
 }
 
@@ -77,7 +86,6 @@ async function getInvitationByToken(token) {
   const payload = verifySignedToken(token);
   if (!payload) return null;
   if (!payload.invitationId) return null;
-  // Defensive: payload.invitationId might not be a valid ObjectId
   if (!mongoose.isValidObjectId(payload.invitationId)) return null;
 
   const tokenHash = sha256(token);
@@ -108,19 +116,21 @@ function ensureInvitationActive(invitation) {
 }
 
 // ───────────────────────────────────────────────────────────────
-// 1. CREATE INVITATION (owner/admin)
+// 1. CREATE INVITATION (owner/admin) — smart new/existing routing
 // ───────────────────────────────────────────────────────────────
 
 /**
- * Create a new staff invitation. Sends an email with a signed link.
+ * Create a staff invitation. Automatically routes:
+ *   - existing global worker identity → kind:"existing" (one-click consent)
+ *   - unknown email                   → kind:"new" (OTP + password)
  *
  * @param {object} args
  * @param {string} args.email
  * @param {string} args.role
  * @param {string} [args.customTitle]
  * @param {string} [args.language]
- * @param {object} args.actor — { userId, role: actorRole, clinicId }
- * @returns {Promise<{invitation, emailSent}>}
+ * @param {object} args.actor — { userId, role: actorRole, clinicId, inviterName }
+ * @returns {Promise<{invitation, emailSent, kind}>}
  */
 export async function createInvitation({
   email,
@@ -141,38 +151,59 @@ export async function createInvitation({
   const normalized = normalizeEmail(email);
   const emailHash = sha256(normalized);
 
-  // 2. Dedup: reject if a pending invitation already exists for this email
-  const existing = await StaffInvitation.findOne({
+  // 2. One pending invitation per (clinic, email) — applies to both kinds.
+  const pending = await StaffInvitation.findOne({
     clinicId,
     emailHash,
     status: "pending",
   });
-  if (existing) {
+  if (pending) {
     throw new ConflictError(
       "A pending invitation already exists for this email",
     );
   }
 
-  // 3. Reject if email is already a ClinicEmployee in this clinic
-  const existingEmployee = await ClinicEmployee.findOne({
-    clinicId,
-    emailHash,
-    isDeleted: false,
-  });
-  if (existingEmployee) {
-    throw new ConflictError(
-      "This email is already registered as an employee in this clinic",
-    );
-  }
-
-  // 4. Get clinic name for email
+  // 3. Clinic (for email content) — needed by both branches.
   const clinic = await Clinic.findById(clinicId).select("name").lean();
   if (!clinic) {
     throw new NotFoundError("Clinic not found");
   }
 
-  // 5. Generate ID + token first, then create with real tokenHash.
-  // (Avoids placeholder collision on the unique tokenHash index.)
+  // 4. Is there already a GLOBAL worker identity for this email?
+  const existingEmployee = await ClinicEmployee.findOne({
+    emailHash,
+    isPlatformDeleted: false,
+  });
+
+  if (existingEmployee) {
+    // 4a. Already an active member of THIS clinic → nothing to do.
+    const activeHere = await ClinicMembership.findOne({
+      userId: existingEmployee._id,
+      clinicId,
+      actorType: "employee",
+      leftAt: null,
+    });
+    if (activeHere) {
+      throw new ConflictError("This worker is already in your clinic team");
+    }
+    // 4b. Route to the "existing" one-click-consent flow.
+    return createExistingWorkerInvitation({
+      existingEmployee,
+      role,
+      customTitle,
+      language,
+      clinic,
+      actor: {
+        userId,
+        role: actorRole,
+        clinicId,
+        inviterName: actor.inviterName,
+      },
+      normalized,
+    });
+  }
+
+  // 5. Unknown email → NEW flow: signed token + StaffInvitation(kind:"new").
   const invitationId = new mongoose.Types.ObjectId();
   const token = createSignedToken(
     { invitationId: String(invitationId) },
@@ -185,6 +216,7 @@ export async function createInvitation({
     clinicId,
     emailEncrypted: normalized,
     role,
+    kind: "new",
     customTitle: customTitle || undefined,
     tokenHash,
     status: "pending",
@@ -193,7 +225,6 @@ export async function createInvitation({
     language,
   });
 
-  // 6. Send email (fire-and-forget logging — failure does not roll back)
   let emailSent = false;
   try {
     const acceptUrl = buildAcceptUrl(token);
@@ -204,12 +235,9 @@ export async function createInvitation({
       inviterName: actor.inviterName || "Clinic Admin",
       acceptUrl,
       expiresInDays: INVITATION_TTL_DAYS,
+      isExistingWorker: false,
     });
-    emailSent = await sendRichEmail({
-      to: normalized,
-      subject,
-      htmlContent,
-    });
+    emailSent = await sendRichEmail({ to: normalized, subject, htmlContent });
   } catch (err) {
     log.error({ err, invitationId: invitation._id }, "Email send failed");
     emailSent = false;
@@ -221,12 +249,85 @@ export async function createInvitation({
       clinicId,
       role,
       invitedBy: userId,
+      kind: "new",
       emailSent,
     },
-    "Invitation created",
+    "Invitation created (new worker)",
   );
 
-  return { invitation, emailSent };
+  return { invitation, emailSent, kind: "new" };
+}
+
+/**
+ * Internal: create a kind:"existing" invitation for a worker who already has
+ * a global ClinicEmployee identity. Accepting is a one-click consent that
+ * only creates a ClinicMembership — no OTP, no new password, no new identity.
+ */
+async function createExistingWorkerInvitation({
+  existingEmployee,
+  role,
+  customTitle,
+  language,
+  clinic,
+  actor,
+  normalized,
+}) {
+  const { userId, clinicId } = actor;
+
+  const invitationId = new mongoose.Types.ObjectId();
+  const token = createSignedToken(
+    { invitationId: String(invitationId) },
+    TOKEN_TTL,
+  );
+  const tokenHash = sha256(token);
+
+  const invitation = await StaffInvitation.create({
+    _id: invitationId,
+    clinicId,
+    emailEncrypted: normalized,
+    role,
+    kind: "existing",
+    existingEmployeeId: existingEmployee._id,
+    customTitle: customTitle || undefined,
+    tokenHash,
+    status: "pending",
+    expiresAt: new Date(Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000),
+    invitedBy: userId,
+    language,
+  });
+
+  let emailSent = false;
+  try {
+    const acceptUrl = buildAcceptUrl(token);
+    const { subject, htmlContent } = renderInvitationEmail({
+      language,
+      clinicName: clinic.name,
+      role,
+      inviterName: actor.inviterName || "Clinic Admin",
+      acceptUrl,
+      expiresInDays: INVITATION_TTL_DAYS,
+      isExistingWorker: true,
+    });
+    emailSent = await sendRichEmail({ to: normalized, subject, htmlContent });
+  } catch (err) {
+    log.error({ err, invitationId: invitation._id }, "Email send failed");
+    emailSent = false;
+  }
+
+  log.info(
+    {
+      invitationId: invitation._id,
+      clinicId,
+      role,
+      invitedBy: userId,
+      kind: "existing",
+      existingEmployeeId: String(existingEmployee._id),
+      emailSent,
+    },
+    "Invitation created (existing worker)",
+  );
+
+  return { invitation, emailSent, kind: "existing" };
 }
 
 // ───────────────────────────────────────────────────────────────
@@ -243,6 +344,7 @@ export async function listInvitations({ clinicId, status = "pending" }) {
     id: String(inv._id),
     email: inv.getEmail(),
     role: inv.role,
+    kind: inv.kind || "new",
     customTitle: inv.customTitle || null,
     status: inv.status,
     expiresAt: inv.expiresAt,
@@ -265,7 +367,7 @@ export async function revokeInvitation({ invitationId, actor }) {
 
   const invitation = await StaffInvitation.findOne({
     _id: invitationId,
-    clinicId, // tenant guard — cross-clinic revoke returns 404
+    clinicId,
   });
 
   if (!invitation) {
@@ -303,9 +405,16 @@ export async function getInvitationPreview({ token }) {
     .select("name slug")
     .lean();
 
+  const kind = invitation.kind || "new";
+
   return {
     email: invitation.getEmail(),
     role: invitation.role,
+    kind,
+    // Frontend uses this to branch the UI:
+    //   "new"      → full form (OTP + name + password)
+    //   "existing" → single "Accept" button (one-click consent)
+    isExistingWorker: kind === "existing",
     customTitle: invitation.customTitle || null,
     clinic: {
       id: String(invitation.clinicId),
@@ -318,14 +427,20 @@ export async function getInvitationPreview({ token }) {
 }
 
 // ───────────────────────────────────────────────────────────────
-// 5. REQUEST OTP (public — sends OTP to invitation email)
+// 5. REQUEST OTP (public — kind:"new" only)
 // ───────────────────────────────────────────────────────────────
 
 export async function requestOtp({ token }) {
   const invitation = await getInvitationByToken(token);
   ensureInvitationActive(invitation);
 
-  // Cooldown: prevent rapid OTP spam
+  if ((invitation.kind || "new") === "existing") {
+    // Existing workers accept with one click — no OTP is issued.
+    throw new UnprocessableError(
+      "This invitation does not require an OTP. Accept it directly.",
+    );
+  }
+
   if (
     invitation.otpRequestedAt &&
     Date.now() - invitation.otpRequestedAt.getTime() < OTP_REQUEST_COOLDOWN_MS
@@ -359,11 +474,7 @@ export async function requestOtp({ token }) {
 
   let emailSent = false;
   try {
-    emailSent = await sendRichEmail({
-      to: email,
-      subject,
-      htmlContent,
-    });
+    emailSent = await sendRichEmail({ to: email, subject, htmlContent });
   } catch (err) {
     log.error({ err, invitationId: invitation._id }, "OTP email send failed");
   }
@@ -377,26 +488,15 @@ export async function requestOtp({ token }) {
 }
 
 // ───────────────────────────────────────────────────────────────
-// 6. ACCEPT INVITATION (public — completes registration)
+// 6. ACCEPT INVITATION (public)
 // ───────────────────────────────────────────────────────────────
 
 /**
- * Verify OTP, create ClinicEmployee + ClinicMembership atomically.
- *
- * Note: we attempt a transaction first (works on replica sets).
- * If transactions are not supported (single-node Mongo), we fall back
- * to sequential operations. This keeps the test suite green on
- * mongodb-memory-server while still being safe in production.
- *
- * @param {object} args
- * @param {string} args.token
- * @param {string} args.otp
- * @param {string} args.password
- * @param {string} args.firstName
- * @param {string} args.lastName
- * @param {string} [args.phoneNumber]
- * @param {string} [args.language]
- * @returns {Promise<{employee}>}
+ * Accept an invitation.
+ *   - kind:"existing" → one-click consent: link the existing global identity
+ *     to this clinic via a new ClinicMembership. No OTP, no password.
+ *   - kind:"new"      → verify OTP, find-or-create the global ClinicEmployee
+ *     identity, create the ClinicMembership.
  */
 export async function acceptInvitation({
   token,
@@ -410,22 +510,26 @@ export async function acceptInvitation({
   const invitation = await getInvitationByToken(token);
   ensureInvitationActive(invitation);
 
+  // ── EXISTING worker: one-click consent ──
+  if ((invitation.kind || "new") === "existing") {
+    return acceptExistingInvitation({ invitation });
+  }
+
+  // ── NEW worker: OTP + password → create identity ──
+
   // 1. Check OTP exists
   if (!invitation.otpHash || !invitation.otpExpiresAt) {
     throw new UnprocessableError("OTP not requested. Call request-otp first.");
   }
-
   // 2. Check OTP expiry
   if (invitation.otpExpiresAt < new Date()) {
     throw new ConflictError("OTP has expired. Request a new one.");
   }
-
   // 3. Check OTP attempts left
   if (invitation.otpAttemptsLeft <= 0) {
     throw new ConflictError("Too many failed attempts. Request a new OTP.");
   }
-
-  // 4. Verify OTP (timing-safe comparison via sha256 hash)
+  // 4. Verify OTP (timing-safe)
   const expectedHash = hashOtp(otp, invitation.tokenHash);
   const isValidOtp =
     expectedHash.length === invitation.otpHash.length &&
@@ -433,7 +537,6 @@ export async function acceptInvitation({
       Buffer.from(expectedHash),
       Buffer.from(invitation.otpHash),
     );
-
   if (!isValidOtp) {
     invitation.otpAttemptsLeft = Math.max(0, invitation.otpAttemptsLeft - 1);
     await invitation.save();
@@ -445,16 +548,14 @@ export async function acceptInvitation({
   // 5. Hash password with argon2
   const passwordHash = await argon2.hash(password, {
     type: argon2.argon2id,
-    memoryCost: 19_456, // 19 MiB
+    memoryCost: 19_456,
     timeCost: 2,
     parallelism: 1,
   });
 
   const email = invitation.getEmail();
 
-  // 6. Create ClinicEmployee + ClinicMembership.
-  //    Try transaction first; fall back to sequential operations if
-  //    the underlying Mongo doesn't support transactions.
+  // 6. Persist (transaction if supported)
   let employee;
   const useTransaction = await supportsTransactions();
 
@@ -495,17 +596,75 @@ export async function acceptInvitation({
       employeeId: employee._id,
       clinicId: invitation.clinicId,
       role: invitation.role,
+      kind: "new",
     },
-    "Invitation accepted, employee created",
+    "Invitation accepted, worker joined clinic",
   );
 
   return { employee };
 }
 
 /**
- * Internal: actually create ClinicEmployee + ClinicMembership and update
- * invitation. Works both inside a transaction (when session is provided)
- * and standalone.
+ * Internal: accept a kind:"existing" invitation. Links the existing global
+ * ClinicEmployee identity to the clinic via a new ClinicMembership. The
+ * worker keeps their existing login/password — nothing about the identity
+ * changes here.
+ */
+async function acceptExistingInvitation({ invitation }) {
+  const employee = await ClinicEmployee.findOne({
+    _id: invitation.existingEmployeeId,
+    isPlatformDeleted: false,
+  });
+  if (!employee) {
+    throw new NotFoundError("Worker identity not found");
+  }
+
+  // Idempotency / race guard: only create a membership if not already active.
+  const already = await ClinicMembership.findOne({
+    userId: employee._id,
+    clinicId: invitation.clinicId,
+    actorType: "employee",
+    leftAt: null,
+  });
+  if (!already) {
+    await ClinicMembership.create({
+      userId: employee._id,
+      clinicId: invitation.clinicId,
+      role: invitation.role,
+      isActive: true,
+      joinedAt: new Date(),
+      actorType: "employee",
+    });
+  }
+
+  invitation.status = "accepted";
+  invitation.acceptedAt = new Date();
+  invitation.acceptedBy = employee._id;
+  await invitation.save();
+
+  log.info(
+    {
+      invitationId: invitation._id,
+      employeeId: String(employee._id),
+      clinicId: String(invitation.clinicId),
+      role: invitation.role,
+      kind: "existing",
+      created: !already,
+    },
+    "Existing worker joined clinic via invitation",
+  );
+
+  return { employee };
+}
+
+/**
+ * Internal: for kind:"new" — find-or-create the GLOBAL ClinicEmployee identity
+ * (by global emailHash) and link it to the clinic via ClinicMembership.
+ *
+ * Find-or-create makes this race-safe: if the identity already exists (e.g.
+ * created concurrently by another clinic), we reuse it instead of hitting the
+ * unique emailHash index. The identity no longer carries clinicId/role — those
+ * live on the membership.
  */
 async function persistAcceptInvitation({
   invitation,
@@ -519,57 +678,61 @@ async function persistAcceptInvitation({
 }) {
   const sessionOpt = session ? { session } : {};
 
-  // Final dedup check inside transaction (race-safe)
-  const conflict = await ClinicEmployee.findOne({
-    clinicId: invitation.clinicId,
+  // 1. Find-or-create the global identity.
+  let employee = await ClinicEmployee.findOne({
     emailHash: invitation.emailHash,
-    isDeleted: false,
+    isPlatformDeleted: false,
   }).session(session || null);
-  if (conflict) {
-    throw new ConflictError(
-      "An employee with this email already exists in this clinic",
+
+  if (!employee) {
+    const employeeDocs = await ClinicEmployee.create(
+      [
+        {
+          emailEncrypted: email,
+          firstNameEncrypted: firstName,
+          lastNameEncrypted: lastName,
+          phoneNumberEncrypted: phoneNumber || null,
+          passwordHash,
+          customTitle: invitation.customTitle || undefined,
+          invitedBy: invitation.invitedBy,
+          invitationId: invitation._id,
+          joinedAt: new Date(),
+          preferredLanguage: language,
+        },
+      ],
+      sessionOpt,
+    );
+    employee = employeeDocs[0];
+  }
+
+  // 2. Link into this clinic (skip if somehow already active).
+  const already = await ClinicMembership.findOne({
+    userId: employee._id,
+    clinicId: invitation.clinicId,
+    actorType: "employee",
+    leftAt: null,
+  }).session(session || null);
+
+  if (!already) {
+    await ClinicMembership.create(
+      [
+        {
+          userId: employee._id,
+          clinicId: invitation.clinicId,
+          role: invitation.role,
+          isActive: true,
+          joinedAt: new Date(),
+          actorType: "employee",
+        },
+      ],
+      sessionOpt,
     );
   }
 
-  const employeeDocs = await ClinicEmployee.create(
-    [
-      {
-        clinicId: invitation.clinicId,
-        emailEncrypted: email,
-        firstNameEncrypted: firstName,
-        lastNameEncrypted: lastName,
-        phoneNumberEncrypted: phoneNumber || null,
-        passwordHash,
-        role: invitation.role,
-        customTitle: invitation.customTitle || undefined,
-        invitedBy: invitation.invitedBy,
-        invitationId: invitation._id,
-        joinedAt: new Date(),
-        preferredLanguage: language,
-      },
-    ],
-    sessionOpt,
-  );
-  const employee = employeeDocs[0];
-
-  await ClinicMembership.create(
-    [
-      {
-        userId: employee._id, // ClinicEmployee ID acts as the user identifier
-        clinicId: invitation.clinicId,
-        role: invitation.role,
-        isActive: true,
-        joinedAt: new Date(),
-        actorType: "employee",
-      },
-    ],
-    sessionOpt,
-  );
-
+  // 3. Close the invitation.
   invitation.status = "accepted";
   invitation.acceptedAt = new Date();
   invitation.acceptedBy = employee._id;
-  // Clear OTP fields — single use
   invitation.otpHash = null;
   invitation.otpExpiresAt = null;
   await invitation.save(sessionOpt);
@@ -579,8 +742,6 @@ async function persistAcceptInvitation({
 
 /**
  * Detect whether the connected Mongo deployment supports transactions.
- * Standalone Mongo (single-node, no replset) does not. Replica sets and
- * sharded clusters do. We cache the result for the lifetime of the process.
  */
 let _txSupportCache = null;
 async function supportsTransactions() {
@@ -592,7 +753,6 @@ async function supportsTransactions() {
       return false;
     }
     const info = await admin.command({ hello: 1 });
-    // Replica sets expose `setName`. Sharded clusters expose `msg: 'isdbgrid'`.
     _txSupportCache = Boolean(info.setName) || info.msg === "isdbgrid";
   } catch {
     _txSupportCache = false;

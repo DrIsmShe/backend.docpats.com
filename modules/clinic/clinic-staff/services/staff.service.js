@@ -321,59 +321,30 @@ export async function removeStaff(membershipId, actor) {
     }
   }
 
+  // Global Clinic Worker model: firing = end the CLINIC membership only.
+  //
+  // The ClinicEmployee is a GLOBAL identity — the same person may work in
+  // other clinics and keeps their single login. A clinic must NOT delete or
+  // deactivate that identity; only the platform owner can (isPlatformDeleted,
+  // via a separate endpoint). So removeStaff touches ONLY the membership.
+  //
+  // Re-hiring later just creates a new membership: createInvitation detects
+  // the existing global identity and routes to kind:"existing" (one-click
+  // consent). The unique global emailHash never collides because the identity
+  // is reused, not recreated — which is exactly what fixes the old
+  // "Duplicate key / already an employee" problem for good.
   membership.leftAt = new Date();
   membership.isActive = false;
   await membership.save();
-
-  // When this membership is backed by a ClinicEmployee (internal staff:
-  // nurse, receptionist, marketer, …), also soft-delete the ClinicEmployee.
-  //
-  // Previously removeStaff ended ONLY the membership, leaving
-  // ClinicEmployee.isDeleted = false. That made createInvitation's dedup
-  // (step 3: "already registered as an employee") reject re-inviting the
-  // same email after a removal. Marking the employee isDeleted keeps history
-  // (the record stays, just flagged) and frees the email so a fresh invite
-  // can create a NEW ClinicEmployee. The old invitation stays "accepted"
-  // (honest history) — it does not block, since dedup only checks "pending".
-  //
-  // Best-effort: the membership removal is the primary effect and has already
-  // been persisted. If the employee flag update fails, we log it rather than
-  // failing the whole removal (there is no shared transaction here).
-  if (membership.actorType === "employee") {
-    try {
-      const ClinicEmployee = (await import("../models/clinicEmployee.model.js"))
-        .default;
-      const result = await ClinicEmployee.updateOne(
-        { _id: membership.userId, clinicId },
-        { $set: { isDeleted: true, isActive: false } },
-      );
-      log.info(
-        {
-          employeeId: String(membership.userId),
-          matched: result.matchedCount ?? result.n,
-          modified: result.modifiedCount ?? result.nModified,
-        },
-        "ClinicEmployee soft-deleted during removeStaff",
-      );
-    } catch (err) {
-      log.error(
-        {
-          err: err.message,
-          employeeId: String(membership.userId),
-          clinicId: String(clinicId),
-        },
-        "Failed to soft-delete ClinicEmployee during removeStaff (membership already removed)",
-      );
-    }
-  }
 
   log.info(
     {
       membershipId: String(membershipId),
       userId: String(membership.userId),
+      actorType: membership.actorType || "user",
       removedBy: String(actor.userId),
     },
-    "Staff member removed (soft)",
+    "Staff member removed (membership ended; global identity untouched)",
   );
 
   eventBus.emitSafe(EVENTS.STAFF_LEFT, {

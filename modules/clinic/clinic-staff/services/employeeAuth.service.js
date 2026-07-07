@@ -1,10 +1,19 @@
 // modules/clinic/clinic-staff/services/employeeAuth.service.js
 //
-// Business logic for ClinicEmployee login and profile retrieval.
+// Business logic for ClinicEmployee login and profile retrieval
+// (Global Clinic Worker model).
+//
+// A ClinicEmployee is ONE global identity (unique emailHash). It may be a
+// member of several clinics at once via ClinicMembership. Login authenticates
+// the identity, then returns the list of clinics the worker is currently
+// active in; the caller (controller) either auto-selects the single clinic or
+// asks the worker to pick one. The selected clinicId lives in the session.
 //
 // Functions:
-// - loginEmployee: verify email + password, return employee + clinic
-// - getEmployeeWithClinic: load employee + clinic profile by id
+// - loginEmployee: verify email + password, return identity + active clinics
+// - listEmployeeMemberships: active clinic memberships for an identity
+// - getEmployeeWithClinic: load identity + one selected clinic's membership
+// - employeeToDTO: public-safe identity DTO (no clinic/role — those are per-clinic)
 
 import crypto from "crypto";
 import argon2 from "argon2";
@@ -27,31 +36,76 @@ const sha256 = (v) =>
 
 const normalizeEmail = (v) => String(v).trim().toLowerCase();
 
+// Known-bad argon2 hash — verified against when no identity is found, so login
+// timing doesn't leak whether the email exists.
+const DUMMY_HASH =
+  "$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
 /**
- * Verify email + password and return employee + clinic context.
- * Uses a constant-time-ish flow: argon2.verify is always called even when
- * the user does not exist (with a dummy hash) to reduce timing leakage.
+ * Load the worker's ACTIVE clinic memberships (leftAt: null), each enriched
+ * with a small clinic summary. Used both by login (which clinics can I enter?)
+ * and by the clinic-selection screen.
+ *
+ * @param {mongoose.Types.ObjectId|string} employeeId
+ * @returns {Promise<Array<{membershipId, clinicId, role, permissions, clinic}>>}
+ */
+export async function listEmployeeMemberships(employeeId) {
+  const memberships = await ClinicMembership.find({
+    userId: employeeId,
+    actorType: "employee",
+    isActive: true,
+    leftAt: null,
+  }).lean();
+
+  if (!memberships.length) return [];
+
+  const clinicIds = memberships.map((m) => m.clinicId);
+  const clinics = await Clinic.find({ _id: { $in: clinicIds } })
+    .select("name slug tier")
+    .lean();
+  const clinicMap = new Map(clinics.map((c) => [String(c._id), c]));
+
+  return memberships
+    .map((m) => {
+      const c = clinicMap.get(String(m.clinicId));
+      if (!c) return null; // clinic deleted — skip
+      return {
+        membershipId: String(m._id),
+        clinicId: String(m.clinicId),
+        role: m.role,
+        permissions: m.permissions || {},
+        clinic: {
+          _id: String(c._id),
+          name: c.name,
+          slug: c.slug,
+          tier: c.tier,
+        },
+      };
+    })
+    .filter(Boolean);
+}
+
+/**
+ * Verify email + password and return the identity plus the clinics it can
+ * enter. Constant-time-ish: argon2.verify always runs (dummy hash when the
+ * identity is not found) to reduce timing leakage.
  *
  * @param {object} args
  * @param {string} args.email
  * @param {string} args.password
- * @returns {Promise<{employee, clinic, membership}>}
+ * @returns {Promise<{employee, memberships}>}
  */
 export async function loginEmployee({ email, password }) {
   const normalized = normalizeEmail(email);
   const emailHash = sha256(normalized);
 
-  // Look up across all clinics (employee belongs to exactly one)
+  // Global identity lookup (not scoped to a clinic anymore).
   const employee = await ClinicEmployee.findOne({
     emailHash,
-    isDeleted: false,
+    isPlatformDeleted: false,
   });
 
-  // Constant-time-ish: always run argon2.verify so timing doesn't leak
-  // whether the email exists. Use a known-bad hash if no employee found.
-  const passwordHashToCheck =
-    employee?.passwordHash ||
-    "$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+  const passwordHashToCheck = employee?.passwordHash || DUMMY_HASH;
 
   let isValid = false;
   try {
@@ -76,76 +130,69 @@ export async function loginEmployee({ email, password }) {
     throw new UnauthorizedError("Account is not active");
   }
 
-  // Find membership (must exist — created at invitation accept)
-  const membership = await ClinicMembership.findOne({
-    userId: employee._id,
-    clinicId: employee.clinicId,
-    actorType: "employee",
-    isActive: true,
-    leftAt: null,
-  }).lean();
-
-  if (!membership) {
-    log.error(
-      {
-        employeeId: String(employee._id),
-        clinicId: String(employee.clinicId),
-      },
-      "Employee has no active membership — login rejected",
+  if (employee.isBlocked === true) {
+    log.warn(
+      { employeeId: String(employee._id) },
+      "Blocked employee attempted login",
     );
-    throw new UnauthorizedError("Account is not active");
+    throw new UnauthorizedError("Account is blocked");
   }
 
-  const clinic = await Clinic.findById(employee.clinicId).lean();
-  if (!clinic) {
-    log.error(
-      { clinicId: String(employee.clinicId) },
-      "Employee's clinic not found",
+  // Which clinics can this worker enter right now?
+  const memberships = await listEmployeeMemberships(employee._id);
+  if (!memberships.length) {
+    log.warn(
+      { employeeId: String(employee._id) },
+      "Employee has no active clinic membership — login rejected",
     );
-    throw new UnauthorizedError("Account is not active");
+    throw new UnauthorizedError("You are not a member of any active clinic");
   }
 
   log.info(
-    {
-      employeeId: String(employee._id),
-      clinicId: String(clinic._id),
-      role: membership.role,
-    },
+    { employeeId: String(employee._id), clinics: memberships.length },
     "Employee logged in",
   );
 
-  return { employee, clinic, membership };
+  return { employee, memberships };
 }
 
 /**
- * Load employee + their clinic for the /me endpoint.
+ * Load identity + the SELECTED clinic's membership for the /me endpoint.
+ * The selected clinicId comes from the session (set at login when there is a
+ * single clinic, or via the clinic-selection step when there are several).
  *
  * @param {string} employeeId
+ * @param {string} clinicId
  * @returns {Promise<{employee, clinic, membership}>}
  */
-export async function getEmployeeWithClinic(employeeId) {
+export async function getEmployeeWithClinic(employeeId, clinicId) {
   if (!mongoose.isValidObjectId(employeeId)) {
     throw new NotFoundError("Employee not found");
   }
 
   const employee = await ClinicEmployee.findById(employeeId);
-  if (!employee || employee.isDeleted) {
+  if (!employee || employee.isPlatformDeleted) {
     throw new NotFoundError("Employee not found");
+  }
+
+  if (!clinicId || !mongoose.isValidObjectId(clinicId)) {
+    // No clinic chosen yet — caller should route to clinic selection.
+    throw new UnauthorizedError("No clinic selected");
   }
 
   const membership = await ClinicMembership.findOne({
     userId: employee._id,
-    clinicId: employee.clinicId,
+    clinicId,
     actorType: "employee",
     isActive: true,
     leftAt: null,
   }).lean();
 
   if (!membership) {
-    throw new NotFoundError("Employee has no active membership");
+    throw new UnauthorizedError("No active membership in this clinic");
   }
 
-  const clinic = await Clinic.findById(employee.clinicId).lean();
+  const clinic = await Clinic.findById(clinicId).lean();
   if (!clinic) {
     throw new NotFoundError("Clinic not found");
   }
@@ -154,8 +201,9 @@ export async function getEmployeeWithClinic(employeeId) {
 }
 
 /**
- * Build a public-safe DTO for the employee.
- * Excludes passwordHash, encrypted-only fields, and internals.
+ * Build a public-safe DTO for the identity.
+ * NOTE: no clinicId/role here — those are per-clinic and returned separately
+ * by the controller from the selected membership.
  */
 export function employeeToDTO(employee) {
   const decrypted = employee.decryptFields
@@ -169,12 +217,10 @@ export function employeeToDTO(employee) {
 
   return {
     _id: String(employee._id),
-    clinicId: String(employee.clinicId),
     email: decrypted.email,
     firstName: decrypted.firstName,
     lastName: decrypted.lastName,
     phoneNumber: decrypted.phoneNumber,
-    role: employee.role,
     customTitle: employee.customTitle || null,
     preferredLanguage: employee.preferredLanguage,
     joinedAt: employee.joinedAt,

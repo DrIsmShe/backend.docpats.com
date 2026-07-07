@@ -1,9 +1,17 @@
 // modules/clinic/clinic-staff/models/staffInvitation.model.js
 //
-// Staff invitations sent by clinic owners/admins to invite new internal
-// employees (nurses, receptionists, accountants, etc.) who don't yet have
-// any DocPats account. After accepting, recipient gets a ClinicEmployee
-// record + ClinicMembership.
+// Staff invitations sent by clinic owners/admins to bring an internal
+// employee (nurse, receptionist, accountant, marketer, …) into their clinic.
+//
+// TWO kinds (see `kind` field):
+//   - "new"      → the email has NO ClinicEmployee identity yet. Accepting
+//                  runs the full flow (OTP + password) and CREATES a global
+//                  ClinicEmployee identity + a ClinicMembership.
+//   - "existing" → the email already has a global ClinicEmployee identity
+//                  (the worker was hired by some clinic before). Accepting is
+//                  a one-click consent (no OTP, no password) that only
+//                  creates a new ClinicMembership linking that existing
+//                  identity to this clinic. `existingEmployeeId` points to it.
 //
 // Lifecycle: pending → accepted | revoked | expired
 
@@ -59,6 +67,7 @@ const normalizeEmail = (v) => (v == null ? v : String(v).trim().toLowerCase());
 const SUPPORTED_LANGUAGES = ["ru", "en", "tr", "az", "ar"];
 
 const STATUSES = ["pending", "accepted", "revoked", "expired"];
+const KINDS = ["new", "existing"];
 
 const staffInvitationSchema = new mongoose.Schema(
   {
@@ -76,6 +85,22 @@ const staffInvitationSchema = new mongoose.Schema(
     role: { type: String, required: true },
     customTitle: { type: String, trim: true, maxlength: 200 },
 
+    // Which flow this invitation drives. Defaults to "new" so older rows and
+    // any caller that doesn't set it behave exactly as before.
+    kind: {
+      type: String,
+      enum: KINDS,
+      default: "new",
+      index: true,
+    },
+    // Only set when kind === "existing": the global ClinicEmployee identity
+    // this invitation will link into the clinic on accept.
+    existingEmployeeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClinicEmployee",
+      default: null,
+    },
+
     // Token: only the SHA-256 hash is stored; the actual signed token is
     // sent in the email and never persisted. We verify by hashing again.
     tokenHash: { type: String, required: true, unique: true, index: true },
@@ -89,7 +114,8 @@ const staffInvitationSchema = new mongoose.Schema(
 
     expiresAt: { type: Date, required: true, index: true },
 
-    // OTP for confirming email ownership during registration
+    // OTP for confirming email ownership during registration.
+    // Used only by kind === "new"; "existing" accepts are one-click consent.
     otpHash: { type: String, default: null },
     otpExpiresAt: { type: Date, default: null },
     otpAttemptsLeft: { type: Number, default: 3, min: 0 },
