@@ -4,12 +4,12 @@
 //
 // Architecture (consistent with day-1/day-2 services in this module and
 // with patient.service.js in clinic-patients):
-//   - All queries rely on tenantScopedPlugin — clinicId is auto-filtered.
+//   - All queries rely on tenantScopedPlugin вЂ” clinicId is auto-filtered.
 //     We never pass clinicId in queries; we only read it from
 //     tenantContext for explicit safety checks and event payloads.
-//   - Reason is PHI → encrypted at rest with the same AES-256-GCM
+//   - Reason is PHI в†’ encrypted at rest with the same AES-256-GCM
 //     helpers used by ClinicPatient (encryptValue/decryptValue exported
-//     from clinicPatient.model.js — single canonical implementation,
+//     from clinicPatient.model.js вЂ” single canonical implementation,
 //     no duplication).
 //   - Permissions are checked manually here, not via the RBAC catalog,
 //     to stay self-contained (matches the day-1/day-2 pattern of
@@ -57,14 +57,14 @@ import { localMidnightToUTC } from "./scheduleException.service.js";
 
 const log = logger.child({ module: "clinic-appointments/service" });
 
-// ─── Constants ────────────────────────────────────────────────────────
+// в”Ђв”Ђв”Ђ Constants в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 // Roles that can create / reschedule / cancel appointments. Doctors are
-// NOT in this list — they can only flip status on their own appointments
+// NOT in this list вЂ” they can only flip status on their own appointments
 // (see STATUS_TRANSITIONS_BY_ROLE below).
-const WRITE_ROLES = new Set(["owner", "admin", "receptionist"]);
+const WRITE_ROLES = new Set(["owner", "admin", "manager", "receptionist"]);
 
-// Roles that can read appointments — every clinic role.
+// Roles that can read appointments вЂ” every clinic role.
 const READ_ROLES = new Set([
   "owner",
   "admin",
@@ -77,7 +77,7 @@ const READ_ROLES = new Set([
   "marketer",
 ]);
 
-// Status FSM — directed graph of legal transitions.
+// Status FSM вЂ” directed graph of legal transitions.
 // "scheduled" is reachable only on create (the default); explicit
 // transitions INTO scheduled are forbidden by the validator.
 const ALLOWED_TRANSITIONS = Object.freeze({
@@ -94,7 +94,7 @@ const RESCHEDULABLE_STATUSES = new Set(ACTIVE_STATUSES);
 const DEFAULT_TZ = "Asia/Baku";
 const MAX_PATIENT_HISTORY_LIMIT = 100;
 
-// ─── Tenant / actor helpers ───────────────────────────────────────────
+// в”Ђв”Ђв”Ђ Tenant / actor helpers в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 function requireClinicId() {
   const clinicId = getCurrentClinicId();
@@ -123,12 +123,12 @@ function requireWriteAccess() {
   const { role } = requireActor();
   if (!WRITE_ROLES.has(role)) {
     throw new ForbiddenError(
-      `Role "${role}" cannot create or modify appointments — write access is limited to owner/admin/receptionist`,
+      `Role "${role}" cannot create or modify appointments вЂ” write access is limited to owner/admin/receptionist`,
     );
   }
 }
 
-// ─── Membership / participant validation ──────────────────────────────
+// в”Ђв”Ђв”Ђ Membership / participant validation в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 /**
  * Confirm the target doctor has an active membership in this clinic as a
@@ -168,7 +168,7 @@ async function assertPatientOfClinic(patientId) {
   }
 }
 
-// ─── Timezone / coordinate derivation ─────────────────────────────────
+// в”Ђв”Ђв”Ђ Timezone / coordinate derivation в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 async function resolveClinicTimezone(clinicId) {
   const clinic = await Clinic.findById(clinicId).select("timezone").lean();
@@ -184,7 +184,7 @@ async function resolveClinicTimezone(clinicId) {
  *   - startMinute / endMinute: minutes-from-local-midnight relative to
  *                that localDate
  *
- * Reject appointments that span local midnight — they break the
+ * Reject appointments that span local midnight вЂ” they break the
  * "one appointment = one day" denormalization, and clinically there's
  * no reason to allow a single appointment crossing midnight.
  */
@@ -200,7 +200,7 @@ function deriveLocalCoords(startUTC, endUTC, timeZone) {
   const localDateEnd = dateFmt.format(endUTC);
 
   // Same-day check. An appointment ending exactly at next-day 00:00 is
-  // technically "the next day"; we treat that as crossing midnight too —
+  // technically "the next day"; we treat that as crossing midnight too вЂ”
   // schedule it to end at 23:59 instead.
   if (localDate !== localDateEnd) {
     throw new ValidationError(
@@ -219,7 +219,7 @@ function deriveLocalCoords(startUTC, endUTC, timeZone) {
   const startMinute = minutesFromMidnight(startUTC);
   const endMinute = minutesFromMidnight(endUTC);
 
-  // Sanity belt — should be unreachable given the validator, but the
+  // Sanity belt вЂ” should be unreachable given the validator, but the
   // denormalised fields must always be sane.
   if (
     startMinute < 0 ||
@@ -229,14 +229,14 @@ function deriveLocalCoords(startUTC, endUTC, timeZone) {
     endMinute <= startMinute
   ) {
     throw new ValidationError(
-      "Derived local minutes are out of range — DST or tz boundary?",
+      "Derived local minutes are out of range вЂ” DST or tz boundary?",
       { field: "startUTC", startMinute, endMinute },
     );
   }
   return { localDate, startMinute, endMinute };
 }
 
-// ─── Conflict detection ───────────────────────────────────────────────
+// в”Ђв”Ђв”Ђ Conflict detection в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 /**
  * Throw ConflictError if the doctor has any ACTIVE appointment whose time
@@ -263,7 +263,7 @@ async function assertNoConflict({
   if (excludeId) {
     filter._id = { $ne: excludeId };
   }
-  // Suppress clinicId — tenantScopedPlugin attaches it. Belt-and-suspenders:
+  // Suppress clinicId вЂ” tenantScopedPlugin attaches it. Belt-and-suspenders:
   // the model is tenant-scoped, so we won't see another clinic's docs anyway.
   // But the partial index includes clinicId for selectivity, so even though
   // the plugin handles isolation, the query plan still benefits.
@@ -282,7 +282,7 @@ async function assertNoConflict({
   }
 }
 
-// ─── PHI helpers ──────────────────────────────────────────────────────
+// в”Ђв”Ђв”Ђ PHI helpers в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 function encryptReason(text) {
   if (text === null || text === undefined || text === "") return null;
@@ -296,13 +296,13 @@ function decryptReason(blob) {
   } catch (e) {
     log.warn(
       { err: e.message },
-      "Failed to decrypt appointment reason — returning null",
+      "Failed to decrypt appointment reason вЂ” returning null",
     );
     return null;
   }
 }
 
-// ─── DTO shaping ──────────────────────────────────────────────────────
+// в”Ђв”Ђв”Ђ DTO shaping в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
 /**
  * Convert a stored ClinicAppointment doc (lean or hydrated) into the API
@@ -321,7 +321,7 @@ function toDTO(doc) {
     clinicId: String(obj.clinicId),
     doctorId: String(obj.doctorId),
     patientId: String(obj.patientId),
-    // Org link — non-PHI; null when no department is assigned.
+    // Org link вЂ” non-PHI; null when no department is assigned.
     departmentId: obj.departmentId ? String(obj.departmentId) : null,
     roomId: obj.roomId ? String(obj.roomId) : null,
     startUTC: obj.startUTC,
@@ -348,10 +348,10 @@ function toDTO(doc) {
   };
 }
 
-// ─── Patient-name enrichment ──────────────────────────────────────────
+// в”Ђв”Ђв”Ђ Patient-name enrichment в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 //
 // Appointment DTOs need the patient's display name so the UI can render
-// "Иван Тестов" instead of an opaque ObjectId. Mirror the pattern from
+// "РРІР°РЅ РўРµСЃС‚РѕРІ" instead of an opaque ObjectId. Mirror the pattern from
 // patient.service's enrichWithCreatedByName: bulk fetch ClinicPatient
 // records by id, decrypt firstName/lastName once, build a Map for O(1)
 // lookup, attach to each DTO.
@@ -378,12 +378,12 @@ async function enrichDTOsWithPatientName(dtos) {
     try {
       firstName = decryptValue(p.firstNameEncrypted) || null;
     } catch {
-      /* ignore — leave null */
+      /* ignore вЂ” leave null */
     }
     try {
       lastName = decryptValue(p.lastNameEncrypted) || null;
     } catch {
-      /* ignore — leave null */
+      /* ignore вЂ” leave null */
     }
     const display = [firstName, lastName].filter(Boolean).join(" ") || null;
     nameMap.set(String(p._id), display);
@@ -394,9 +394,9 @@ async function enrichDTOsWithPatientName(dtos) {
   );
 }
 
-// ════════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 //  PUBLIC API
-// ════════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
 /**
  * Create a new appointment.
@@ -505,11 +505,11 @@ export async function getAppointment(id) {
  * List appointments. Two complementary modes (the validator enforces that
  * exactly the right fields are present for each mode).
  *
- * Doctor mode  — { doctorId, from: "YYYY-MM-DD", to: "YYYY-MM-DD", status? }
+ * Doctor mode  вЂ” { doctorId, from: "YYYY-MM-DD", to: "YYYY-MM-DD", status? }
  *   Returns ALL appointments for that doctor in the clinic-local window,
  *   ordered by startUTC ascending. Designed for a day/week schedule UI.
  *
- * Patient mode — { patientId, before?: Date, limit?, status? }
+ * Patient mode вЂ” { patientId, before?: Date, limit?, status? }
  *   Cursor-paginated history, most-recent first. Returns { items, nextBefore }.
  */
 export async function listAppointments(query) {
@@ -520,12 +520,12 @@ export async function listAppointments(query) {
   if (query.status) filter.status = query.status;
 
   if (query.doctorId) {
-    // Doctor mode — translate the local-day window into a UTC window.
+    // Doctor mode вЂ” translate the local-day window into a UTC window.
     const timeZone = await resolveClinicTimezone(clinicId);
     const [fy, fm, fd] = query.from.split("-").map((s) => parseInt(s, 10));
     const [ty, tm, td] = query.to.split("-").map((s) => parseInt(s, 10));
     const windowStartUTC = localMidnightToUTC(timeZone, fy, fm, fd);
-    // End of day "to" = start of (to + 1 day) — exclusive upper bound.
+    // End of day "to" = start of (to + 1 day) вЂ” exclusive upper bound.
     const dayAfterTo = new Date(Date.UTC(ty, tm - 1, td + 1));
     const windowEndUTC = localMidnightToUTC(
       timeZone,
@@ -544,7 +544,7 @@ export async function listAppointments(query) {
     return { items: dtos, count: dtos.length };
   }
 
-  // Patient mode — cursor pagination.
+  // Patient mode вЂ” cursor pagination.
   filter.patientId = query.patientId;
   if (query.before) filter.startUTC = { $lt: query.before };
 
@@ -572,11 +572,11 @@ export async function listAppointments(query) {
  *
  * Only legal while the appointment is still ACTIVE (scheduled or
  * checked_in). Terminal statuses (completed/cancelled/no_show) cannot be
- * rescheduled — use updateAppointmentReason for note corrections instead.
+ * rescheduled вЂ” use updateAppointmentReason for note corrections instead.
  *
  * departmentId / roomId: only touched if the caller included the key.
- *   - null  → cleared
- *   - id    → validated for clinic-ownership, then set
+ *   - null  в†’ cleared
+ *   - id    в†’ validated for clinic-ownership, then set
  */
 export async function rescheduleAppointment(id, input) {
   requireWriteAccess();
@@ -614,12 +614,12 @@ export async function rescheduleAppointment(id, input) {
     excludeId: existing._id,
   });
 
-  // Optional department change — only if the caller supplied the key.
+  // Optional department change вЂ” only if the caller supplied the key.
   if (Object.prototype.hasOwnProperty.call(input, "departmentId")) {
     await assertDepartmentInClinic(clinicId, input.departmentId);
     existing.departmentId = input.departmentId || null;
   }
-  // Optional room change — only if the caller supplied the key.
+  // Optional room change вЂ” only if the caller supplied the key.
   if (Object.prototype.hasOwnProperty.call(input, "roomId")) {
     await assertRoomInClinic(clinicId, input.roomId);
     existing.roomId = input.roomId || null;
@@ -663,7 +663,7 @@ export async function rescheduleAppointment(id, input) {
  * adding notes on cancelled ones (medical records often need correction
  * after the fact).
  *
- * Does NOT change timing or status — purely a text edit on PHI.
+ * Does NOT change timing or status вЂ” purely a text edit on PHI.
  * Time-shifting always goes through rescheduleAppointment.
  */
 export async function updateAppointmentReason(id, input) {
@@ -707,11 +707,11 @@ export async function updateAppointmentReason(id, input) {
 /**
  * Change the appointment status. Enforces the legal-transition FSM and
  * role-based restrictions:
- *   - owner / admin / receptionist  → any legal transition on any appointment
- *   - doctor                        → only their OWN appointments, and only
+ *   - owner / admin / receptionist  в†’ any legal transition on any appointment
+ *   - doctor                        в†’ only their OWN appointments, and only
  *                                      transitions that make sense at-visit:
  *                                      checked_in, completed, no_show
- *   - other roles                   → forbidden
+ *   - other roles                   в†’ forbidden
  *
  * Side effects: emits APPOINTMENT_STATUS_CHANGED, plus APPOINTMENT_CANCELLED
  * when transitioning to cancelled.
@@ -735,7 +735,7 @@ export async function changeAppointmentStatus(id, input) {
   const doctorAllowed = new Set(["checked_in", "completed", "no_show"]);
 
   if (WRITE_ROLES.has(role)) {
-    // owner/admin/receptionist — anything legal goes
+    // owner/admin/receptionist вЂ” anything legal goes
   } else if (role === "doctor" && isOwnAppointment) {
     if (!doctorAllowed.has(input.status)) {
       throw new ForbiddenError(
@@ -750,11 +750,11 @@ export async function changeAppointmentStatus(id, input) {
     );
   }
 
-  // FSM gate — legal-transition check
+  // FSM gate вЂ” legal-transition check
   const legalNext = ALLOWED_TRANSITIONS[existing.status];
   if (!legalNext || !legalNext.has(input.status)) {
     throw new ConflictError(
-      `Illegal status transition: ${existing.status} → ${input.status}`,
+      `Illegal status transition: ${existing.status} в†’ ${input.status}`,
       { from: existing.status, to: input.status },
     );
   }
@@ -808,9 +808,9 @@ export async function changeAppointmentStatus(id, input) {
   return toDTO(existing);
 }
 
-// ════════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 //  BOOKABLE-SLOTS WRAPPER
-// ════════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
 /**
  * Compute slots that are BOTH (a) within the doctor's working schedule
@@ -820,7 +820,7 @@ export async function changeAppointmentStatus(id, input) {
  * on top. The slot service stays "pure availability of the doctor"; this
  * wrapper is what callers should use for actual booking UIs.
  *
- * Input / output shape mirrors computeSlots exactly — same fields, just
+ * Input / output shape mirrors computeSlots exactly вЂ” same fields, just
  * fewer slots in the days[] array. Frontend can swap one endpoint for the
  * other without changing UI code.
  *
