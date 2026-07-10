@@ -13,7 +13,7 @@ import clinicPatientRouter from "./clinic-patients/routes/patient.routes.js";
 import clinicConsentRequestRouter from "./clinic-patients/routes/consentRequest.routes.js";
 import clinicAppointmentsRouter from "./clinic-appointments/index.js";
 import clinicReviewModerationRouter from "./clinic-core/routes/clinicReviewModeration.routes.js";
-// ─── UMR / clinic-medical (Sprint 2 Phase 2B + 2C) ───────────────────
+// в”Ђв”Ђв”Ђ UMR / clinic-medical (Sprint 2 Phase 2B + 2C) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 // Aggregator: encounter CRUD + 5 sub-record routers (allergies, chronic,
 // operations, family history, immunization). imaging deferred to 2C.2.
 import clinicMedicalRouter from "./clinic-medical/index.js";
@@ -41,6 +41,7 @@ import clinicRoomRouter from "./clinic-rooms/index.js";
 import clinicEquipmentRouter from "./clinic-equipment/index.js";
 import clinicKnowledgeRouter from "./clinic-knowledge/index.js";
 import clinicAnnouncementsRouter from "./clinic-announcements/index.js";
+import clinicAnalyticsRouter from "./clinic-analytics/index.js";
 import myMembershipsRouter from "./clinic-staff/myMemberships.js";
 import "./clinic-staff/events/staff.listeners.js";
 import clinicConsiliumRouter from "./clinic-consilium/index.js";
@@ -48,28 +49,28 @@ import clinicTelemedRouter from "./clinic-telemed/index.js";
 import membershipRequestRouter from "./clinic-staff/routes/membershipRequest.routes.js";
 import clinicMediaRouter from "./clinic-core/routes/clinicMedia.routes.js";
 import clinicServiceRouter from "./clinic-services/index.js";
-// V4.2 — модель услуг (для /me: чекбокс «Услуги» в редакторе витрины).
+// V4.2 вЂ” РјРѕРґРµР»СЊ СѓСЃР»СѓРі (РґР»СЏ /me: С‡РµРєР±РѕРєСЃ В«РЈСЃР»СѓРіРёВ» РІ СЂРµРґР°РєС‚РѕСЂРµ РІРёС‚СЂРёРЅС‹).
 import ClinicService from "./clinic-services/models/clinicService.model.js";
 import clinicMembershipInviteRouter from "./clinic-staff/routes/clinicMembershipInvite.routes.js";
 
 const router = express.Router();
 
-// ═══════════════════════════════════════════════════════════════
-// 1. Employee auth routes — MOUNTED BEFORE tenantMiddleware
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+// 1. Employee auth routes вЂ” MOUNTED BEFORE tenantMiddleware
 //    so /login can run without an auth context.
-// ═══════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
 router.use("/", clinicEmployeeAuthRouter);
 
-// ═══════════════════════════════════════════════════════════════
-// 2. tenantMiddleware — устанавливает context из session.userId/employeeId
-// ═══════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+// 2. tenantMiddleware вЂ” СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ context РёР· session.userId/employeeId
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
 router.use(tenantMiddleware({ required: false }));
 
-// ═══════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 // 3. Built-in endpoints
-// ═══════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
 /**
  * GET /api/v1/clinic/me
@@ -118,8 +119,8 @@ router.get(
       )
       .lean();
 
-    // V4.2 — услуги клиники (для редактора витрины: чекбокс «Услуги» в NavForm
-    // показывается только когда у клиники есть хотя бы одна услуга).
+    // V4.2 вЂ” СѓСЃР»СѓРіРё РєР»РёРЅРёРєРё (РґР»СЏ СЂРµРґР°РєС‚РѕСЂР° РІРёС‚СЂРёРЅС‹: С‡РµРєР±РѕРєСЃ В«РЈСЃР»СѓРіРёВ» РІ NavForm
+    // РїРѕРєР°Р·С‹РІР°РµС‚СЃСЏ С‚РѕР»СЊРєРѕ РєРѕРіРґР° Сѓ РєР»РёРЅРёРєРё РµСЃС‚СЊ С…РѕС‚СЏ Р±С‹ РѕРґРЅР° СѓСЃР»СѓРіР°).
     const clinicServices = await ClinicService.find({
       clinicId,
       status: "active",
@@ -170,7 +171,7 @@ router.get(
             callCenterPhone: clinic.callCenterPhone || "",
             callCenterHours: clinic.callCenterHours || "",
             faq: Array.isArray(clinic.faq) ? clinic.faq : [],
-            // V4.2 — услуги (для редактора витрины и nav). Облегчённый DTO.
+            // V4.2 вЂ” СѓСЃР»СѓРіРё (РґР»СЏ СЂРµРґР°РєС‚РѕСЂР° РІРёС‚СЂРёРЅС‹ Рё nav). РћР±Р»РµРіС‡С‘РЅРЅС‹Р№ DTO.
             services: Array.isArray(clinicServices)
               ? clinicServices.map((s) => ({
                   id: String(s._id),
@@ -229,9 +230,9 @@ router.get("/health", (req, res) => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 // 4. Submodule routes (protected by tenantMiddleware above)
-// ═══════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 router.use("/", clinicReviewModerationRouter);
 router.use("/", clinicCoreRouter);
 router.use("/", clinicMediaRouter);
@@ -242,6 +243,7 @@ router.use("/", clinicRoomRouter);
 router.use("/", clinicEquipmentRouter);
 router.use("/", clinicKnowledgeRouter);
 router.use("/", clinicAnnouncementsRouter);
+router.use("/", clinicAnalyticsRouter);
 router.use("/", myMembershipsRouter);
 router.use("/", clinicInvitationRouter);
 router.use("/", clinicPatientRouter);
@@ -250,12 +252,12 @@ router.use("/", clinicTelemedRouter);
 router.use("/", clinicConsentRequestRouter);
 router.use("/", membershipRequestRouter);
 router.use("/appointments", clinicAppointmentsRouter);
-// UMR / clinic-medical — encounter + sub-records, mounted under /medical
+// UMR / clinic-medical вЂ” encounter + sub-records, mounted under /medical
 router.use("/medical", clinicMedicalRouter);
 router.use("/", clinicMembershipInviteRouter);
-// ═══════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 // 5. 404 + error handler
-// ═══════════════════════════════════════════════════════════════
+// в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
 router.use(notFoundHandler);
 router.use(errorHandler);
