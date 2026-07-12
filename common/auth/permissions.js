@@ -49,6 +49,7 @@ export const RESOURCES = Object.freeze({
   PHARMACY: "pharmacy",
   INVENTORY: "inventory",
   SUPPLIER: "supplier",
+  REQUISITION: "requisition", // NEW — заявки отделений в аптеку (nurse → pharmacist)
 
   // marketing & site
   REVIEW: "review",
@@ -116,6 +117,13 @@ const NONE = Object.freeze({ read: false, write: false, delete: false });
  *   write — admin, manager (owner gets it via _ownerPermissions)
  *   read  — every clinical role that needs to pick a department/room
  *           (doctor, nurse, receptionist) + manager + admin
+ *
+ * REQUISITION (заявки отделений в аптеку):
+ *   write — nurse (создаёт/правит заявку своего отделения),
+ *           pharmacist (исполняет: partially_dispensed → dispensed / rejected)
+ *   read  — manager, admin (надзор); owner через _ownerPermissions
+ *   Скоуп по отделению (медсестра видит только свои заявки) — в сервисном
+ *   слое, RBAC здесь грубый (ресурс × действие).
  */
 const _basePermissions = {
   [ROLES.ADMIN]: {
@@ -143,6 +151,7 @@ const _basePermissions = {
     [RESOURCES.PHARMACY]: RW,
     [RESOURCES.INVENTORY]: FULL,
     [RESOURCES.SUPPLIER]: FULL,
+    [RESOURCES.REQUISITION]: RO, // NEW — надзор за заявками
     [RESOURCES.REVIEW]: FULL,
     [RESOURCES.ARTICLE]: FULL,
     [RESOURCES.SITE_BUILDER]: FULL,
@@ -174,6 +183,7 @@ const _basePermissions = {
     [RESOURCES.BILLING]: RW,
     [RESOURCES.INVENTORY]: RW,
     [RESOURCES.PHARMACY]: RO,
+    [RESOURCES.REQUISITION]: RO, // NEW — надзор за заявками
     [RESOURCES.REVIEW]: RW,
     [RESOURCES.LEAD]: RW,
     [RESOURCES.ANALYTICS]: RO,
@@ -211,6 +221,7 @@ const _basePermissions = {
     [RESOURCES.QUEUE]: RW,
     [RESOURCES.CHECKIN]: RW,
     [RESOURCES.INVENTORY]: { read: true, write: true, delete: false },
+    [RESOURCES.REQUISITION]: RW, // NEW — подаёт/правит заявку своего отделения
   },
 
   [ROLES.RECEPTIONIST]: {
@@ -246,6 +257,7 @@ const _basePermissions = {
     [RESOURCES.INVENTORY]: { read: true, write: true, delete: false },
     [RESOURCES.PRESCRIPTION]: { read: true, write: true, delete: false },
     [RESOURCES.SUPPLIER]: RW,
+    [RESOURCES.REQUISITION]: { read: true, write: true, delete: false }, // NEW — исполняет заявки
   },
 
   // MARKETER — публичный контур (витрина, свой маркет-контент, лиды, отзывы,

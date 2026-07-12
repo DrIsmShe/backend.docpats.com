@@ -18,6 +18,7 @@ import clinicReviewModerationRouter from "./clinic-core/routes/clinicReviewModer
 // operations, family history, immunization). imaging deferred to 2C.2.
 import clinicMedicalRouter from "./clinic-medical/index.js";
 import { tenantMiddleware } from "../../common/middlewares/tenantMiddleware.js";
+import clinicPharmacyRouter from "./clinic-pharmacy/index.js"; // NEW
 import {
   errorHandler,
   notFoundHandler,
@@ -246,6 +247,7 @@ router.use("/", clinicKnowledgeRouter);
 router.use("/", clinicAnnouncementsRouter);
 router.use("/", clinicAnalyticsRouter);
 router.use("/", clinicLeadsRouter);
+router.use("/", clinicPharmacyRouter);
 router.use("/", myMembershipsRouter);
 router.use("/", clinicInvitationRouter);
 router.use("/", clinicPatientRouter);

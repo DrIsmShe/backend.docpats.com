@@ -41,6 +41,7 @@ const notificationSchema = new mongoose.Schema(
         "doctorProfile.commentSent",
         "chat_message",
         "consent_request_new",
+        "clinic_lead",
       ],
       default: "system_message",
       required: true,

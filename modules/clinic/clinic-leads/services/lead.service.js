@@ -22,6 +22,7 @@ import Lead, {
   LEAD_TYPE_VALUES,
   LEAD_STATUS_VALUES,
 } from "../models/lead.model.js";
+import { notifyClinicManagersOfLead } from "./leadNotify.service.js";
 
 function badRequest(message) {
   const e = new Error(message);
@@ -70,6 +71,12 @@ export async function createLead({ slug, name, phone, message, type } = {}) {
     status: "new",
     source: "vitrina",
   });
+
+  // fire-and-forget: уведомление клиники (in-app + email) не должно влиять
+  // на публичный ответ гостю — createLead всегда отдаёт 201.
+  notifyClinicManagersOfLead(clinic._id, lead).catch((err) =>
+    console.error("[lead] notification failed:", err?.message),
+  );
 
   return lead.toObject();
 }
