@@ -225,6 +225,7 @@ const _basePermissions = {
   },
 
   [ROLES.RECEPTIONIST]: {
+    [RESOURCES.STAFF]: RO,
     [RESOURCES.DEPARTMENT]: RO,
     [RESOURCES.ROOM]: RO,
     [RESOURCES.EQUIPMENT]: RO,
