@@ -12,22 +12,30 @@
 // (req.session.employeeId) at the same time — e.g. a clinic owner who
 // also did a staff-login. These two identities serve DIFFERENT zones:
 //
-//   • Owner / DocPats-user zone  → /clinic/*        (this middleware)
-//   • Employee zone              → /clinic/employees/* (reads employeeId
-//                                   directly in its own controllers; it
-//                                   does NOT depend on this middleware)
+//   • Owner / DocPats-user zone  → /clinic/*
+//   • Employee zone              → /clinic/employee/* (and /clinic/employees/*
+//                                   auth endpoints)
 //
-// Because this middleware only backs the owner/user zone, the USER
-// identity must win whenever both ids are present. Otherwise an owner
-// who also logged in as staff would be resolved with the employee role
-// across the whole owner zone. We therefore resolve userId FIRST and
+// Because the USER identity must win whenever both ids are present
+// (otherwise an owner who also logged in as staff would be resolved with the
+// employee role across the whole owner zone), we resolve userId FIRST and
 // only fall back to employeeId when there is no userId in the session.
+//
+// ── ClinicEmployee is a GLOBAL identity (multi-clinic) ────────────
+// A ClinicEmployee is ONE global identity that may belong to several clinics
+// via ClinicMembership. The ACTIVE clinic for the request lives in
+// req.session.clinicId (set at login / via /select-clinic). We therefore
+// resolve the employee's membership using the SESSION clinicId — NOT a
+// clinicId on the employee document (there is none). The effective
+// permissions (role defaults merged with per-membership overrides) are put
+// into the context so server-side can()/require() work in the employee zone.
 //
 // Behavior:
 //   1. No session → continue without context (public routes work fine).
 //   2. session.userId present → resolve active clinic membership for User
 //      (takes priority even if employeeId is also present).
-//   3. Only employeeId present → resolve clinic from ClinicEmployee.
+//   3. Only employeeId present → resolve membership for the SELECTED clinic
+//      (req.session.clinicId) from ClinicMembership.
 //   4. Wrap the rest of the request lifecycle in runWithTenantContext.
 //   5. Also expose the context as req.tenantContext for req-based access.
 //
@@ -35,11 +43,11 @@
 // ClinicEmployee._id. Distinguish via `actorType: "employee"` when needed.
 
 import mongoose from "mongoose";
-
 import { runWithTenantContext } from "../context/tenantContext.js";
 import { resolveActiveClinic } from "../services/clinicResolver.service.js";
 import ClinicEmployee from "../../modules/clinic/clinic-staff/models/clinicEmployee.model.js";
 import ClinicMembership from "../../modules/clinic/clinic-staff/models/clinicMembership.model.js";
+import { getEffectivePermissions } from "../auth/permissions.js";
 import logger from "../logger.js";
 
 const log = logger.child({ module: "tenantMiddleware" });
@@ -56,29 +64,21 @@ export function tenantMiddleware(options = {}) {
       const userId = req.session?.userId;
       const employeeId = req.session?.employeeId;
 
-      // No auth at all
+      // 1. No identity at all → public route, no context.
       if (!userId && !employeeId) {
-        if (required) {
-          return res.status(401).json({
-            error: "Authentication required",
-            code: "UNAUTHORIZED",
-          });
-        }
         return next();
       }
 
-      // ── User branch — DocPats user identity takes PRIORITY ──
+      // ── User branch — takes priority when both ids are present ──
       // When both userId and employeeId are present in the session, the
-      // owner/user identity wins in this (owner-zone) middleware. The
-      // employee zone has its own /employees/* routes that read employeeId
-      // directly, so employee auth never depends on this middleware.
+      // USER identity wins for the owner zone. (The employee zone has its
+      // own /clinic/employee/* routes; those requests carry employeeId and,
+      // when there is no userId, fall through to the employee branch below.)
       if (userId) {
-        const headerClinicId = req.headers["x-clinic-id"];
-        const paramClinicId = req.params?.clinicId;
-        const requestedClinicId = headerClinicId || paramClinicId || null;
+        const requestedClinicId =
+          req.headers["x-clinic-id"] || req.query?.clinicId || undefined;
 
         const active = await resolveActiveClinic(userId, requestedClinicId);
-
         if (!active) {
           if (required) {
             return res.status(403).json({
@@ -99,20 +99,20 @@ export function tenantMiddleware(options = {}) {
           membershipId: String(active.membershipId),
           actorType: "user",
         };
-
         req.tenantContext = ctx;
         return runWithTenantContext(ctx, () => next());
       }
 
       // ── Employee branch — only when there is NO userId ──
-      // Pure employee session (staff-login without a DocPats user logged
-      // in). Resolve the clinic context from the ClinicEmployee.
+      // Pure employee session (staff-login without a DocPats user logged in).
+      // Resolve the membership for the SELECTED clinic (session.clinicId).
       if (employeeId) {
-        const ctx = await resolveEmployeeContext(employeeId);
+        const sessionClinicId = req.session?.clinicId;
+        const ctx = await resolveEmployeeContext(employeeId, sessionClinicId);
         if (!ctx) {
           if (required) {
             return res.status(403).json({
-              error: "Employee account not active",
+              error: "Employee account not active or no clinic selected",
               code: "EMPLOYEE_INACTIVE",
             });
           }
@@ -141,24 +141,37 @@ export function tenantMiddleware(options = {}) {
 
 /**
  * Resolve the tenant context for a ClinicEmployee.
- * Employees belong to exactly one clinic (by design), so we don't need
- * the multi-clinic resolution logic that Users have.
+ *
+ * A ClinicEmployee is a GLOBAL identity — it has NO clinicId on the model.
+ * The active clinic is the one selected for this session (session.clinicId),
+ * so we look up the membership by (employeeId, sessionClinicId). Without a
+ * selected clinic we cannot resolve a role → return null (caller decides
+ * whether that's a hard 403; the client should call /select-clinic first).
+ *
+ * The context carries EFFECTIVE permissions (role defaults merged with any
+ * per-membership overrides) so server-side can()/require() resolve correctly
+ * in the employee zone — same as the user branch.
  *
  * @param {string} employeeId
- * @returns {Promise<object|null>}  context object or null if not active
+ * @param {string} [sessionClinicId]
+ * @returns {Promise<object|null>}
  */
-async function resolveEmployeeContext(employeeId) {
+async function resolveEmployeeContext(employeeId, sessionClinicId) {
   if (!mongoose.isValidObjectId(employeeId)) return null;
+  if (!sessionClinicId || !mongoose.isValidObjectId(sessionClinicId)) {
+    // No clinic selected in this session → cannot resolve role/permissions.
+    return null;
+  }
 
   const employee = await ClinicEmployee.findById(employeeId).lean();
   if (!employee) return null;
-  if (employee.isDeleted) return null;
+  if (employee.isPlatformDeleted) return null;
   if (employee.isActive === false) return null;
 
-  // Find the corresponding membership (created at invitation accept time)
+  // Membership for the SELECTED clinic (global identity → per-clinic membership).
   const membership = await ClinicMembership.findOne({
     userId: employee._id,
-    clinicId: employee.clinicId,
+    clinicId: sessionClinicId,
     actorType: "employee",
     isActive: true,
     leftAt: null,
@@ -166,17 +179,23 @@ async function resolveEmployeeContext(employeeId) {
 
   if (!membership) {
     log.warn(
-      { employeeId: String(employee._id), clinicId: String(employee.clinicId) },
-      "Employee has no active membership — auth rejected",
+      { employeeId: String(employee._id), clinicId: String(sessionClinicId) },
+      "Employee has no active membership in the selected clinic — auth rejected",
     );
     return null;
   }
 
   return {
     userId: String(employee._id), // employee id acts as actor id
-    clinicId: String(employee.clinicId),
+    clinicId: String(sessionClinicId),
     role: membership.role,
-    permissions: membership.permissions || {},
+    // EFFECTIVE permissions (role defaults + per-membership overrides), so the
+    // server-side can()/require() see site_builder/marketing/etc. from the
+    // role even when the membership has no explicit override for them.
+    permissions: getEffectivePermissions(
+      membership.role,
+      membership.permissions,
+    ),
     membershipId: String(membership._id),
     actorType: "employee",
   };
