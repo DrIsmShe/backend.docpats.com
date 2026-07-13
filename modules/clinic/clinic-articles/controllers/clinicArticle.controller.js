@@ -1,6 +1,9 @@
 // server/modules/clinic/clinic-articles/controllers/clinicArticle.controller.js
 //
-// CRUD статей клиники. Запись — под can("clinic","write").
+// CRUD статей клиники (статьи страниц-категорий витрины).
+// Запись — домен site_builder/marketing: пускаем marketer (site_builder.write
+// ИЛИ marketing.write) наравне с owner/admin (clinic.write). Согласовано с
+// clinicCustomPage.controller.js / clinic.controller.js SITE_BUILDER_FIELDS.
 // Модерация (рубильник) — отдельный admin-контроллер (см. примечание внизу).
 
 import * as service from "../services/clinicArticle.service.js";
@@ -12,9 +15,21 @@ import {
 import { ForbiddenError } from "../../../../common/utils/errors.js";
 import { can } from "../../../../common/auth/can.js";
 
+/**
+ * Право на изменение статей витрины.
+ * Статьи страниц-категорий — публичный контент витрины (site_builder /
+ * marketing), НЕ ядро клиники и НЕ PHI. Write разрешён маркетологу по
+ * site_builder.write ИЛИ marketing.write, а также owner/admin по clinic.write.
+ */
 function assertCanWrite() {
-  if (!can("clinic", "write")) {
-    throw new ForbiddenError("clinic.write permission required");
+  if (
+    !can("site_builder", "write") &&
+    !can("marketing", "write") &&
+    !can("clinic", "write")
+  ) {
+    throw new ForbiddenError(
+      "site_builder.write, marketing.write or clinic.write permission required",
+    );
   }
 }
 

@@ -14,6 +14,7 @@
 // - listEmployeeMemberships: active clinic memberships for an identity
 // - getEmployeeWithClinic: load identity + one selected clinic's membership
 // - employeeToDTO: public-safe identity DTO (no clinic/role — those are per-clinic)
+// - toClinicContextDTO: shared clinic DTO (core + витрина/site_builder fields)
 
 import crypto from "crypto";
 import argon2 from "argon2";
@@ -41,10 +42,85 @@ const normalizeEmail = (v) => String(v).trim().toLowerCase();
 const DUMMY_HASH =
   "$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
+// ───────────────────────────────────────────────────────────────────────────
+// Витринные / site_builder поля клиники, которые employee-контекст должен
+// нести, чтобы редактор витрины (ClinicPublicPageSettings) в employee-режиме
+// имел данные для рендера/сохранения. НЕ PHI. Держать в синхроне с:
+//   - clinic.model.js (имена полей)
+//   - clinic.controller.js SITE_BUILDER_FIELDS (поля, которые marketer правит)
+// Порядок select-строки не важен; _id включается автоматически.
+// ───────────────────────────────────────────────────────────────────────────
+const CLINIC_CONTEXT_SELECT = [
+  "name",
+  "slug",
+  "tier",
+  "logo",
+  "description",
+  "gallery",
+  "coverImage",
+  "pageBackground",
+  "slogan",
+  "callCenterPhone",
+  "callCenterHours",
+  "faq",
+  "isPublished",
+  "theme",
+  "layout",
+  "contacts",
+  "address",
+].join(" ");
+
+/**
+ * Единый DTO клиники для employee-контекста (login / me / select-clinic).
+ * Форма ДОЛЖНА быть одинаковой во всех трёх путях — иначе поведение витрины
+ * различается «сразу после входа» vs «после reload». Принимает как полный
+ * Mongoose-док (getEmployeeWithClinic → .lean()), так и уже выбранный select.
+ *
+ * @param {object} c — clinic doc/lean (может быть частичным по select)
+ * @returns {object|null}
+ */
+export function toClinicContextDTO(c) {
+  if (!c) return null;
+  return {
+    _id: String(c._id),
+    name: c.name,
+    slug: c.slug,
+    tier: c.tier,
+    // витрина / site_builder
+    logo: c.logo ?? null,
+    description: c.description ?? "",
+    gallery: Array.isArray(c.gallery)
+      ? c.gallery.map((g) => ({
+          id: String(g._id),
+          url: g.url,
+          caption: g.caption || "",
+          order: g.order ?? 0,
+        }))
+      : [],
+    coverImage: c.coverImage ?? null,
+    pageBackground: c.pageBackground ?? null,
+    slogan: c.slogan ?? "",
+    callCenterPhone: c.callCenterPhone ?? "",
+    callCenterHours: c.callCenterHours ?? "",
+    faq: Array.isArray(c.faq)
+      ? c.faq.map((f) => ({ q: f.q || "", a: f.a || "" }))
+      : [],
+    isPublished: c.isPublished === true,
+    theme: c.theme || {},
+    layout: c.layout || {},
+    contacts: c.contacts || {},
+    address: c.address || {},
+  };
+}
+
 /**
  * Load the worker's ACTIVE clinic memberships (leftAt: null), each enriched
- * with a small clinic summary. Used both by login (which clinics can I enter?)
- * and by the clinic-selection screen.
+ * with a clinic DTO (core + витрина). Used both by login (which clinics can I
+ * enter?) and by the clinic-selection screen.
+ *
+ * NOTE: select is widened to CLINIC_CONTEXT_SELECT so the single-clinic
+ * auto-select path (login) returns the SAME толстый clinic as /me — no
+ * "works after reload only" asymmetry for the vitrina editor.
  *
  * @param {mongoose.Types.ObjectId|string} employeeId
  * @returns {Promise<Array<{membershipId, clinicId, role, permissions, clinic}>>}
@@ -61,7 +137,7 @@ export async function listEmployeeMemberships(employeeId) {
 
   const clinicIds = memberships.map((m) => m.clinicId);
   const clinics = await Clinic.find({ _id: { $in: clinicIds } })
-    .select("name slug tier")
+    .select(CLINIC_CONTEXT_SELECT)
     .lean();
   const clinicMap = new Map(clinics.map((c) => [String(c._id), c]));
 
@@ -74,12 +150,7 @@ export async function listEmployeeMemberships(employeeId) {
         clinicId: String(m.clinicId),
         role: m.role,
         permissions: m.permissions || {},
-        clinic: {
-          _id: String(c._id),
-          name: c.name,
-          slug: c.slug,
-          tier: c.tier,
-        },
+        clinic: toClinicContextDTO(c),
       };
     })
     .filter(Boolean);
@@ -160,6 +231,9 @@ export async function loginEmployee({ email, password }) {
  * Load identity + the SELECTED clinic's membership for the /me endpoint.
  * The selected clinicId comes from the session (set at login when there is a
  * single clinic, or via the clinic-selection step when there are several).
+ *
+ * Returns the FULL clinic doc (.lean()) — the controller passes it through
+ * toClinicContextDTO for the same shape as the login path.
  *
  * @param {string} employeeId
  * @param {string} clinicId

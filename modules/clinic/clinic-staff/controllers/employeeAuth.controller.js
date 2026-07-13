@@ -39,7 +39,8 @@ function saveSession(req) {
 
 // Build the full "you are in this clinic" payload from a membership summary
 // (as returned by listEmployeeMemberships / loginEmployee) — its `clinic`
-// field is already { _id, name, slug, tier }.
+// field is already a full clinic-context DTO (core + витрина), built via
+// authService.toClinicContextDTO in the service layer.
 function activeClinicPayload(employeeDTO, membershipSummary) {
   return {
     employee: employeeDTO,
@@ -54,15 +55,12 @@ function activeClinicPayload(employeeDTO, membershipSummary) {
 }
 
 // Build the same payload from full docs (employee doc + clinic doc + membership).
+// clinic is passed through the SAME DTO helper as the login path so the shape
+// (core + витрина fields) is identical for /me and /select-clinic.
 function activeClinicPayloadFromDocs(employee, clinic, membership) {
   return {
     employee: authService.employeeToDTO(employee),
-    clinic: {
-      _id: String(clinic._id),
-      name: clinic.name,
-      slug: clinic.slug,
-      tier: clinic.tier,
-    },
+    clinic: authService.toClinicContextDTO(clinic),
     role: membership.role,
     permissions: getEffectivePermissions(
       membership.role,

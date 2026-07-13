@@ -1,7 +1,10 @@
 // server/modules/clinic/clinic-pages/controllers/clinicCustomPage.controller.js
 //
-// Контроллеры CRUD кастомных страниц. Запись — под can("clinic","write").
+// Контроллеры CRUD кастомных страниц («Публикации» витрины).
 // Чтение списка/одной — для членов клиники (роут под tenantMiddleware).
+// Запись — домен site_builder/marketing: пускаем marketer (site_builder.write
+// ИЛИ marketing.write) наравне с owner/admin (clinic.write). Согласовано с
+// clinic.controller.js SITE_BUILDER_FIELDS / clinicMedia.controller assertCanEdit.
 
 import * as service from "../services/clinicCustomPage.service.js";
 import {
@@ -12,9 +15,21 @@ import {
 import { ForbiddenError } from "../../../../common/utils/errors.js";
 import { can } from "../../../../common/auth/can.js";
 
+/**
+ * Право на изменение кастомных страниц.
+ * Кастомные страницы — публичный контент витрины (site_builder / marketing),
+ * НЕ ядро клиники и НЕ PHI. Поэтому write разрешён маркетологу по
+ * site_builder.write ИЛИ marketing.write, а также owner/admin по clinic.write.
+ */
 function assertCanWrite() {
-  if (!can("clinic", "write")) {
-    throw new ForbiddenError("clinic.write permission required");
+  if (
+    !can("site_builder", "write") &&
+    !can("marketing", "write") &&
+    !can("clinic", "write")
+  ) {
+    throw new ForbiddenError(
+      "site_builder.write, marketing.write or clinic.write permission required",
+    );
   }
 }
 

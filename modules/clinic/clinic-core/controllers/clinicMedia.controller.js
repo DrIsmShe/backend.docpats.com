@@ -7,7 +7,14 @@
 // (${R2_PUBLIC_URL}/uploads/images/<uuid>.webp), поэтому в модель пишем
 // готовый URL — маппер (pass-through для http) уже работает, резолв не нужен.
 //
-// Guard'ы как в updateClinic: cross-tenant + can("clinic","write").
+// Guard'ы: cross-tenant + can("site_builder","write") ИЛИ can("clinic","write").
+// Все ручки здесь пишут ТОЛЬКО витринные медиа-поля (logo/cover/pageBackground/
+// gallery) либо возвращают CDN-URL без записи в модель (asset) — это домен
+// site_builder, поэтому маркетолог (role marketer, site_builder.write) допущен
+// наравне с owner/admin (clinic.write). Ядро клиники (name/slug/tier/...) эти
+// ручки не трогают. Согласовано с полем-level гейтом в clinic.controller.js
+// (SITE_BUILDER_FIELDS).
+//
 // Цепочка в роутере: upload → rebindTenantContext → controller (ALS после multer).
 
 import Clinic from "../models/clinic.model.js";
@@ -25,14 +32,20 @@ import { can } from "../../../../common/auth/can.js";
 
 const GALLERY_MAX = 20;
 
-/** Общая проверка прав владельца на изменение своей клиники. */
+/**
+ * Общая проверка прав на изменение медиа своей клиники.
+ * Cross-tenant guard + витринный гейт (site_builder.write ИЛИ clinic.write).
+ * Владелец/админ проходят по clinic.write, маркетолог — по site_builder.write.
+ */
 function assertCanEdit(clinicIdParam) {
   const currentClinicId = getCurrentClinicId();
   if (String(currentClinicId) !== String(clinicIdParam)) {
     throw new ForbiddenError("Cannot modify another clinic");
   }
-  if (!can("clinic", "write")) {
-    throw new ForbiddenError("clinic.write permission required");
+  if (!can("site_builder", "write") && !can("clinic", "write")) {
+    throw new ForbiddenError(
+      "site_builder.write or clinic.write permission required",
+    );
   }
 }
 

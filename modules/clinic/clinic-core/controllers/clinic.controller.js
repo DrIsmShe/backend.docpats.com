@@ -19,6 +19,53 @@ import { can } from "../../../../common/auth/can.js";
 import { deleteClinicCascade } from "../services/deleteClinicCascade.service.js";
 
 /**
+ * ВИТРИНА / site_builder — набор полей публичной страницы клиники, которые
+ * маркетолог (роль marketer, право site_builder.write) может редактировать
+ * БЕЗ права clinic.write. Всё, что НЕ в этом наборе (name, slug, tier,
+ * contacts, timezone, defaultCurrency, ...), остаётся ядром клиники и требует
+ * clinic.write (owner/admin).
+ *
+ * Логика гейта (assertCanEditFields):
+ *   - если запрос трогает ТОЛЬКО витринные поля → site_builder.write ИЛИ clinic.write
+ *   - если есть хоть один ключ вне набора → нужен clinic.write
+ * Владелец/админ (clinic.write) работают как раньше — набор их не ограничивает.
+ */
+const SITE_BUILDER_FIELDS = new Set([
+  "theme",
+  "layout",
+  "description",
+  "logo",
+  "gallery",
+  "isPublished",
+  "coverImage",
+  "pageBackground",
+]);
+
+/**
+ * Проверяет права на изменение конкретного набора полей.
+ * @param {string[]} keys — ключи, которые реально пришли в запросе (после Zod)
+ * @throws {ForbiddenError}
+ */
+function assertCanEditFields(keys) {
+  const touchesCoreOnly = keys.some((k) => !SITE_BUILDER_FIELDS.has(k));
+
+  if (touchesCoreOnly) {
+    // затронуто ядро клиники — только clinic.write
+    if (!can("clinic", "write")) {
+      throw new ForbiddenError("clinic.write permission required");
+    }
+    return;
+  }
+
+  // затронуты только витринные поля — site_builder.write ИЛИ clinic.write
+  if (!can("site_builder", "write") && !can("clinic", "write")) {
+    throw new ForbiddenError(
+      "site_builder.write or clinic.write permission required",
+    );
+  }
+}
+
+/**
  * POST /api/v1/clinic/clinics
  *
  * Only verified DocPats DOCTORS can create a clinic and become its owner.
@@ -110,8 +157,12 @@ export async function getMyClinic(req, res, next) {
 /**
  * PATCH /api/v1/clinic/clinics/:id
  *
- * Update clinic profile. Requires "clinic.write" permission.
- * Поддерживает brand-поля (description/logo/gallery) — см. updateClinicSchema.
+ * Update clinic profile.
+ * Права зависят от затронутых полей (см. assertCanEditFields):
+ *   - только витринные поля  → site_builder.write ИЛИ clinic.write (маркетолог)
+ *   - поля ядра клиники      → clinic.write (owner/admin)
+ * Поддерживает brand/витрина-поля (description/logo/gallery/theme/layout/…)
+ * — см. updateClinicSchema.
  */
 export async function updateClinic(req, res, next) {
   try {
@@ -123,15 +174,21 @@ export async function updateClinic(req, res, next) {
       throw new ForbiddenError("Cannot update another clinic");
     }
 
-    if (!can("clinic", "write")) {
-      throw new ForbiddenError("clinic.write permission required");
-    }
-
     const parsed = updateClinicSchema.safeParse(req.body);
     if (!parsed.success) {
       throw new ValidationError("Invalid update data", {
         issues: parsed.error.issues,
       });
+    }
+
+    // Гейт по фактически переданным полям (field-level RBAC).
+    // Пустой запрос трактуем как отсутствие изменений витрины → минимальный гейт.
+    const keys = Object.keys(parsed.data);
+    if (keys.length === 0) {
+      // ничего не пришло — не пропускаем молча, требуем хотя бы витринное право
+      assertCanEditFields([]);
+    } else {
+      assertCanEditFields(keys);
     }
 
     const updated = await service.updateClinic(id, parsed.data);
@@ -145,7 +202,8 @@ export async function updateClinic(req, res, next) {
  * PATCH /api/v1/clinic/clinics/:id/publish
  *
  * Clinic-as-Brand (этап A): тумблер видимости публичной страницы /clinic/:slug.
- * Те же guard'ы, что и updateClinic: cross-tenant + clinic.write (owner/admin).
+ * Cross-tenant guard + витринный гейт: меняется только isPublished (витринное
+ * поле) → site_builder.write ИЛИ clinic.write (маркетолог тоже может).
  * body: { isPublished: boolean }
  */
 export async function setClinicPublished(req, res, next) {
@@ -157,9 +215,8 @@ export async function setClinicPublished(req, res, next) {
       throw new ForbiddenError("Cannot modify another clinic");
     }
 
-    if (!can("clinic", "write")) {
-      throw new ForbiddenError("clinic.write permission required");
-    }
+    // isPublished входит в SITE_BUILDER_FIELDS → маркетолог допускается
+    assertCanEditFields(["isPublished"]);
 
     const parsed = publishClinicSchema.safeParse(req.body);
     if (!parsed.success) {
