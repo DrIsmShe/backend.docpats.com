@@ -91,6 +91,12 @@ export async function login(req, res, next) {
     const { employee, memberships } = await authService.loginEmployee({
       email: data.email,
       password: data.password,
+      // Контекст для HIPAA-аудита: кто, откуда, каким браузером.
+      context: {
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+        sessionId: req.sessionID,
+      },
     });
 
     const employeeDTO = authService.employeeToDTO(employee);

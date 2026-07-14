@@ -92,7 +92,10 @@ describe("POST /api/v1/clinic/employees/login", () => {
     expect(res.body.employee).toBeDefined();
     expect(res.body.employee.email).toBe(email);
     expect(res.body.employee.firstName).toBe("Leyla");
-    expect(res.body.employee.role).toBe("receptionist");
+    // Роль живёт в ClinicMembership и приходит рядом с employee (res.body.role),
+    // а не внутри него — сотрудник это глобальная личность, роль у него своя
+    // в каждой клинике. Раньше тест ждал employee.role и падал.
+    expect(res.body.role).toBe("receptionist");
     // passwordHash must NEVER be exposed in API responses
     expect(res.body.employee.passwordHash).toBeUndefined();
 

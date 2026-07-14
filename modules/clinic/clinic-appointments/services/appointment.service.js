@@ -123,7 +123,7 @@ function requireWriteAccess() {
   const { role } = requireActor();
   if (!WRITE_ROLES.has(role)) {
     throw new ForbiddenError(
-      `Role "${role}" cannot create or modify appointments вЂ” write access is limited to owner/admin/receptionist`,
+      `Role "${role}" cannot create or modify appointments — write access is limited to ${[...WRITE_ROLES].join("/")}`,
     );
   }
 }

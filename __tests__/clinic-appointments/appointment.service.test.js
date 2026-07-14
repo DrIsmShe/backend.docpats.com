@@ -320,7 +320,11 @@ describe("createAppointment — role gate", () => {
     ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
-  it("manager cannot create an appointment", async () => {
+  // Менеджеру право на запись выдали осознанно — коммит c19a472 от 09.07.2026
+  // «grant manager full write access per RBAC matrix»: в permissions.js у роли
+  // manager стоит APPOINTMENT: FULL, и WRITE_ROLES это отражает. Старая версия
+  // теста ждала запрета и с тех пор падала.
+  it("manager can create an appointment", async () => {
     const managerId = new mongoose.Types.ObjectId();
     await ClinicMembership.create({
       userId: managerId,
@@ -329,11 +333,13 @@ describe("createAppointment — role gate", () => {
       actorType: "user",
       isActive: true,
     });
-    await expect(
-      actAs("manager", () => createAppointment(validCreatePayload()), {
-        userId: managerId,
-      }),
-    ).rejects.toBeInstanceOf(ForbiddenError);
+    const appointment = await actAs(
+      "manager",
+      () => createAppointment(validCreatePayload()),
+      { userId: managerId },
+    );
+    expect(appointment.status).toBe("scheduled");
+    expect(appointment.createdBy.role).toBe("manager");
   });
 });
 

@@ -116,6 +116,25 @@ const clinicEmployeeSchema = new mongoose.Schema(
     failedLoginAttempts: { type: Number, default: 0 },
     lockoutUntil: { type: Date, default: null },
 
+    // ─── Восстановление пароля (ссылка + код из одного письма) ───
+    // В БД хранится ТОЛЬКО sha256 от токена — сам токен живёт лишь в письме.
+    // Тот же приём, что у StaffInvitation.tokenHash.
+    // Код хешируется ВМЕСТЕ с хешем токена — sha256(`${код}:${хеш_токена}`), —
+    // поэтому ни ссылка без кода, ни код без ссылки по отдельности не работают.
+    passwordResetTokenHash: { type: String, default: null, index: true },
+    passwordResetOtpHash: { type: String, default: null },
+    // Срок жизни ссылки и кода — 30 минут.
+    passwordResetExpiresAt: { type: Date, default: null },
+    // Сколько попыток ввода кода осталось (даём 3). Кончились — ссылка сгорает.
+    passwordResetAttemptsLeft: { type: Number, default: 0 },
+    // Когда сброс запрашивали в последний раз — для кулдауна в 60 секунд.
+    passwordResetRequestedAt: { type: Date, default: null },
+
+    // Когда пароль меняли в последний раз (для интерфейса и аудита).
+    lastPasswordChangeAt: { type: Date, default: null },
+    // Требовать смену пароля при следующем входе (если пароль выдал админ).
+    mustChangePassword: { type: Boolean, default: false },
+
     preferredLanguage: {
       type: String,
       enum: SUPPORTED_LANGUAGES,
@@ -181,6 +200,9 @@ clinicEmployeeSchema.set("toJSON", {
     delete ret.lastNameEncrypted;
     delete ret.phoneNumberEncrypted;
     delete ret.passwordHash;
+    // Хеши сброса пароля наружу не отдаём никогда.
+    delete ret.passwordResetTokenHash;
+    delete ret.passwordResetOtpHash;
     return ret;
   },
 });

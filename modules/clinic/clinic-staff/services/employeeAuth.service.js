@@ -29,6 +29,7 @@ import {
   NotFoundError,
 } from "../../../../common/utils/errors.js";
 import logger from "../../../../common/logger.js";
+import { recordActionAsync } from "../../../audit/index.js";
 
 const log = logger.child({ module: "clinic-staff/employee-auth" });
 
@@ -41,6 +42,38 @@ const normalizeEmail = (v) => String(v).trim().toLowerCase();
 // timing doesn't leak whether the email exists.
 const DUMMY_HASH =
   "$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+// Блокировка конкретной учётной записи после серии неудачных попыток.
+// Ограничитель по IP живёт в роутере (loginLimiter) — он про другое: не даёт
+// перебирать МНОГО аккаунтов с одного адреса. А эта блокировка не даёт долбить
+// ОДИН аккаунт с разных адресов.
+// Успешное восстановление пароля снимает блокировку (см. employeePassword.service.js),
+// поэтому запертый сотрудник никогда не остаётся без выхода.
+const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
+
+/** Актор для аудита. Расшифрованных ПДн здесь быть не должно. */
+function auditActor(employee) {
+  return { userId: String(employee._id), role: "employee" };
+}
+
+/** Записать исход входа в HIPAA-журнал (hipaa_audit_logs). */
+function recordLoginOutcome(
+  employee,
+  { outcome, failureReason, context, metadata },
+) {
+  recordActionAsync({
+    actor: auditActor(employee),
+    action: outcome === "success" ? "auth.login" : "auth.failed_login",
+    resourceType: "clinic-employee",
+    resourceId: employee._id,
+    resourceOwnerId: employee._id,
+    outcome,
+    failureReason,
+    context,
+    metadata,
+  });
+}
 
 // ───────────────────────────────────────────────────────────────────────────
 // Витринные / site_builder поля клиники, которые employee-контекст должен
@@ -161,12 +194,17 @@ export async function listEmployeeMemberships(employeeId) {
  * enter. Constant-time-ish: argon2.verify always runs (dummy hash when the
  * identity is not found) to reduce timing leakage.
  *
+ * Неверные пароли копятся в failedLoginAttempts; на MAX_FAILED_LOGIN_ATTEMPTS
+ * учётка запирается на LOCKOUT_MINUTES. Счётчик обнуляется при успешном входе,
+ * а восстановление пароля снимает блокировку целиком.
+ *
  * @param {object} args
  * @param {string} args.email
  * @param {string} args.password
+ * @param {object} [args.context] — { ipAddress, userAgent, sessionId } для аудита
  * @returns {Promise<{employee, memberships}>}
  */
-export async function loginEmployee({ email, password }) {
+export async function loginEmployee({ email, password, context = {} }) {
   const normalized = normalizeEmail(email);
   const emailHash = sha256(normalized);
 
@@ -185,7 +223,65 @@ export async function loginEmployee({ email, password }) {
     isValid = false;
   }
 
+  // Заперт — отказываем даже при верном пароле, иначе блокировка декоративная.
+  // Проверяем ПОСЛЕ argon2, чтобы не менять временной профиль ответа.
+  if (
+    employee?.lockoutUntil &&
+    new Date(employee.lockoutUntil).getTime() > Date.now()
+  ) {
+    log.warn(
+      { employeeId: String(employee._id) },
+      "Locked-out employee attempted login",
+    );
+    recordLoginOutcome(employee, {
+      outcome: "denied",
+      failureReason: "Account is temporarily locked",
+      context,
+    });
+    throw new UnauthorizedError(
+      "Account is temporarily locked. Try again later or reset your password.",
+    );
+  }
+
   if (!employee || !isValid) {
+    if (employee) {
+      employee.failedLoginAttempts = (employee.failedLoginAttempts || 0) + 1;
+
+      const locked = employee.failedLoginAttempts >= MAX_FAILED_LOGIN_ATTEMPTS;
+      if (locked) {
+        employee.lockoutUntil = new Date(
+          Date.now() + LOCKOUT_MINUTES * 60 * 1000,
+        );
+        employee.failedLoginAttempts = 0;
+      }
+      await employee.save();
+
+      if (locked) {
+        log.warn(
+          { employeeId: String(employee._id) },
+          "Employee account locked after repeated failed logins",
+        );
+        recordActionAsync({
+          actor: auditActor(employee),
+          action: "auth.account_locked",
+          resourceType: "clinic-employee",
+          resourceId: employee._id,
+          resourceOwnerId: employee._id,
+          outcome: "success",
+          context,
+          metadata: { lockoutMinutes: LOCKOUT_MINUTES },
+        });
+      }
+
+      recordLoginOutcome(employee, {
+        outcome: "failure",
+        failureReason: "Invalid password",
+        context,
+        metadata: { locked },
+      });
+    }
+
+    // Неизвестный email — аудит писать не на кого (нет актора), только pino.
     log.warn(
       { emailHash, found: Boolean(employee) },
       "Failed employee login attempt",
@@ -198,6 +294,11 @@ export async function loginEmployee({ email, password }) {
       { employeeId: String(employee._id) },
       "Inactive employee attempted login",
     );
+    recordLoginOutcome(employee, {
+      outcome: "denied",
+      failureReason: "Account is not active",
+      context,
+    });
     throw new UnauthorizedError("Account is not active");
   }
 
@@ -206,6 +307,11 @@ export async function loginEmployee({ email, password }) {
       { employeeId: String(employee._id) },
       "Blocked employee attempted login",
     );
+    recordLoginOutcome(employee, {
+      outcome: "denied",
+      failureReason: "Account is blocked",
+      context,
+    });
     throw new UnauthorizedError("Account is blocked");
   }
 
@@ -216,13 +322,31 @@ export async function loginEmployee({ email, password }) {
       { employeeId: String(employee._id) },
       "Employee has no active clinic membership — login rejected",
     );
+    recordLoginOutcome(employee, {
+      outcome: "denied",
+      failureReason: "No active clinic membership",
+      context,
+    });
     throw new UnauthorizedError("You are not a member of any active clinic");
   }
+
+  // Успешный вход обнуляет серию неудач и проставляет lastLoginAt
+  // (поле в модели было, но его никто никогда не писал).
+  employee.failedLoginAttempts = 0;
+  employee.lockoutUntil = null;
+  employee.lastLoginAt = new Date();
+  await employee.save();
 
   log.info(
     { employeeId: String(employee._id), clinics: memberships.length },
     "Employee logged in",
   );
+
+  recordLoginOutcome(employee, {
+    outcome: "success",
+    context,
+    metadata: { clinics: memberships.length },
+  });
 
   return { employee, memberships };
 }
@@ -299,5 +423,8 @@ export function employeeToDTO(employee) {
     preferredLanguage: employee.preferredLanguage,
     joinedAt: employee.joinedAt,
     isActive: employee.isActive,
+    // Чтобы клиент мог увести сотрудника на принудительную смену пароля.
+    mustChangePassword: employee.mustChangePassword === true,
+    lastPasswordChangeAt: employee.lastPasswordChangeAt || null,
   };
 }

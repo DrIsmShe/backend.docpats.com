@@ -305,12 +305,12 @@ describe("POST /api/v1/clinic/invitations/accept", () => {
 
     expect(res.status).toBe(201);
     expect(res.body.employee).toBeDefined();
-    expect(res.body.employee.role).toBe("receptionist");
 
-    // Verify ClinicEmployee was created
+    // Роль и клиника БОЛЬШЕ НЕ ЛЕЖАТ в личности сотрудника — сотрудник это
+    // глобальная личность, а роль и клиника живут в ClinicMembership (одна
+    // запись на каждую клинику). Проверяем их ниже, на membership.
     const employee = await ClinicEmployee.findById(res.body.employee._id);
     expect(employee).not.toBeNull();
-    expect(employee.clinicId.toString()).toBe(clinic._id.toString());
     const decrypted = employee.decryptFields();
     expect(decrypted.firstName).toBe("Leyla");
     expect(decrypted.email).toBe("newhire@example.com");
