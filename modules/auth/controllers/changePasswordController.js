@@ -34,14 +34,34 @@ const hashEmail = (email) => {
   return crypto.createHash("sha256").update(email.toLowerCase()).digest("hex");
 };
 
+// Сравнение двух кодов за постоянное время. Хешируем обе стороны, чтобы
+// timingSafeEqual всегда получал буферы равной длины (коды бывают разной
+// длины: первое письмо — 8 hex, переотправка — 6 цифр).
+const otpMatches = (provided, stored) => {
+  if (!provided || !stored) return false;
+  const a = crypto.createHash("sha256").update(String(provided).trim()).digest();
+  const b = crypto.createHash("sha256").update(String(stored).trim()).digest();
+  return crypto.timingSafeEqual(a, b);
+};
+
 const changePasswordController = async (req, res) => {
   try {
-    const { email, newPassword, newRepeatPassword } = req.body;
+    const { email, newPassword, newRepeatPassword, otpPassword } = req.body;
 
     if (!email || !newPassword || !newRepeatPassword) {
       return res
         .status(400)
         .json({ message: "Email and both passwords are required." });
+    }
+
+    // ─── КРИТИЧНО: смену пароля подтверждает ТОЛЬКО код из письма ───
+    // Без этой проверки любой, кто знает чужой email, мог сменить пароль и
+    // войти в аккаунт с медданными. Код доказывает владение почтой.
+    if (!otpPassword) {
+      return res.status(400).json({
+        message: "Confirmation code is required.",
+        code: "OTP_REQUIRED",
+      });
     }
 
     if (newPassword !== newRepeatPassword) {
@@ -54,11 +74,28 @@ const changePasswordController = async (req, res) => {
     }
 
     const emailHash = hashEmail(decryptedEmail);
-    console.log("🔍 Ищем пользователя по emailHash:", emailHash);
 
     const existingUser = await User.findOne({ emailHash });
+    // Одинаковый ответ для «нет пользователя» и «неверный код» — чтобы по
+    // этому эндпоинту нельзя было проверять, какие email зарегистрированы.
     if (!existingUser) {
-      return res.status(404).json({ message: "User not found." });
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired confirmation code." });
+    }
+
+    // Код должен существовать, не истечь и совпасть.
+    const notExpired =
+      existingUser.otpExpiresAt &&
+      Number(existingUser.otpExpiresAt) > Date.now();
+    if (
+      !existingUser.otpPassword ||
+      !notExpired ||
+      !otpMatches(otpPassword, existingUser.otpPassword)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired confirmation code." });
     }
 
     if (existingUser.password) {
@@ -82,6 +119,10 @@ const changePasswordController = async (req, res) => {
 
     existingUser.password = hashedPassword;
     existingUser.mustChangePassword = false; // ✅ Сбрасываем mustChangePassword
+    // Код одноразовый — гасим его сразу, чтобы им нельзя было воспользоваться
+    // повторно.
+    existingUser.otpPassword = null;
+    existingUser.otpExpiresAt = null;
     await existingUser.save();
 
     return res.status(200).json({ message: "Password successfully changed." });
