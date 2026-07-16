@@ -45,6 +45,22 @@ export const UserPatientDetailGetController = async (req, res) => {
 
     const decryptedUser = {
       ...userDoc,
+      // .lean() обходит toJSON — вычищаем секреты и шифртекст вручную
+      // (undefined-ключи не попадают в JSON-ответ).
+      password: undefined,
+      passwordHistory: undefined,
+      twoFactorAuth: undefined,
+      sessions: undefined,
+      pendingNewPasswordHash: undefined,
+      otpPassword: undefined,
+      activationOtp: undefined,
+      firstNameEncrypted: undefined,
+      lastNameEncrypted: undefined,
+      emailEncrypted: undefined,
+      firstNameHash: undefined,
+      lastNameHash: undefined,
+      emailHash: undefined,
+      phoneHash: undefined,
       firstName: safeDecrypt(userDoc.firstNameEncrypted),
       lastName: safeDecrypt(userDoc.lastNameEncrypted),
       email: safeDecrypt(userDoc.emailEncrypted),

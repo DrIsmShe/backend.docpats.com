@@ -18,6 +18,14 @@ function buildDecryptedUser(rawUser) {
 
   return {
     ...rawUser,
+    // .lean() обходит toJSON — вычищаем секреты вручную (undefined не попадает в JSON).
+    password: undefined,
+    passwordHistory: undefined,
+    twoFactorAuth: undefined,
+    sessions: undefined,
+    pendingNewPasswordHash: undefined,
+    otpPassword: undefined,
+    activationOtp: undefined,
     email: rawUser.emailEncrypted ? decrypt(rawUser.emailEncrypted) : null,
     firstName: rawUser.firstNameEncrypted
       ? decrypt(rawUser.firstNameEncrypted)

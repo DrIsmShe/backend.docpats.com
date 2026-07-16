@@ -3,6 +3,7 @@ import { PolyclinicPatientsChartCountryController } from "../controllers/Polycli
 
 import { PolyclinicPatientsChartController } from "../controllers//PolyclinicPatientsChartController.js";
 import { DoctorsChartController } from "../controllers/DoctorsChartController.js";
+import requireAdmin from "./isAdminRoute.js";
 
 const router = express.Router();
 
@@ -11,12 +12,12 @@ const router = express.Router();
  * @desc  Возвращает статистику добавления пациентов по выбранному периоду
  * @access Admin / Doctor
  */
-router.get("/patients-chart/:period", PolyclinicPatientsChartController);
-router.get("/doctors-chart/:period", DoctorsChartController);
+router.get("/patients-chart/:period", requireAdmin, PolyclinicPatientsChartController);
+router.get("/doctors-chart/:period", requireAdmin, DoctorsChartController);
 
 router.get(
   "/patients-chart-country/:period",
-  PolyclinicPatientsChartCountryController
+  requireAdmin, PolyclinicPatientsChartCountryController
 );
 
 export default router;

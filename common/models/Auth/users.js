@@ -976,6 +976,17 @@ userSchema.set("toJSON", {
     delete ret.lastNameHash;
     delete ret.emailHash;
 
+    // Секреты, которые НИКОГДА не должны уходить в ответ (утечка = офлайн-брутфорс
+    // паролей, кража 2FA и активных сессий). Раньше toJSON их не вычищал, и
+    // admin-контроллеры возвращали хэш пароля/2FA/сессии.
+    delete ret.password;
+    delete ret.passwordHistory;
+    delete ret.twoFactorAuth;
+    delete ret.sessions;
+    delete ret.pendingNewPasswordHash;
+    delete ret.otpPassword;
+    delete ret.activationOtp;
+
     if (ret.apiKeys) {
       ret.apiKeys = ret.apiKeys.map((k) => ({
         label: k.label,
