@@ -149,6 +149,25 @@ const sessionMiddleware = session({
 });
 
 app.use(sessionMiddleware);
+
+// ======================= CSRF (Origin check) =======================
+// Защита от CSRF без токенов на каждом запросе. На мутирующих методах требуем,
+// чтобы заголовок Origin принадлежал allowlist. Браузер выставляет Origin
+// автоматически на любом cross-site (и same-site) запросе и НЕ даёт странице
+// его подделать, поэтому форма/fetch со стороннего сайта, несущие cookie
+// сессии, будут отклонены. GET/HEAD/OPTIONS состояние не меняют — пропускаем.
+// Запросы без Origin (curl, серверные вызовы, webhooks) пропускаем: CSRF —
+// это атака через браузер жертвы, а браузер всегда шлёт Origin на такие запросы.
+app.use((req, res, next) => {
+  const m = req.method.toUpperCase();
+  if (m === "GET" || m === "HEAD" || m === "OPTIONS") return next();
+  const origin = req.get("origin");
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return res.status(403).json({ message: "CSRF: origin not allowed" });
+  }
+  next();
+});
+
 app.use(blockUnfinishedRegistration);
 // ✅ ИСПРАВЛЕНО: consultation routes теперь после sessionMiddleware,
 // чтобы req.session был доступен в контроллерах

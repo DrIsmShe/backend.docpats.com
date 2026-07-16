@@ -36,8 +36,12 @@ import {
 } from "../controllers/scheduleException.controller.js";
 
 import { auditMiddleware } from "../../../audit/middleware/auditMiddleware.js";
+import { requireClinicPerm } from "../../../../common/middlewares/requireClinicPerm.js";
 
 const router = express.Router();
+
+// RBAC: изменение исключений расписания (отгулы, отпуска) — по "schedule" write;
+// просмотр — read. Раньше проверялось лишь наличие актора, не роль.
 
 // ─── Bulk day-off (vacation range) ────────────────────────────────────
 // MUST be registered before "/exceptions/:doctorId" — more specific path.
@@ -45,6 +49,7 @@ const router = express.Router();
 // metaFrom: the date range + note presence — NOT enumerated days.
 router.post(
   "/exceptions/:doctorId/bulk-day-off",
+  requireClinicPerm("schedule", "write"),
   auditMiddleware({
     resourceType: "clinic-doctor-schedule",
     action: "clinic.schedule.exception.bulk_day_off",
@@ -63,6 +68,7 @@ router.post(
 // intervals (for "custom") — structural only.
 router.post(
   "/exceptions/:doctorId",
+  requireClinicPerm("schedule", "write"),
   auditMiddleware({
     resourceType: "clinic-doctor-schedule",
     action: "clinic.schedule.exception.create",
@@ -83,6 +89,7 @@ router.post(
 // resourceId = the doctor. metaFrom: the requested window bounds.
 router.get(
   "/exceptions/:doctorId",
+  requireClinicPerm("schedule", "read"),
   auditMiddleware({
     resourceType: "clinic-doctor-schedule",
     action: "clinic.schedule.exception.list",
@@ -100,6 +107,7 @@ router.get(
 // routes. resourceId = the exception's own id.
 router.delete(
   "/exceptions/entry/:exceptionId",
+  requireClinicPerm("schedule", "write"),
   auditMiddleware({
     resourceType: "clinic-doctor-schedule",
     action: "clinic.schedule.exception.delete",

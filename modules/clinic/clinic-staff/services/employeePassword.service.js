@@ -142,10 +142,12 @@ function auditActor(employee) {
  *
  * @param {object} args
  * @param {string} args.email
+ * @param {string} [args.language] — язык письма (с формы). Неизвестный/пустой →
+ *   откат на язык из профиля сотрудника.
  * @param {object} [args.context] — { ipAddress, userAgent, sessionId } для аудита
  * @returns {Promise<{emailSent: boolean}>}
  */
-export async function requestPasswordReset({ email, context = {} }) {
+export async function requestPasswordReset({ email, language, context = {} }) {
   const emailHash = sha256(normalizeEmail(email));
 
   const employee = await ClinicEmployee.findOne({ emailHash });
@@ -191,8 +193,14 @@ export async function requestPasswordReset({ email, context = {} }) {
 
   const { email: plainEmail, firstName } = employee.decryptFields();
 
+  // Язык письма: то, что выбрано на форме сейчас, иначе — язык профиля.
+  const SUPPORTED_LANGUAGES = ["ru", "en", "tr", "az", "ar"];
+  const emailLanguage = SUPPORTED_LANGUAGES.includes(language)
+    ? language
+    : employee.preferredLanguage;
+
   const { subject, htmlContent } = renderPasswordResetEmail({
-    language: employee.preferredLanguage,
+    language: emailLanguage,
     firstName,
     otp,
     resetUrl: buildResetUrl(token),

@@ -21,6 +21,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import Prescription from "../../../../common/models/Polyclinic/Prescription.js";
+import { encryptPHI, decryptPHI } from "../../../../common/utils/phiCrypto.js";
 import PatientConsent from "../../../../common/models/Polyclinic/PatientConsent.js";
 import { eventBus, EVENTS } from "../../../../common/events/eventBus.js";
 import {
@@ -75,7 +76,7 @@ function normalizeItems(rawItems) {
       duration: (it.duration || "").trim(),
       quantity: (it.quantity || "").trim(),
       prn: !!it.prn,
-      instructions: (it.instructions || "").trim(),
+      instructions: encryptPHI((it.instructions || "").trim()), // PHI
     }));
 }
 
@@ -123,10 +124,10 @@ function toApiShape(doc) {
       ? {
           code: doc.diagnosis.code || "",
           codeTitle: doc.diagnosis.codeTitle || "",
-          text: doc.diagnosis.text || "",
+          text: decryptPHI(doc.diagnosis.text) || "",
         }
       : null,
-    generalNotes: doc.generalNotes || "",
+    generalNotes: decryptPHI(doc.generalNotes) || "",
     items: Array.isArray(doc.items)
       ? doc.items.map((it) => ({
           _id: it._id ? String(it._id) : undefined,
@@ -140,7 +141,7 @@ function toApiShape(doc) {
           duration: it.duration || "",
           quantity: it.quantity || "",
           prn: !!it.prn,
-          instructions: it.instructions || "",
+          instructions: decryptPHI(it.instructions) || "",
         }))
       : [],
 
@@ -222,7 +223,7 @@ export async function createPrescription({ patient, body }) {
     ? {
         code: (body.diagnosis.code || "").trim(),
         codeTitle: (body.diagnosis.codeTitle || "").trim(),
-        text: (body.diagnosis.text || "").trim(),
+        text: encryptPHI((body.diagnosis.text || "").trim()), // PHI
       }
     : { code: "", codeTitle: "", text: "" };
 
@@ -237,7 +238,7 @@ export async function createPrescription({ patient, body }) {
     status: "active",
 
     items,
-    generalNotes: (body.generalNotes || "").trim(),
+    generalNotes: encryptPHI((body.generalNotes || "").trim()), // PHI
     diagnosis,
 
     sharedWith: Array.isArray(body.sharedWith) ? body.sharedWith : [],

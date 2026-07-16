@@ -21,12 +21,14 @@
 import express from "express";
 import * as ctrl from "../controllers/consent.clinic.controller.js";
 import auditMiddleware from "../../../audit/middleware/auditMiddleware.js";
+import { requireClinicPerm } from "../../../../common/middlewares/requireClinicPerm.js";
 
 const router = express.Router();
 
 // ─── GET /clinic/patients/:cardId/consents ────────────────────────────
 router.get(
   "/patients/:cardId/consents",
+  requireClinicPerm("patient", "read"),
   auditMiddleware({
     resourceType: "patient-consent",
     action: "patient.consent.list",
@@ -41,6 +43,7 @@ router.get(
 // Clinic revokes a consent it holds for the patient.
 router.delete(
   "/consents/:id",
+  requireClinicPerm("patient", "write"),
   auditMiddleware({
     resourceType: "patient-consent",
     action: "patient.consent.revoke_by_clinic",

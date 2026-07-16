@@ -34,13 +34,19 @@ import {
 } from "../controllers/doctorSchedule.controller.js";
 
 import { auditMiddleware } from "../../../audit/middleware/auditMiddleware.js";
+import { requireClinicPerm } from "../../../../common/middlewares/requireClinicPerm.js";
 
 const router = express.Router();
+
+// RBAC: раньше сервис проверял лишь НАЛИЧИЕ актора, но не роль — регистратор
+// (SCHEDULE: RO), медсестра, бухгалтер могли править расписание врачей.
+// Теперь чтение — по "schedule" read, изменение — по "schedule" write.
 
 // ─── List all schedules in the clinic ─────────────────────────────────
 // Admin overview. No resourceId (collection-level read).
 router.get(
   "/schedule",
+  requireClinicPerm("schedule", "read"),
   auditMiddleware({
     resourceType: "clinic",
     action: "clinic.schedule.list",
@@ -56,6 +62,7 @@ router.get(
 // resourceId = the doctor whose schedule is being read.
 router.get(
   "/schedule/:doctorId",
+  requireClinicPerm("schedule", "read"),
   auditMiddleware({
     resourceType: "clinic-doctor-schedule",
     action: "clinic.schedule.view",
@@ -71,6 +78,7 @@ router.get(
 // but no reason to bloat the audit log; counts are enough for forensics).
 router.put(
   "/schedule/:doctorId",
+  requireClinicPerm("schedule", "write"),
   auditMiddleware({
     resourceType: "clinic-doctor-schedule",
     action: "clinic.schedule.upsert",

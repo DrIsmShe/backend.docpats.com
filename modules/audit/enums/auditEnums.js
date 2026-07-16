@@ -426,6 +426,12 @@ export const RESOURCE_TYPE_ENUM = [
   "patient-profile",
   "user-account",
   "orphan-r2-file",
+
+  // Clinic telemed / consilium (доступ к PHI — обсуждения случая, заметки сессии)
+  "telemed-session",
+  "consilium",
+  "consilium-message",
+
   // Catch-all
   "other",
 ];

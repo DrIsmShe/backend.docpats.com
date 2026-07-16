@@ -23,12 +23,14 @@ import { eventBus, EVENTS } from "../../../../common/events/eventBus.js";
 import {
   getCurrentClinicId,
   getCurrentUserId,
+  getCurrentRole,
 } from "../../../../common/context/tenantContext.js";
 import {
   ConflictError,
   NotFoundError,
   ForbiddenError,
 } from "../../../../common/utils/errors.js";
+import { canAssignRole } from "../../../../common/auth/roleHierarchy.js";
 import logger from "../../../../common/logger.js";
 
 const log = logger.child({ module: "clinic-staff/membership-request" });
@@ -84,6 +86,16 @@ export async function createRequest({
   const invitedBy = getCurrentUserId();
 
   if (!userId) throw new ForbiddenError("userId is required");
+
+  // Защита от эскалации привилегий: нельзя пригласить на роль, равную своей или
+  // выше. Без этой проверки manager (STAFF: RW) мог выдать admin. Тот же guard
+  // стоит на всех остальных путях приглашения (staff.service, invitation.service).
+  const actorRole = getCurrentRole();
+  if (!canAssignRole(actorRole, role)) {
+    throw new ForbiddenError(
+      `Role '${actorRole}' cannot assign role '${role}'`,
+    );
+  }
 
   // Already an active member?
   const ClinicMembership = (await import("../models/clinicMembership.model.js"))

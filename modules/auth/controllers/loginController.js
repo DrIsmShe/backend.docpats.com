@@ -97,6 +97,12 @@ export const loginUser = async (req, res) => {
     }
 
     // === СЕССИЯ ===
+    // Защита от session fixation: после успешной аутентификации выдаём НОВЫЙ
+    // session id, чтобы cookie, подсунутая жертве до входа, стала бесполезной.
+    await new Promise((resolve, reject) => {
+      req.session.regenerate((err) => (err ? reject(err) : resolve()));
+    });
+
     req.session.cookie.maxAge = remember
       ? 30 * 24 * 60 * 60 * 1000
       : 14 * 24 * 60 * 60 * 1000;
@@ -154,8 +160,7 @@ export const loginUser = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Authorization error:", error);
-    return res
-      .status(500)
-      .json({ message: "Login error", error: error.message });
+    // Не отдаём error.message наружу — внутренние детали не должны утекать клиенту.
+    return res.status(500).json({ message: "Login error" });
   }
 };

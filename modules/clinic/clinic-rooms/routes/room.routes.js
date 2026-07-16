@@ -14,34 +14,37 @@
 // AUTH / TENANT:
 //   authMiddleware + tenantMiddleware are applied UPSTREAM on the parent
 //   clinic router (clinic/index.js). By the time we reach these handlers
-//   getCurrentClinicId() is populated. RBAC is enforced in the service
-//   layer via requirePerm("room", ...) — exactly like clinic-departments.
+//   getCurrentClinicId() is populated.
 //
-// AUDIT (intentionally NOT applied — same rationale as departments):
-//   Rooms hold no PII/PHI (name, code, floor, capacity, assigned member
-//   ids). Logging them would pollute hipaa_audit_logs with non-PHI noise.
-//   If org-structure forensics is wanted later, add a SEPARATE non-HIPAA
-//   audit channel — do not mix into hipaa_audit_logs.
+// RBAC: проверяется здесь через requireClinicPerm("room", ...). Ранее комментарий
+//   утверждал, что RBAC делается в сервисном слое — это было НЕВЕРНО, в
+//   room.service проверки не было вообще (любая роль могла править комнаты).
+//   Матрица: read — все роли с доступом; write/delete — admin/manager/owner.
+//
+// AUDIT (intentionally NOT applied):
+//   Rooms hold no PII/PHI (name, code, floor, capacity, assigned member ids).
+//   Logging them would pollute hipaa_audit_logs with non-PHI noise.
 
 import express from "express";
 import * as ctrl from "../controllers/room.controller.js";
+import { requireClinicPerm } from "../../../../common/middlewares/requireClinicPerm.js";
 
 const router = express.Router();
 
 // ─── List rooms ───────────────────────────────────────────────────────
 // Query: departmentId, status
-router.get("/rooms", ctrl.listRoomsController);
+router.get("/rooms", requireClinicPerm("room", "read"), ctrl.listRoomsController);
 
 // ─── Create room ──────────────────────────────────────────────────────
-router.post("/rooms", ctrl.createRoomController);
+router.post("/rooms", requireClinicPerm("room", "write"), ctrl.createRoomController);
 
 // ─── Get one ──────────────────────────────────────────────────────────
-router.get("/rooms/:id", ctrl.getRoomController);
+router.get("/rooms/:id", requireClinicPerm("room", "read"), ctrl.getRoomController);
 
 // ─── Update ───────────────────────────────────────────────────────────
-router.patch("/rooms/:id", ctrl.updateRoomController);
+router.patch("/rooms/:id", requireClinicPerm("room", "write"), ctrl.updateRoomController);
 
 // ─── Archive (soft delete) ────────────────────────────────────────────
-router.delete("/rooms/:id", ctrl.archiveRoomController);
+router.delete("/rooms/:id", requireClinicPerm("room", "delete"), ctrl.archiveRoomController);
 
 export default router;

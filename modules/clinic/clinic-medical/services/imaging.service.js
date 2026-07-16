@@ -19,6 +19,7 @@ import {
   getCurrentActorType,
 } from "../../../../common/context/tenantContext.js";
 import { require as requirePerm } from "../../../../common/auth/can.js";
+import { encryptPHI, decryptPHI } from "../../../../common/utils/phiCrypto.js";
 import logger from "../../../../common/logger.js";
 
 const log = logger.child({ module: "clinic-medical/imaging" });
@@ -65,11 +66,13 @@ function toShape(doc) {
     studyType: doc.studyType,
     date: doc.date || null,
     images: Array.isArray(doc.images) ? doc.images : [],
-    report: doc.report || null,
-    diagnosis: doc.diagnosis || null,
+    // report/diagnosis/doctorNotes — PHI, шифруются в БД; расшифровка в единой
+    // точке чтения (её вывод использует и PDF).
+    report: decryptPHI(doc.report) || null,
+    diagnosis: decryptPHI(doc.diagnosis) || null,
     contrastUsed: Boolean(doc.contrastUsed),
     validatedByDoctor: Boolean(doc.validatedByDoctor),
-    doctorNotes: doc.doctorNotes || null,
+    doctorNotes: decryptPHI(doc.doctorNotes) || null,
     createdBy: doc.createdBy ? String(doc.createdBy) : null,
     createdByEmployee: doc.createdByEmployee
       ? String(doc.createdByEmployee)
@@ -148,8 +151,8 @@ export async function createImaging({ patient, body, images = [], files }) {
     studyType: body.studyType,
     date: body.date || new Date(),
     images: Array.isArray(images) ? images : [],
-    report: body.report || null,
-    diagnosis: body.diagnosis || null,
+    report: encryptPHI(body.report || null),
+    diagnosis: encryptPHI(body.diagnosis || null),
     contrastUsed: Boolean(body.contrastUsed),
     ...authorship,
     sharedWith: Array.isArray(body.sharedWith) ? body.sharedWith : [],
@@ -282,7 +285,7 @@ export async function updateImaging({ recordId, body }) {
   const editable = ["report", "diagnosis", "doctorNotes"];
   for (const field of editable) {
     if (Object.prototype.hasOwnProperty.call(body, field)) {
-      doc[field] = body[field] || null;
+      doc[field] = encryptPHI(body[field] || null); // PHI — шифруем
     }
   }
   if (Object.prototype.hasOwnProperty.call(body, "contrastUsed")) {

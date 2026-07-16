@@ -49,10 +49,14 @@ const decrypt = (cipherText) => {
   }
 };
 
+// .trim() ОБЯЗАТЕЛЕН для согласования с DoctorPrivatePatient.sha256Lower
+// (там trim есть): без него один и тот же телефон/email хешируется по-разному в
+// двух моделях, и blind-index матчинг при связывании/миграции пациентов
+// промахивается, плодя дубли. Нормализация должна быть одинаковой везде.
 const sha256Lower = (s) =>
   crypto
     .createHash("sha256")
-    .update(String(s || "").toLowerCase())
+    .update(String(s || "").trim().toLowerCase())
     .digest("hex");
 
 /* ============================================================
@@ -223,10 +227,11 @@ schema.index(
     partialFilterExpression: { phoneEncrypted: { $type: "string" } },
   },
 );
-schema.index({ phoneHash: 1 }, { unique: true, sparse: true });
+// phoneHash / firstNameHash / lastNameHash уже индексируются на уровне полей
+// (index:true / unique+sparse). Повторный schema.index на тот же одиночный ключ
+// давал прод-warning "Duplicate schema index" — убран. Оставляем только
+// составной индекс, которого на уровне поля не задать.
 schema.index({ doctorId: 1, createdAt: -1 });
-schema.index({ firstNameHash: 1 });
-schema.index({ lastNameHash: 1 });
 
 /* ============================================================
    SETTERS + GETTERS

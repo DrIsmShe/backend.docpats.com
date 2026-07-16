@@ -439,21 +439,34 @@ export async function createAppointment(input) {
 
   await assertNoConflict({ clinicId, doctorId, startUTC, endUTC });
 
-  const doc = await ClinicAppointment.create({
-    clinicId,
-    doctorId,
-    patientId,
-    departmentId: departmentId || null,
-    roomId: roomId || null,
-    startUTC,
-    endUTC,
-    localDate,
-    startMinute,
-    endMinute,
-    reasonEncrypted: encryptReason(reason),
-    status: "scheduled",
-    createdBy: { actorType, actorId: userId, role },
-  });
+  let doc;
+  try {
+    doc = await ClinicAppointment.create({
+      clinicId,
+      doctorId,
+      patientId,
+      departmentId: departmentId || null,
+      roomId: roomId || null,
+      startUTC,
+      endUTC,
+      localDate,
+      startMinute,
+      endMinute,
+      reasonEncrypted: encryptReason(reason),
+      status: "scheduled",
+      createdBy: { actorType, actorId: userId, role },
+    });
+  } catch (err) {
+    // assertNoConflict — это проверка «до», но между ней и вставкой есть окно
+    // гонки. Уникальный индекс doctor_slot_unique_active закрывает его: при
+    // одновременной записи на один слот второй insert падает с E11000.
+    if (err?.code === 11000) {
+      throw new ConflictError(
+        "This time slot was just taken. Please choose another.",
+      );
+    }
+    throw err;
+  }
 
   log.info(
     {

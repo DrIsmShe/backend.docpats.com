@@ -24,6 +24,8 @@ export const RESOURCES = Object.freeze({
   KNOWLEDGE: "knowledge",
   CONSILIUM: "consilium",
   TELEMED: "telemed",
+  SERVICE: "service", // прайс-лист услуг клиники
+  ANNOUNCEMENT: "announcement", // внутренние объявления клиники
 
   // patients & medical records
   PATIENT: "patient",
@@ -130,12 +132,17 @@ const _basePermissions = {
     [RESOURCES.CLINIC]: RW,
     [RESOURCES.STAFF]: RO,
     [RESOURCES.STAFF_INVITE]: NONE,
-    [RESOURCES.DEPARTMENT]: RO,
-    [RESOURCES.ROOM]: RO,
-    [RESOURCES.EQUIPMENT]: RO,
+    // admin (уровень 7) старше manager (6) и должен мочь править орг-структуру —
+    // раньше было RO, что при включении RBAC мешало админу создавать
+    // отделения/кабинеты/оборудование. Приведено к RW для согласованности.
+    [RESOURCES.DEPARTMENT]: RW,
+    [RESOURCES.ROOM]: RW,
+    [RESOURCES.EQUIPMENT]: RW,
     [RESOURCES.KNOWLEDGE]: FULL,
     [RESOURCES.CONSILIUM]: FULL,
     [RESOURCES.TELEMED]: FULL,
+    [RESOURCES.SERVICE]: FULL,
+    [RESOURCES.ANNOUNCEMENT]: FULL,
     [RESOURCES.PATIENT]: FULL,
     [RESOURCES.MEDICAL_RECORD]: RW,
     [RESOURCES.PRESCRIPTION]: RO,
@@ -175,6 +182,8 @@ const _basePermissions = {
     [RESOURCES.KNOWLEDGE]: RW,
     [RESOURCES.CONSILIUM]: RW,
     [RESOURCES.TELEMED]: RW,
+    [RESOURCES.SERVICE]: RW,
+    [RESOURCES.ANNOUNCEMENT]: RW,
     [RESOURCES.PATIENT]: RO,
     [RESOURCES.SCHEDULE]: FULL,
     [RESOURCES.APPOINTMENT]: FULL,

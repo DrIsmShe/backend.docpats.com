@@ -31,28 +31,32 @@
 
 import express from "express";
 import * as ctrl from "../controllers/department.controller.js";
+import { requireClinicPerm } from "../../../../common/middlewares/requireClinicPerm.js";
 
 const router = express.Router();
 
+// RBAC через requireClinicPerm("department", ...). Раньше проверки не было —
+// любая роль могла править структуру отделений.
+
 // ─── List departments ─────────────────────────────────────────────────
 // Query: status, branchId, specialty, parentDepartmentId, q
-router.get("/departments", ctrl.listDepartments);
+router.get("/departments", requireClinicPerm("department", "read"), ctrl.listDepartments);
 
 // ─── Create department ─────────────────────────────────────────────────
-router.post("/departments", ctrl.createDepartment);
+router.post("/departments", requireClinicPerm("department", "write"), ctrl.createDepartment);
 
 // ─── Get one ──────────────────────────────────────────────────────────
-router.get("/departments/:id", ctrl.getDepartment);
+router.get("/departments/:id", requireClinicPerm("department", "read"), ctrl.getDepartment);
 
 // ─── Update ───────────────────────────────────────────────────────────
-router.patch("/departments/:id", ctrl.updateDepartment);
+router.patch("/departments/:id", requireClinicPerm("department", "write"), ctrl.updateDepartment);
 
 // ─── Set / unset head (заведующий отделением) ─────────────────────────
 // Body: { headMembershipId: <id|null> }  — null снимает заведующего.
-router.patch("/departments/:id/head", ctrl.setDepartmentHead);
+router.patch("/departments/:id/head", requireClinicPerm("department", "write"), ctrl.setDepartmentHead);
 
 // ─── Archive (soft delete) ────────────────────────────────────────────
 // System "General" department cannot be archived (service enforces).
-router.delete("/departments/:id", ctrl.archiveDepartment);
+router.delete("/departments/:id", requireClinicPerm("department", "delete"), ctrl.archiveDepartment);
 
 export default router;

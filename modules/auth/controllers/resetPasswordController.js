@@ -40,8 +40,13 @@ const resetPassword = async (req, res) => {
   try {
     const user = await User.findOne({ emailHash: hashData(email) });
 
+    // Анти-энумерация: не раскрываем, зарегистрирован ли email. Отвечаем как при
+    // успехе, письмо не отправляем.
     if (!user) {
-      return res.status(400).json({ message: "Invalid email." });
+      return res.status(200).json({
+        message: "OTP password sent to your email successfully.",
+        otpExpiresAt: Date.now() + 5 * 60 * 1000,
+      });
     }
 
     const currentTime = Date.now();
@@ -84,10 +89,7 @@ const resetPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error sending OTP to email: ", error);
-    return res.status(500).json({
-      message: "Failed to send OTP to your email.",
-      error: error.message,
-    });
+    return res.status(500).json({ message: "Failed to send OTP to your email." });
   }
 };
 

@@ -71,21 +71,36 @@ export function tenantScopedPlugin(schema, pluginOptions = {}) {
       const clinicId = getCurrentClinicId();
 
       if (!clinicId) {
-        // No active context → typical for cron jobs, seeds, system tasks
-        if (!opts.allowMissingTenant) {
-          const collectionName =
-            this.mongooseCollection?.name ||
-            schema.options?.collection ||
-            "(unknown)";
-          log.warn(
-            {
-              hook: hookName,
-              collection: collectionName,
-              hasActiveCtx: hasActiveContext(),
-            },
-            `tenantScopedPlugin: ${hookName} on ${collectionName} without clinicId in context`,
-          );
+        // Явный опт-аут (cron/seed, которые ЗНАЮТ, что читают вне арендатора).
+        if (opts.allowMissingTenant) {
+          return next();
         }
+
+        const collectionName =
+          this.mongooseCollection?.name ||
+          schema.options?.collection ||
+          "(unknown)";
+
+        // ВНУТРИ активного запроса, но clinicId не резолвился — это баг/дыра:
+        // раньше запрос шёл БЕЗ фильтра и возвращал данные ВСЕХ клиник
+        // (fail-open). Теперь fail-closed: подставляем невозможный фильтр
+        // (clinicId — required ObjectId, значение null не совпадёт ни с чем),
+        // поэтому find вернёт пусто, а update/delete ничего не тронет.
+        if (hasActiveContext()) {
+          log.error(
+            { hook: hookName, collection: collectionName },
+            `tenantScopedPlugin: ${hookName} on ${collectionName} inside a request without clinicId — fail-closed (empty result)`,
+          );
+          this.where({ clinicId: null });
+          return next();
+        }
+
+        // ВНЕ запроса (cron/seed/worker) — как раньше: предупреждаем и пропускаем.
+        // Такой код должен явно ставить allowMissingTenant либо skipTenantScope.
+        log.warn(
+          { hook: hookName, collection: collectionName, hasActiveCtx: false },
+          `tenantScopedPlugin: ${hookName} on ${collectionName} without clinicId in context (outside request)`,
+        );
         return next();
       }
 

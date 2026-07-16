@@ -23,6 +23,9 @@ const tokenField = z.string().trim().min(1, "Token is required");
 // Шаг 1 — «забыл пароль»: только email.
 export const forgotPasswordSchema = z.object({
   email: z.string().trim().toLowerCase().email("Invalid email format"),
+  // Язык письма = язык, выбранный на странице сейчас. Необязателен: если не
+  // передан или неизвестен, сервис возьмёт язык из профиля сотрудника.
+  language: z.string().trim().optional(),
 });
 
 // Шаг 2 — открытие страницы по ссылке из письма.

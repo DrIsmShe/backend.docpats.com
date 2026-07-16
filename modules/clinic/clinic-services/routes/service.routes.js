@@ -22,24 +22,29 @@
 
 import express from "express";
 import * as ctrl from "../controllers/service.controller.js";
+import { requireClinicPerm } from "../../../../common/middlewares/requireClinicPerm.js";
 
 const router = express.Router();
+
+// RBAC: прайс правят owner/admin/manager (ресурс "service"). Раньше проверки
+// не было — любой сотрудник мог переписать прайс-лист. Чтение открыто всем
+// членам клиники (регистратор/врач должны видеть цены).
 
 // ─── List services ────────────────────────────────────────
 // Query: status, departmentId, branchId, q
 router.get("/services", ctrl.listServices);
 
 // ─── Create service ───────────────────────────────────────
-router.post("/services", ctrl.createService);
+router.post("/services", requireClinicPerm("service", "write"), ctrl.createService);
 
 // ─── Get one ──────────────────────────────────────────────
 router.get("/services/:id", ctrl.getService);
 
 // ─── Update ───────────────────────────────────────────────
-router.patch("/services/:id", ctrl.updateService);
+router.patch("/services/:id", requireClinicPerm("service", "write"), ctrl.updateService);
 
 // ─── Archive (soft delete) ────────────────────────────────
 // System service cannot be archived (service-layer enforces).
-router.delete("/services/:id", ctrl.archiveService);
+router.delete("/services/:id", requireClinicPerm("service", "delete"), ctrl.archiveService);
 
 export default router;

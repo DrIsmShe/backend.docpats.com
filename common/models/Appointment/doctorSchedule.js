@@ -173,8 +173,9 @@ doctorScheduleSchema.methods.generateSlotsForDate = function (dateStr, type) {
 
 /* ============================================================
    🔍 Индекс для уникальности врача
+   doctorId уже задан на уровне поля как unique+index — повторный
+   schema.index давал прод-warning "Duplicate schema index" и убран.
 ============================================================ */
-doctorScheduleSchema.index({ doctorId: 1 }, { unique: true });
 
 /* ============================================================
    📦 Экспорт модели

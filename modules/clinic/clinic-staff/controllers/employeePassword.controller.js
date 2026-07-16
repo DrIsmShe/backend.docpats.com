@@ -50,6 +50,7 @@ export async function forgotPassword(req, res, next) {
 
     await passwordService.requestPasswordReset({
       email: data.email,
+      language: data.language,
       context: requestContext(req),
     });
 

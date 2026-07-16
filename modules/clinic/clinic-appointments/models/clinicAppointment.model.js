@@ -240,6 +240,29 @@ clinicAppointmentSchema.index(
   },
 );
 
+// Гонка двойной записи: два параллельных запроса на ОДИН слот (doctor+startUTC)
+// оба проходят assertNoConflict (check-then-act) и оба вставляются. Уникальный
+// partial-индекс не даёт создать два АКТИВНЫХ приёма с одинаковым началом у
+// одного врача — второй insert упадёт с E11000, который сервис превращает в
+// ConflictError. Ловит самый частый случай гонки (двойной клик по слоту).
+// ВНИМАНИЕ (миграция): перед деплоем убедиться, что среди активных приёмов нет
+// существующих дублей (clinicId+doctorId+startUTC), иначе построение индекса
+// упадёт. Проверка:
+//   db.clinicappointments.aggregate([
+//     { $match: { status: { $in: ["scheduled","checked_in"] } } },
+//     { $group: { _id: { c:"$clinicId", d:"$doctorId", s:"$startUTC" }, n:{$sum:1} } },
+//     { $match: { n: { $gt: 1 } } } ])
+clinicAppointmentSchema.index(
+  { clinicId: 1, doctorId: 1, startUTC: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: { $in: ["scheduled", "checked_in"] },
+    },
+    name: "doctor_slot_unique_active",
+  },
+);
+
 // ─── Plugins ──────────────────────────────────────────────────
 clinicAppointmentSchema.plugin(tenantScopedPlugin);
 clinicAppointmentSchema.plugin(softDeletePlugin);

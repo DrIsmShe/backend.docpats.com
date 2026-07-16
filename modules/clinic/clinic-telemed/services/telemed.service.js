@@ -22,8 +22,14 @@ import {
   ConflictError,
 } from "../../../../common/utils/errors.js";
 import logger from "../../../../common/logger.js";
+import { encryptPHI, decryptFields } from "../../../../common/utils/phiCrypto.js";
 
 const TERMINAL = new Set(["completed", "cancelled", "no_show"]);
+
+// Поля PHI, которые шифруются в этой модели. title НЕ шифруется — по нему идёт
+// regex-поиск (listSessions), а по шифртексту regex невозможен.
+const PHI_FIELDS = ["notes"];
+const decrypt = (doc) => decryptFields(doc, PHI_FIELDS);
 
 // ─── helpers ──────────────────────────────────────────────────────────
 
@@ -123,10 +129,10 @@ export async function createSession(clinicId, input) {
       joinKey,
       meetingUrl,
       patientUserId: input.patientUserId ?? null,
-      notes: input.notes ?? null,
+      notes: encryptPHI(input.notes ?? null),
       createdBy: input.actorId ?? null,
     });
-    return doc.toObject();
+    return decrypt(doc.toObject());
   } catch (err) {
     throw toConflictIfDupKey(err);
   }
@@ -162,7 +168,8 @@ export async function listSessions(clinicId, filters = {}) {
   }
 
   // Soonest first.
-  return TelemedSession.find(query).sort({ scheduledAt: 1 }).lean();
+  const docs = await TelemedSession.find(query).sort({ scheduledAt: 1 }).lean();
+  return docs.map(decrypt);
 }
 
 // ─── getSessionById ─────────────────────────────────────────────────────
@@ -170,7 +177,7 @@ export async function getSessionById(clinicId, id) {
   if (!clinicId) throw new ValidationError("clinicId is required");
   const doc = await TelemedSession.findOne({ _id: id, clinicId }).lean();
   if (!doc) throw new NotFoundError("Telemed session not found");
-  return doc;
+  return decrypt(doc);
 }
 
 // ─── updateSession ─────────────────────────────────────────────────────
@@ -183,7 +190,7 @@ export async function updateSession(clinicId, id, input) {
   const update = {};
 
   if (input.title !== undefined) update.title = input.title;
-  if (input.notes !== undefined) update.notes = input.notes ?? null;
+  if (input.notes !== undefined) update.notes = encryptPHI(input.notes ?? null);
   if (input.durationMinutes !== undefined)
     update.durationMinutes = input.durationMinutes;
   if (input.patientId !== undefined) update.patientId = input.patientId ?? null;
@@ -245,7 +252,7 @@ export async function updateSession(clinicId, id, input) {
     { new: true, runValidators: true },
   ).lean();
   if (!doc) throw new NotFoundError("Telemed session not found");
-  return doc;
+  return decrypt(doc);
 }
 
 // ─── cancelSession (terminal → cancelled) ──────────────────────────────
@@ -263,5 +270,5 @@ export async function cancelSession(clinicId, id) {
     { clinicId: String(clinicId), sessionId: String(id) },
     "telemed session cancelled",
   );
-  return doc;
+  return decrypt(doc);
 }

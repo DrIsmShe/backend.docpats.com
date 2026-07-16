@@ -34,11 +34,15 @@ const BUCKET = process.env.R2_BUCKET;
 //          FULL LIST OF ALLOWED FILE TYPES
 // ============================================================
 
+// SVG намеренно исключён: он scriptable (может содержать <script>/onload) и,
+// если когда-нибудь начнёт отдаваться с того же origin инлайном, даёт stored XSS.
+// Растровые форматы безопаснее (плюс sharp их переэнкодит).
 const ALLOWED_EXT =
-  /\.(jpeg|jpg|png|gif|webp|bmp|tiff|svg|pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|zip|rar|7z|mp3|mp4|avi|mov|mkv|wav|flac|ogg|webm|jfif)$/i;
+  /\.(jpeg|jpg|png|gif|webp|bmp|tiff|pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|zip|rar|7z|mp3|mp4|avi|mov|mkv|wav|flac|ogg|webm|jfif)$/i;
 
+// image/svg+xml исключён из image/ — сузили до конкретных растровых MIME.
 const ALLOWED_MIME =
-  /(image\/|video\/|audio\/|application\/pdf|application\/msword|officedocument|excel|powerpoint|text\/|zip|rar)/i;
+  /(image\/(jpeg|png|gif|webp|bmp|tiff|jfif|x-icon)|video\/|audio\/|application\/pdf|application\/msword|officedocument|excel|powerpoint|text\/|zip|rar)/i;
 
 const storage = multer.memoryStorage();
 

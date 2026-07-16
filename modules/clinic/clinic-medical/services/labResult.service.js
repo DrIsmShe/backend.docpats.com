@@ -13,6 +13,7 @@
 
 import LabResult from "../models/labResult.model.js";
 import PatientConsent from "../../../../common/models/Polyclinic/PatientConsent.js";
+import { encryptPHI, decryptPHI } from "../../../../common/utils/phiCrypto.js";
 import { eventBus, EVENTS } from "../../../../common/events/eventBus.js";
 import {
   NotFoundError,
@@ -138,12 +139,16 @@ function toApiShape(doc) {
       : [],
 
     labName: doc.labName || "",
-    report: doc.report || "",
+    // report / diagnosis.text / comments[].text шифруются в БД (PHI-заключение
+    // врача) — расшифровываем здесь, в единой точке чтения (её же использует
+    // PDF-генератор через getLabResultForPdf). code/codeTitle/labName не
+    // шифруются (ICD-код и название лаборатории — не свободный PHI).
+    report: decryptPHI(doc.report) || "",
     diagnosis: doc.diagnosis
       ? {
           code: doc.diagnosis.code || "",
           codeTitle: doc.diagnosis.codeTitle || "",
-          text: doc.diagnosis.text || "",
+          text: decryptPHI(doc.diagnosis.text) || "",
         }
       : null,
 
@@ -176,7 +181,9 @@ function toApiShape(doc) {
         }
       : null,
 
-    comments: Array.isArray(doc.comments) ? doc.comments : [],
+    comments: Array.isArray(doc.comments)
+      ? doc.comments.map((c) => ({ ...c, text: decryptPHI(c.text) }))
+      : [],
 
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
@@ -246,7 +253,8 @@ export async function createLabResult({ patient, body }) {
     ? {
         code: (body.diagnosis.code || "").trim(),
         codeTitle: (body.diagnosis.codeTitle || "").trim(),
-        text: (body.diagnosis.text || "").trim(),
+        // Свободнотекстовый диагноз — PHI, шифруем перед сохранением.
+        text: encryptPHI((body.diagnosis.text || "").trim()),
       }
     : { code: "", codeTitle: "", text: "" };
 
@@ -267,7 +275,7 @@ export async function createLabResult({ patient, body }) {
       : new Date(),
 
     parameters,
-    report: (body.report || "").trim(),
+    report: encryptPHI((body.report || "").trim()), // PHI-заключение — шифруем
     diagnosis,
     labName: (body.labName || "").trim(),
 
@@ -439,7 +447,7 @@ export async function addLabComment({ record, body = {} }) {
   record.comments.push({
     authorUser: actorType === "employee" ? null : userId,
     authorEmployee: actorType === "employee" ? userId : null,
-    text: text.slice(0, 2000),
+    text: encryptPHI(text.slice(0, 2000)), // PHI-комментарий — шифруем
     createdAt: new Date(),
   });
   await record.save();
