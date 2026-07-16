@@ -9,6 +9,33 @@ import File from "../../../common/models/file.js";
 import Comment from "../../../common/models/Comments/CommentDocpats.js";
 import MedicalHistory from "../../../common/models/Polyclinic/MedicalHistory/newPatientMedicalHistory.js";
 import { decryptPhone } from "../../../common/middlewares/cryptoPhone.js";
+import { auditAdminAccess } from "../adminAudit.js";
+
+/**
+ * Толерантная расшифровка одного поля.
+ *
+ * У части старых записей поля зашифрованы другой схемой (или лежат в legacy-
+ * формате). Такое «битое» поле не должно ронять весь запрос 500-й ошибкой —
+ * возвращаем null и продолжаем. Так же уже сделано для телефонов в историях
+ * (mapHistoriesWithDecryptedDoctorPhone).
+ */
+function safeDecrypt(value) {
+  if (!value) return null;
+  try {
+    return decrypt(value);
+  } catch {
+    return null;
+  }
+}
+
+function safePhone(value) {
+  if (!value) return null;
+  try {
+    return decryptPhone(value);
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Аккуратная расшифровка пользователя
@@ -26,16 +53,10 @@ function buildDecryptedUser(rawUser) {
     pendingNewPasswordHash: undefined,
     otpPassword: undefined,
     activationOtp: undefined,
-    email: rawUser.emailEncrypted ? decrypt(rawUser.emailEncrypted) : null,
-    firstName: rawUser.firstNameEncrypted
-      ? decrypt(rawUser.firstNameEncrypted)
-      : null,
-    lastName: rawUser.lastNameEncrypted
-      ? decrypt(rawUser.lastNameEncrypted)
-      : null,
-    phoneNumber: rawUser.phoneEncrypted
-      ? decrypt(rawUser.phoneEncrypted)
-      : null,
+    email: safeDecrypt(rawUser.emailEncrypted),
+    firstName: safeDecrypt(rawUser.firstNameEncrypted),
+    lastName: safeDecrypt(rawUser.lastNameEncrypted),
+    phoneNumber: safeDecrypt(rawUser.phoneEncrypted),
   };
 }
 
@@ -115,6 +136,14 @@ const UserDetailGetController = async (req, res) => {
 
     const decryptedUser = buildDecryptedUser(userDoc);
 
+    // Аудит доступа к данным пользователя — один раз, до ветвления по роли
+    // (у контроллера три ветки ответа: doctor / patient / default).
+    auditAdminAccess(req, {
+      action: "read",
+      resourceType: "user-account",
+      resourceId: req.params.id,
+    });
+
     /* === Общие данные (для обеих ролей) === */
     const [articles, files, historiesRaw] = await Promise.all([
       Article.find({ authorId: id }).populate("category", "name").lean(),
@@ -168,14 +197,14 @@ const UserDetailGetController = async (req, res) => {
       const allPatients = npcDocs.map((p) => ({
         _id: p.linkedUserId?._id || p._id,
         firstName: p.linkedUserId
-          ? decrypt(p.linkedUserId.firstNameEncrypted)
-          : decrypt(p.firstNameEncrypted),
+          ? safeDecrypt(p.linkedUserId.firstNameEncrypted)
+          : safeDecrypt(p.firstNameEncrypted),
         lastName: p.linkedUserId
-          ? decrypt(p.linkedUserId.lastNameEncrypted)
-          : decrypt(p.lastNameEncrypted),
+          ? safeDecrypt(p.linkedUserId.lastNameEncrypted)
+          : safeDecrypt(p.lastNameEncrypted),
         email: p.linkedUserId?.emailEncrypted
-          ? decrypt(p.linkedUserId.emailEncrypted)
-          : decrypt(p.emailEncrypted),
+          ? safeDecrypt(p.linkedUserId.emailEncrypted)
+          : safeDecrypt(p.emailEncrypted),
         avatar: p.linkedUserId?.avatar || null,
         bio: p.bio,
         birthDate: p.birthDate,
@@ -227,9 +256,9 @@ const UserDetailGetController = async (req, res) => {
       const decryptedDoctors =
         polyclinicProfile?.doctorId?.map((d) => ({
           _id: d._id,
-          firstName: decrypt(d.firstNameEncrypted),
-          lastName: decrypt(d.lastNameEncrypted),
-          email: decrypt(d.emailEncrypted),
+          firstName: safeDecrypt(d.firstNameEncrypted),
+          lastName: safeDecrypt(d.lastNameEncrypted),
+          email: safeDecrypt(d.emailEncrypted),
           role: d.role,
         })) || [];
 
@@ -292,12 +321,10 @@ const UserDetailGetController = async (req, res) => {
       const decryptedPolyclinicProfile = polyclinicProfile
         ? {
             ...polyclinicProfile,
-            firstName: decrypt(polyclinicProfile.firstNameEncrypted),
-            lastName: decrypt(polyclinicProfile.lastNameEncrypted),
-            email: decrypt(polyclinicProfile.emailEncrypted),
-            phone: polyclinicProfile.phoneEncrypted
-              ? decryptPhone(polyclinicProfile.phoneEncrypted)
-              : null,
+            firstName: safeDecrypt(polyclinicProfile.firstNameEncrypted),
+            lastName: safeDecrypt(polyclinicProfile.lastNameEncrypted),
+            email: safeDecrypt(polyclinicProfile.emailEncrypted),
+            phone: safePhone(polyclinicProfile.phoneEncrypted),
             chronicDiseases: polyclinicProfile.chronicDiseases,
             operations: polyclinicProfile.operations,
             allergies: polyclinicProfile.allergies,

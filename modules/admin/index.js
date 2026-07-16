@@ -24,6 +24,11 @@ import patchVerificationyDoctorRoute from "./routes/patchVerificationyDoctorRout
 
 import clinicArticlesModerationRoute from "./routes/clinicArticlesModerationRoute.js";
 import platformClinicEmployeeRoute from "./routes/platformClinicEmployeeRoute.js";
+import adminClinicsRoute from "./routes/adminClinicsRoute.js";
+import adminOverviewRoute from "./routes/adminOverviewRoute.js";
+import adminEntitiesRoute from "./routes/adminEntitiesRoute.js";
+import adminOpsRoute from "./routes/adminOpsRoute.js";
+import adminDatabaseRoute from "./routes/adminDatabaseRoute.js";
 
 // system ADMIN end
 // system ADMIN start
@@ -58,6 +63,16 @@ router.use("/verification", patchVerificationyDoctorRoute);
 // ВИТРИНА 2.0 (Часть 3) — модерация статей клиник (рубильник проекта)
 router.use("/clinic-articles", clinicArticlesModerationRoute);
 router.use("/clinic-workers", platformClinicEmployeeRoute);
+// Платформенное администрирование клиник (список/детали/тариф/блок/удаление)
+router.use("/clinics", adminClinicsRoute);
+// Сводный дашборд платформы + просмотр HIPAA аудит-лога
+router.use("/", adminOverviewRoute);
+// Обзор врачей/приёмов + рассылка уведомлений
+router.use("/", adminEntitiesRoute);
+// Безопасность + модерация отзывов + статус системы
+router.use("/", adminOpsRoute);
+// База данных — сводная аналитика (пациенты/статьи/врачи/пользователи)
+router.use("/database", adminDatabaseRoute);
 //router.use("/admin-panel", isAdminRoute);
 // system ADMIN end
 export default router;

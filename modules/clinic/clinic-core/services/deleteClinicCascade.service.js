@@ -148,6 +148,7 @@ export async function deleteClinicCascade({
   clinicId,
   actorUserId,
   confirmationName,
+  bypassOwnerCheck = false,
 }) {
   if (!mongoose.isValidObjectId(clinicId)) {
     throw new NotFoundError("Clinic not found");
@@ -158,8 +159,12 @@ export async function deleteClinicCascade({
     throw new NotFoundError("Clinic not found");
   }
 
-  // Gate: OWNER only.
-  await assertOwner(clinicId, actorUserId);
+  // Gate: OWNER only — КРОМЕ платформенного админа (bypassOwnerCheck), который
+  // уже прошёл requireAdmin на своём роуте. Подтверждение по имени всё равно
+  // обязательно (ниже), так что случайное удаление исключено.
+  if (!bypassOwnerCheck) {
+    await assertOwner(clinicId, actorUserId);
+  }
 
   // Safety: require the exact clinic name as typed confirmation.
   if (!confirmationName || confirmationName.trim() !== clinic.name) {

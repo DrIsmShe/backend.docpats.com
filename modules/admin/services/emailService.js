@@ -26,3 +26,28 @@ export const sendEmail = async (to, subject, text) => {
     throw error;
   }
 };
+
+// Отправка письма с вложениями (напр. PDF-отчёт аналитики).
+// attachments — массив в формате nodemailer: { filename, content(Buffer), contentType }.
+export const sendEmailWithAttachment = async (
+  to,
+  subject,
+  text,
+  attachments = [],
+) => {
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to,
+    subject,
+    text,
+    attachments,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Email with attachment sent successfully");
+  } catch (error) {
+    console.error("Error sending email with attachment:", error);
+    throw error;
+  }
+};

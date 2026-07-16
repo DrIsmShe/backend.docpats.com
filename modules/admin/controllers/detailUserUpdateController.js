@@ -6,6 +6,22 @@ const detailUserUpdateController = async (req, res) => {
     const { userId } = req.params; // Получение ID пользователя из параметров URL
     const { isDoctor, ...updateData } = req.body; // Извлечение данных из тела запроса
 
+    // Защита от mass-assignment: НЕ позволяем через этот эндпоинт перезаписать
+    // критичные поля. Раньше Object.assign брал ВЕСЬ body — можно было выставить
+    // себе role/isBlocked (эскалация), затереть password (ломает вход) или
+    // хэши/шифртекст (ломает поиск/расшифровку). Роль и блокировка меняются
+    // отдельными эндпоинтами (updateUserRole/blockUser).
+    const FORBIDDEN = [
+      "password", "role", "isAdmin", "isBlocked", "isVerified",
+      "emailHash", "firstNameHash", "lastNameHash", "phoneHash",
+      "emailEncrypted", "firstNameEncrypted", "lastNameEncrypted",
+      "sessions", "twoFactorAuth", "passwordHistory", "pendingNewPasswordHash",
+      "pendingNewEmailEncrypted", "otpPassword", "activationOtp",
+      "access", "permissions", "apiKeys", "subscriptionPlan",
+      "_id", "__v", "createdAt",
+    ];
+    for (const k of FORBIDDEN) delete updateData[k];
+
     // Найти пользователя по ID
     const user = await User.findById(userId);
     if (!user) {

@@ -16,6 +16,7 @@ import translationArticle from "../routes/article.routes.js";
 import translationScientificArticle from "../routes/articleScine.routes.js";
 import surgeryRoutes from "../../modules/surgery/surgicalCase.routes.js";
 import simulationRoutes from "../../modules/surgery/simulation.routes.js";
+import presenceModule from "../../modules/presence/index.js";
 
 const router = Router();
 
@@ -35,5 +36,6 @@ router.use("/doctor-profile", translationArticle);
 router.use("/doctor-profile", translationScientificArticle);
 router.use("/api/surgery", surgeryRoutes);
 router.use("/api/surgery", simulationRoutes);
+router.use("/presence", presenceModule);
 
 export default router;

@@ -6,6 +6,7 @@ import File from "../../../common/models/file.js";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import PatientProfile from "../../../common/models/PatientProfile/patientProfile.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
+import { auditAdminAccess } from "../adminAudit.js";
 
 /**
  * @route   GET /polyclinic/get-all
@@ -109,6 +110,7 @@ export const polyclinicGetController = async (req, res) => {
       })
       .lean();
 
+    auditAdminAccess(req, { action: "list", resourceType: "patient-profile", resourceId: null });
     return res.status(200).json({
       success: true,
       total: {

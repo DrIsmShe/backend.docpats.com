@@ -10,6 +10,7 @@ import MRIScan from "../../../common/models/Polyclinic/ExamenationsTemplates/MRI
 import Angiographyscan from "../../../common/models/Polyclinic/ExamenationsTemplates/AngiographyscanTemplates/Angiographyscan.js";
 import DopplerScan from "../../../common/models/Polyclinic//ExamenationsTemplates/DoplerScansTemplates/DoplerScan.js";
 import PETScan from "../../../common/models/Polyclinic/ExamenationsTemplates/PETScansTemplates/PETScan.js";
+import { auditAdminAccess } from "../adminAudit.js";
 
 /**
  * @route   GET /admin/polyclinic-patient-detail-get/:id
@@ -191,6 +192,7 @@ export const PolyclinicPatientDetailGetController = async (req, res) => {
     ];
 
     // === 6️⃣ Итог ===
+    auditAdminAccess(req, { action: "read", resourceType: "patient-profile", resourceId: req.params.id });
     return res.status(200).json({
       success: true,
       data: {

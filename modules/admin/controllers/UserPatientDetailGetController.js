@@ -8,6 +8,7 @@ import Article from "../../../common/models/Articles/articles.js";
 import File from "../../../common/models/file.js";
 import Comment from "../../../common/models/Comments/CommentDocpats.js";
 import MedicalHistory from "../../../common/models/Polyclinic/MedicalHistory/newPatientMedicalHistory.js";
+import { auditAdminAccess } from "../adminAudit.js";
 
 /**
  * @route   GET /admin/user-patient-detail-get/:id
@@ -260,6 +261,7 @@ export const UserPatientDetailGetController = async (req, res) => {
     };
 
     // === 🔟 Финальный ответ ===
+    auditAdminAccess(req, { action: "read", resourceType: "patient-profile", resourceId: req.params.id });
     return res.status(200).json({
       success: true,
       user: decryptedUser,

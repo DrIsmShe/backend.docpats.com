@@ -11,8 +11,56 @@ import {
 } from "../chat-translation/messageTranslation.service.js";
 import { createSocketRateLimiter } from "../../../common/utils/socketRateLimit.js";
 import { recordActionAsync } from "../../audit/index.js";
+import User from "../../../common/models/Auth/users.js";
 
 let ioInstance = null;
+let presenceSweepTimer = null;
+
+/**
+ * Presence в БД. Список пользователей (getUsersListController) считает статус
+ * по User.lastActive: свежее 2 мин → online, 2–15 мин → away, дальше → offline.
+ * Поэтому пока жив сокет, lastActive нужно периодически освежать.
+ * «invisible» не раскрываем — обновляем только активность, статус не трогаем.
+ */
+async function setUserPresence(userId, online) {
+  try {
+    await User.updateOne(
+      { _id: userId, status: { $ne: "invisible" } },
+      { $set: { status: online ? "online" : "offline", lastActive: new Date() } },
+    );
+    await User.updateOne(
+      { _id: userId, status: "invisible" },
+      { $set: { lastActive: new Date() } },
+    );
+  } catch (e) {
+    console.warn("[presence] update failed:", e.message);
+  }
+}
+
+/**
+ * Периодически освежает lastActive всех подключённых пользователей.
+ * userId берём из персональных комнат "user:<id>" — fetchSockets() не
+ * сохраняет socket.user, а комнаты доступны в адаптере.
+ */
+async function presenceSweep(nsp) {
+  try {
+    const ids = [];
+    for (const room of nsp.adapter.rooms.keys()) {
+      if (room.startsWith("user:")) ids.push(room.slice(5));
+    }
+    if (!ids.length) return;
+    await User.updateMany(
+      { _id: { $in: ids }, status: { $ne: "invisible" } },
+      { $set: { status: "online", lastActive: new Date() } },
+    );
+    await User.updateMany(
+      { _id: { $in: ids }, status: "invisible" },
+      { $set: { lastActive: new Date() } },
+    );
+  } catch (e) {
+    console.warn("[presence] sweep failed:", e.message);
+  }
+}
 
 // ─── Rate limiters per event type ─────────────────────────────────────
 // Каждое событие имеет свой счётчик независимый от других.
@@ -85,6 +133,10 @@ export async function getDialogsForUser(userId) {
 export function initCommunicationGateway(nsp) {
   ioInstance = nsp;
 
+  // Держим presence живым, пока есть подключённые сокеты (каждые 60с).
+  if (presenceSweepTimer) clearInterval(presenceSweepTimer);
+  presenceSweepTimer = setInterval(() => presenceSweep(nsp), 60_000);
+
   nsp.use((socket, next) => {
     const session = socket.request.session;
     if (!session || !session.userId) {
@@ -103,6 +155,8 @@ export function initCommunicationGateway(nsp) {
     socket.join(`user:${userId}`);
 
     nsp.emit("user:online", { userId });
+    // Отмечаем online в БД сразу, не дожидаясь ближайшего sweep.
+    setUserPresence(userId, true);
 
     // ======================================================
     // JOIN DIALOG
@@ -647,9 +701,18 @@ export function initCommunicationGateway(nsp) {
     // ======================================================
     // DISCONNECT
     // ======================================================
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       console.log("❌ SOCKET DISCONNECTED:", userId);
       nsp.emit("user:offline", { userId });
+      // Offline только если у пользователя не осталось других вкладок/сокетов.
+      try {
+        const remaining = await nsp.in(`user:${userId}`).fetchSockets();
+        if (remaining.length === 0) {
+          await setUserPresence(userId, false);
+        }
+      } catch (e) {
+        console.warn("[presence] disconnect update failed:", e.message);
+      }
     });
   });
 }
