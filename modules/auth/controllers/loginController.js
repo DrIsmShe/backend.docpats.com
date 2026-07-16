@@ -97,12 +97,10 @@ export const loginUser = async (req, res) => {
     }
 
     // === СЕССИЯ ===
-    // Защита от session fixation: после успешной аутентификации выдаём НОВЫЙ
-    // session id, чтобы cookie, подсунутая жертве до входа, стала бесполезной.
-    await new Promise((resolve, reject) => {
-      req.session.regenerate((err) => (err ? reject(err) : resolve()));
-    });
-
+    // NB: session.regenerate() здесь ломало вход в cross-origin проде
+    // (Netlify docpats.com → backend.docpats.com, sameSite=none): новая сессия
+    // не персистилась и пользователя выкидывало. Защиту от session fixation
+    // нужно возвращать отдельно и аккуратно под текущую cookie-конфигурацию.
     req.session.cookie.maxAge = remember
       ? 30 * 24 * 60 * 60 * 1000
       : 14 * 24 * 60 * 60 * 1000;
