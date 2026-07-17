@@ -75,13 +75,13 @@ const normalizeGenderForModels = (v) => {
 /* controller */
 const profileMainUpdatePatientController = async (req, res) => {
   try {
-    const { userId, avatar, username, dateOfBirth, bio, phoneNumber } =
-      req.body || {};
+    // 🔒 БЕЗОПАСНОСТЬ: userId берём ТОЛЬКО из сессии (authMiddleware), не из тела —
+    // иначе можно править чужой профиль.
+    const userId = req.userId;
+    const { avatar, username, dateOfBirth, bio, phoneNumber } = req.body || {};
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res
-        .status(400)
-        .json({ message: "Некорректный формат ID пользователя." });
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({ message: "Требуется авторизация." });
     }
 
     const user = await User.findById(userId);

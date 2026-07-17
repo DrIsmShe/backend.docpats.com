@@ -1,5 +1,6 @@
 // server/modules/patientProfile/controllers/getMyCoronographyScanFilesDetailsController.js
 import mongoose from "mongoose";
+import { canAccessPatientRecord } from "../utils/phiAccess.js";
 
 // ⚠️ Проверьте путь к модели под вашу структуру проекта!
 // Например, если модель лежит в server/common/models/CoronographyScan.js:
@@ -91,6 +92,11 @@ export default async function getMyCoronographyScanFilesDetailsController(
 
     if (!doc) {
       return res.status(404).json({ ok: false, error: "NOT_FOUND" });
+    }
+
+    // 🔒 PHI-доступ: только владелец-пациент, врач-создатель или админ.
+    if (!canAccessPatientRecord(req, doc)) {
+      return res.status(403).json({ ok: false, error: "FORBIDDEN" });
     }
 
     // Нормализованный ответ

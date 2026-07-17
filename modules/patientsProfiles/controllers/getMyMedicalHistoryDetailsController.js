@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import newPatientMedicalHistoryModel from "../../../common/models/Polyclinic/MedicalHistory/newPatientMedicalHistory.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
+import { canAccessPatientRecord } from "../utils/phiAccess.js";
 
 // Sub-record models (patient-attribute records: chronic / allergies / etc.)
 import ChronicDiseasesPatient from "../../../common/models/Polyclinic/MedicalHistory/chronicDiseasesPatient.js";
@@ -249,6 +250,13 @@ const getMyMedicalHistoryDetailsController = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "История болезни не найдена" });
+    }
+
+    // 🔒 PHI-доступ: только владелец-пациент, врач-создатель или админ.
+    if (!canAccessPatientRecord(req, history)) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Доступ запрещён" });
     }
 
     /* ───── врач ───── */

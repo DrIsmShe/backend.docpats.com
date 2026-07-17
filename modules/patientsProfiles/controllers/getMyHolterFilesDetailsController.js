@@ -1,5 +1,6 @@
 // server/modules/patientProfile/controllers/getMyHolterFilesDetailsController.js
 import mongoose from "mongoose";
+import { canAccessPatientRecord } from "../utils/phiAccess.js";
 import HOLTERScan from "../../../common/models/Polyclinic/ExamenationsTemplates/HOLTERscanTemplates/HOLTERscan.js";
 // ^^^ проверьте и поправьте путь к модели при необходимости
 
@@ -84,6 +85,11 @@ export default async function getMyHolterFilesDetailsController(req, res) {
 
     if (!doc) {
       return res.status(404).json({ ok: false, error: "NOT_FOUND" });
+    }
+
+    // 🔒 PHI-доступ: только владелец-пациент, врач-создатель или админ.
+    if (!canAccessPatientRecord(req, doc)) {
+      return res.status(403).json({ ok: false, error: "FORBIDDEN" });
     }
 
     // Нормализованный ответ

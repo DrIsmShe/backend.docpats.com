@@ -21,8 +21,7 @@ const changePasswordProfileOfPatientController = async (req, res) => {
         .json({ message: "Пожалуйста, войдите в систему." });
     }
 
-    console.log("Контроллер changePasswordProfileOfPatientController вызван");
-    console.log("Данные запроса:", req.body);
+    // H-2: НЕ логируем req.body — там пароли (утечка секретов в логи).
 
     if (!currentPassword || !newPassword || !renewPassword) {
       return res.status(400).json({ message: "Все поля обязательны." });

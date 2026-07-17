@@ -1,5 +1,6 @@
 // server/modules/ginecology/controllers/getMyGinecologyFilesDetailsController.js
 import mongoose from "mongoose";
+import { canAccessPatientRecord } from "../utils/phiAccess.js";
 import GinecologyScan from "../../../common/models/Polyclinic/ExamenationsTemplates/GinecologyTemplates/Ginecology.js";
 // ^ проверьте точный путь к модели GinecologyScan
 
@@ -86,6 +87,11 @@ export default async function getMyGinecologyFilesDetailsController(req, res) {
 
     if (!doc) {
       return res.status(404).json({ ok: false, error: "NOT_FOUND" });
+    }
+
+    // 🔒 PHI-доступ: только владелец-пациент, врач-создатель или админ.
+    if (!canAccessPatientRecord(req, doc)) {
+      return res.status(403).json({ ok: false, error: "FORBIDDEN" });
     }
 
     // Нормализованный ответ
