@@ -2,6 +2,7 @@
 
 import express from "express";
 import isAuthenticated from "../../../../common/middlewares/authvalidateMiddleware/authMiddleware.js"; // если используется export default
+import { commentLimiter } from "../../../../common/middlewares/rateLimiter.js";
 
 import {
   toggleArticleLike,
@@ -20,25 +21,27 @@ const router = express.Router();
  * @desc    Toggle like for an article
  * @access  Protected
  */
-router.post("/article/:articleId", isAuthenticated, toggleArticleLike);
+router.post("/article/:articleId", isAuthenticated, commentLimiter, toggleArticleLike);
 
 /**
  * @route   POST /api/likes/doctor/:doctorId
  * @desc    Toggle like for a doctor
  * @access  Protected
  */
-router.post("/doctor/:doctorId", isAuthenticated, toggleDoctorLike);
+router.post("/doctor/:doctorId", isAuthenticated, commentLimiter, toggleDoctorLike);
 
 router.get("/status/:targetType/:targetId", isAuthenticated, getLikeStatus);
 
 router.post(
   "/scientific-article/:articleId",
   isAuthenticated,
+  commentLimiter,
   toggleArticleScientificLike,
 );
 router.post(
   "/scientific-doctor/:doctorId",
   isAuthenticated,
+  commentLimiter,
   toggleDoctorScientificLike,
 );
 

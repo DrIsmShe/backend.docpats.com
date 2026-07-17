@@ -44,4 +44,17 @@ export const passwordResetLimiter = rateLimit({
   message: { error: "Too many password reset requests. Try again later." },
 });
 
+/**
+ * Тормоз для создания комментариев / лайков (защита от спама). Действия под
+ * авторизацией, но без лимита можно было заваливать контентом/уведомлениями.
+ */
+export const commentLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipInTests,
+  message: { error: "Too many actions. Please slow down." },
+});
+
 export default emailLimiter;

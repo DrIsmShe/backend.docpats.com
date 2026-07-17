@@ -15,6 +15,19 @@ export const createComment = async (req, res) => {
     } = req.body;
     const userId = req.user._id;
 
+    // Валидация контента ДО любой обработки (иначе .toLowerCase() на undefined → 500).
+    if (typeof content !== "string" || !content.trim()) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Комментарий не может быть пустым" });
+    }
+    if (content.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: "Комментарий слишком длинный (макс. 1000 символов)",
+      });
+    }
+
     // 🚫 Проверка на оскорбления
     const forbiddenWords = [
       "дурак",
@@ -389,7 +402,6 @@ export const getCommentsByRef = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Ошибка при получении комментариев",
-      error: err.message,
     });
   }
 };
@@ -400,6 +412,18 @@ export const updateComment = async (req, res) => {
     const { commentId } = req.params;
     const { content } = req.body;
     const userId = req.user._id;
+
+    if (typeof content !== "string" || !content.trim()) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Комментарий не может быть пустым" });
+    }
+    if (content.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: "Комментарий слишком длинный (макс. 1000 символов)",
+      });
+    }
 
     const comment = await Comment.findById(commentId);
     if (!comment)
@@ -427,7 +451,6 @@ export const updateComment = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Ошибка при редактировании",
-      error: err.message,
     });
   }
 };
@@ -459,7 +482,6 @@ export const deleteComment = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Ошибка при удалении",
-      error: err.message,
     });
   }
 };
@@ -489,7 +511,6 @@ export const toggleLike = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Ошибка при лайке",
-      error: err.message,
     });
   }
 };
@@ -517,7 +538,6 @@ export const getCommentCountBulk = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Ошибка сервера",
-      error: err.message,
     });
   }
 };
