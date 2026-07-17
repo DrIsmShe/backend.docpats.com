@@ -17,6 +17,11 @@ const NEWS_ENGINE_URL =
   process.env.NEWS_ENGINE_URL ||
   (isProduction ? "https://news-api.docpats.com" : "http://localhost:5010");
 
+// Новости лежат в отдельной базе того же Mongo-кластера (news-api их туда
+// пишет). Читаем напрямую из Mongo, т.к. HTTP-API news-api отдаёт максимум
+// ~500 записей и не умеет пагинацию — из БД же берём все.
+const NEWS_DB_NAME = process.env.NEWS_DB_NAME || "DOCPATS_AI_NEWS";
+
 const LANGS = ["ru", "en", "az", "tr", "ar"];
 
 // Кэш 1 час
@@ -150,28 +155,25 @@ async function fetchDoctors() {
 // Один URL + hreflang (все языки на один URL)
 async function fetchNews() {
   try {
-    // news-api отдаёт максимум ~500 записей за запрос: при limit>=1000 он
-    // возвращает 500 Internal Server Error, а page/skip/offset игнорирует
-    // (пагинации нет). Поэтому берём limit=500 — это максимум, который сервис
-    // отдаёт стабильно. Раньше стоял 5000 → каждый вызов падал и в sitemap
-    // не попадала НИ ОДНА новость. TODO: снять ограничение, когда news-api
-    // научится пагинации/большим лимитам (сейчас всего ~7600 новостей).
-    const { data } = await axios.get(`${NEWS_ENGINE_URL}/api/news`, {
-      params: { limit: 500 },
-      timeout: 8000,
-    });
-    const items = data?.items || data?.news || data?.data || [];
+    // Читаем ВСЕ опубликованные новости напрямую из Mongo (все 7600+), а не
+    // через HTTP-API news-api (тот отдаёт максимум ~500 и не умеет пагинацию).
+    const db = mongoose.connection.getClient().db(NEWS_DB_NAME);
+    const items = await db
+      .collection("news")
+      .find(
+        { status: "published", slug: { $exists: true, $ne: null } },
+        { projection: { slug: 1, updatedAt: 1, publishedAt: 1 } },
+      )
+      .toArray();
 
-    return items
-      .filter((n) => n.slug || n._id)
-      .map((n) =>
-        urlWithHreflang({
-          loc: `${FRONTEND_URL}/news/${encodeURIComponent(n.slug || n._id)}`,
-          lastmod: toW3cDate(n.updatedAt || n.publishedAt),
-          changefreq: "weekly",
-          priority: "0.7",
-        }),
-      );
+    return items.map((n) =>
+      urlWithHreflang({
+        loc: `${FRONTEND_URL}/news/${encodeURIComponent(n.slug)}`,
+        lastmod: toW3cDate(n.updatedAt || n.publishedAt),
+        changefreq: "weekly",
+        priority: "0.7",
+      }),
+    );
   } catch (err) {
     console.error("[sitemap] fetchNews:", err.message);
     return [];
