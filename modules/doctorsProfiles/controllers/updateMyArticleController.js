@@ -8,6 +8,16 @@ const updateMyArticleController = async (req, res) => {
     const existed = await Article.findById(id);
     if (!existed) return res.status(404).json({ message: "Article not found" });
 
+    // 🔒 БЕЗОПАСНОСТЬ: править может ТОЛЬКО автор статьи или админ.
+    const isAdmin = req.user?.role === "admin";
+    const isOwner =
+      existed.authorId && String(existed.authorId) === String(req.userId);
+    if (!isAdmin && !isOwner) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: you are not the author of this article." });
+    }
+
     const updateFields = {
       title: req.body.title,
       content: req.body.content,
