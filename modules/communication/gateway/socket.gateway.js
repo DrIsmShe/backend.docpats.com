@@ -149,7 +149,6 @@ export function initCommunicationGateway(nsp) {
   nsp.on("connection", (socket) => {
     const userId = socket.user.id;
 
-    console.log("🔥 SOCKET CONNECTED:", userId);
 
     // Личная комната для каждого пользователя (для push событий)
     socket.join(`user:${userId}`);
@@ -178,7 +177,6 @@ export function initCommunicationGateway(nsp) {
         });
 
         if (!isParticipant) {
-          console.log("❌ NOT PARTICIPANT:", userId, dialogId);
 
           // ✅ AUDIT — denied access (важно для security аналитики)
           recordActionAsync({
@@ -194,7 +192,6 @@ export function initCommunicationGateway(nsp) {
         }
 
         socket.join(`room:dialog:${dialogId}`);
-        console.log("✅ JOIN:", dialogId);
 
         // ✅ AUDIT — join success
         recordActionAsync({
@@ -230,7 +227,6 @@ export function initCommunicationGateway(nsp) {
     socket.on("dialog:leave", ({ dialogId }) => {
       if (!dialogId) return;
       socket.leave(`room:dialog:${dialogId}`);
-      console.log("🚪 LEFT:", dialogId);
     });
 
     // ======================================================
@@ -291,7 +287,6 @@ export function initCommunicationGateway(nsp) {
           return;
         }
 
-        console.log("MESSAGE SEND:", payload);
 
         const peerId = await getPeerIdInDialog(dialogId, userId);
         const { blocked, reason } = await checkBlockBetween(userId, peerId);
@@ -383,7 +378,6 @@ export function initCommunicationGateway(nsp) {
     // DELETE MESSAGE (без лимита — редкое действие)
     // ======================================================
     socket.on("message:delete", async ({ messageId }) => {
-      console.log("🗑 DELETE REQUEST:", messageId, "from", userId);
       try {
         if (!messageId) return;
 
@@ -702,7 +696,6 @@ export function initCommunicationGateway(nsp) {
     // DISCONNECT
     // ======================================================
     socket.on("disconnect", async () => {
-      console.log("❌ SOCKET DISCONNECTED:", userId);
       nsp.emit("user:offline", { userId });
       // Offline только если у пользователя не осталось других вкладок/сокетов.
       try {

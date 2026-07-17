@@ -57,10 +57,6 @@ export const saveCallRecord = async (data = {}) => {
     }
 
     if (existing) {
-      console.log(
-        "🔁 [saveCallRecord] Обновляем существующий лог:",
-        existing._id
-      );
 
       const updated = await CallLog.findByIdAndUpdate(
         existing._id,
@@ -87,7 +83,6 @@ export const saveCallRecord = async (data = {}) => {
         { new: true }
       );
 
-      console.log("✅ [saveCallRecord] Запись обновлена:", updated._id);
       return updated;
     }
 
@@ -114,20 +109,6 @@ export const saveCallRecord = async (data = {}) => {
       status,
     });
 
-    console.log("✅ [saveCallRecord] Новый звонок сохранён:", newLog._id);
-    console.log("🧾 [saveCallRecord] Данные для записи:", {
-      callSessionId: sessionId,
-      caller,
-      callee,
-      callerUserId,
-      calleeUserId,
-      callerName,
-      calleeName,
-      callerConnectionQuality: normalizedCallerQuality,
-      calleeConnectionQuality: normalizedCalleeQuality,
-      durationSec,
-      type,
-    });
 
     return newLog;
   } catch (err) {

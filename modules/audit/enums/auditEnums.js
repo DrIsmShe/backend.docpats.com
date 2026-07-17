@@ -60,6 +60,8 @@ export const ACTION_ENUM = [
   "chat.message.delete",
   "chat.message.upload",
   "chat.message.export",
+  // Видеозвонки (Jitsi): выдача токена доступа к видеокомнате диалога.
+  "communication.video.token",
 
   // ═══════════ ANTHROPOMETRY ═══════════
   // Сохраняем те же что в anthropometry-модуле — для совместимости
@@ -351,6 +353,7 @@ export const RESOURCE_TYPE_ENUM = [
   // Communication
   "chat-message",
   "chat-dialog",
+  "video-room",
 
   // Anthropometry (совместимость с существующими ресурсами)
   "PatientCase",

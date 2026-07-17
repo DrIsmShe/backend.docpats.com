@@ -24,9 +24,9 @@ router.post(
   auditMiddleware({
     resourceType: "video-room",
     action: "communication.video.token",
-    // The room id is known only from the body; record kind+id (no PHI).
-    resourceIdFrom: (req) =>
-      req.body?.id ? `${req.body?.kind}-${req.body.id}` : null,
+    // resourceId — чистый ObjectId диалога (поле аудита ждёт ObjectId).
+    // Тип комнаты (kind) уходит в metadata, а не в resourceId.
+    resourceIdFrom: (req) => req.body?.id || null,
     metaFrom: (req) => ({
       kind: req.body?.kind || null,
     }),

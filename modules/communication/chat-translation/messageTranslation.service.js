@@ -353,9 +353,6 @@ export function prefetchMessageTranslations({
           translatedTextEncrypted: encryptMessageText(translated),
           isPrefetch: true,
         });
-        console.log(
-          `[chatTranslation] prefetch ✓ msg=${messageId} lang=${lang}`,
-        );
       } catch (err) {
         console.error(
           `[chatTranslation] prefetch ✗ msg=${messageId} lang=${lang}:`,

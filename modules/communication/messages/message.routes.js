@@ -20,9 +20,6 @@ const PENALTIES_SEC = [60, 300, 900, 3600];
 
 function httpRateLimit(req, res, next) {
   const userId = String(req.user?._id || req.user?.id || req.ip);
-  console.log(
-    `[HTTP-RL] userId=${userId} timestamps=${httpRateStore.get(userId)?.timestamps?.length ?? 0} blocked=${httpRateStore.get(userId)?.blockedUntil ?? 0 > Date.now()}`,
-  );
   const now = Date.now();
 
   if (!httpRateStore.has(userId)) {
@@ -83,9 +80,6 @@ setInterval(() => {
     }
   }
   if (cleaned > 0) {
-    console.log(
-      `🧹 HTTP RateLimit cleanup: removed ${cleaned} inactive entries (size=${httpRateStore.size})`,
-    );
   }
 }, CLEANUP_INTERVAL_MS);
 
@@ -205,7 +199,6 @@ router.post(
       const nsp = io?.of("/communication");
 
       if (nsp) {
-        console.log("📡 EMIT TO ROOM:", finalDialogId);
         nsp.to(`room:dialog:${finalDialogId}`).emit("message:new", {
           dialogId: finalDialogId,
           tempId: null,
@@ -272,9 +265,6 @@ router.post(
                 .to(recipientId)
                 .emit("new_notification", notificationPayload);
             }
-            console.log(
-              `🔔 SAVED + EMITTED new_notification → user:${recipientId}`,
-            );
           }
         } catch (notifyErr) {
           console.error("notify error:", notifyErr);

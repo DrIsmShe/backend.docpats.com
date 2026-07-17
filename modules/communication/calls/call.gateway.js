@@ -40,9 +40,6 @@ export function initCallGateway(nsp) {
             isRemoved: { $ne: true },
           });
           if (!isParticipant) {
-            console.log(
-              `❌ call:initiate — userId ${userId} не участник диалога ${dialogId}`,
-            );
             return;
           }
 
@@ -85,9 +82,6 @@ export function initCallGateway(nsp) {
             // не прерываем звонок из-за ошибки лога
           }
 
-          console.log(
-            `📞 call:initiate callId=${callId} ${userId} → ${calleeIdStr}`,
-          );
 
           // Notify callee — ВАЖНО: callee должен быть в room user:{calleeId}
           // Это обеспечивает socket_gateway.js: socket.join(`user:${userId}`)
@@ -119,7 +113,6 @@ export function initCallGateway(nsp) {
               CallLogModel.findByIdAndUpdate(session.logId, {
                 status: "missed",
               }).catch(() => {});
-              console.log(`📞 call:no_answer callId=${callId}`);
             }
           }, 45_000);
         } catch (err) {
@@ -135,25 +128,19 @@ export function initCallGateway(nsp) {
       try {
         const session = activeCalls.get(callId);
         if (!session) {
-          console.log(`❌ call:accept — callId ${callId} не найден`);
           return;
         }
         if (session.status !== "ringing") {
-          console.log(`❌ call:accept — неверный статус: ${session.status}`);
           return;
         }
         // String() сравнение — главный баг был здесь
         if (String(session.calleeId) !== userId) {
-          console.log(
-            `❌ call:accept — userId mismatch: session.calleeId=${session.calleeId}, userId=${userId}`,
-          );
           return;
         }
 
         session.status = "active";
         session.startedAt = new Date();
 
-        console.log(`✅ call:accept callId=${callId}`);
 
         nsp.to(`user:${String(session.callerId)}`).emit("call:accepted", {
           callId,
@@ -176,7 +163,6 @@ export function initCallGateway(nsp) {
         session.status = "declined";
         activeCalls.delete(callId);
 
-        console.log(`❌ call:decline callId=${callId}`);
 
         nsp
           .to(`user:${String(session.callerId)}`)
@@ -203,7 +189,6 @@ export function initCallGateway(nsp) {
 
         activeCalls.delete(callId);
 
-        console.log(`🚫 call:cancel callId=${callId}`);
 
         nsp
           .to(`user:${String(session.calleeId)}`)
@@ -239,7 +224,6 @@ export function initCallGateway(nsp) {
 
         activeCalls.delete(callId);
 
-        console.log(`📵 call:end callId=${callId} duration=${durationSec}s`);
 
         const peerId =
           String(session.callerId) === userId

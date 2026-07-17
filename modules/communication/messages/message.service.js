@@ -25,13 +25,6 @@ export async function getMessagesForDialog({
   after,
   limit,
 }) {
-  console.log("💡 getMessagesForDialog", {
-    userId,
-    dialogId,
-    before,
-    after,
-    limit,
-  });
   const dialogObjectId = new mongoose.Types.ObjectId(dialogId);
   const userObjectId = new mongoose.Types.ObjectId(userId);
   // 1. Проверяем, что пользователь участвует в диалоге
@@ -41,7 +34,6 @@ export async function getMessagesForDialog({
     isRemoved: { $ne: true },
   });
 
-  console.log("💡 participant in dialog?", !!participant);
 
   if (!participant) {
     const err = new Error("Forbidden");
