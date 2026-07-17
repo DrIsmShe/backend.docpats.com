@@ -17,7 +17,8 @@ const AllDoctorArticlesController = async (req, res) => {
         .json({ success: false, message: "Не авторизован" });
     }
 
-    if (!["doctor", "patient"].includes(req.session.role)) {
+    // admin — на чтение (инспекция/модерация статей врачей из админ-панели).
+    if (!["doctor", "patient", "admin"].includes(req.session.role)) {
       console.warn(`⚠️ Доступ запрещен! Роль: ${req.session.role}`);
       return res
         .status(403)
