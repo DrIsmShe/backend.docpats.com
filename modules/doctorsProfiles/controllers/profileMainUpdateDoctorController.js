@@ -25,6 +25,23 @@ const updateMainProfileControllerDoctor = async (req, res) => {
       });
     }
 
+    // 🔒 Уникальность username — обязательна. Проверяем, что новый username не
+    // занят другим пользователем (unique-индекс в модели — вторая линия защиты).
+    if (username && username.trim() !== user.username) {
+      const taken = await User.findOne({
+        username: username.trim(),
+        _id: { $ne: userId },
+      })
+        .select("_id")
+        .lean();
+      if (taken) {
+        return res.status(409).json({
+          message: "This username is already taken.",
+          code: "USERNAME_TAKEN",
+        });
+      }
+    }
+
     if (bio && bio.length > 500) {
       return res
         .status(400)
@@ -62,6 +79,13 @@ const updateMainProfileControllerDoctor = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating profile:", error);
+    // Подстраховка от гонки: если unique-индекс отклонил дубликат username.
+    if (error?.code === 11000 && error?.keyPattern?.username) {
+      return res.status(409).json({
+        message: "This username is already taken.",
+        code: "USERNAME_TAKEN",
+      });
+    }
     // Не раскрываем внутренние детали ошибки клиенту.
     res.status(500).json({ message: "Error on the server" });
   }
