@@ -4,6 +4,14 @@ import crypto from "crypto";
 const hashData = (data) =>
   crypto.createHash("sha256").update(String(data).toLowerCase()).digest("hex");
 
+// Сравнение OTP за постоянное время (защита от timing-атаки).
+const otpMatches = (provided, stored) => {
+  if (!provided || !stored) return false;
+  const a = crypto.createHash("sha256").update(String(provided).trim()).digest();
+  const b = crypto.createHash("sha256").update(String(stored).trim()).digest();
+  return crypto.timingSafeEqual(a, b);
+};
+
 export const confirmationChildeController = async (req, res) => {
   try {
     const { email, childOtp, parentOtp } = req.body;
@@ -15,8 +23,12 @@ export const confirmationChildeController = async (req, res) => {
     const emailHash = hashData(email);
     const user = await User.findOne({ emailHash });
 
+    // Анти-энумерация: не раскрываем, существует ли детский аккаунт —
+    // тот же ответ, что и на неверный код.
     if (!user || !user.isChild) {
-      return res.status(400).json({ message: "Child account not found." });
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired confirmation code." });
     }
 
     // -----------------------------------------
@@ -24,13 +36,13 @@ export const confirmationChildeController = async (req, res) => {
     // -----------------------------------------
     if (childOtp) {
       if (
-        user.otpPassword !== childOtp || // ← СРАВНИВАЕМ С otpPassword
+        !otpMatches(childOtp, user.otpPassword) || // constant-time сравнение
         !user.otpExpiresAt ||
         user.otpExpiresAt < Date.now()
       ) {
         return res
           .status(400)
-          .json({ message: "Invalid or expired child OTP." });
+          .json({ message: "Invalid or expired confirmation code." });
       }
 
       // очищаем код ребёнка
@@ -51,13 +63,13 @@ export const confirmationChildeController = async (req, res) => {
     // -----------------------------------------
     if (parentOtp) {
       if (
-        user.parentOtp !== parentOtp ||
+        !otpMatches(parentOtp, user.parentOtp) || // constant-time сравнение
         !user.parentOtpExpires ||
         user.parentOtpExpires < Date.now()
       ) {
         return res
           .status(400)
-          .json({ message: "Invalid or expired parent OTP." });
+          .json({ message: "Invalid or expired confirmation code." });
       }
 
       user.parentOtp = null;
@@ -78,9 +90,7 @@ export const confirmationChildeController = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error in confirmationChildeController:", error);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
-    });
+    // Не раскрываем внутренние детали ошибки клиенту.
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

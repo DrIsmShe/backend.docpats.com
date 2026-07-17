@@ -424,6 +424,9 @@ const userSchema = new mongoose.Schema(
     pendingNewEmailEncrypted: { type: String, default: null },
     pendingNewPasswordHash: { type: String, default: null },
     otpPassword: { type: String },
+    // M-1: счётчик неверных попыток ввода OTP (сброс/смена пароля).
+    // После лимита код гасится, чтобы его нельзя было добить перебором.
+    otpAttempts: { type: Number, default: 0 },
     lastLoginAt: { type: Date, default: null },
 
     isVerified: { type: Boolean, default: false },

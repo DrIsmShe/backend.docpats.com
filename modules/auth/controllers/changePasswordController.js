@@ -93,6 +93,21 @@ const changePasswordController = async (req, res) => {
       !notExpired ||
       !otpMatches(otpPassword, existingUser.otpPassword)
     ) {
+      // M-1: считаем неверные попытки; после лимита гасим код, чтобы его нельзя
+      // было добить распределённым перебором.
+      if (existingUser.otpPassword && notExpired) {
+        existingUser.otpAttempts = (existingUser.otpAttempts || 0) + 1;
+        if (existingUser.otpAttempts >= 5) {
+          existingUser.otpPassword = null;
+          existingUser.otpExpiresAt = null;
+          existingUser.otpAttempts = 0;
+        }
+        try {
+          await existingUser.save({ validateModifiedOnly: true });
+        } catch (e) {
+          console.error("❌ Не удалось сохранить счётчик попыток OTP");
+        }
+      }
       return res
         .status(400)
         .json({ message: "Invalid or expired confirmation code." });
@@ -123,14 +138,15 @@ const changePasswordController = async (req, res) => {
     // повторно.
     existingUser.otpPassword = null;
     existingUser.otpExpiresAt = null;
+    existingUser.otpAttempts = 0; // M-1: сбрасываем счётчик попыток
     await existingUser.save();
 
     return res.status(200).json({ message: "Password successfully changed." });
   } catch (error) {
     console.error("Error changing password: ", error);
+    // M-3: не раскрываем внутренние детали ошибки клиенту.
     return res.status(500).json({
       message: "An error occurred while changing the password.",
-      error: error.message,
     });
   }
 };

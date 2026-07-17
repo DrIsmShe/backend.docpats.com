@@ -24,6 +24,9 @@ export const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipInTests,
+  // Считаем только НЕУДАЧНЫЕ попытки (ответ >= 400). Успешный вход (200) не
+  // расходует лимит — легитимный пользователь не блокирует сам себя.
+  skipSuccessfulRequests: true,
   message: { error: "Too many login attempts. Try again later." },
 });
 

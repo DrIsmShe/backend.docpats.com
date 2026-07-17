@@ -53,13 +53,8 @@ export const registerUser = async (req, res) => {
       parentEmail,
     } = req.body;
 
-    console.log("📩 Registration request received:", {
-      email,
-      username,
-      role,
-      speciality,
-      parentEmail,
-    });
+    // H-2: не логируем email/parentEmail (PII). Оставляем обезличенные метки.
+    console.log("📩 Registration request received:", { role, speciality });
 
     // ----------- Проверка обязательных полей -----------
     if (!email || !password || !username || !role) {
@@ -170,18 +165,20 @@ export const registerUser = async (req, res) => {
 
     // ----------- Хэш пароля -----------
     const hashedPassword = await argon2.hash(password, {
-      timeCost: 2,
+      timeCost: 3,
       memoryCost: 2 ** 16,
       parallelism: 1,
+      type: argon2.argon2id,
     });
 
     // ----------- OTP основной email -----------
-    const otpPassword = Math.floor(100000 + Math.random() * 900000).toString();
+    // H-3/L-4: криптостойкий генератор вместо предсказуемого Math.random().
+    const otpPassword = crypto.randomInt(100000, 1000000).toString();
     const otpExpiresAt = Date.now() + 5 * 60 * 1000;
 
     // ----------- OTP родителя -----------
     const parentOtp = isChild
-      ? Math.floor(100000 + Math.random() * 900000).toString()
+      ? crypto.randomInt(100000, 1000000).toString()
       : null;
 
     const parentOtpExpires = isChild ? Date.now() + 10 * 60 * 1000 : null;
@@ -266,9 +263,7 @@ export const registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error during registration:", error);
-    return res.status(500).json({
-      message: "Registration failed",
-      error: error.message,
-    });
+    // M-3: не раскрываем внутренние детали ошибки клиенту.
+    return res.status(500).json({ message: "Registration failed" });
   }
 };

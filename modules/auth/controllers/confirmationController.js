@@ -11,6 +11,14 @@ const hashData = (data) => {
   return crypto.createHash("sha256").update(data.toLowerCase()).digest("hex");
 };
 
+// H-3: сравнение OTP за постоянное время (защита от timing-атаки).
+const otpMatches = (provided, stored) => {
+  if (!provided || !stored) return false;
+  const a = crypto.createHash("sha256").update(String(provided).trim()).digest();
+  const b = crypto.createHash("sha256").update(String(stored).trim()).digest();
+  return crypto.timingSafeEqual(a, b);
+};
+
 const decrypt = (text) => {
   if (!text || !text.includes(":")) {
     console.error("❌ [DECRYPT ERROR] Invalid encrypted data format:", text);
@@ -55,16 +63,28 @@ export const confirmationRegister = async (req, res) => {
   try {
     const user = await User.findOne({ emailHash: hashData(email) });
 
-    if (!user) {
-      console.error("❌ [ERROR] User not found or decryption error.");
-      return res
+    // M-4: одинаковый ответ для «нет пользователя» и «неверный/просроченный код»
+    // — по этому эндпоинту нельзя перечислять зарегистрированные email.
+    const invalid = () =>
+      res
         .status(400)
-        .json({ message: "User not found or decryption error." });
-    }
+        .json({ message: "Invalid or expired confirmation code." });
 
-    if (user.otpPassword === otpPassword) {
+    if (!user) return invalid();
+
+    // H-3: код должен существовать, не истечь (otpExpiresAt пишется при
+    // регистрации) и совпасть по постоянному времени.
+    const notExpired =
+      user.otpExpiresAt && Number(user.otpExpiresAt) > Date.now();
+
+    if (
+      user.otpPassword &&
+      notExpired &&
+      otpMatches(otpPassword, user.otpPassword)
+    ) {
       user.isVerified = true;
       user.otpPassword = undefined;
+      user.otpExpiresAt = undefined;
       await user.save({ validateModifiedOnly: true });
 
       // ── Optional: bind a pending clinic membership invite ──────────────
@@ -104,10 +124,11 @@ export const confirmationRegister = async (req, res) => {
         ...(inviteResult ? { invite: inviteResult } : {}),
       });
     } else {
-      return res.status(400).json({ message: "Invalid OTP" });
+      return invalid();
     }
   } catch (error) {
     console.error("❌ [ERROR] OTP verification failed:", error);
-    return res.status(500).json({ message: "OTP verification failed", error });
+    // M-3: не раскрываем внутренний объект ошибки клиенту.
+    return res.status(500).json({ message: "OTP verification failed" });
   }
 };

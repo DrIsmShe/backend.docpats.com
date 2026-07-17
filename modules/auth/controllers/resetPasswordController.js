@@ -53,11 +53,7 @@ const resetPassword = async (req, res) => {
 
     // Проверяем, не истёк ли предыдущий OTP
     if (user.otpExpiresAt && user.otpExpiresAt > currentTime) {
-      console.log(
-        `🔹 OTP has already been sent to the user ${decrypt(
-          user.emailEncrypted,
-        )}.`,
-      );
+      // H-2: НЕ логируем email/OTP (утечка PII/секрета в логи).
       return res.status(200).json({
         message: "An OTP has already been sent. Please check your email.",
         otpExpiresAt: user.otpExpiresAt,
@@ -70,6 +66,7 @@ const resetPassword = async (req, res) => {
 
     user.otpPassword = otpPassword;
     user.otpExpiresAt = otpExpiresAt;
+    user.otpAttempts = 0; // M-1: свежий код — полный лимит попыток
     await user.save({ validateModifiedOnly: true });
 
     await sendEmail(
@@ -78,9 +75,7 @@ const resetPassword = async (req, res) => {
       `Your OTP code is: ${otpPassword}. It expires in 5 minutes.`,
     );
 
-    console.log(
-      `✅ New OTP ${otpPassword} sent to ${decrypt(user.emailEncrypted)}`,
-    );
+    // H-2: НЕ логируем OTP и email — это утечка секрета/PII в логи.
 
     // ✅ Отправляем успешный ответ + время окончания OTP для таймера на фронте
     return res.status(200).json({

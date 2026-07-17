@@ -42,6 +42,15 @@ const resetPassword = async (req, res) => {
       });
     }
 
+    // M-2: анти-спам — если активный OTP ещё жив, не шлём новый (как в
+    // /reset-password). Наружу поведение неотличимо от «успеха».
+    if (user.otpExpiresAt && Number(user.otpExpiresAt) > Date.now()) {
+      return res.status(200).json({
+        message: "OTP password sent successfully.",
+        otpExpiresAt: user.otpExpiresAt,
+      });
+    }
+
     const decryptedEmail = decrypt(user.emailEncrypted);
 
     const otpPassword = crypto.randomInt(100000, 999999).toString();
@@ -49,6 +58,7 @@ const resetPassword = async (req, res) => {
 
     user.otpPassword = otpPassword;
     user.otpExpiresAt = otpExpiresAt;
+    user.otpAttempts = 0; // M-1: свежий код — полный лимит попыток
     await user.save({ validateModifiedOnly: true });
 
     await sendEmail(

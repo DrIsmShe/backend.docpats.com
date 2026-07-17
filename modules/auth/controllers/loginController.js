@@ -14,6 +14,27 @@ const SECRET_KEY = (process.env.ENCRYPTION_KEY || "")
 const hashData = (data) =>
   crypto.createHash("sha256").update(data.toLowerCase()).digest("hex");
 
+// H-1: блокировка учётки при переборе пароля (как у сотрудников клиник,
+// employeeAuth.service.js). Поля failedLoginAttempts/lockoutUntil есть в модели.
+const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
+
+// L-1: чтобы время ответа при несуществующем email не отличалось от реального
+// (argon2.verify занимает заметное время), прогоняем dummy-verify. Хэш считаем
+// один раз и кэшируем.
+let dummyHashPromise = null;
+const getDummyHash = () => {
+  if (!dummyHashPromise) {
+    dummyHashPromise = argon2.hash("timing-equalizer-dummy", {
+      type: argon2.argon2id,
+      timeCost: 3,
+      memoryCost: 2 ** 16,
+      parallelism: 1,
+    });
+  }
+  return dummyHashPromise;
+};
+
 const decrypt = (text) => {
   if (!text || !text.includes(":")) return text;
   try {
@@ -43,17 +64,16 @@ export const loginUser = async (req, res) => {
   }
 
   try {
-    console.log("📩 Входящие данные:", { email });
-
     // === Ищем пользователя по хэшу email ===
     const user = await User.findOne({ emailHash: hashData(email) });
 
     if (!user) {
+      // L-1: выравниваем тайминг — считаем argon2 и при несуществующем email.
+      await argon2.verify(await getDummyHash(), password).catch(() => false);
       return res.status(400).json({ message: "Incorrect email or password." });
     }
 
     const decryptedEmail = decrypt(user.emailEncrypted);
-    console.log(`🔎 Найден пользователь: ${decryptedEmail}`);
 
     // 🔥 ДЕТИ: блокируем вход, если родитель ещё не подтвердил
     if (user.isChild && user.childStatus !== "active") {
@@ -69,10 +89,41 @@ export const loginUser = async (req, res) => {
         .json({ message: "Your account has been blocked." });
     }
 
+    // 🔥 H-1: учётка временно заперта из-за перебора пароля
+    if (user.lockoutUntil && new Date(user.lockoutUntil).getTime() > Date.now()) {
+      const retryAfterMinutes = Math.max(
+        1,
+        Math.ceil((new Date(user.lockoutUntil).getTime() - Date.now()) / 60000),
+      );
+      return res.status(403).json({
+        message:
+          "Account is temporarily locked after several failed attempts.",
+        code: "ACCOUNT_LOCKED",
+        retryAfterMinutes,
+      });
+    }
+
     // 🔥 Проверка пароля
     const validPassword = await argon2.verify(user.password, password);
     if (!validPassword) {
+      // H-1: копим неудачные попытки; на лимите — запираем на LOCKOUT_MINUTES.
+      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+      if (user.failedLoginAttempts >= MAX_FAILED_LOGIN_ATTEMPTS) {
+        user.lockoutUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000);
+        user.failedLoginAttempts = 0;
+      }
+      try {
+        await user.save({ validateModifiedOnly: true });
+      } catch (e) {
+        console.error("❌ Не удалось сохранить счётчик попыток входа");
+      }
       return res.status(400).json({ message: "Incorrect email or password." });
+    }
+
+    // Успешный ввод пароля — сбрасываем счётчик/локаут.
+    if (user.failedLoginAttempts || user.lockoutUntil) {
+      user.failedLoginAttempts = 0;
+      user.lockoutUntil = null;
     }
 
     // 🔥 Система принудительной смены пароля
