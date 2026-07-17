@@ -150,8 +150,14 @@ async function fetchDoctors() {
 // Один URL + hreflang (все языки на один URL)
 async function fetchNews() {
   try {
+    // news-api отдаёт максимум ~500 записей за запрос: при limit>=1000 он
+    // возвращает 500 Internal Server Error, а page/skip/offset игнорирует
+    // (пагинации нет). Поэтому берём limit=500 — это максимум, который сервис
+    // отдаёт стабильно. Раньше стоял 5000 → каждый вызов падал и в sitemap
+    // не попадала НИ ОДНА новость. TODO: снять ограничение, когда news-api
+    // научится пагинации/большим лимитам (сейчас всего ~7600 новостей).
     const { data } = await axios.get(`${NEWS_ENGINE_URL}/api/news`, {
-      params: { limit: 5000 },
+      params: { limit: 500 },
       timeout: 8000,
     });
     const items = data?.items || data?.news || data?.data || [];
@@ -201,9 +207,11 @@ async function fetchSynthesisArticles() {
 async function fetchDoctorArticles() {
   try {
     const db = mongoose.connection.db;
-    // ⚠️ Проверь реальное название коллекции в MongoDB Compass
+    // Коллекция модели Article — "articles" (дефолтная плюрализация Mongoose).
+    // Раньше здесь стояло "Article" (несуществующая коллекция) → в sitemap не
+    // попадала ни одна статья врача.
     const articles = await db
-      .collection("Article")
+      .collection("articles")
       .find({ isPublished: true }, { projection: { _id: 1, updatedAt: 1 } })
       .toArray();
 
@@ -227,9 +235,11 @@ async function fetchDoctorArticles() {
 async function fetchScientificArticles() {
   try {
     const db = mongoose.connection.db;
-    // ⚠️ Проверь реальное название коллекции в MongoDB Compass
+    // Коллекция модели ArticleScine — "articlescines". Раньше здесь стояло
+    // "ArticleScine" (несуществующая коллекция) → научные статьи не попадали
+    // в sitemap.
     const articles = await db
-      .collection("ArticleScine")
+      .collection("articlescines")
       .find({ isPublished: true }, { projection: { _id: 1, updatedAt: 1 } })
       .toArray();
 
