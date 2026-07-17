@@ -4,11 +4,13 @@ import { uploadFile } from "../../../common/middlewares/uploadMiddleware.js"; //
 
 const updateMainProfileControllerDoctor = async (req, res) => {
   try {
-    const { userId, username, firstName, lastName, dateOfBirth, bio } =
-      req.body;
+    // 🔒 БЕЗОПАСНОСТЬ: userId берём ТОЛЬКО из сессии (authMiddleware ставит
+    // req.userId). Никогда из req.body — иначе можно править чужой профиль.
+    const userId = req.userId;
+    const { username, firstName, lastName, dateOfBirth, bio } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Incorrect ID format" });
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const user = await User.findById(userId);
@@ -39,11 +41,16 @@ const updateMainProfileControllerDoctor = async (req, res) => {
     const sanitizedData = {
       avatar: avatarUrl,
       username: username?.trim() || user.username,
-      firstName: firstName?.trim() || user.firstName,
-      lastName: lastName?.trim() || user.lastName,
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : user.dateOfBirth,
       bio: bio?.trim() || user.bio,
     };
+
+    // Имя/фамилия хранятся зашифрованными (firstNameEncrypted/lastNameEncrypted).
+    // Пишем в *Encrypted-поля plaintext — pre("findOneAndUpdate") хук зашифрует
+    // их и пересчитает blind-index хэши. Раньше писали в firstName/lastName,
+    // которых нет в схеме → strict-mode их отбрасывал и имя не менялось.
+    if (firstName?.trim()) sanitizedData.firstNameEncrypted = firstName.trim();
+    if (lastName?.trim()) sanitizedData.lastNameEncrypted = lastName.trim();
 
     const updatedUser = await User.findByIdAndUpdate(userId, sanitizedData, {
       new: true,
@@ -55,10 +62,8 @@ const updateMainProfileControllerDoctor = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating profile:", error);
-    res.status(500).json({
-      message: "Error on the server",
-      error: error.message,
-    });
+    // Не раскрываем внутренние детали ошибки клиенту.
+    res.status(500).json({ message: "Error on the server" });
   }
 };
 
