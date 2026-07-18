@@ -52,7 +52,7 @@ export async function getMyReferral(req, res) {
     return res.status(200).json({
       success: true,
       code,
-      url: `${FRONTEND_URL}/register?ref=${code}`,
+      url: `${FRONTEND_URL}/registration?ref=${code}`,
       referralCount: user.referralCount || 0,
       bonusDays: user.referralBonusDays || 0,
     });
