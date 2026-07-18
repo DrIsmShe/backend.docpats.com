@@ -99,6 +99,10 @@ import CancelVerificationDocumentsRoute from "./CancelVerificationDocumentsRoute
 router.use("/add-verification", addVerificationDocumentsRoute);
 router.use("/get-verification", getVerificationDocumentsRoute);
 router.use("/cancel-verification-document", CancelVerificationDocumentsRoute);
+
+// Отзывы пациентов о враче (публичное чтение + авторизованная отправка)
+import doctorReviewRoute from "./doctorReviewRoute.js";
+router.use("/reviews", doctorReviewRoute);
 // DOCTOR VERIFICATIONS ROUTES END
 
 // Проверка авторизации врача

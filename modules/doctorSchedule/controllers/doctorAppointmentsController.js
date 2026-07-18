@@ -265,7 +265,15 @@ export const updateAppointmentStatus = async (req, res) => {
         message: `Ваш приём у доктора ${doctorName} (${formattedDate}) завершён.`,
         link: `/patient/my-appointment`,
       });
-      console.log("📨 Уведомление о завершении отправлено пациенту");
+
+      // 🌟 Авто-запрос отзыва о враче (доверие + петля роста «сарафанное радио»).
+      // Ведём на страницу врача с флагом ?review=1 — там откроется форма отзыва.
+      eventBus.emit("system.message", {
+        userId: patientUserId,
+        title: "Оцените приём",
+        message: `Поделитесь впечатлением о докторе ${doctorName} — это поможет другим пациентам выбрать врача.`,
+        link: `/patient/doctor-details/${doctorProfile._id}?review=1`,
+      });
     }
 
     // ======================================================
