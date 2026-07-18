@@ -429,6 +429,16 @@ const userSchema = new mongoose.Schema(
     otpAttempts: { type: Number, default: 0 },
     lastLoginAt: { type: Date, default: null },
 
+    // ─── Реферальная программа (сарафанное радио) ───
+    // referralCode — мой личный код-приглашение; referredBy — кто пригласил
+    // меня; referralCount — сколько людей зарегистрировалось по моему коду.
+    // без default: поле отсутствует до присвоения кода → sparse-unique корректен
+    // (иначе множество null нарушили бы уникальность).
+    referralCode: { type: String, unique: true, sparse: true },
+    referredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    referralCount: { type: Number, default: 0 },
+    referralBonusDays: { type: Number, default: 0 }, // сколько бонус-дней trial начислено
+
     isVerified: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     blockUntil: { type: Date, default: null },

@@ -9,6 +9,7 @@
 
 import express from "express";
 import { getTrialStatus } from "./trial.controller.js";
+import { getMyReferral } from "./referral.controller.js";
 
 const router = express.Router();
 
@@ -25,5 +26,6 @@ function requireAuth(req, res, next) {
 }
 
 router.get("/trial-status", requireAuth, getTrialStatus);
+router.get("/referral", requireAuth, getMyReferral);
 
 export default router;
