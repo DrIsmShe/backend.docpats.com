@@ -233,11 +233,11 @@ const ReissueHistorySchema = new mongoose.Schema(
    Числа должны совпадать с patientsInOffice в aiPlanLimits.js.
 ========================================================================= */
 const PLAN_TO_MAX_PATIENTS = {
-  // Новые ключи
-  doctor_basic: 5,
-  doctor_super: 50,
-  doctor_pro: 1000,
-  doctor_trial: 50, // как Super во время trial
+  // Новые ключи (тарифная сетка v3) — совпадают с patientsInOffice в aiPlanLimits.js
+  doctor_basic: 50,
+  doctor_super: 500,
+  doctor_pro: -1, // -1 = безлимит (middleware requireDoctorPatientLimit это понимает)
+  doctor_trial: 500, // как Growth во время trial
 
   patient_free: 0,
   patient_std: 0,
@@ -253,7 +253,6 @@ const PLAN_TO_MAX_PATIENTS = {
   doctor_plus: 50,
   standard: 0,
   premium: 0,
-  clinic: 1000,
 };
 
 /* ======================= Основная схема User ======================= */

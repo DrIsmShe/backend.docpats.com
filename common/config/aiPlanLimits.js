@@ -5,28 +5,26 @@
 //   Используется во всех AI-сервисах: user-synthesis, consultation-ai,
 //   SOAP-генератор и т.д. Если меняешь лимит — меняй ТОЛЬКО здесь.
 //
-//   Обновлено: 2026-05-03 — стратегия А
-//   patientsInOffice синхронизирован с pre-save хуком User модели
-//   (5/50/1000) чтобы requireDoctorPatientLimit middleware
-//   продолжал работать через features.maxPatients без изменений.
+//   Обновлено: 2026-07-18 — тарифная сетка v3, валюта USD.
+//   3 тарифа на аудиторию (пациенты / врачи / клиники). Цены в долларах.
+//   patientsInOffice синхронизирован с PLAN_TO_MAX_PATIENTS в модели User.
 // ─────────────────────────────────────────────────────────────────────
 
-// ─── Пациентские планы ──────────────────────────────────────────────
-// guest        — неавторизованный посетитель (нет userId)
-// patient_free — зарегистрированный пациент бессрочно
-// patient_std  — Standard 9 AZN/мес (или 86 AZN/год -20%)
-// patient_pro  — Pro 19 AZN/мес (или 182 AZN/год -20%)
+// ─── Пациентские планы (USD) ────────────────────────────────────────
+// patient_free — Free 0$ — базовый доступ бессрочно
+// patient_std  — Plus 9$/мес (90$/год)
+// patient_pro  — Pro 19$/мес (190$/год)
 //
-// ─── Врачебные планы ────────────────────────────────────────────────
-// doctor_trial — первые 6 месяцев после регистрации (как Doctor Super)
-// doctor_basic — Basic 6 AZN/мес — базовое присутствие после trial
-// doctor_super — Super 23 AZN/мес — растущая практика
-// doctor_pro   — Pro 49 AZN/мес — полный инструментарий
+// ─── Врачебные планы (USD) ──────────────────────────────────────────
+// doctor_trial — первые 6 месяцев после регистрации (как Doctor Growth)
+// doctor_basic — Start 19$/мес (190$/год)
+// doctor_super — Growth 49$/мес (490$/год)
+// doctor_pro   — Pro 99$/мес (990$/год)
 //
-// ─── Клиники ────────────────────────────────────────────────────────
-// clinic_start — Start 99 AZN/мес (5 врачей)
-// clinic       — Clinic 149 AZN/мес (10 врачей)
-// clinic_pro   — Medical Center 299 AZN/мес (∞ врачей)
+// ─── Клиники (USD) ──────────────────────────────────────────────────
+// clinic_start — Start 99$/мес (5 врачей)
+// clinic       — Business 249$/мес (15 врачей)
+// clinic_pro   — Enterprise 499$/мес (∞ врачей)
 
 export const PLAN_LIMITS = {
   // ═════════════════════ ПАЦИЕНТЫ ═══════════════════════
@@ -38,65 +36,64 @@ export const PLAN_LIMITS = {
     bookingDiscount: 0,
   },
   patient_free: {
-    aiConsultations: 7,
+    aiConsultations: 5,
     aiArticles: 1,
-    soapEpicrises: 7,
+    soapEpicrises: 3,
     documentExports: -1, // -1 = без лимита (свои данные)
     bookingDiscount: 0,
   },
   patient_std: {
-    aiConsultations: 20,
-    aiArticles: 3,
+    aiConsultations: 30,
+    aiArticles: 5,
     soapEpicrises: 20,
     documentExports: -1,
     bookingDiscount: 10, // % скидка на видео-приём с врачом
   },
   patient_pro: {
-    aiConsultations: 60,
-    aiArticles: 10,
-    soapEpicrises: 60,
+    aiConsultations: -1, // безлимит (fair use)
+    aiArticles: 20,
+    soapEpicrises: -1,
     documentExports: -1,
     bookingDiscount: 20,
   },
 
   // ═════════════════════ ВРАЧИ ═══════════════════════════
-  // patientsInOffice выставлен 5/50/1000 для совместимости
-  // с существующим requireDoctorPatientLimit middleware,
-  // который читает features.maxPatients.
+  // patientsInOffice ДОЛЖЕН совпадать с PLAN_TO_MAX_PATIENTS в users.js.
+  // Middleware requireDoctorPatientLimit трактует -1 как безлимит.
   doctor_trial: {
-    // Первые 6 месяцев — даём как Doctor Super.
-    aiAnalyses: 30,
-    aiArticles: 10,
-    soapEpicrises: 30,
-    aiPatientConsultations: 30,
-    patientsInOffice: 50,
+    // Первые 6 месяцев — даём как Doctor Growth.
+    aiAnalyses: 50,
+    aiArticles: 15,
+    soapEpicrises: 50,
+    aiPatientConsultations: 50,
+    patientsInOffice: 500,
     videoMinutes: 600,
     docpatsCommissionPct: 12,
   },
   doctor_basic: {
-    aiAnalyses: 7,
+    aiAnalyses: 10,
     aiArticles: 3,
-    soapEpicrises: 7,
+    soapEpicrises: 10,
     aiPatientConsultations: 5,
-    patientsInOffice: 5,
-    videoMinutes: 30,
+    patientsInOffice: 50,
+    videoMinutes: 120,
     docpatsCommissionPct: 15,
   },
   doctor_super: {
-    aiAnalyses: 30,
-    aiArticles: 10,
-    soapEpicrises: 30,
-    aiPatientConsultations: 30,
-    patientsInOffice: 50,
+    aiAnalyses: 50,
+    aiArticles: 15,
+    soapEpicrises: 50,
+    aiPatientConsultations: 50,
+    patientsInOffice: 500,
     videoMinutes: 600,
     docpatsCommissionPct: 12,
   },
   doctor_pro: {
-    aiAnalyses: 100,
-    aiArticles: 30,
-    soapEpicrises: 100,
+    aiAnalyses: -1,
+    aiArticles: -1,
+    soapEpicrises: -1,
     aiPatientConsultations: -1, // ∞ AI-консультаций
-    patientsInOffice: 1000, // практически ∞
+    patientsInOffice: -1, // безлимит (middleware понимает -1)
     videoMinutes: 1500,
     docpatsCommissionPct: 10,
   },
@@ -113,7 +110,7 @@ export const PLAN_LIMITS = {
     docpatsCommissionPct: 10,
   },
   clinic: {
-    doctors: 10,
+    doctors: 15,
     aiAnalyses: -1,
     aiArticles: -1,
     soapEpicrises: -1,
@@ -134,49 +131,21 @@ export const PLAN_LIMITS = {
   },
 };
 
-// ─── Цены (для отображения и проверок) ──────────────────────────────
+// ─── Цены (USD, месяц/год). Годовая ≈ ×10 месяцев (2 месяца в подарок) ──
+// Витрина client/src/pages/PricingPage.jsx (PRICES_USD) должна совпадать.
 export const PLAN_PRICES = {
-  patient_std: {
-    monthly: 5,
-    yearly: 48,
-    currencyAZN: { monthly: 9, yearly: 86 },
-  },
-  patient_pro: {
-    monthly: 11,
-    yearly: 106,
-    currencyAZN: { monthly: 19, yearly: 182 },
-  },
-  doctor_basic: {
-    monthly: 3.5,
-    yearly: 34,
-    currencyAZN: { monthly: 6, yearly: 58 },
-  },
-  doctor_super: {
-    monthly: 13,
-    yearly: 125,
-    currencyAZN: { monthly: 23, yearly: 220 },
-  },
-  doctor_pro: {
-    monthly: 29,
-    yearly: 278,
-    currencyAZN: { monthly: 49, yearly: 470 },
-  },
-  clinic_start: {
-    monthly: 59,
-    yearly: 566,
-    currencyAZN: { monthly: 99, yearly: 950 },
-  },
-  clinic: {
-    monthly: 99,
-    yearly: 950,
-    currencyAZN: { monthly: 149, yearly: 1430 },
-  },
-  clinic_pro: {
-    monthly: 199,
-    yearly: 1910,
-    currencyAZN: { monthly: 299, yearly: 2870 },
-  },
+  patient_std: { monthly: 9, yearly: 90 },
+  patient_pro: { monthly: 19, yearly: 190 },
+  doctor_basic: { monthly: 19, yearly: 190 },
+  doctor_super: { monthly: 49, yearly: 490 },
+  doctor_pro: { monthly: 99, yearly: 990 },
+  clinic_start: { monthly: 99, yearly: 990 },
+  clinic: { monthly: 249, yearly: 2490 },
+  clinic_pro: { monthly: 499, yearly: 4990 },
 };
+
+// ─── Валюта тарифов ─────────────────────────────────────────────────
+export const PLAN_CURRENCY = "USD";
 
 // ─── Длительность бесплатного trial для врачей ─────────────────────
 export const DOCTOR_TRIAL_DAYS = 180; // 6 месяцев
@@ -274,13 +243,13 @@ export function getMaxPatientsForPlan(planKey) {
 export const PLAN_DISPLAY_NAMES = {
   guest: "Гость",
   patient_free: "Patient Free",
-  patient_std: "Patient Standard",
+  patient_std: "Patient Plus",
   patient_pro: "Patient Pro",
-  doctor_trial: "Doctor Free (trial)",
-  doctor_basic: "Doctor Basic",
-  doctor_super: "Doctor Super",
+  doctor_trial: "Doctor Growth (trial)",
+  doctor_basic: "Doctor Start",
+  doctor_super: "Doctor Growth",
   doctor_pro: "Doctor Pro",
   clinic_start: "Clinic Start",
-  clinic: "Clinic",
-  clinic_pro: "Medical Center",
+  clinic: "Clinic Business",
+  clinic_pro: "Clinic Enterprise",
 };

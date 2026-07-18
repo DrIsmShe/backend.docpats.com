@@ -14,7 +14,7 @@ import {
 } from "../../modules/payments/controllers/checkout.controller.js";
 import {
   assertPlanAllowed,
-  getPlanAmountAZN,
+  getPlanAmount,
   computeSubscriptionEnd,
 } from "../../modules/payments/services/subscription.service.js";
 import { createTestDoctor } from "../helpers/createTestUser.js";
@@ -65,9 +65,9 @@ describe("subscription.service — валидация и расчёты", () => 
     expect(() => assertPlanAllowed("nope", "monthly", "doctor")).toThrow();
   });
 
-  it("getPlanAmountAZN возвращает цену из aiPlanLimits", () => {
-    expect(getPlanAmountAZN("doctor_super", "monthly")).toBe(23);
-    expect(getPlanAmountAZN("doctor_super", "yearly")).toBe(220);
+  it("getPlanAmount возвращает цену USD из aiPlanLimits", () => {
+    expect(getPlanAmount("doctor_super", "monthly")).toBe(49);
+    expect(getPlanAmount("doctor_super", "yearly")).toBe(490);
   });
 
   it("computeSubscriptionEnd продлевает от будущей даты (стекинг)", () => {
@@ -92,7 +92,8 @@ describe("checkout flow (mock provider)", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.provider).toBe("mock");
-    expect(res.body.amount).toBe(23);
+    expect(res.body.amount).toBe(49);
+    expect(res.body.currency).toBe("USD");
     expect(res.body.checkoutUrl).toContain("/payment/mock");
     expect(res.body.transactionId).toBeTruthy();
 

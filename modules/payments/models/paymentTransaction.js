@@ -46,7 +46,7 @@ const paymentTransactionSchema = new mongoose.Schema(
 
     // Деньги
     amount: { type: Number, required: true }, // в валюте платежа
-    currency: { type: String, default: "AZN" },
+    currency: { type: String, default: "USD" },
 
     // Провайдер и его идентификаторы
     provider: {

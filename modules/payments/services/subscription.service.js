@@ -39,12 +39,12 @@ export function assertPlanAllowed(planKey, period, role) {
 }
 
 /**
- * Цена плана в AZN за выбранный период.
+ * Цена плана в USD за выбранный период.
  */
-export function getPlanAmountAZN(planKey, period) {
+export function getPlanAmount(planKey, period) {
   const price = PLAN_PRICES[planKey];
-  if (!price || !price.currencyAZN) return 0;
-  return price.currencyAZN[period] || 0;
+  if (!price) return 0;
+  return price[period] || 0;
 }
 
 /**

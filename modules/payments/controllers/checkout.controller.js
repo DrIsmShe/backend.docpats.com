@@ -15,7 +15,7 @@ import User from "../../../common/models/Auth/users.js";
 import PaymentTransaction from "../models/paymentTransaction.js";
 import {
   assertPlanAllowed,
-  getPlanAmountAZN,
+  getPlanAmount,
   activateSubscription,
 } from "../services/subscription.service.js";
 import {
@@ -57,7 +57,7 @@ export async function createSubscriptionCheckout(req, res) {
       return res.status(400).json({ success: false, message: e.message });
     }
 
-    const amount = getPlanAmountAZN(planKey, period);
+    const amount = getPlanAmount(planKey, period);
     if (!amount || amount <= 0) {
       return res
         .status(400)
@@ -73,7 +73,7 @@ export async function createSubscriptionCheckout(req, res) {
       planKey,
       period,
       amount,
-      currency: "AZN",
+      currency: "USD",
       provider: providerName,
       status: "pending",
       meta: { role: user.role },
@@ -88,7 +88,7 @@ export async function createSubscriptionCheckout(req, res) {
         planKey,
         period,
         amount,
-        currency: "AZN",
+        currency: "USD",
         frontendUrl: FRONTEND_URL,
       });
 
@@ -103,7 +103,7 @@ export async function createSubscriptionCheckout(req, res) {
       transactionId: tx._id.toString(),
       checkoutUrl,
       amount,
-      currency: "AZN",
+      currency: "USD",
     });
   } catch (err) {
     console.error("createSubscriptionCheckout error:", err.message);

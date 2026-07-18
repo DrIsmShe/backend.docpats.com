@@ -21,7 +21,7 @@ function audienceOf(planKey) {
 
 /**
  * GET /api/payments/plans — публичный список покупаемых планов с ценами
- * (AZN) и лимитами. Для страницы тарифов.
+ * (USD) и лимитами. Для страницы тарифов.
  */
 export async function getPlans(req, res) {
   try {
@@ -29,13 +29,13 @@ export async function getPlans(req, res) {
       key,
       name: PLAN_DISPLAY_NAMES[key] || key,
       audience: audienceOf(key),
-      currency: "AZN",
-      monthly: PLAN_PRICES[key].currencyAZN?.monthly ?? null,
-      yearly: PLAN_PRICES[key].currencyAZN?.yearly ?? null,
+      currency: "USD",
+      monthly: PLAN_PRICES[key].monthly ?? null,
+      yearly: PLAN_PRICES[key].yearly ?? null,
       limits: PLAN_LIMITS[key] || {},
     }));
 
-    return res.status(200).json({ success: true, currency: "AZN", plans });
+    return res.status(200).json({ success: true, currency: "USD", plans });
   } catch (err) {
     console.error("getPlans error:", err.message);
     return res.status(500).json({ success: false, message: "Server error" });
