@@ -45,6 +45,8 @@ import { auditRoutes } from "./modules/audit/index.js";
 import clinicRoutes from "./modules/clinic/index.js";
 import blockUnfinishedRegistration from "./common/middlewares/blockUnfinishedRegistration.middleware.js";
 import clinicPublicRouter from "./modules/clinic/clinic-public/clinic-public.routes.js";
+import paymentsRouter from "./modules/payments/payments.routes.js";
+import paymentsWebhookRouter from "./modules/payments/webhook.routes.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -95,6 +97,8 @@ app.use(cookieParser());
 // Clinic-as-Brand (этап A) — публичная страница клиники.
 // Вне session/auth/tenant: гость/потенциальный пациент.
 app.use("/api/v1/public", clinicPublicRouter);
+// Платёжные webhook'и — server-to-server (вызов от шлюза), до session/CSRF.
+app.use("/api/payments/webhook", paymentsWebhookRouter);
 // ======================= SESSION =======================
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URL;
 
@@ -300,6 +304,7 @@ app.use(routes);
 app.use("/update-email-doctor", emailLimiter);
 app.use(simulation.basePath, simulation.router);
 app.use("/api/me", meRoutes);
+app.use("/api/payments", paymentsRouter);
 app.use("/audit", auditRoutes);
 app.use("/api/v1/clinic", clinicRoutes);
 // ======================= AUTO MODEL LOADER =======================
