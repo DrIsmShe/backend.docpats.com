@@ -51,6 +51,7 @@ export const registerUser = async (req, res) => {
       bio,
       dateOfBirth,
       parentEmail,
+      ref, // реферальный код пригласившего (из ?ref= на фронте)
     } = req.body;
 
     // H-2: не логируем email/parentEmail (PII). Оставляем обезличенные метки.
@@ -235,6 +236,40 @@ export const registerUser = async (req, res) => {
     });
 
     await newUser.save();
+
+    // ----------- Реферальная атрибуция (шаг 2) -----------
+    // Неблокирующе: неверный/пустой код просто игнорируется, регистрация идёт.
+    // Награда — бонус-дни trial обеим сторонам (актуально для врачей с trial).
+    if (ref) {
+      try {
+        const BONUS_DAYS = 30;
+        const DAY = 24 * 60 * 60 * 1000;
+        const code = String(ref).trim().toUpperCase();
+        const referrer = await User.findOne({ referralCode: code });
+        if (referrer && String(referrer._id) !== String(newUser._id)) {
+          const extendTrial = (u) => {
+            if (u.trialEndsAt) {
+              const base = Math.max(
+                Date.now(),
+                new Date(u.trialEndsAt).getTime(),
+              );
+              u.trialEndsAt = new Date(base + BONUS_DAYS * DAY);
+              u.referralBonusDays = (u.referralBonusDays || 0) + BONUS_DAYS;
+            }
+          };
+          // приглашённый
+          newUser.referredBy = referrer._id;
+          extendTrial(newUser);
+          await newUser.save({ validateModifiedOnly: true });
+          // пригласивший
+          referrer.referralCount = (referrer.referralCount || 0) + 1;
+          extendTrial(referrer);
+          await referrer.save({ validateModifiedOnly: true });
+        }
+      } catch (e) {
+        console.warn("[referral] attribution failed:", e.message);
+      }
+    }
 
     console.log("✅ User created:", {
       username,
