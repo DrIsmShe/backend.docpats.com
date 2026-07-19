@@ -71,6 +71,7 @@ export async function selectDigestRecipients(now = new Date()) {
     _id: { $in: ids },
     isDeleted: { $ne: true },
     role: { $in: ["patient", "doctor", "user"] },
+    emailDigestEnabled: { $ne: false }, // уважаем опт-аут
     lastLoginAt: { $lt: inactiveBefore },
     $or: [
       { lastDigestEmailAt: null },

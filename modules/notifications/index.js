@@ -14,6 +14,10 @@ import {
   subscribePush,
   unsubscribePush,
 } from "./controllers/push.controller.js";
+import {
+  getNotificationPreferences,
+  updateNotificationPreferences,
+} from "./controllers/preferences.controller.js";
 
 import authMidleWeare from "../../common/middlewares/authMiddleware.js";
 const router = Router();
@@ -22,6 +26,10 @@ const router = Router();
 router.get("/push/public-key", getPushPublicKey);
 router.post("/push/subscribe", authMidleWeare, subscribePush);
 router.post("/push/unsubscribe", authMidleWeare, unsubscribePush);
+
+// ── Настройки уведомлений ──────────────────────────────────────────
+router.get("/preferences", authMidleWeare, getNotificationPreferences);
+router.patch("/preferences", authMidleWeare, updateNotificationPreferences);
 
 // GET /notifications - все уведомления пользователя
 router.get("/get", authMidleWeare, getNotificationsController);

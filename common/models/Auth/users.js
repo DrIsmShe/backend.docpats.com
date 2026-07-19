@@ -429,6 +429,8 @@ const userSchema = new mongoose.Schema(
     lastLoginAt: { type: Date, default: null },
     // Когда последний раз слали дайджест непрочитанных (анти-спам).
     lastDigestEmailAt: { type: Date, default: null },
+    // Настройка: получать ли email-дайджест непрочитанных (опт-аут).
+    emailDigestEnabled: { type: Boolean, default: true },
 
     // ─── Реферальная программа (сарафанное радио) ───
     // referralCode — мой личный код-приглашение; referredBy — кто пригласил

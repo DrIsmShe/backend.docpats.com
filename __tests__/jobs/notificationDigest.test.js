@@ -61,10 +61,15 @@ describe("notificationDigest — селекция получателей", () =>
     const noUnread = await patient({
       lastLoginAt: new Date(now.getTime() - 5 * DAY),
     });
+    const optedOut = await patient({
+      lastLoginAt: new Date(now.getTime() - 5 * DAY),
+      emailDigestEnabled: false,
+    });
 
     await addUnread(inactive.userId, 2);
     await addUnread(active.userId, 1);
     await addUnread(digestedRecently.userId, 1);
+    await addUnread(optedOut.userId, 3);
     // noUnread — без уведомлений
 
     const recipients = await selectDigestRecipients(now);
@@ -74,6 +79,7 @@ describe("notificationDigest — селекция получателей", () =>
     expect(ids).not.toContain(String(active.userId));
     expect(ids).not.toContain(String(digestedRecently.userId));
     expect(ids).not.toContain(String(noUnread.userId));
+    expect(ids).not.toContain(String(optedOut.userId)); // опт-аут
 
     const rec = recipients.find((r) => String(r.user._id) === String(inactive.userId));
     expect(rec.count).toBe(2);
