@@ -88,9 +88,12 @@ export async function computeAnalytics() {
       byField(NewPatientPolyclinic, "country"),
       byField(NewPatientPolyclinic, "gender"),
       byField(NewPatientPolyclinic, "status"),
+      // Группируем по ICD-заголовку (mainDiagnosis.codeTitle): он стандартный
+      // и НЕ PHI, поэтому не шифруется. Свободный текст diagnosis теперь
+      // зашифрован (случайный IV) — по нему группировать нельзя.
       MedicalHistory.aggregate([
-        { $match: { diagnosis: { $nin: [null, ""] } } },
-        { $group: { _id: "$diagnosis", count: { $sum: 1 } } },
+        { $match: { "mainDiagnosis.codeTitle": { $nin: [null, ""] } } },
+        { $group: { _id: "$mainDiagnosis.codeTitle", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: TOP },
       ]),

@@ -1,4 +1,22 @@
 import mongoose from "mongoose";
+import { encryptPHI, decryptPHI } from "../../../utils/phiCrypto.js";
+
+// Плоские PHI-поля encounter, которые шифруются at-rest. Для lean-чтений
+// расшифровывать через decryptFields(doc, ENCOUNTER_PHI_FIELDS).
+export const ENCOUNTER_PHI_FIELDS = [
+  "complaints",
+  "anamnesisMorbi",
+  "anamnesisVitae",
+  "statusPreasens",
+  "statusLocalis",
+  "recommendations",
+  "ctScanResults",
+  "mriResults",
+  "ultrasoundResults",
+  "laboratoryTestResults",
+  "additionalDiagnosis",
+  "diagnosis",
+];
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -88,29 +106,48 @@ const newPatientMedicalHistorySchema = new mongoose.Schema(
     views: { type: Number, default: 0 },
     readTime: { type: Number, default: 0 },
 
-    complaints: { type: String, trim: true },
-    anamnesisMorbi: { type: String, trim: true },
-    anamnesisVitae: { type: String, trim: true },
-    statusPreasens: { type: String, trim: true },
-    statusLocalis: { type: String, trim: true },
-    recommendations: { type: String, trim: true },
-    ctScanResults: { type: String, trim: true },
-    mriResults: { type: String, trim: true },
-    ultrasoundResults: { type: String, trim: true },
-    laboratoryTestResults: { type: String, trim: true },
+    // ── PHI: шифруются at-rest (set: encryptPHI / get: decryptPHI) ──
+    complaints: { type: String, trim: true, set: encryptPHI, get: decryptPHI },
+    anamnesisMorbi: { type: String, trim: true, set: encryptPHI, get: decryptPHI },
+    anamnesisVitae: { type: String, trim: true, set: encryptPHI, get: decryptPHI },
+    statusPreasens: { type: String, trim: true, set: encryptPHI, get: decryptPHI },
+    statusLocalis: { type: String, trim: true, set: encryptPHI, get: decryptPHI },
+    recommendations: { type: String, trim: true, set: encryptPHI, get: decryptPHI },
+    ctScanResults: { type: String, trim: true, set: encryptPHI, get: decryptPHI },
+    mriResults: { type: String, trim: true, set: encryptPHI, get: decryptPHI },
+    ultrasoundResults: { type: String, trim: true, set: encryptPHI, get: decryptPHI },
+    laboratoryTestResults: { type: String, trim: true, set: encryptPHI, get: decryptPHI },
 
-    // Структурный диагноз (новый, основной)
+    // Структурный диагноз (новый, основной). code/codeTitle — стандарт ICD
+    // (не PHI, code индексируется), text — свободный текст диагноза (PHI).
     mainDiagnosis: {
       code: { type: String, trim: true, default: "" },
       codeTitle: { type: String, trim: true, default: "" },
-      text: { type: String, trim: true, default: "" },
+      text: {
+        type: String,
+        trim: true,
+        default: "",
+        set: encryptPHI,
+        get: decryptPHI,
+      },
     },
 
     // ⚠️ LEGACY MIRROR — синхронизируется автоматически из mainDiagnosis.text
     // через pre-save hook. НЕ заполнять вручную!
-    diagnosis: { type: String, trim: true, default: "" },
+    diagnosis: {
+      type: String,
+      trim: true,
+      default: "",
+      set: encryptPHI,
+      get: decryptPHI,
+    },
 
-    additionalDiagnosis: { type: String, trim: true },
+    additionalDiagnosis: {
+      type: String,
+      trim: true,
+      set: encryptPHI,
+      get: decryptPHI,
+    },
 
     files: [{ type: mongoose.Schema.Types.ObjectId, ref: "File", default: [] }],
 
@@ -172,8 +209,8 @@ const newPatientMedicalHistorySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    toJSON: { virtuals: true, getters: true },
+    toObject: { virtuals: true, getters: true },
   },
 );
 
@@ -245,6 +282,62 @@ newPatientMedicalHistorySchema.pre("save", function (next) {
   }
   next();
 });
+
+// ── ЗАПИСЬ через update-операторы: setters НЕ срабатывают на
+// findOneAndUpdate/updateOne → шифруем PHI в $set сами. encryptPHI идемпотентна.
+function encryptUpdatePHI(update) {
+  if (!update || typeof update !== "object") return;
+  const target = update.$set && typeof update.$set === "object" ? update.$set : update;
+  for (const f of ENCOUNTER_PHI_FIELDS) {
+    if (target[f] != null) target[f] = encryptPHI(target[f]);
+  }
+  // mainDiagnosis.text — и dot-notation, и вложенный объект
+  if (target["mainDiagnosis.text"] != null) {
+    target["mainDiagnosis.text"] = encryptPHI(target["mainDiagnosis.text"]);
+  }
+  if (target.mainDiagnosis && target.mainDiagnosis.text != null) {
+    target.mainDiagnosis.text = encryptPHI(target.mainDiagnosis.text);
+  }
+}
+
+newPatientMedicalHistorySchema.pre(
+  ["findOneAndUpdate", "updateOne", "updateMany"],
+  function () {
+    encryptUpdatePHI(this.getUpdate());
+  },
+);
+
+// ── ЧТЕНИЕ: lean-запросы НЕ вызывают геттеры → шифротекст утёк бы в ответ.
+// Централизованно расшифровываем ТОЛЬКО lean-результаты; обычные документы
+// покрыты геттерами + toJSON getters:true, их не трогаем (иначе двойная
+// обработка через сеттеры). Это избавляет от ручного decryptFields в каждом
+// из ~16 путей чтения.
+function decryptLeanEncounter(res, isLean) {
+  if (!isLean || !res) return;
+  const arr = Array.isArray(res) ? res : [res];
+  for (const d of arr) {
+    if (!d || typeof d !== "object") continue;
+    for (const f of ENCOUNTER_PHI_FIELDS) {
+      if (d[f] != null) d[f] = decryptPHI(d[f]);
+    }
+    if (d.mainDiagnosis && d.mainDiagnosis.text != null) {
+      d.mainDiagnosis.text = decryptPHI(d.mainDiagnosis.text);
+    }
+  }
+}
+
+newPatientMedicalHistorySchema.post(
+  ["find", "findOne", "findOneAndUpdate"],
+  function (res) {
+    let isLean = false;
+    try {
+      isLean = !!this.mongooseOptions().lean;
+    } catch {
+      isLean = false;
+    }
+    decryptLeanEncounter(res, isLean);
+  },
+);
 
 const newPatientMedicalHistoryModel = mongoose.model(
   "newPatientMedicalHistory",
