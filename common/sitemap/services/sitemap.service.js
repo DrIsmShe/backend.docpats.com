@@ -37,6 +37,7 @@ const STATIC_PAGES = [
   { path: "/news", priority: "0.9", changefreq: "hourly" },
   { path: "/consultation", priority: "0.7", changefreq: "monthly" },
   { path: "/pricing", priority: "0.6", changefreq: "monthly" },
+  { path: "/top-doctors", priority: "0.8", changefreq: "weekly" },
   { path: "/demo", priority: "0.5", changefreq: "monthly" },
 ];
 
