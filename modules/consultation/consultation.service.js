@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import mongoose from "mongoose";
 import { ConsultationSession } from "./consultation.model.js";
+import User from "../../common/models/Auth/users.js";
 
 const claude = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -57,10 +58,26 @@ function getMaxes(isAuth) {
   };
 }
 
+// Максимум консультаций с учётом бонусов за рефералов (bonusConsultations).
+// Для гостей бонусов нет. Ошибку чтения User трактуем как «без бонуса».
+async function consultationMaxFor(userId, isAuth) {
+  let max = isAuth ? CONSULTATION_LIMITS.auth : CONSULTATION_LIMITS.guest;
+  if (isAuth && userId) {
+    try {
+      const u = await User.findById(userId).select("bonusConsultations").lean();
+      if (u?.bonusConsultations) max += u.bonusConsultations;
+    } catch {
+      /* без бонуса */
+    }
+  }
+  return max;
+}
+
 // ─── Статус обоих лимитов ──────────────────────────────────────────
 export async function getStatus(userId, guestId) {
   const { query, isAuth } = buildQuery(userId, guestId);
   const max = getMaxes(isAuth);
+  const consMax = await consultationMaxFor(userId, isAuth);
   const rec = await ConsultationSession.findOne(query).lean();
 
   const consUsed = rec?.consultationsUsed || 0;
@@ -70,8 +87,8 @@ export async function getStatus(userId, guestId) {
     isAuthenticated: isAuth,
     consultations: {
       used: consUsed,
-      remaining: Math.max(0, max.consultations - consUsed),
-      max: max.consultations,
+      remaining: Math.max(0, consMax - consUsed),
+      max: consMax,
     },
     epicrises: {
       used: epicUsed,
@@ -90,7 +107,7 @@ export async function getStatus(userId, guestId) {
 // Проверка лимита БЕЗ инкремента
 export async function checkConsultationLimit(userId, guestId) {
   const { query, isAuth } = buildQuery(userId, guestId);
-  const max = getMaxes(isAuth).consultations;
+  const max = await consultationMaxFor(userId, isAuth);
   const rec = await ConsultationSession.findOne(query).lean();
   const used = rec?.consultationsUsed || 0;
   return {
@@ -104,7 +121,7 @@ export async function checkConsultationLimit(userId, guestId) {
 // Атомарный инкремент ПОСЛЕ успешного ответа Claude
 export async function consumeConsultation(userId, guestId) {
   const { query, isAuth } = buildQuery(userId, guestId);
-  const max = getMaxes(isAuth).consultations;
+  const max = await consultationMaxFor(userId, isAuth);
 
   const rec = await ConsultationSession.findOneAndUpdate(
     query,

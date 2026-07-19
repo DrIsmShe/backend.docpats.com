@@ -437,6 +437,9 @@ const userSchema = new mongoose.Schema(
     referredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     referralCount: { type: Number, default: 0 },
     referralBonusDays: { type: Number, default: 0 }, // сколько бонус-дней trial начислено
+    // Бонусные AI-консультации за рефералов (актуально для пациентов, у которых нет trial).
+    // Прибавляются к лимиту в consultation.service.js.
+    bonusConsultations: { type: Number, default: 0 },
 
     isVerified: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },

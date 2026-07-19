@@ -243,11 +243,13 @@ export const registerUser = async (req, res) => {
     if (ref) {
       try {
         const BONUS_DAYS = 30;
+        const BONUS_CONSULTATIONS = 5;
         const DAY = 24 * 60 * 60 * 1000;
         const code = String(ref).trim().toUpperCase();
         const referrer = await User.findOne({ referralCode: code });
         if (referrer && String(referrer._id) !== String(newUser._id)) {
-          const extendTrial = (u) => {
+          const reward = (u) => {
+            // Врачам (есть trial) — продлеваем trial.
             if (u.trialEndsAt) {
               const base = Math.max(
                 Date.now(),
@@ -256,14 +258,17 @@ export const registerUser = async (req, res) => {
               u.trialEndsAt = new Date(base + BONUS_DAYS * DAY);
               u.referralBonusDays = (u.referralBonusDays || 0) + BONUS_DAYS;
             }
+            // Всем (в т.ч. пациентам без trial) — бонусные AI-консультации.
+            u.bonusConsultations =
+              (u.bonusConsultations || 0) + BONUS_CONSULTATIONS;
           };
           // приглашённый
           newUser.referredBy = referrer._id;
-          extendTrial(newUser);
+          reward(newUser);
           await newUser.save({ validateModifiedOnly: true });
           // пригласивший
           referrer.referralCount = (referrer.referralCount || 0) + 1;
-          extendTrial(referrer);
+          reward(referrer);
           await referrer.save({ validateModifiedOnly: true });
         }
       } catch (e) {

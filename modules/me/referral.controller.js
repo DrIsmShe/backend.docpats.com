@@ -29,7 +29,7 @@ export async function getMyReferral(req, res) {
     }
 
     const user = await User.findById(userId).select(
-      "referralCode referralCount referralBonusDays",
+      "referralCode referralCount referralBonusDays bonusConsultations",
     );
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
@@ -55,6 +55,7 @@ export async function getMyReferral(req, res) {
       url: `${FRONTEND_URL}/registration?ref=${code}`,
       referralCount: user.referralCount || 0,
       bonusDays: user.referralBonusDays || 0,
+      bonusConsultations: user.bonusConsultations || 0,
     });
   } catch (err) {
     console.error("getMyReferral error:", err.message);
