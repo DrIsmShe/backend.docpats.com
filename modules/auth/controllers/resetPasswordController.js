@@ -45,7 +45,7 @@ const resetPassword = async (req, res) => {
     if (!user) {
       return res.status(200).json({
         message: "OTP password sent to your email successfully.",
-        otpExpiresAt: Date.now() + 5 * 60 * 1000,
+        otpExpiresAt: Date.now() + 15 * 60 * 1000,
       });
     }
 
@@ -62,7 +62,7 @@ const resetPassword = async (req, res) => {
 
     // Генерация нового OTP
     const otpPassword = crypto.randomBytes(4).toString("hex").toUpperCase();
-    const otpExpiresAt = currentTime + 5 * 60 * 1000;
+    const otpExpiresAt = currentTime + 15 * 60 * 1000;
 
     user.otpPassword = otpPassword;
     user.otpExpiresAt = otpExpiresAt;
@@ -72,7 +72,7 @@ const resetPassword = async (req, res) => {
     await sendEmail(
       decrypt(user.emailEncrypted),
       "Your OTP Code",
-      `Your OTP code is: ${otpPassword}. It expires in 5 minutes.`,
+      `Your OTP code is: ${otpPassword}. It expires in 15 minutes.`,
     );
 
     // H-2: НЕ логируем OTP и email — это утечка секрета/PII в логи.

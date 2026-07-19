@@ -37,10 +37,13 @@ const hashEmail = (email) => {
 // Сравнение двух кодов за постоянное время. Хешируем обе стороны, чтобы
 // timingSafeEqual всегда получал буферы равной длины (коды бывают разной
 // длины: первое письмо — 8 hex, переотправка — 6 цифр).
-const otpMatches = (provided, stored) => {
+export const otpMatches = (provided, stored) => {
   if (!provided || !stored) return false;
-  const a = crypto.createHash("sha256").update(String(provided).trim()).digest();
-  const b = crypto.createHash("sha256").update(String(stored).trim()).digest();
+  // Регистронезависимо: код — HEX в верхнем регистре, но пользователь мог
+  // ввести/вставить его в нижнем. Нормализуем обе стороны.
+  const norm = (v) => String(v).trim().toUpperCase();
+  const a = crypto.createHash("sha256").update(norm(provided)).digest();
+  const b = crypto.createHash("sha256").update(norm(stored)).digest();
   return crypto.timingSafeEqual(a, b);
 };
 

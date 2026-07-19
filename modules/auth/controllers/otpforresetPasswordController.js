@@ -38,7 +38,7 @@ const resetPassword = async (req, res) => {
     if (!user) {
       return res.status(200).json({
         message: "OTP password sent successfully.",
-        otpExpiresAt: Date.now() + 5 * 60 * 1000,
+        otpExpiresAt: Date.now() + 15 * 60 * 1000,
       });
     }
 
@@ -54,7 +54,7 @@ const resetPassword = async (req, res) => {
     const decryptedEmail = decrypt(user.emailEncrypted);
 
     const otpPassword = crypto.randomInt(100000, 999999).toString();
-    const otpExpiresAt = Date.now() + 5 * 60 * 1000;
+    const otpExpiresAt = Date.now() + 15 * 60 * 1000;
 
     user.otpPassword = otpPassword;
     user.otpExpiresAt = otpExpiresAt;
@@ -64,7 +64,7 @@ const resetPassword = async (req, res) => {
     await sendEmail(
       decryptedEmail,
       "Your OTP Code",
-      `Your OTP code is: ${otpPassword}. It expires in 5 minutes.`,
+      `Your OTP code is: ${otpPassword}. It expires in 15 minutes.`,
     );
 
     return res.status(200).json({
