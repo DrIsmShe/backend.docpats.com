@@ -46,6 +46,7 @@ import { auditRoutes } from "./modules/audit/index.js";
 import clinicRoutes from "./modules/clinic/index.js";
 import blockUnfinishedRegistration from "./common/middlewares/blockUnfinishedRegistration.middleware.js";
 import clinicPublicRouter from "./modules/clinic/clinic-public/clinic-public.routes.js";
+import publicDoctorsRouter from "./modules/doctorsProfiles/routes/publicDoctorsRoute.js";
 import paymentsRouter from "./modules/payments/payments.routes.js";
 import paymentsWebhookRouter from "./modules/payments/webhook.routes.js";
 // ======================= PATHS =======================
@@ -98,6 +99,8 @@ app.use(cookieParser());
 // Clinic-as-Brand (этап A) — публичная страница клиники.
 // Вне session/auth/tenant: гость/потенциальный пациент.
 app.use("/api/v1/public", clinicPublicRouter);
+// Публичные списки врачей для SEO-страниц (без session).
+app.use("/api/v1/public", publicDoctorsRouter);
 // Платёжные webhook'и — server-to-server (вызов от шлюза), до session/CSRF.
 app.use("/api/payments/webhook", paymentsWebhookRouter);
 // ======================= SESSION =======================
