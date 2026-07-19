@@ -7,7 +7,10 @@ import mongoose from "mongoose";
 import DoctorProfile from "../../common/models/DoctorProfile/profileDoctor.js";
 import DoctorReview from "../../common/models/DoctorProfile/doctorReview.js";
 import Appointment from "../../common/models/Appointment/appointment.js";
-import { getDoctorTrustStats } from "../../modules/doctorsProfiles/controllers/doctorReview.controller.js";
+import {
+  getDoctorTrustStats,
+  computeDoctorBadges,
+} from "../../modules/doctorsProfiles/controllers/doctorReview.controller.js";
 
 function mockRes() {
   return {
@@ -101,5 +104,52 @@ describe("getDoctorTrustStats — счётчик доверия", () => {
     expect(res.body.completedAppointments).toBe(0);
     expect(res.body.patientsServed).toBe(0);
     expect(res.body.isVerified).toBe(false);
+    expect(res.body.badges).toEqual([]);
+  });
+});
+
+describe("computeDoctorBadges — бейджи из агрегатов", () => {
+  const keys = (s) => computeDoctorBadges(s).map((b) => b.key);
+
+  it("топовый врач получает набор бейджей", () => {
+    const k = keys({
+      completedAppointments: 500,
+      averageRating: 4.9,
+      reviewCount: 60,
+      patientsServed: 150,
+      monthsOnPlatform: 15,
+    });
+    expect(k).toContain("appts_500");
+    expect(k).toContain("rating_excellent");
+    expect(k).toContain("patients_100");
+    expect(k).toContain("reviews_50");
+    expect(k).toContain("veteran");
+  });
+
+  it("порог приёмов — только самый высокий (500 не даёт 100/50)", () => {
+    const k = keys({ completedAppointments: 500 });
+    expect(k).toContain("appts_500");
+    expect(k).not.toContain("appts_100");
+    expect(k).not.toContain("appts_50");
+  });
+
+  it("средний врач: 60 приёмов + рейтинг 4.6 при 6 отзывах", () => {
+    const k = keys({
+      completedAppointments: 60,
+      averageRating: 4.6,
+      reviewCount: 6,
+    });
+    expect(k).toEqual(expect.arrayContaining(["appts_50", "rating_high"]));
+    expect(k).not.toContain("rating_excellent");
+  });
+
+  it("высокий рейтинг без достаточного числа отзывов не даёт бейдж", () => {
+    const k = keys({ averageRating: 5, reviewCount: 3 });
+    expect(k).not.toContain("rating_excellent");
+    expect(k).not.toContain("rating_high");
+  });
+
+  it("новичок без активности — бейджей нет", () => {
+    expect(computeDoctorBadges({})).toEqual([]);
   });
 });

@@ -105,6 +105,38 @@ export async function getDoctorReviews(req, res) {
   }
 }
 
+// Бейджи-достижения врача, выведенные из агрегатов (без доп. запросов).
+// Возвращаем { key, icon, label } — фронт может локализовать по key,
+// с фолбэком на русский label.
+export function computeDoctorBadges(s) {
+  const badges = [];
+  const appts = s.completedAppointments || 0;
+  const reviews = s.reviewCount || 0;
+  const rating = s.averageRating || 0;
+  const patients = s.patientsServed || 0;
+  const months = s.monthsOnPlatform || 0;
+
+  // Приёмы — показываем самый высокий достигнутый порог.
+  if (appts >= 500) badges.push({ key: "appts_500", icon: "🏅", label: "500+ приёмов" });
+  else if (appts >= 100) badges.push({ key: "appts_100", icon: "🏅", label: "100+ приёмов" });
+  else if (appts >= 50) badges.push({ key: "appts_50", icon: "🏅", label: "50+ приёмов" });
+
+  // Рейтинг (при достаточном числе отзывов).
+  if (reviews >= 10 && rating >= 4.8)
+    badges.push({ key: "rating_excellent", icon: "⭐", label: "Отличный рейтинг" });
+  else if (reviews >= 5 && rating >= 4.5)
+    badges.push({ key: "rating_high", icon: "⭐", label: "Высокий рейтинг" });
+
+  // Пациенты и признание.
+  if (patients >= 100) badges.push({ key: "patients_100", icon: "👥", label: "100+ пациентов" });
+  if (reviews >= 50) badges.push({ key: "reviews_50", icon: "💬", label: "Народный выбор" });
+
+  // Стаж на платформе.
+  if (months >= 12) badges.push({ key: "veteran", icon: "🚀", label: "Год+ на DocPats" });
+
+  return badges;
+}
+
 // GET /doctor-profile/stats/:doctorProfileId  (публично)
 // «Счётчик доверия» — только агрегаты, БЕЗ PHI: рейтинг, число отзывов,
 // проведённых приёмов, уникальных пациентов, стаж на платформе, верификация.
@@ -155,8 +187,7 @@ export async function getDoctorTrustStats(req, res) {
         )
       : 0;
 
-    return res.status(200).json({
-      success: true,
+    const stats = {
       averageRating,
       reviewCount,
       completedAppointments,
@@ -164,7 +195,14 @@ export async function getDoctorTrustStats(req, res) {
       memberSince,
       monthsOnPlatform,
       isVerified:
-        profile.verificationStatus === "approved" || profile.isVerified === true,
+        profile.verificationStatus === "approved" ||
+        profile.isVerified === true,
+    };
+
+    return res.status(200).json({
+      success: true,
+      ...stats,
+      badges: computeDoctorBadges(stats),
     });
   } catch (err) {
     console.error("getDoctorTrustStats error:", err.message);
