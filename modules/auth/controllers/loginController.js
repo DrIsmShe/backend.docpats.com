@@ -148,10 +148,13 @@ export const loginUser = async (req, res) => {
     }
 
     // === СЕССИЯ ===
-    // NB: session.regenerate() здесь ломало вход в cross-origin проде
-    // (Netlify docpats.com → backend.docpats.com, sameSite=none): новая сессия
-    // не персистилась и пользователя выкидывало. Защиту от session fixation
-    // нужно возвращать отдельно и аккуратно под текущую cookie-конфигурацию.
+    // Защита от session fixation: СНАЧАЛА пересоздаём сессию (новый ID),
+    // ЗАТЕМ пишем данные. Прежняя поломка cross-origin была из-за обратного
+    // порядка — данные, записанные до regenerate, терялись, и юзера выкидывало.
+    await new Promise((resolve, reject) => {
+      req.session.regenerate((err) => (err ? reject(err) : resolve()));
+    });
+
     req.session.cookie.maxAge = remember
       ? 30 * 24 * 60 * 60 * 1000
       : 14 * 24 * 60 * 60 * 1000;
