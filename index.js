@@ -22,6 +22,7 @@ import uploadRoutes from "./common/routes/uploadRoutes.js";
 import uploadFileRoutes from "./common/routes/uploadFileRoutes.js";
 import emailLimiter from "./common/middlewares/rateLimiter.js";
 import { scheduleTrialReminders } from "./jobs/checkTrialReminders.js";
+import { scheduleNotificationDigest } from "./jobs/notificationDigest.job.js";
 import User, { decrypt as decryptUser } from "./common/models/Auth/users.js";
 import NewPatientPolyclinic from "./common/models/PatientProfile/patientProfile.js";
 import "./common/models/Comments/CommentDocpats.js";
@@ -383,6 +384,7 @@ async function bootstrap(startPort = PORT) {
     // ✅ Call gateway на том же nsp
     initCallGateway(nsp);
     scheduleTrialReminders();
+    scheduleNotificationDigest();
     app.set("io", io);
     setSimulationIo(io);
     server.listen(startPort, () =>

@@ -427,6 +427,8 @@ const userSchema = new mongoose.Schema(
     // После лимита код гасится, чтобы его нельзя было добить перебором.
     otpAttempts: { type: Number, default: 0 },
     lastLoginAt: { type: Date, default: null },
+    // Когда последний раз слали дайджест непрочитанных (анти-спам).
+    lastDigestEmailAt: { type: Date, default: null },
 
     // ─── Реферальная программа (сарафанное радио) ───
     // referralCode — мой личный код-приглашение; referredBy — кто пригласил
