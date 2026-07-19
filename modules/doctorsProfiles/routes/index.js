@@ -103,6 +103,9 @@ router.use("/cancel-verification-document", CancelVerificationDocumentsRoute);
 // Отзывы пациентов о враче (публичное чтение + авторизованная отправка)
 import doctorReviewRoute from "./doctorReviewRoute.js";
 router.use("/reviews", doctorReviewRoute);
+// Публичный «счётчик доверия» на профиле врача (агрегаты, без PHI).
+import { getDoctorTrustStats } from "../controllers/doctorReview.controller.js";
+router.get("/stats/:doctorProfileId", getDoctorTrustStats);
 // DOCTOR VERIFICATIONS ROUTES END
 
 // Проверка авторизации врача

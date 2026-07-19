@@ -6,6 +6,7 @@
 import mongoose from "mongoose";
 import DoctorReview from "../../../common/models/DoctorProfile/doctorReview.js";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
+import Appointment from "../../../common/models/Appointment/appointment.js";
 import { decrypt } from "../../../common/models/Auth/users.js";
 
 const safeDecrypt = (v) => {
@@ -100,6 +101,73 @@ export async function getDoctorReviews(req, res) {
     return res.status(200).json({ success: true, average, count, reviews });
   } catch (err) {
     console.error("getDoctorReviews error:", err.message);
+    return res.status(500).json({ success: false, message: "Ошибка сервера." });
+  }
+}
+
+// GET /doctor-profile/stats/:doctorProfileId  (публично)
+// «Счётчик доверия» — только агрегаты, БЕЗ PHI: рейтинг, число отзывов,
+// проведённых приёмов, уникальных пациентов, стаж на платформе, верификация.
+export async function getDoctorTrustStats(req, res) {
+  try {
+    const { doctorProfileId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(doctorProfileId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Некорректный ID врача." });
+    }
+
+    const profile = await DoctorProfile.findById(doctorProfileId)
+      .select("verificationStatus isVerified createdAt")
+      .lean();
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "Врач не найден." });
+    }
+
+    const oid = new mongoose.Types.ObjectId(doctorProfileId);
+
+    // Отзывы: среднее + количество (одним запросом).
+    const [reviewAgg, completedAppointments, distinctPatients] =
+      await Promise.all([
+        DoctorReview.aggregate([
+          { $match: { doctorProfileId: oid, status: "visible" } },
+          { $group: { _id: null, count: { $sum: 1 }, avg: { $avg: "$rating" } } },
+        ]),
+        // doctorId в приёме ссылается на DoctorProfile напрямую.
+        Appointment.countDocuments({ doctorId: oid, status: "completed" }),
+        Appointment.distinct("patientId", { doctorId: oid, status: "completed" }),
+      ]);
+
+    const reviewCount = reviewAgg[0]?.count || 0;
+    const averageRating = reviewAgg[0]?.avg
+      ? Math.round(reviewAgg[0].avg * 10) / 10
+      : 0;
+    const patientsServed = distinctPatients.filter(Boolean).length;
+
+    const memberSince = profile.createdAt || null;
+    const monthsOnPlatform = memberSince
+      ? Math.max(
+          0,
+          Math.floor(
+            (Date.now() - new Date(memberSince).getTime()) /
+              (1000 * 60 * 60 * 24 * 30),
+          ),
+        )
+      : 0;
+
+    return res.status(200).json({
+      success: true,
+      averageRating,
+      reviewCount,
+      completedAppointments,
+      patientsServed,
+      memberSince,
+      monthsOnPlatform,
+      isVerified:
+        profile.verificationStatus === "approved" || profile.isVerified === true,
+    });
+  } catch (err) {
+    console.error("getDoctorTrustStats error:", err.message);
     return res.status(500).json({ success: false, message: "Ошибка сервера." });
   }
 }
