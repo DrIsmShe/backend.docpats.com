@@ -10,6 +10,7 @@
 import express from "express";
 import { getTrialStatus } from "./trial.controller.js";
 import { getMyReferral } from "./referral.controller.js";
+import { getOnboarding } from "./onboarding.controller.js";
 
 const router = express.Router();
 
@@ -27,5 +28,6 @@ function requireAuth(req, res, next) {
 
 router.get("/trial-status", requireAuth, getTrialStatus);
 router.get("/referral", requireAuth, getMyReferral);
+router.get("/onboarding", requireAuth, getOnboarding);
 
 export default router;
