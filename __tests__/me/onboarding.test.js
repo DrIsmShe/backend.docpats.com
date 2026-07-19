@@ -46,6 +46,9 @@ describe("онбординг — чек-лист профиля", () => {
         "invite",
       ]),
     );
+    // фото/специализация ведут на страницу профиля врача (с userId)
+    const avatarStep = res.body.steps.find((s) => s.key === "avatar");
+    expect(avatarStep.link).toContain(`/doctor/doctor-profile/${userId}`);
   });
 
   it("частично заполненный врач считает выполненные шаги", async () => {
@@ -86,8 +89,16 @@ describe("онбординг — чек-лист профиля", () => {
     expect(res.body.role).toBe("patient");
     const keys = res.body.steps.map((s) => s.key);
     expect(keys).toEqual(
-      expect.arrayContaining(["avatar", "consultation", "doctor", "invite"]),
+      expect.arrayContaining([
+        "avatar",
+        "consultation",
+        "doctor",
+        "invitePatient",
+      ]),
     );
+    // ссылка на фото ведёт на страницу профиля пациента (с userId)
+    const avatarStep = res.body.steps.find((s) => s.key === "avatar");
+    expect(avatarStep.link).toContain("/patient/patient-profile/");
   });
 
   it("без авторизации → 401", async () => {

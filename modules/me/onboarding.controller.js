@@ -42,9 +42,10 @@ export async function getOnboarding(req, res) {
         Article.countDocuments({ authorId: userId }),
         DoctorSchedule.findOne({ doctorId: userId }).select("_id").lean(),
       ]);
+      const profileLink = `/doctor/doctor-profile/${userId}`;
       steps = [
-        { key: "avatar", done: avatarOk, link: "/doctor/home-page" },
-        { key: "specialization", done: !!user.specialization, link: "/doctor/home-page" },
+        { key: "avatar", done: avatarOk, link: profileLink },
+        { key: "specialization", done: !!user.specialization, link: profileLink },
         {
           key: "verification",
           done: profile?.verificationStatus === "approved",
@@ -64,7 +65,11 @@ export async function getOnboarding(req, res) {
         .select("consultationsUsed")
         .lean();
       steps = [
-        { key: "avatar", done: avatarOk, link: "/patient/home-page" },
+        {
+          key: "avatar",
+          done: avatarOk,
+          link: `/patient/patient-profile/${userId}`,
+        },
         {
           key: "consultation",
           done: (consult?.consultationsUsed || 0) > 0,
@@ -76,7 +81,7 @@ export async function getOnboarding(req, res) {
           link: "/patient/doctors",
         },
         {
-          key: "invite",
+          key: "invitePatient",
           done: (user.referralCount || 0) > 0,
           link: "/patient/invite",
         },
