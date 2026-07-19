@@ -2,6 +2,7 @@ import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js
 import User from "../../../common/models/Auth/users.js";
 import Article from "../../../common/models/Articles/articles.js";
 import Specialization from "../../../common/models/DoctorProfile/specialityOfDoctor.js";
+import DoctorReview from "../../../common/models/DoctorProfile/doctorReview.js";
 
 /** Унифицированная функция нормализации URL */
 const normalizeImageUrl = (raw, baseUrl) => {
@@ -47,6 +48,25 @@ const AllDoctorController = async (req, res) => {
 
     const doctors = doctorsRaw.filter((doc) => doc.userId);
 
+    // Рейтинги — ОДИН агрегат на весь список (без N+1).
+    const profileIds = doctors.map((d) => d._id);
+    const ratingAgg = await DoctorReview.aggregate([
+      { $match: { doctorProfileId: { $in: profileIds }, status: "visible" } },
+      {
+        $group: {
+          _id: "$doctorProfileId",
+          count: { $sum: 1 },
+          avg: { $avg: "$rating" },
+        },
+      },
+    ]);
+    const ratingMap = new Map(
+      ratingAgg.map((r) => [
+        String(r._id),
+        { reviewCount: r.count, rating: Math.round(r.avg * 10) / 10 },
+      ]),
+    );
+
     const result = await Promise.all(
       doctors.map(async (doctor) => {
         let firstName = "Неизвестно",
@@ -74,6 +94,11 @@ const AllDoctorController = async (req, res) => {
         const rawImage = doctor.profileImage || userDoc?.avatar || null;
         const profileImage = normalizeImageUrl(rawImage, publicR2);
 
+        const rt = ratingMap.get(String(doctor._id)) || {
+          reviewCount: 0,
+          rating: 0,
+        };
+
         return {
           _id: doctor._id,
           profileImage,
@@ -83,6 +108,8 @@ const AllDoctorController = async (req, res) => {
           createdAt: doctor.createdAt,
           user: { firstName, lastName },
           specialty: specializationName,
+          rating: rt.rating,
+          reviewCount: rt.reviewCount,
           articles: {
             count: articlesCount,
             link: `${req.protocol}://${req.get("host")}/articles?authorId=${

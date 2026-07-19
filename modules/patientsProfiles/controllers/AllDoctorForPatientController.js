@@ -5,6 +5,7 @@ import Article from "../../../common/models/Articles/articles.js";
 import Specialization from "../../../common/models/DoctorProfile/specialityOfDoctor.js";
 import Comments from "../../../common/models/Comments/CommentDocpats.js";
 import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js";
+import DoctorReview from "../../../common/models/DoctorProfile/doctorReview.js";
 
 /**
  * Получение списка всех врачей с фильтрацией и проверкой даты
@@ -26,6 +27,25 @@ const AllDoctorController = async (req, res) => {
         data: [],
       });
     }
+
+    // Реальные рейтинги — ОДИН агрегат на весь список (без N+1, без фейков).
+    const profileIds = doctors.map((d) => d._id);
+    const ratingAgg = await DoctorReview.aggregate([
+      { $match: { doctorProfileId: { $in: profileIds }, status: "visible" } },
+      {
+        $group: {
+          _id: "$doctorProfileId",
+          count: { $sum: 1 },
+          avg: { $avg: "$rating" },
+        },
+      },
+    ]);
+    const ratingMap = new Map(
+      ratingAgg.map((r) => [
+        String(r._id),
+        { count: r.count, avg: Math.round(r.avg * 10) / 10 },
+      ]),
+    );
 
     const allCountries = new Set();
     const allSpecialties = new Set();
@@ -128,14 +148,12 @@ const AllDoctorController = async (req, res) => {
             isDeleted: false,
           })
         : 0;
-      const profileReviewsCount = await Comments.countDocuments({
-        targetType: "Doctor",
-        targetId: doctor._id,
-        isDeleted: false,
-      });
+      // Реальный рейтинг из DoctorReview (0, если отзывов ещё нет).
+      const rt = ratingMap.get(String(doctor._id)) || { count: 0, avg: 0 };
+      const realRating = rt.avg;
+      const profileReviewsCount = rt.count;
 
-      const fakeRating = 3.5 + Math.min(profileReviewsCount / 20, 1.5);
-      if (minRating && fakeRating < Number(minRating)) continue;
+      if (minRating && realRating < Number(minRating)) continue;
       if (minReviews && profileReviewsCount < Number(minReviews)) continue;
 
       const consultationPrice =
@@ -153,7 +171,7 @@ const AllDoctorController = async (req, res) => {
         lastName,
         specialty: specialtyName,
         reviewsCount: profileReviewsCount,
-        rating: Number(fakeRating.toFixed(1)),
+        rating: realRating,
         consultationPrice,
         articles: {
           count: articleIds.length,
