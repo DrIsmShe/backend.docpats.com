@@ -275,13 +275,24 @@ clinicSchema.plugin(softDeletePlugin);
 clinicSchema.index({ ownerId: 1, isActive: 1 });
 clinicSchema.index({ "address.city": 1, isActive: 1 });
 
+// Зарезервированные корневые пути — клиника с таким slug затенила бы реальный
+// маршрут (клиники теперь доступны по корневому /:slug). Такому slug добавляем
+// суффикс "-clinic".
+const RESERVED_SLUGS = new Set([
+  "login", "registration", "register", "pricing", "demo", "patient", "doctor",
+  "dp", "clinic", "clinics", "admin", "public", "api", "top-doctors",
+  "subscription", "payment", "complete-registration", "resetpassword",
+  "resetpasswordchange", "otpresetpasswordchange", "confirmationregister",
+  "about", "articles", "article", "news", "consultation", "uploads", "static",
+  "assets", "images", "sitemap", "robots", "manifest", "sw", "favicon",
+]);
+
 // Helper: generate URL-safe slug from name
 clinicSchema.statics.generateSlug = function (name) {
-  return slugify(name, {
-    lower: true,
-    strict: true,
-    locale: "en",
-  });
+  let base = slugify(name || "", { lower: true, strict: true, locale: "en" });
+  if (!base) base = "clinic";
+  if (RESERVED_SLUGS.has(base)) base = `${base}-clinic`;
+  return base;
 };
 
 // Pre-save: auto-generate slug if not set
