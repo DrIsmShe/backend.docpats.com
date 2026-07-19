@@ -9,8 +9,19 @@ import { markSinglePatientNotificationAsReadController } from "./controllers/mar
 import { markAllPatientNotificationsAsRead } from "./controllers/markAllPatientNotificationsAsRead.js";
 import { deletePatientNotificationController } from "./controllers/deletePatientNotificationController.js";
 
+import {
+  getPushPublicKey,
+  subscribePush,
+  unsubscribePush,
+} from "./controllers/push.controller.js";
+
 import authMidleWeare from "../../common/middlewares/authMiddleware.js";
 const router = Router();
+
+// ── Web-push подписки ──────────────────────────────────────────────
+router.get("/push/public-key", getPushPublicKey);
+router.post("/push/subscribe", authMidleWeare, subscribePush);
+router.post("/push/unsubscribe", authMidleWeare, unsubscribePush);
 
 // GET /notifications - все уведомления пользователя
 router.get("/get", authMidleWeare, getNotificationsController);

@@ -14,6 +14,7 @@
 
 import mongoose from "mongoose";
 import Notification from "../../../common/models/Notification/notification.js";
+import { sendToUser } from "./webpush.service.js";
 
 const VALID_PRIORITIES = new Set(["low", "normal", "high"]);
 
@@ -69,6 +70,14 @@ export async function notify({
       priority: VALID_PRIORITIES.has(priority) ? priority : "normal",
       icon: icon || "bell",
     });
+
+    // Браузерный web-push (fire-and-forget; no-op без VAPID-ключей).
+    sendToUser(uid, {
+      title: String(title),
+      body: String(message),
+      url: link || "/",
+    }).catch(() => {});
+
     return doc;
   } catch (err) {
     // E11000 — сработал dedup-индекс (userId, senderId, type, message).
