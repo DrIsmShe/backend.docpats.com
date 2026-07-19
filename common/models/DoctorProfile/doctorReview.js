@@ -20,6 +20,9 @@ const doctorReviewSchema = new mongoose.Schema(
     },
     rating: { type: Number, min: 1, max: 5, required: true },
     text: { type: String, maxlength: 1000, trim: true, default: "" },
+    // Публичный ответ врача на отзыв (растит доверие).
+    reply: { type: String, maxlength: 1000, trim: true, default: "" },
+    repliedAt: { type: Date, default: null },
     // видимость (на случай модерации админом)
     status: {
       type: String,

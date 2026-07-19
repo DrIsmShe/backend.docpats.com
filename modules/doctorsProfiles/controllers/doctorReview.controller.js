@@ -90,6 +90,8 @@ export async function getDoctorReviews(req, res) {
       createdAt: d.createdAt,
       author: authorName(d.patientId),
       avatar: d.patientId?.avatar || null,
+      reply: d.reply || "",
+      repliedAt: d.repliedAt || null,
     }));
 
     const count = reviews.length;
@@ -98,7 +100,18 @@ export async function getDoctorReviews(req, res) {
         ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / count) * 10) / 10
         : 0;
 
-    return res.status(200).json({ success: true, average, count, reviews });
+    // userId владельца профиля — чтобы фронт показал форму ответа только ему.
+    const profile = await DoctorProfile.findById(doctorProfileId)
+      .select("userId")
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      average,
+      count,
+      reviews,
+      ownerUserId: profile?.userId || null,
+    });
   } catch (err) {
     console.error("getDoctorReviews error:", err.message);
     return res.status(500).json({ success: false, message: "Ошибка сервера." });
@@ -135,6 +148,69 @@ export function computeDoctorBadges(s) {
   if (months >= 12) badges.push({ key: "veteran", icon: "🚀", label: "Год+ на DocPats" });
 
   return badges;
+}
+
+// POST /doctor-profile/reviews/:reviewId/reply  (auth, только владелец профиля)
+export async function replyToDoctorReview(req, res) {
+  try {
+    const userId = req.userId; // authMiddleware
+    const { reviewId } = req.params;
+    const { reply } = req.body || {};
+
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Требуется авторизация." });
+    }
+    if (!mongoose.Types.ObjectId.isValid(reviewId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Некорректный ID отзыва." });
+    }
+    const text = String(reply || "").trim();
+    if (!text) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Ответ не может быть пустым." });
+    }
+    if (text.length > 1000) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Ответ слишком длинный (макс. 1000)." });
+    }
+
+    const review = await DoctorReview.findById(reviewId);
+    if (!review) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Отзыв не найден." });
+    }
+    const profile = await DoctorProfile.findById(review.doctorProfileId).select(
+      "userId",
+    );
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "Врач не найден." });
+    }
+    if (String(profile.userId) !== String(userId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Отвечать можно только на отзывы о своём профиле.",
+      });
+    }
+
+    review.reply = text;
+    review.repliedAt = new Date();
+    await review.save();
+
+    return res.status(200).json({
+      success: true,
+      reply: review.reply,
+      repliedAt: review.repliedAt,
+    });
+  } catch (err) {
+    console.error("replyToDoctorReview error:", err.message);
+    return res.status(500).json({ success: false, message: "Ошибка сервера." });
+  }
 }
 
 // GET /doctor-profile/stats/:doctorProfileId  (публично)
