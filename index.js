@@ -49,6 +49,7 @@ import clinicPublicRouter from "./modules/clinic/clinic-public/clinic-public.rou
 import publicDoctorsRouter from "./modules/doctorsProfiles/routes/publicDoctorsRoute.js";
 import paymentsRouter from "./modules/payments/payments.routes.js";
 import paymentsWebhookRouter from "./modules/payments/webhook.routes.js";
+import educationRoutes from "./modules/education/index.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -311,6 +312,9 @@ app.use("/api/me", meRoutes);
 app.use("/api/payments", paymentsRouter);
 app.use("/audit", auditRoutes);
 app.use("/api/v1/clinic", clinicRoutes);
+// Подготовка к экзаменам — глобальный модуль (без tenantMiddleware),
+// но опирается на req.session, поэтому монтируется после session-middleware.
+app.use("/api/v1/education", educationRoutes);
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
 await import("./common/models/index.js")
