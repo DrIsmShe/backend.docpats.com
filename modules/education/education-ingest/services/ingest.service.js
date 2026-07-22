@@ -409,6 +409,34 @@ export async function startExtraction(jobId, { buffer, payloadItems } = {}) {
   return started ?? job;
 }
 
+// ─── deleteJob ────────────────────────────────────────────────────────
+// Уборка списка загрузок. Задание — журнал распознавания, а не сам контент:
+// вопросы, уже перенесённые в банк, живут отдельно и удалением задания не
+// затрагиваются (у них остаётся importJobId несуществующего задания — это
+// осознанно, ссылка нужна для истории, а не для целостности).
+//
+// Пока идёт распознавание, удалять нельзя: фоновая работа допишет
+// результат в никуда, и оператор решит, что она просто пропала.
+export async function deleteJob(jobId) {
+  const job = await ExamImportJob.findById(jobId).select("status stats").lean();
+  if (!job) throw new NotFoundError("Import job");
+
+  if (job.status === "extracting") {
+    throw new ConflictError(
+      "Задание сейчас распознаётся — дождитесь завершения",
+    );
+  }
+
+  await ExamImportJob.deleteOne({ _id: jobId });
+  return {
+    deleted: true,
+    id: String(jobId),
+    // Отдаём оператору, сколько вопросов из этого задания уже в банке:
+    // они остаются, и в интерфейсе об этом честно пишем.
+    importedItems: job.stats?.imported ?? 0,
+  };
+}
+
 // ─── listJobs / getJob ────────────────────────────────────────────────
 export async function listJobs(filters = {}) {
   const query = {};

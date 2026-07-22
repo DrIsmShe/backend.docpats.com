@@ -13,6 +13,7 @@ import {
   createJob,
   runExtraction,
   startExtraction,
+  deleteJob,
   getJob,
   updateDraft,
   importDrafts,
@@ -382,5 +383,49 @@ describe("асинхронный запуск распознавания", () =>
     await startExtraction(job._id, { payloadItems: [RAW_ITEMS[0]] });
     const finished = await waitForStatus(job._id, ["extracted", "failed"]);
     expect(finished.status).toBe("extracted");
+  });
+});
+
+// Список загрузок копится после каждой попытки — оператор должен уметь
+// его чистить, не заходя в базу.
+describe("удаление задания импорта", () => {
+  let program;
+  beforeEach(async () => {
+    program = await makeProgram();
+  });
+
+  it("удаляет разобранное задание", async () => {
+    const job = await makeJob(program);
+    await runExtraction(job._id, { payloadItems: [RAW_ITEMS[0]] });
+
+    const result = await deleteJob(job._id);
+    expect(result.deleted).toBe(true);
+    await expect(getJob(job._id)).rejects.toThrow();
+  });
+
+  it("не удаляет задание, пока идёт распознавание", async () => {
+    // Иначе фоновая работа допишет результат в никуда, и оператор решит,
+    // что распознавание просто пропало.
+    const job = await makeJob(program);
+    await ExamImportJob.updateOne(
+      { _id: job._id },
+      { $set: { status: "extracting", startedAt: new Date() } },
+    );
+
+    await expect(deleteJob(job._id)).rejects.toThrow(/распознаётся/i);
+  });
+
+  it("не трогает вопросы, уже перенесённые в банк", async () => {
+    // Задание — журнал распознавания, а не сам контент: удалять его
+    // безопасно, и это отдельно зафиксировано, потому что соблазн
+    // «почистить за собой» вместе с вопросами тут очевидный.
+    const job = await makeJob(program);
+    await runExtraction(job._id, { payloadItems: [RAW_ITEMS[0]] });
+    const { createdCount } = await importDrafts(job._id, { actorId: oid() });
+    expect(createdCount).toBe(1);
+
+    const result = await deleteJob(job._id);
+    expect(result.importedItems).toBe(1);
+    expect(await ExamItem.countDocuments({ programId: program._id })).toBe(1);
   });
 });

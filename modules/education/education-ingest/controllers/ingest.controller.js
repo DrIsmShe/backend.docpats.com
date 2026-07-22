@@ -7,6 +7,7 @@ import {
   startExtraction,
   listJobs,
   getJob,
+  deleteJob,
   updateDraft,
   importDrafts,
 } from "../services/ingest.service.js";
@@ -72,6 +73,13 @@ export const listJobsController = asyncHandler(async (req, res) => {
 export const getJobController = asyncHandler(async (req, res) => {
   const job = await getJob(req.params.id);
   res.json({ job });
+});
+
+// Удаление задания. Разбор распознанного — журнал, а не контент: вопросы,
+// уже перенесённые в банк, остаются на месте.
+export const deleteJobController = asyncHandler(async (req, res) => {
+  const result = await deleteJob(req.params.id);
+  res.json(result);
 });
 
 export const updateDraftController = asyncHandler(async (req, res) => {

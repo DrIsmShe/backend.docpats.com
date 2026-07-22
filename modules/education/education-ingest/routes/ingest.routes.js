@@ -64,6 +64,7 @@ router.get("/import/extractors", requireAuthor, ctrl.listExtractorsController);
 router.get("/import/jobs", requireAuthor, ctrl.listJobsController);
 router.post("/import/jobs", requireAuthor, ctrl.createJobController);
 router.get("/import/jobs/:id", requireAuthor, ctrl.getJobController);
+router.delete("/import/jobs/:id", requireAuthor, ctrl.deleteJobController);
 
 router.post(
   "/import/jobs/:id/run",
