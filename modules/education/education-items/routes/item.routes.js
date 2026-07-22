@@ -23,6 +23,12 @@ router.post("/items/:id/submit", requireAuthor, ctrl.submitForReviewController);
 // Публикация и отклонение — только рецензент. Именно здесь снимается
 // блокировка с ИИ-черновиков.
 router.post("/items/:id/review", requireReviewer, ctrl.reviewItemController);
+// Пакет по тесту, а не по вопросу — отсюда и /programs в пути.
+router.post(
+  "/programs/:id/review-all",
+  requireReviewer,
+  ctrl.reviewAllController,
+);
 router.delete("/items/:id", requireReviewer, ctrl.archiveItemController);
 
 router.get(

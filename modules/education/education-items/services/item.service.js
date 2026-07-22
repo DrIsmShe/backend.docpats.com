@@ -554,3 +554,59 @@ export async function itemAnalysis(programId, { minServed = 20 } = {}) {
 // Экспортируем модель для сборки сессий, чтобы attempts не тянул модель напрямую.
 export { ExamItem };
 export const toObjectId = (v) => new mongoose.Types.ObjectId(String(v));
+
+// ─── reviewAllReady ───────────────────────────────────────────────────
+// Пакетное одобрение очереди одного теста.
+//
+// Зачем: импорт сборника даёт сотню вопросов разом, и проходить их по
+// одному — работа на вечер. При этом оператор УЖЕ смотрел их в разборе
+// импорта: проставлял ключи ответов, отбраковывал мусор.
+//
+// Гейт при этом остаётся на месте. Одобряет по-прежнему человек — просто
+// одним действием вместо ста, и решение фиксируется на каждом вопросе
+// (reviewedBy = тот, кто нажал). Вопросы, которые нельзя публиковать —
+// без правильного ответа, без органа для заимствованного материала, —
+// пропускаются и возвращаются оператору списком: они требуют глазами.
+//
+// Идём по одному через reviewItem, а не bulk-обновлением: иначе
+// разъедутся денормализованные счётчики и языки программы, которые
+// пересчитывает именно он.
+export async function reviewAllReady({ programId, reviewerId }) {
+  if (!reviewerId) throw new ValidationError("reviewerId is required");
+  if (!programId) throw new ValidationError("programId is required");
+
+  const pending = await ExamItem.find({ programId, status: "in_review" })
+    .select("_id")
+    .lean();
+
+  const approved = [];
+  const skipped = [];
+
+  for (const { _id } of pending) {
+    try {
+      await reviewItem(_id, { decision: "approve", reviewerId });
+      approved.push(String(_id));
+    } catch (err) {
+      skipped.push({
+        itemId: String(_id),
+        reason: String(err?.message ?? err).slice(0, 300),
+      });
+    }
+  }
+
+  logger?.info?.(
+    {
+      programId: String(programId),
+      reviewerId: String(reviewerId),
+      approved: approved.length,
+      skipped: skipped.length,
+    },
+    "bulk review finished",
+  );
+
+  return {
+    approvedCount: approved.length,
+    skippedCount: skipped.length,
+    skipped: skipped.slice(0, 20),
+  };
+}

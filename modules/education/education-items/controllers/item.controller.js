@@ -9,6 +9,7 @@ import {
   updateItem,
   submitForReview,
   reviewItem,
+  reviewAllReady,
   archiveItem,
   itemAnalysis,
 } from "../services/item.service.js";
@@ -69,6 +70,17 @@ export const submitForReviewController = asyncHandler(async (req, res) => {
     req.educationActor?.userId ?? null,
   );
   res.json({ item });
+});
+
+// Пакетное одобрение очереди одного теста: сборник даёт сотню вопросов
+// разом, и по одному это работа на вечер. Гейт сохраняется — одобряет
+// человек, решение пишется на каждый вопрос.
+export const reviewAllController = asyncHandler(async (req, res) => {
+  const result = await reviewAllReady({
+    programId: req.params.id,
+    reviewerId: req.educationActor?.userId,
+  });
+  res.json(result);
 });
 
 export const reviewItemController = asyncHandler(async (req, res) => {

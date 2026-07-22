@@ -13,6 +13,7 @@ import {
   submitForReview,
   reviewItem,
   archiveItem,
+  reviewAllReady,
   assertItemIntegrity,
   assertPublishable,
   collectQualityWarnings,
@@ -369,5 +370,77 @@ describe("languages программы следуют за банком вопр
     const fresh = await ExamProgram.findById(program._id).lean();
     expect(fresh.publishedItemCount).toBe(0);
     expect(fresh.languages).toEqual(["az"]);
+  });
+});
+
+// Импорт сборника даёт сотню вопросов разом, и ревью по одному — работа
+// на вечер. Пакет одобряет всё готовое, но гейт не отменяет: решение
+// принимает человек и оно пишется на каждый вопрос.
+describe("пакетное одобрение очереди", () => {
+  let program;
+
+  beforeEach(async () => {
+    program = await makeProgram();
+  });
+
+  it("одобряет все готовые вопросы теста и проставляет рецензента", async () => {
+    const reviewerId = oid();
+    for (let i = 0; i < 3; i += 1) {
+      const item = await createItem(
+        goodItemPayload(program._id, { stem: `Вопрос ${i} про тактику?` }),
+      );
+      await submitForReview(item._id);
+    }
+
+    const result = await reviewAllReady({ programId: program._id, reviewerId });
+    expect(result.approvedCount).toBe(3);
+    expect(result.skippedCount).toBe(0);
+
+    const published = await ExamItem.find({
+      programId: program._id,
+      status: "published",
+    }).lean();
+    expect(published).toHaveLength(3);
+    for (const item of published) {
+      expect(String(item.reviewedBy)).toBe(String(reviewerId));
+    }
+  });
+
+  it("пропускает вопрос без правильного ответа и возвращает причину", async () => {
+    // Именно ради таких пакет и не делает bulk-update: вопрос без ключа
+    // ответа опубликовать нельзя, и оператор должен узнать, какой именно
+    // остался.
+    const good = await createItem(goodItemPayload(program._id));
+    await submitForReview(good._id);
+
+    const broken = await createItem(
+      goodItemPayload(program._id, { stem: "Вопрос без ключа ответа?" }),
+    );
+    await submitForReview(broken._id);
+    await ExamItem.updateOne({ _id: broken._id }, { $set: { correctKeys: [] } });
+
+    const result = await reviewAllReady({
+      programId: program._id,
+      reviewerId: oid(),
+    });
+
+    expect(result.approvedCount).toBe(1);
+    expect(result.skippedCount).toBe(1);
+    expect(result.skipped[0].itemId).toBe(String(broken._id));
+
+    const stillPending = await ExamItem.findById(broken._id).lean();
+    expect(stillPending.status).toBe("in_review");
+  });
+
+  it("пересчитывает счётчик опубликованных вопросов теста", async () => {
+    // Пакет идёт через reviewItem именно поэтому: bulk-обновление
+    // разъехалось бы с денормализованными полями программы.
+    const item = await createItem(goodItemPayload(program._id));
+    await submitForReview(item._id);
+
+    await reviewAllReady({ programId: program._id, reviewerId: oid() });
+
+    const fresh = await ExamProgram.findById(program._id).lean();
+    expect(fresh.publishedItemCount).toBe(1);
   });
 });
