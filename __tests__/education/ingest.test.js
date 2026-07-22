@@ -8,9 +8,11 @@ import { describe, it, expect, beforeEach } from "vitest";
 import mongoose from "mongoose";
 import ExamProgram from "../../modules/education/education-catalog/models/examProgram.model.js";
 import ExamItem from "../../modules/education/education-items/models/examItem.model.js";
+import ExamImportJob from "../../modules/education/education-ingest/models/examImportJob.model.js";
 import {
   createJob,
   runExtraction,
+  startExtraction,
   getJob,
   updateDraft,
   importDrafts,
@@ -313,5 +315,72 @@ describe("перенос в банк вопросов", () => {
     expect(() => assertPublishable(item)).toThrow(/requires human review/i);
     // А с рецензентом — можно, объяснения для этого не нужны.
     expect(() => assertPublishable(item, { reviewerId: oid() })).not.toThrow();
+  });
+});
+
+// Регресс с прода: распознавание идёт 3–4 минуты, nginx рвёт соединение
+// раньше, и браузер получает «Network Error» без статуса. Сервер при этом
+// доводит работу до конца, но форма считает загрузку сорванной и
+// архивирует программу — результат теряется. Лечится тем, что запуск
+// возвращает управление сразу, а прогресс забирают опросом задания.
+describe("асинхронный запуск распознавания", () => {
+  let program;
+  beforeEach(async () => {
+    program = await makeProgram();
+  });
+
+  // Ждём фонового завершения, не завязываясь на конкретную задержку.
+  async function waitForStatus(jobId, statuses, limitMs = 5000) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < limitMs) {
+      const current = await getJob(jobId);
+      if (statuses.includes(current.status)) return current;
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    throw new Error(`Задание не дошло до ${statuses.join("/")} за ${limitMs} мс`);
+  }
+
+  it("возвращает задание сразу, а распознаёт в фоне", async () => {
+    const job = await makeJob(program);
+
+    const started = await startExtraction(job._id, {
+      payloadItems: [RAW_ITEMS[0]],
+    });
+    // Ответ отдан до того, как экстрактор закончил.
+    expect(started.status).toBe("extracting");
+
+    const finished = await waitForStatus(job._id, ["extracted", "failed"]);
+    expect(finished.status).toBe("extracted");
+    expect(finished.stats.detected).toBe(1);
+  });
+
+  it("не даёт перезапустить уже распознанное задание", async () => {
+    const job = await makeJob(program);
+    await startExtraction(job._id, { payloadItems: [RAW_ITEMS[0]] });
+    await waitForStatus(job._id, ["extracted"]);
+
+    await expect(
+      startExtraction(job._id, { payloadItems: [RAW_ITEMS[0]] }),
+    ).rejects.toThrow(/cannot be re-extracted/i);
+  });
+
+  it("перезапускает задание, брошенное на середине", async () => {
+    // Процесс перезапустили посреди распознавания: задание навсегда
+    // осталось в extracting. Без послабления оператор не смог бы его
+    // повторить — только завести новое.
+    const job = await makeJob(program);
+    await ExamImportJob.updateOne(
+      { _id: job._id },
+      {
+        $set: {
+          status: "extracting",
+          startedAt: new Date(Date.now() - 60 * 60 * 1000),
+        },
+      },
+    );
+
+    await startExtraction(job._id, { payloadItems: [RAW_ITEMS[0]] });
+    const finished = await waitForStatus(job._id, ["extracted", "failed"]);
+    expect(finished.status).toBe("extracted");
   });
 });

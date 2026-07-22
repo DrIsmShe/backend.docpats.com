@@ -4,7 +4,7 @@ import { asyncHandler } from "../../../../common/middlewares/errorHandler.js";
 import { ValidationError } from "../../../../common/utils/errors.js";
 import {
   createJob,
-  runExtraction,
+  startExtraction,
   listJobs,
   getJob,
   updateDraft,
@@ -51,11 +51,14 @@ export const runExtractionController = asyncHandler(async (req, res) => {
   const parsed = runExtractionSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
 
-  const job = await runExtraction(req.params.id, {
+  // Отвечаем сразу, распознавание идёт в фоне: синхронный ответ на 3–4
+  // минуты не переживает nginx, и клиент получал «Network Error» на живой
+  // работе. Прогресс клиент забирает опросом GET /import/jobs/:id.
+  const job = await startExtraction(req.params.id, {
     buffer: req.file?.buffer ?? null,
     payloadItems: parsed.data.items ?? null,
   });
-  res.json({ job });
+  res.status(202).json({ job });
 });
 
 export const listJobsController = asyncHandler(async (req, res) => {

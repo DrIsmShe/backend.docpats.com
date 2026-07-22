@@ -212,13 +212,22 @@ export async function createJob(input) {
 }
 
 // ─── runExtraction ────────────────────────────────────────────────────
-// Синхронный прогон: оператор загружает файл и ждёт результат. Очередь
-// (BullMQ) здесь пока избыточна — импорт делает человек вручную, пачками
-// по одному файлу, и ему нужен результат сразу.
-export async function runExtraction(jobId, { buffer, payloadItems } = {}) {
+// Сам прогон экстрактора. Через HTTP вызывается не напрямую, а из
+// startExtraction (см. ниже) — оператор не должен держать соединение
+// открытым все 3–4 минуты. Прямой вызов остаётся для очереди, скриптов и
+// тестов.
+//
+// alreadyStarted — служебный флаг для startExtraction: она уже проверила
+// задание и перевела его в extracting. Повторять переход здесь нельзя,
+// иначе появляется промежуточное состояние, которое опрос клиента видит
+// как чужой результат.
+export async function runExtraction(
+  jobId,
+  { buffer, payloadItems, alreadyStarted = false } = {},
+) {
   const job = await ExamImportJob.findById(jobId);
   if (!job) throw new NotFoundError("Import job");
-  if (!["pending", "failed"].includes(job.status)) {
+  if (!alreadyStarted && !["pending", "failed"].includes(job.status)) {
     throw new ConflictError(
       `Job with status "${job.status}" cannot be re-extracted`,
     );
@@ -229,10 +238,12 @@ export async function runExtraction(jobId, { buffer, payloadItems } = {}) {
     .lean();
   if (!program) throw new NotFoundError("Exam program");
 
-  job.status = "extracting";
-  job.startedAt = new Date();
-  job.error = null;
-  await job.save();
+  if (!alreadyStarted) {
+    job.status = "extracting";
+    job.startedAt = new Date();
+    job.error = null;
+    await job.save();
+  }
 
   try {
     const extractor = getExtractor(job.extractor);
@@ -332,6 +343,70 @@ export async function runExtraction(jobId, { buffer, payloadItems } = {}) {
     await job.save();
     throw err;
   }
+}
+
+// ─── startExtraction ──────────────────────────────────────────────────
+// Асинхронный запуск: проверяем, что задание вообще можно запускать, и
+// сразу возвращаем управление, не дожидаясь модели.
+//
+// Почему не синхронно, как задумывалось изначально: распознавание идёт
+// 3–4 минуты, а nginx перед приложением рвёт соединение раньше. Браузер в
+// этот момент показывает «Network Error» вообще без статуса — ошибку,
+// сгенерированную nginx, отдают без CORS-заголовков, и прочитать её нельзя.
+// Сервер при этом спокойно доводит распознавание до конца, но оператор
+// видит сбой и теряет результат (так и случилось на проде: три задания
+// со 101 распознанным вопросом, и все программы откачены формой).
+//
+// Прогресс оператор получает опросом задания: статусы pending → extracting
+// → extracted/failed в модели уже есть, а причину падения runExtraction
+// пишет в job.error.
+//
+// Зависший запуск: если процесс перезапустили посреди распознавания,
+// задание навсегда осталось бы в extracting и его нельзя было бы повторить.
+// Поэтому старый extracting считаем брошенным и разрешаем перезапуск.
+const STALE_EXTRACTING_MS = 20 * 60 * 1000;
+
+export async function startExtraction(jobId, { buffer, payloadItems } = {}) {
+  const job = await ExamImportJob.findById(jobId).lean();
+  if (!job) throw new NotFoundError("Import job");
+
+  const startedAt = job.startedAt ? new Date(job.startedAt).getTime() : 0;
+  const isStale =
+    job.status === "extracting" && Date.now() - startedAt > STALE_EXTRACTING_MS;
+
+  if (!["pending", "failed"].includes(job.status) && !isStale) {
+    throw new ConflictError(
+      `Job with status "${job.status}" cannot be re-extracted`,
+    );
+  }
+
+  // Переход в extracting делаем здесь и только здесь — одним обновлением.
+  // Если бы статус менял фоновый прогон, между ответом и его стартом
+  // осталось бы окно, в котором опрос клиента видит прежний статус
+  // задания и принимает его за результат этого запуска.
+  const started = await ExamImportJob.findOneAndUpdate(
+    { _id: jobId },
+    { $set: { status: "extracting", startedAt: new Date(), error: null } },
+    { new: true },
+  ).lean();
+
+  // Фоновая работа. Ошибку не пробрасываем: runExtraction уже записал её в
+  // задание, а этот промис никто не ждёт — необработанный reject уронил бы
+  // весь процесс.
+  runExtraction(jobId, {
+    buffer,
+    payloadItems,
+    alreadyStarted: true,
+  }).catch((err) => {
+    logger?.error?.(
+      { jobId: String(jobId), err: String(err?.message ?? err) },
+      "background extraction failed",
+    );
+  });
+
+  // Отдаём уже помеченное задание, а не то, что прочитали до обновления:
+  // клиент по этому статусу решает, начинать ли опрос.
+  return started ?? job;
 }
 
 // ─── listJobs / getJob ────────────────────────────────────────────────
