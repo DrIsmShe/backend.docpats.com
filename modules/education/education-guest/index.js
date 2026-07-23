@@ -47,8 +47,19 @@ const router = express.Router();
 // одного захода.
 const GUEST_ATTEMPT_QUESTIONS = 20;
 
-/** Гостевой владелец для сервисов попыток. */
+/**
+ * Гостевой владелец для сервисов попыток.
+ *
+ * Отметка в сессии здесь обязательна. Session-middleware настроен с
+ * saveUninitialized: false — пустая сессия не сохраняется в store и
+ * cookie не выдаётся, а значит на КАЖДЫЙ запрос гость получал бы новый
+ * req.sessionID. Демо-квота при этом не накапливалась бы никогда (каждый
+ * запрос — «новый гость»), а попытка теряла бы владельца сразу после
+ * создания. Любая запись в req.session помечает её изменённой, после чего
+ * express-session сохраняет её и выставляет cookie.
+ */
 function guestActor(req) {
+  if (!req.session.eduGuest) req.session.eduGuest = true;
   return { userId: null, guestSessionId: req.sessionID };
 }
 
