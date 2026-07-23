@@ -517,6 +517,10 @@ export async function startExtraction(jobId, { buffer, payloadItems } = {}) {
 // качества: на коротком батче модель тщательнее и меньше повторяется.
 const MAX_GENERATION_COUNT = 500;
 
+// Ниже этого размера батч не ужимаем: если и три вопроса не помещаются в
+// ответ, дело не в объёме заказа, и повторять бессмысленно.
+const MIN_GENERATION_BATCH = 3;
+
 export async function runGeneration(jobId, { alreadyStarted = false } = {}) {
   const job = await ExamImportJob.findById(jobId);
   if (!job) throw new NotFoundError("Import job");
@@ -551,6 +555,10 @@ export async function runGeneration(jobId, { alreadyStarted = false } = {}) {
     let inputTokens = 0;
     let outputTokens = 0;
     let failedBatches = 0;
+    // Причина последнего провалившегося батча. Без неё оператор видел
+    // только «модель ничего не сгенерировала», а настоящая ошибка (ключ,
+    // 429, отказ модели) оставалась в логе PM2 — искать её было негде.
+    let lastBatchError = null;
 
     // На первом успешном батче строим структуру теста из предложения модели,
     // как и импорт. Язык здесь известен заранее (его выбрал оператор), но
@@ -580,34 +588,62 @@ export async function runGeneration(jobId, { alreadyStarted = false } = {}) {
       await job.save();
 
       const remaining = total - accumulated.length;
-      const batchCount = Math.min(GENERATION_BATCH_SIZE, remaining);
+      let batchCount = Math.min(GENERATION_BATCH_SIZE, remaining);
       if (batchCount <= 0) break;
 
-      try {
-        const result = await generateBatch({
-          topic: spec.topic,
-          count: batchCount,
-          lang: job.defaults.lang,
-          difficulty: spec.difficulty ?? "mixed",
-          program: effectiveProgram,
-          // Не повторять уже созданное: передаём тексты накопленных вопросов.
-          avoidStems: accumulated.map((it) => it.stem),
-        });
-        await applyFirstBatchStructure(result.suggestedProgram);
-        inputTokens += result.usage?.inputTokens ?? 0;
-        outputTokens += result.usage?.outputTokens ?? 0;
-        accumulated.push(...result.items);
-      } catch (err) {
-        failedBatches += 1;
-        logger?.warn?.(
-          {
-            jobId: String(job._id),
-            batch: i + 1,
-            of: batches,
-            err: String(err?.message ?? err),
-          },
-          "generation batch failed",
-        );
+      // Переполнение ответа (stop_reason: max_tokens) экстрактор помечает
+      // флагом overflow — это не отказ, а слишком крупный заказ на один
+      // вызов. Уменьшаем батч вдвое и повторяем тот же кусок, вместо того
+      // чтобы записать его в потери: на длинных медицинских вопросах с
+      // разбором 20 штук за раз в лимит вывода не влезают.
+      for (;;) {
+        try {
+          const result = await generateBatch({
+            topic: spec.topic,
+            count: batchCount,
+            lang: job.defaults.lang,
+            difficulty: spec.difficulty ?? "mixed",
+            program: effectiveProgram,
+            // Не повторять уже созданное: передаём тексты накопленных вопросов.
+            avoidStems: accumulated.map((it) => it.stem),
+          });
+          await applyFirstBatchStructure(result.suggestedProgram);
+          inputTokens += result.usage?.inputTokens ?? 0;
+          outputTokens += result.usage?.outputTokens ?? 0;
+          accumulated.push(...result.items);
+          break;
+        } catch (err) {
+          if (err?.details?.overflow && batchCount > MIN_GENERATION_BATCH) {
+            const smaller = Math.max(
+              MIN_GENERATION_BATCH,
+              Math.floor(batchCount / 2),
+            );
+            logger?.warn?.(
+              {
+                jobId: String(job._id),
+                batch: i + 1,
+                from: batchCount,
+                to: smaller,
+              },
+              "generation batch overflowed, retrying smaller",
+            );
+            batchCount = smaller;
+            continue;
+          }
+
+          failedBatches += 1;
+          lastBatchError = String(err?.message ?? err);
+          logger?.warn?.(
+            {
+              jobId: String(job._id),
+              batch: i + 1,
+              of: batches,
+              err: lastBatchError,
+            },
+            "generation batch failed",
+          );
+          break;
+        }
       }
     }
 
@@ -624,8 +660,14 @@ export async function runGeneration(jobId, { alreadyStarted = false } = {}) {
 
     if (drafts.length === 0) {
       job.status = "failed";
-      job.error =
-        "Модель не сгенерировала ни одного вопроса. Уточните тему и повторите.";
+      // Настоящую причину показываем оператору: «уточните тему» уводит не
+      // туда, если на самом деле отвергнут ключ или сработал лимит.
+      job.error = lastBatchError
+        ? `Не удалось сгенерировать вопросы. Причина: ${lastBatchError}`.slice(
+            0,
+            2000,
+          )
+        : "Модель не сгенерировала ни одного вопроса. Уточните тему и повторите.";
     } else {
       job.status = "extracted";
       job.error =

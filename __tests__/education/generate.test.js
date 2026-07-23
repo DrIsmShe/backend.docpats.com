@@ -161,6 +161,40 @@ describe("runGeneration", () => {
     expect(result.status).toBe("failed");
     expect(result.draftItems).toHaveLength(0);
   });
+
+  it("причина сбоя доходит до оператора, а не остаётся в логе", async () => {
+    generateMock.mockRejectedValue(
+      new Error("Ключ Anthropic API отклонён (401)"),
+    );
+
+    const program = await makeEmptyProgram();
+    const job = await makeGenJob(program, 20);
+    const result = await runGeneration(job._id);
+
+    expect(result.status).toBe("failed");
+    expect(result.error).toContain("401");
+  });
+
+  it("переполнение ответа уменьшает батч и повторяет тот же кусок", async () => {
+    // Экстрактор помечает stop_reason: max_tokens флагом overflow.
+    const overflow = Object.assign(new Error("Батч не поместился в лимит"), {
+      details: { overflow: true },
+    });
+    generateMock
+      .mockRejectedValueOnce(overflow) // 20 не влезли
+      .mockResolvedValueOnce(batch(10, { withProgram: true })); // 10 — влезли
+
+    const program = await makeEmptyProgram();
+    const job = await makeGenJob(program, 20);
+    const result = await runGeneration(job._id);
+
+    expect(result.status).toBe("extracted");
+    expect(result.progress.failedChunks).toBe(0);
+    expect(result.draftItems.length).toBe(10);
+    // Второй вызов — тот же батч вдвое меньшим заказом.
+    expect(generateMock.mock.calls[0][0].count).toBe(20);
+    expect(generateMock.mock.calls[1][0].count).toBe(10);
+  });
 });
 
 describe("createGenerationJob — валидация", () => {
