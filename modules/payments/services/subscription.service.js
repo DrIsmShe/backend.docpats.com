@@ -95,6 +95,77 @@ export function computeSubscriptionEnd(period, currentEndsAt, now) {
 }
 
 /**
+ * Дата окончания при выдаче на произвольное число месяцев.
+ *
+ * Отдельно от computeSubscriptionEnd: там период — monthly|yearly (так
+ * устроены тарифы у провайдера), а ручная выдача оперирует месяцами,
+ * потому что «на три месяца в качестве компенсации» — обычный случай,
+ * а «на треть года» — нет. Стекинг тот же: продлеваем от конца, если
+ * текущий срок ещё не истёк.
+ */
+export function computeEndFromMonths(months, currentEndsAt, now) {
+  const base =
+    currentEndsAt && new Date(currentEndsAt) > now
+      ? new Date(currentEndsAt)
+      : new Date(now);
+  const end = new Date(base);
+  end.setMonth(end.getMonth() + months);
+  return end;
+}
+
+/**
+ * Выдать тариф или аддон вручную, без оплаты через провайдера.
+ *
+ * Для продаж мимо сайта (перевод, счёт юрлицу), промо, партнёрских
+ * доступов и компенсаций. Нужна и после запуска эквайринга — это не
+ * временная мера на период закрытой кассы.
+ *
+ * Проверку «какая роль что может купить» сохраняем: она защищает не от
+ * админа, а от опечатки — клинический план пациенту не даст ничего,
+ * кроме путаницы в отчётах.
+ *
+ * @param {Object} user   — документ User (mongoose)
+ * @param {Object} opts   — { planKey, months, now }
+ */
+export async function grantPlan(user, { planKey, months = 1, now = new Date() }) {
+  const count = Number(months);
+  if (!Number.isInteger(count) || count < 1 || count > 36) {
+    throw new Error("months must be an integer between 1 and 36");
+  }
+
+  // Период здесь формальность (проверка ждёт monthly|yearly), реальный
+  // срок считается из months.
+  assertPlanAllowed(planKey, "monthly", user.role);
+
+  if (isExamAddon(planKey)) {
+    user.examAddon = planKey;
+    user.examAddonEndsAt = computeEndFromMonths(
+      count,
+      user.examAddonEndsAt,
+      now,
+    );
+    await user.save({ validateModifiedOnly: true });
+    return {
+      examAddon: user.examAddon,
+      examAddonEndsAt: user.examAddonEndsAt,
+    };
+  }
+
+  user.subscriptionPlan = planKey;
+  user.subscriptionEndsAt = computeEndFromMonths(
+    count,
+    user.subscriptionEndsAt,
+    now,
+  );
+  await user.save({ validateModifiedOnly: true });
+
+  return {
+    subscriptionPlan: user.subscriptionPlan,
+    subscriptionEndsAt: user.subscriptionEndsAt,
+  };
+}
+
+/**
  * Активирует подписку на модели User после успешной оплаты.
  * Вызывается из webhook (боевые провайдеры) или из mock-confirm.
  *

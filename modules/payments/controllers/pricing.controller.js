@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────
 
 import User from "../../../common/models/Auth/users.js";
+import { isPaymentsLive } from "../providers/index.js";
 import {
   PLAN_PRICES,
   PLAN_DISPLAY_NAMES,
@@ -52,9 +53,16 @@ export async function getPlans(req, res) {
       limits: EXAM_ADDONS[key],
     }));
 
-    return res
-      .status(200)
-      .json({ success: true, currency: "USD", plans, addons });
+    return res.status(200).json({
+      success: true,
+      currency: "USD",
+      plans,
+      addons,
+      // Состояние кассы. Интерфейс по нему решает, показывать «Подключить»
+      // или «Сообщить о запуске» — и не хранит собственной заглушки, из-за
+      // которой в день запуска пришлось бы править компоненты.
+      paymentsEnabled: isPaymentsLive(),
+    });
   } catch (err) {
     console.error("getPlans error:", err.message);
     return res.status(500).json({ success: false, message: "Server error" });
