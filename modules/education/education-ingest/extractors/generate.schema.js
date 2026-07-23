@@ -74,8 +74,13 @@ export const GENERATION_JSON_SCHEMA = {
           },
           options: {
             type: "array",
-            minItems: 4,
-            maxItems: 5,
+            // Числа вариантов здесь НЕ ограничиваем: structured outputs
+            // отвергают minItems/maxItems (кроме 0 и 1) — схема целиком
+            // не проходит, и запрос падает с 400. Требование «4–5
+            // вариантов» держим в описании и в системном промпте, а
+            // недобор ловит normalizeDrafts при разборе черновиков.
+            description:
+              "Варианты ответа: 4 или 5 штук — один верный и 3–4 дистрактора.",
             items: {
               type: "object",
               additionalProperties: false,
