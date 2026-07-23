@@ -18,6 +18,7 @@ import {
   computeSubscriptionEnd,
 } from "../../modules/payments/services/subscription.service.js";
 import { createTestDoctor } from "../helpers/createTestUser.js";
+import { getExamQuota } from "../../modules/education/services/quota.service.js";
 
 // Гарантируем mock-провайдер (без реальных ключей/списаний).
 beforeAll(() => {
@@ -202,5 +203,104 @@ describe("checkout flow (mock provider)", () => {
       res2,
     );
     expect(res2.statusCode).toBe(404); // не найдено под чужим userId
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//   Аддон «Подготовка к экзаменам»
+//
+//   Отдельная ось поверх плана: покупается тем же checkout-потоком, но
+//   кладётся в examAddon и НЕ трогает subscriptionPlan. Иначе покупка
+//   тестов сбрасывала бы человека с оплаченного тарифа.
+// ═══════════════════════════════════════════════════════════════════
+describe("аддон Exam Prep", () => {
+  it("покупать может любая роль — это не врачебный инструмент", () => {
+    expect(() =>
+      assertPlanAllowed("exam_plus", "monthly", "patient"),
+    ).not.toThrow();
+    expect(() =>
+      assertPlanAllowed("exam_unlimited", "yearly", "doctor"),
+    ).not.toThrow();
+  });
+
+  it("цена берётся из EXAM_ADDON_PRICES", () => {
+    expect(getPlanAmount("exam_plus", "monthly")).toBe(7);
+    expect(getPlanAmount("exam_plus", "yearly")).toBe(70);
+    expect(getPlanAmount("exam_unlimited", "monthly")).toBe(15);
+  });
+
+  it("покупка не сбрасывает основной план", async () => {
+    const { userId } = await createTestPatient();
+
+    // Сначала обычная подписка.
+    const res1 = mockRes();
+    await createSubscriptionCheckout(
+      {
+        session: { userId: userId.toString() },
+        body: { planKey: "patient_std", period: "monthly" },
+      },
+      res1,
+    );
+    const res2 = mockRes();
+    await confirmMockPayment(
+      {
+        session: { userId: userId.toString() },
+        body: { transactionId: res1.body.transactionId },
+      },
+      res2,
+    );
+    expect((await User.findById(userId)).subscriptionPlan).toBe("patient_std");
+
+    // Теперь аддон поверх неё.
+    const res3 = mockRes();
+    await createSubscriptionCheckout(
+      {
+        session: { userId: userId.toString() },
+        body: { planKey: "exam_plus", period: "monthly" },
+      },
+      res3,
+    );
+    expect(res3.body.amount).toBe(7);
+
+    const res4 = mockRes();
+    await confirmMockPayment(
+      {
+        session: { userId: userId.toString() },
+        body: { transactionId: res3.body.transactionId },
+      },
+      res4,
+    );
+
+    const user = await User.findById(userId);
+    expect(user.examAddon).toBe("exam_plus");
+    expect(user.examAddonEndsAt).toBeInstanceOf(Date);
+    // Главное: план остался прежним.
+    expect(user.subscriptionPlan).toBe("patient_std");
+  });
+
+  it("квота модуля тестов поднимается сразу после покупки", async () => {
+    const { userId } = await createTestPatient();
+    const before = await getExamQuota({ userId });
+    expect(before.limit).toBe(250);
+
+    const res1 = mockRes();
+    await createSubscriptionCheckout(
+      {
+        session: { userId: userId.toString() },
+        body: { planKey: "exam_unlimited", period: "monthly" },
+      },
+      res1,
+    );
+    await confirmMockPayment(
+      {
+        session: { userId: userId.toString() },
+        body: { transactionId: res1.body.transactionId },
+      },
+      mockRes(),
+    );
+
+    const after = await getExamQuota({ userId });
+    expect(after.unlimited).toBe(true);
+    expect(after.addonLabel).toBe("Exam Prep Unlimited");
   });
 });

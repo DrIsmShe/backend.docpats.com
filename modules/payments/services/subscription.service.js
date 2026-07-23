@@ -7,7 +7,26 @@
 //   правды). Здесь мы НЕ дублируем цены, а читаем их оттуда.
 // ─────────────────────────────────────────────────────────────────────
 
-import { PLAN_PRICES } from "../../../common/config/aiPlanLimits.js";
+import {
+  PLAN_PRICES,
+  EXAM_ADDONS,
+  EXAM_ADDON_PRICES,
+} from "../../../common/config/aiPlanLimits.js";
+
+/**
+ * Аддон «Подготовка к экзаменам» покупается по тому же маршруту, что и
+ * подписка, но кладётся в другое поле: это не смена плана, а надстройка
+ * над ним. Человек на бесплатном patient_free может купить Exam Prep и
+ * остаться на patient_free.
+ */
+export function isExamAddon(planKey) {
+  return Boolean(EXAM_ADDONS[planKey]);
+}
+
+// Аддон доступен любой роли: он про подготовку к экзаменам, а не про
+// врачебный инструментарий — его одинаково покупают студент, резидент и
+// практикующий врач.
+const ADDON_ALLOWED_ROLES = ["patient", "user", "doctor", "admin"];
 
 // Какие роли имеют право покупать какой план.
 const PLAN_ALLOWED_ROLES = {
@@ -26,11 +45,19 @@ const PLAN_ALLOWED_ROLES = {
  * его покупать. Бросает Error с понятным сообщением, если нет.
  */
 export function assertPlanAllowed(planKey, period, role) {
-  if (!PLAN_PRICES[planKey]) {
-    throw new Error(`Unknown or non-purchasable plan: ${planKey}`);
-  }
   if (period !== "monthly" && period !== "yearly") {
     throw new Error(`Invalid period: ${period} (expected monthly|yearly)`);
+  }
+
+  if (isExamAddon(planKey)) {
+    if (!ADDON_ALLOWED_ROLES.includes(role)) {
+      throw new Error(`Role "${role}" cannot purchase addon "${planKey}"`);
+    }
+    return;
+  }
+
+  if (!PLAN_PRICES[planKey]) {
+    throw new Error(`Unknown or non-purchasable plan: ${planKey}`);
   }
   const allowed = PLAN_ALLOWED_ROLES[planKey];
   if (!allowed || !allowed.includes(role)) {
@@ -42,7 +69,9 @@ export function assertPlanAllowed(planKey, period, role) {
  * Цена плана в USD за выбранный период.
  */
 export function getPlanAmount(planKey, period) {
-  const price = PLAN_PRICES[planKey];
+  const price = isExamAddon(planKey)
+    ? EXAM_ADDON_PRICES[planKey]
+    : PLAN_PRICES[planKey];
   if (!price) return 0;
   return price[period] || 0;
 }
@@ -78,6 +107,26 @@ export async function activateSubscription(user, opts) {
   const now = opts.now instanceof Date ? opts.now : new Date();
 
   assertPlanAllowed(planKey, period, user.role);
+
+  // Аддон не трогает основной план — у него своё поле и свой срок.
+  // Стекинг тот же: докупка до истечения продлевает от конца, а не
+  // обнуляет остаток.
+  if (isExamAddon(planKey)) {
+    user.examAddon = planKey;
+    user.examAddonEndsAt = computeSubscriptionEnd(
+      period,
+      user.examAddonEndsAt,
+      now,
+    );
+    user.paymentLastChargedAt = now;
+    await user.save({ validateModifiedOnly: true });
+
+    return {
+      examAddon: user.examAddon,
+      examAddonEndsAt: user.examAddonEndsAt,
+      subscriptionPlan: user.subscriptionPlan ?? null,
+    };
+  }
 
   user.subscriptionPlan = planKey;
   user.subscriptionPeriod = period;
