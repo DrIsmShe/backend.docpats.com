@@ -29,6 +29,7 @@
 export const PLAN_LIMITS = {
   // ═════════════════════ ПАЦИЕНТЫ ═══════════════════════
   guest: {
+    examQuestions: 20,
     aiConsultations: 1,
     aiArticles: 1,
     soapEpicrises: 0,
@@ -36,6 +37,7 @@ export const PLAN_LIMITS = {
     bookingDiscount: 0,
   },
   patient_free: {
+    examQuestions: 250,
     aiConsultations: 5,
     aiArticles: 1,
     soapEpicrises: 3,
@@ -43,6 +45,7 @@ export const PLAN_LIMITS = {
     bookingDiscount: 0,
   },
   patient_std: {
+    examQuestions: 1000,
     aiConsultations: 30,
     aiArticles: 5,
     soapEpicrises: 20,
@@ -50,6 +53,7 @@ export const PLAN_LIMITS = {
     bookingDiscount: 10, // % скидка на видео-приём с врачом
   },
   patient_pro: {
+    examQuestions: -1,
     aiConsultations: -1, // безлимит (fair use)
     aiArticles: 20,
     soapEpicrises: -1,
@@ -61,6 +65,7 @@ export const PLAN_LIMITS = {
   // patientsInOffice ДОЛЖЕН совпадать с PLAN_TO_MAX_PATIENTS в users.js.
   // Middleware requireDoctorPatientLimit трактует -1 как безлимит.
   doctor_trial: {
+    examQuestions: -1,
     // Первые 6 месяцев — даём как Doctor Growth.
     aiAnalyses: 50,
     aiArticles: 15,
@@ -71,6 +76,7 @@ export const PLAN_LIMITS = {
     docpatsCommissionPct: 12,
   },
   doctor_basic: {
+    examQuestions: 500,
     aiAnalyses: 10,
     aiArticles: 3,
     soapEpicrises: 10,
@@ -80,6 +86,7 @@ export const PLAN_LIMITS = {
     docpatsCommissionPct: 15,
   },
   doctor_super: {
+    examQuestions: -1,
     aiAnalyses: 50,
     aiArticles: 15,
     soapEpicrises: 50,
@@ -89,6 +96,7 @@ export const PLAN_LIMITS = {
     docpatsCommissionPct: 12,
   },
   doctor_pro: {
+    examQuestions: -1,
     aiAnalyses: -1,
     aiArticles: -1,
     soapEpicrises: -1,
@@ -100,6 +108,7 @@ export const PLAN_LIMITS = {
 
   // ═════════════════════ КЛИНИКИ ═════════════════════════
   clinic_start: {
+    examQuestions: -1,
     doctors: 5,
     aiAnalyses: 100,
     aiArticles: 30,
@@ -110,6 +119,7 @@ export const PLAN_LIMITS = {
     docpatsCommissionPct: 10,
   },
   clinic: {
+    examQuestions: -1,
     doctors: 15,
     aiAnalyses: -1,
     aiArticles: -1,
@@ -120,6 +130,7 @@ export const PLAN_LIMITS = {
     docpatsCommissionPct: 7,
   },
   clinic_pro: {
+    examQuestions: -1,
     doctors: -1,
     aiAnalyses: -1,
     aiArticles: -1,
@@ -142,6 +153,32 @@ export const PLAN_PRICES = {
   clinic_start: { monthly: 99, yearly: 990 },
   clinic: { monthly: 249, yearly: 2490 },
   clinic_pro: { monthly: 499, yearly: 4990 },
+};
+
+// ─── Аддон «Подготовка к экзаменам» ─────────────────────────────────
+//
+// Отдельная ось поверх основного плана, а не ещё один основной план.
+// Причина: у модуля education своя аудитория — студенты и резиденты,
+// которым остальной DocPats не нужен, и покупать ради тестов врачебный
+// план они не станут. Аддон дешевле любого основного плана, поэтому их
+// не каннибализирует, а старшим планам безлимит идёт бонусом (см.
+// examQuestions в PLAN_LIMITS) — это аргумент за апгрейд.
+//
+// Действует ровно одна фича — квота вопросов в месяц. Всё остальное
+// (какие тесты видны, какие режимы доступны) определяется планом.
+export const EXAM_ADDONS = {
+  exam_plus: { examQuestions: 2000 },
+  exam_unlimited: { examQuestions: -1 },
+};
+
+export const EXAM_ADDON_PRICES = {
+  exam_plus: { monthly: 7, yearly: 70 },
+  exam_unlimited: { monthly: 15, yearly: 150 },
+};
+
+export const EXAM_ADDON_DISPLAY_NAMES = {
+  exam_plus: "Exam Prep Plus",
+  exam_unlimited: "Exam Prep Unlimited",
 };
 
 // ─── Валюта тарифов ─────────────────────────────────────────────────
@@ -220,6 +257,47 @@ export function getLimit(planKey, feature) {
   if (!plan) return 0;
   const limit = plan[feature];
   return limit === undefined ? 0 : limit;
+}
+
+/**
+ * Активен ли у пользователя аддон подготовки к экзаменам.
+ *
+ * Аддон живёт отдельно от subscriptionPlan и истекает своим сроком:
+ * человек может сидеть на бесплатном patient_free и при этом иметь
+ * оплаченный Exam Prep.
+ *
+ * @param {Object} user — документ User
+ * @returns {String|null} — ключ аддона или null
+ */
+export function resolveExamAddon(user) {
+  const key = user?.examAddon;
+  if (!key || !EXAM_ADDONS[key]) return null;
+  const until = user.examAddonEndsAt ? new Date(user.examAddonEndsAt) : null;
+  if (until && new Date() > until) return null; // срок вышел
+  return key;
+}
+
+/**
+ * Итоговая месячная квота вопросов: максимум из плана и аддона.
+ *
+ * Берём максимум, а не «аддон важнее»: врач на doctor_pro с безлимитом
+ * не должен просесть до 2000, если когда-то докупил Exam Prep Plus.
+ * -1 (безлимит) выигрывает у любого числа.
+ *
+ * @param {Object|null} user — документ User; null/undefined = гость
+ * @returns {{limit: number, plan: string, addon: string|null}}
+ */
+export function resolveExamQuestionLimit(user) {
+  const plan = user ? resolveEffectivePlan(user) : "guest";
+  const planLimit = getLimit(plan, "examQuestions");
+  const addon = user ? resolveExamAddon(user) : null;
+  if (!addon) return { limit: planLimit, plan, addon: null };
+
+  const addonLimit = EXAM_ADDONS[addon].examQuestions;
+  if (planLimit === -1 || addonLimit === -1) {
+    return { limit: -1, plan, addon };
+  }
+  return { limit: Math.max(planLimit, addonLimit), plan, addon };
 }
 
 /**

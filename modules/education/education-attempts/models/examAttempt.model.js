@@ -65,10 +65,25 @@ const topicScoreSchema = new Schema(
 
 const examAttemptSchema = new Schema(
   {
+    // Владелец попытки — ЛИБО зарегистрированный пользователь, либо гость.
+    // Ровно одно из двух полей заполнено (проверка в pre-validate ниже).
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
+      index: true,
+    },
+    // Гостевая попытка «попробовать без регистрации». Привязана к
+    // express-session: cookie гостю и так выдаётся, а sessionID подделать
+    // сложнее, чем произвольный id из localStorage. Обойти лимит
+    // инкогнито-режимом всё равно можно — для демо-прохода это осознанно
+    // допустимо, крепость тут не нужна.
+    //
+    // При регистрации попытка переезжает в аккаунт по этому же id
+    // (claimGuestAttempts), чтобы человек не терял результат.
+    guestSessionId: {
+      type: String,
+      default: null,
       index: true,
     },
     programId: {
@@ -128,11 +143,30 @@ const examAttemptSchema = new Schema(
   },
 );
 
+// Владелец обязателен, но ровно один: попытка либо пользовательская, либо
+// гостевая. Схема этого выразить не умеет — required у обоих полей дал бы
+// «нужны оба», поэтому проверяем хуком.
+examAttemptSchema.pre("validate", function (next) {
+  const hasUser = Boolean(this.userId);
+  const hasGuest = Boolean(this.guestSessionId);
+  if (hasUser === hasGuest) {
+    return next(
+      new Error(
+        "ExamAttempt: нужен ровно один владелец — userId или guestSessionId",
+      ),
+    );
+  }
+  next();
+});
+
 // ─── Индексы ───
 // «Мои попытки по программе», от новых к старым.
 examAttemptSchema.index({ userId: 1, programId: 1, createdAt: -1 });
 // Поиск незавершённой попытки при возврате на страницу.
 examAttemptSchema.index({ userId: 1, status: 1 });
+// Расход квоты за период и перенос попыток в аккаунт при регистрации.
+examAttemptSchema.index({ guestSessionId: 1, startedAt: -1 });
+examAttemptSchema.index({ userId: 1, startedAt: -1 });
 // Отчёт клиники по обучению персонала.
 examAttemptSchema.index({ clinicId: 1, programId: 1, status: 1 });
 

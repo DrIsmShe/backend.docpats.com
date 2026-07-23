@@ -19,7 +19,9 @@ import {
   NotFoundError,
   ConflictError,
   ForbiddenError,
+  QuotaExceededError,
 } from "../../../../common/utils/errors.js";
+import { assertCanStart } from "../../services/quota.service.js";
 import logger from "../../../../common/logger.js";
 
 // Потолок времени на один вопрос — таймер приходит с клиента, и доверять
@@ -163,6 +165,7 @@ async function selectBlockItems({ programId, lang, blockSize, blockIndex }) {
 // ─── startAttempt ─────────────────────────────────────────────────────
 export async function startAttempt({
   userId,
+  guestSessionId = null,
   programId,
   mode = "tutor",
   questionCount,
@@ -172,12 +175,21 @@ export async function startAttempt({
   blockIndex,
   clinicId = null,
 }) {
-  if (!userId) throw new ValidationError("userId is required");
+  if (!userId && !guestSessionId) {
+    throw new ValidationError("userId or guestSessionId is required");
+  }
 
   const program = await ExamProgram.findById(programId).lean();
   if (!program) throw new NotFoundError("Exam program");
   if (program.status !== "published") {
     throw new ConflictError("Exam program is not published");
+  }
+  // Гостю открыты только тесты, помеченные админом как витринные.
+  if (!userId && !program.isFree) {
+    throw new ForbiddenError(
+      "Этот тест доступен после регистрации",
+      { requiresAuth: true },
+    );
   }
 
   // Нормализуем номер блока: попытка либо по всему тесту (null), либо по
@@ -189,7 +201,7 @@ export async function startAttempt({
   // одна «висящая» сессия, а по блокам конфликт считается отдельно на каждый
   // блок, чтобы можно было проходить блоки независимо.
   const openAttempt = await ExamAttempt.findOne({
-    userId,
+    ...(userId ? { userId } : { guestSessionId }),
     programId,
     status: "in_progress",
     blockIndex: normalizedBlockIndex,
@@ -204,10 +216,22 @@ export async function startAttempt({
   }
 
   const effectiveLang = lang ?? program.languages?.[0] ?? "ru";
-  const count = Math.min(
+  const requested = Math.min(
     questionCount ?? program.defaultQuestionCount ?? 60,
     200,
   );
+
+  // Квота тарифа. assertCanStart бросает 402, если не осталось ничего, и
+  // урезает заказ до остатка, если осталось меньше запрошенного: собрать
+  // попытку на 12 вопросов честнее, чем отказать человеку, у которого они
+  // ещё есть. Проверка стоит здесь, ДО выборки вопросов — единственная
+  // точка, где вопросы вообще выдаются.
+  const { quota, allowed } = await assertCanStart({
+    userId,
+    guestSessionId,
+    requested,
+  });
+  const count = allowed;
 
   let selected = [];
 
@@ -227,6 +251,27 @@ export async function startAttempt({
       blockSize,
       blockIndex: normalizedBlockIndex,
     });
+
+    // Блок — фиксированный набор вопросов, урезать его по остатку квоты
+    // нельзя: получился бы «блок 3», не совпадающий с блоком 3 у всех
+    // остальных, и статистика по нему поехала бы. Поэтому либо квоты
+    // хватает на весь блок, либо отказ с понятной цифрой.
+    if (!quota.unlimited && selected.length > quota.remaining) {
+      throw new QuotaExceededError(
+        `В блоке ${selected.length} вопросов, а в вашей квоте осталось ${quota.remaining}. ` +
+          `Пройдите тренировку по частям или подключите Exam Prep.`,
+        {
+          feature: "examQuestions",
+          isGuest: quota.isGuest,
+          plan: quota.plan,
+          limit: quota.limit,
+          used: quota.used,
+          needed: selected.length,
+          upgrade: quota.isGuest ? "register" : "exam_addon",
+          resetsAt: quota.periodEnd,
+        },
+      );
+    }
   } else if (mode === "mock") {
     // Пробный экзамен: состав строго по blueprint.
     const plan = buildBlueprintPlan(program.blueprint, count);
@@ -315,7 +360,8 @@ export async function startAttempt({
     : null;
 
   const attempt = await ExamAttempt.create({
-    userId,
+    userId: userId ?? null,
+    guestSessionId: userId ? null : guestSessionId,
     programId,
     clinicId,
     mode,
@@ -336,10 +382,33 @@ export async function startAttempt({
 }
 
 // Достаёт попытку и проверяет, что она принадлежит этому пользователю.
-async function loadOwnedAttempt(attemptId, userId) {
+// Владелец попытки: либо userId, либо гостевая сессия. Принимаем и голый
+// id (так вызывают все существующие места — контроллеры и тесты), и объект
+// {userId, guestSessionId} от гостевого контура.
+function toOwner(actor) {
+  if (actor && typeof actor === "object" && !(actor instanceof mongoose.Types.ObjectId)) {
+    return {
+      userId: actor.userId ?? null,
+      guestSessionId: actor.guestSessionId ?? null,
+    };
+  }
+  return { userId: actor ?? null, guestSessionId: null };
+}
+
+async function loadOwnedAttempt(attemptId, actor) {
+  const { userId, guestSessionId } = toOwner(actor);
   const attempt = await ExamAttempt.findById(attemptId);
   if (!attempt) throw new NotFoundError("Attempt");
-  if (String(attempt.userId) !== String(userId)) {
+
+  const ownedByUser =
+    userId && attempt.userId && String(attempt.userId) === String(userId);
+  // Гостевая попытка принадлежит той же сессии, в которой была начата.
+  const ownedByGuest =
+    guestSessionId &&
+    attempt.guestSessionId &&
+    attempt.guestSessionId === guestSessionId;
+
+  if (!ownedByUser && !ownedByGuest) {
     throw new ForbiddenError("This attempt belongs to another user");
   }
   return attempt;

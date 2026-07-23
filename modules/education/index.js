@@ -16,7 +16,9 @@ import educationItemsRouter from "./education-items/index.js";
 import educationAttemptsRouter from "./education-attempts/index.js";
 import educationIngestRouter from "./education-ingest/index.js";
 import { requireLearner } from "./middlewares/educationAuth.js";
+import { getExamQuota, claimGuestAttempts } from "./services/quota.service.js";
 import {
+  asyncHandler,
   errorHandler,
   notFoundHandler,
 } from "../../common/middlewares/errorHandler.js";
@@ -36,6 +38,23 @@ router.get("/health", (req, res) => {
 // Единая точка: дальше по цепочке req.educationActor гарантированно есть.
 // Роль (автор / рецензент) проверяется точечно в роутах подмодулей.
 router.use(requireLearner);
+
+// ─── Квота тарифа ─────────────────────────────────────────────────────
+// Остаток вопросов на месяц. Отдельным роутом, а не полем в каждом
+// ответе каталога: клиенту он нужен ровно в двух местах — баннер над
+// витриной и экран перед стартом попытки.
+//
+// Заодно подбираем гостевые попытки этой же сессии: человек прошёл демо,
+// зарегистрировался и вернулся в модуль — результат должен оказаться в
+// его истории, а не потеряться вместе с гостевой привязкой.
+router.get(
+  "/quota",
+  asyncHandler(async (req, res) => {
+    const userId = req.educationActor.userId;
+    await claimGuestAttempts({ userId, guestSessionId: req.sessionID });
+    res.json(await getExamQuota({ userId }));
+  }),
+);
 
 // ─── Подмодули ────────────────────────────────────────────────────────
 // Порядок важен: education-items объявляет /programs/:programId/item-analysis,

@@ -301,6 +301,20 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Аддон «Подготовка к экзаменам» — отдельная ось поверх основного
+    // плана: покупается независимо и истекает своим сроком. Квота вопросов
+    // считается как максимум из плана и аддона (resolveExamQuestionLimit
+    // в common/config/aiPlanLimits.js).
+    examAddon: {
+      type: String,
+      enum: ["exam_plus", "exam_unlimited", null],
+      default: null,
+    },
+    examAddonEndsAt: {
+      type: Date,
+      default: null,
+    },
+
     // Когда заканчивается TRIAL для врачей.
     // У пациентов = null. У врачей при регистрации = Date.now() + 180 days.
     // После окончания resolveEffectivePlan вернёт "doctor_basic".

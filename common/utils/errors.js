@@ -62,6 +62,19 @@ export class FeatureNotEnabledError extends AppError {
   }
 }
 
+/**
+ * Лимит тарифа исчерпан — в отличие от ForbiddenError это не «нельзя»,
+ * а «нельзя сейчас, но можно после апгрейда». 402 позволяет клиенту
+ * отличить исчерпанную квоту от отсутствия прав и показать апселл, а не
+ * страницу ошибки. В details кладём цифры, чтобы UI не ходил за ними
+ * вторым запросом.
+ */
+export class QuotaExceededError extends AppError {
+  constructor(message = "Лимит тарифа исчерпан", details = null) {
+    super(message, 402, "QUOTA_EXCEEDED", details);
+  }
+}
+
 export class UnprocessableError extends AppError {
   constructor(message = "Cannot process request", details = null) {
     super(message, 422, "UNPROCESSABLE", details);

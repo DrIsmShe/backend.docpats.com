@@ -50,6 +50,7 @@ import publicDoctorsRouter from "./modules/doctorsProfiles/routes/publicDoctorsR
 import paymentsRouter from "./modules/payments/payments.routes.js";
 import paymentsWebhookRouter from "./modules/payments/webhook.routes.js";
 import educationRoutes from "./modules/education/index.js";
+import educationGuestRoutes from "./modules/education/education-guest/index.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -314,6 +315,13 @@ app.use("/audit", auditRoutes);
 app.use("/api/v1/clinic", clinicRoutes);
 // Подготовка к экзаменам — глобальный модуль (без tenantMiddleware),
 // но опирается на req.session, поэтому монтируется после session-middleware.
+//
+// Демо-контур для гостей идёт ПЕРВЫМ и отдельным префиксом: сам
+// educationRoutes закрыт requireLearner и без сессии отдаёт 401, а гостю
+// нужен доступ к 20 вопросам из витринных тестов. Сессия здесь уже есть —
+// именно её id и служит гостю идентификатором (в отличие от
+// /api/v1/public, который смонтирован до session-middleware).
+app.use("/api/v1/education/guest", educationGuestRoutes);
 app.use("/api/v1/education", educationRoutes);
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
