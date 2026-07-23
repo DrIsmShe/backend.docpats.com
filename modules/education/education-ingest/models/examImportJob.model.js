@@ -143,6 +143,18 @@ const examImportJobSchema = new Schema(
       outputTokens: { type: Number, default: 0 },
     },
 
+    // Прогресс распознавания по частям. Большой файл сервер режет на части
+    // и гонит проходами (лимит модели — ~200–300 вопросов за раз), а клиент
+    // опросом показывает «часть 3 из 12». total=1 — файл прошёл одним куском.
+    progress: {
+      current: { type: Number, default: 0 },
+      total: { type: Number, default: 0 },
+      // Части, где распознавание сорвалось (слишком плотный кусок и т.п.):
+      // остальные части всё равно доводим и переносим — терять 9 частей
+      // из-за одной нельзя.
+      failedChunks: { type: Number, default: 0 },
+    },
+
     startedAt: { type: Date, default: null },
     finishedAt: { type: Date, default: null },
 

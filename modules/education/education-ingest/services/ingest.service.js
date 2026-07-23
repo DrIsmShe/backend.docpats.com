@@ -12,6 +12,8 @@
 import ExamImportJob from "../models/examImportJob.model.js";
 import ExamProgram from "../../education-catalog/models/examProgram.model.js";
 import { getExtractor, getActiveExtractorName } from "../extractors/index.js";
+import { planChunks } from "../extractors/chunker.js";
+import { resolveFileKind } from "../extractors/fileTypes.js";
 import {
   updateProgram,
   recountPublishedItems,
@@ -247,80 +249,170 @@ export async function runExtraction(
 
   try {
     const extractor = getExtractor(job.extractor);
-    const { items, usage, suggestedProgram } = await extractor.extract({
-      buffer,
-      payloadItems,
-      mimeType: job.file.mimeType,
-      // Имя файла нужно экстрактору, чтобы определить тип, когда браузер
-      // прислал octet-stream или пустой MIME.
-      fileName: job.file.originalName,
-      program,
-      defaults: job.defaults,
-    });
 
-    // Язык материала определяем по содержимому файла. В форме импорта язык —
-    // это догадка оператора со значением по умолчанию "ru", и азербайджанский
-    // сборник из-за неё уезжал в каталог как русский тест: фильтр по языку
-    // такой тест не находил. Доверяем только значению из EXAM_LANGUAGES.
-    const detectedLang = String(suggestedProgram?.lang ?? "").trim();
-    if (
-      EXAM_LANGUAGES.includes(detectedLang) &&
-      detectedLang !== job.defaults.lang
-    ) {
-      logger?.info?.(
-        {
-          jobId: String(job._id),
-          from: job.defaults.lang,
-          to: detectedLang,
-        },
-        "import language corrected by content detection",
-      );
-      job.defaults.lang = detectedLang;
+    // Режем файл на части под проход модели. Ручной экстрактор (payloadItems
+    // без файла) и картинку planChunks вернёт одним куском — обычный путь.
+    let plan;
+    if (buffer) {
+      const { kind } = resolveFileKind({
+        mimeType: job.file.mimeType,
+        fileName: job.file.originalName,
+      });
+      plan = await planChunks({
+        bytes: buffer,
+        kind,
+        mimeType: job.file.mimeType,
+        fileName: job.file.originalName,
+      });
+    } else {
+      // null-часть = «взять payloadItems» (ручной экстрактор).
+      plan = { chunks: [null], unit: "whole", size: 1 };
     }
 
-    // Программа пустая — значит файл загрузили «просто так», и структуру
-    // теста строим из него же. Это то, ради чего suggestedProgram и есть:
-    // админу не нужно заранее размечать темы, чтобы начать.
+    const chunks = plan.chunks;
+    job.progress = { current: 0, total: chunks.length, failedChunks: 0 };
+    await job.save();
+
+    // Накапливаем распознанное по всем частям в один список, нормализуем и
+    // индексируем один раз в конце — так индексы черновиков непрерывны, а
+    // topicCode проверяется против уже достроенного blueprint.
     let effectiveProgram = program;
-    if ((program.blueprint?.length ?? 0) === 0) {
-      const blueprint = buildBlueprintFromSuggestion(suggestedProgram);
-      const patch = {};
+    const accumulated = [];
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let langApplied = false;
+    let failedChunks = 0;
 
-      if (blueprint) patch.blueprint = blueprint;
-
-      // Название трогаем, только если оно осталось техническим —
-      // осмысленное название, введённое админом, не перетираем.
-      // Проверяем отдельно от разделов: на коротком файле модель может
-      // не найти, на что делить, но название предложит вполне толковое.
-      const suggestedTitle = String(suggestedProgram?.title ?? "").trim();
-      if (suggestedTitle && /^(черновик импорта|импорт)/i.test(program.title)) {
-        patch.title = suggestedTitle.slice(0, 300);
+    // Достраиваем структуру теста из ПЕРВОЙ успешной части: язык по тексту,
+    // blueprint и осмысленное название из suggestedProgram. Пустой blueprint
+    // — сигнал, что делаем это впервые; со второй части уже не трогаем.
+    const applyFirstChunkStructure = async (suggestedProgram) => {
+      if (!langApplied) {
+        const detectedLang = String(suggestedProgram?.lang ?? "").trim();
+        if (
+          EXAM_LANGUAGES.includes(detectedLang) &&
+          detectedLang !== job.defaults.lang
+        ) {
+          logger?.info?.(
+            { jobId: String(job._id), from: job.defaults.lang, to: detectedLang },
+            "import language corrected by content detection",
+          );
+          job.defaults.lang = detectedLang;
+        }
+        langApplied = true;
       }
 
-      if (Object.keys(patch).length > 0) {
-        effectiveProgram = await updateProgram(program._id, patch);
-        logger?.info?.(
+      if ((effectiveProgram.blueprint?.length ?? 0) === 0) {
+        const blueprint = buildBlueprintFromSuggestion(suggestedProgram);
+        const patch = {};
+        if (blueprint) patch.blueprint = blueprint;
+
+        const suggestedTitle = String(suggestedProgram?.title ?? "").trim();
+        if (
+          suggestedTitle &&
+          /^(черновик импорта|импорт)/i.test(effectiveProgram.title)
+        ) {
+          patch.title = suggestedTitle.slice(0, 300);
+        }
+
+        if (Object.keys(patch).length > 0) {
+          effectiveProgram = await updateProgram(effectiveProgram._id, patch);
+          logger?.info?.(
+            {
+              jobId: String(job._id),
+              programId: String(effectiveProgram._id),
+              topics: blueprint?.length ?? 0,
+              renamed: Boolean(patch.title),
+            },
+            "program structure built from the imported file",
+          );
+        }
+      }
+    };
+
+    // Прогон одной части. Если модель не уместила её вывод в лимит (overflow),
+    // делим часть пополам и повторяем — до depth-предела. Так оператору не
+    // нужно самому угадывать, на сколько страниц бить файл.
+    const runChunk = async (chunk, depth = 0) => {
+      const extractArgs = chunk
+        ? await chunk.build()
+        : { payloadItems };
+
+      let result;
+      try {
+        result = await extractor.extract({
+          ...extractArgs,
+          mimeType: extractArgs.mimeType ?? job.file.mimeType,
+          fileName: extractArgs.fileName ?? job.file.originalName,
+          program: effectiveProgram,
+          defaults: job.defaults,
+        });
+      } catch (err) {
+        if (err?.details?.overflow && chunk && depth < 4) {
+          const halves = chunk.subdivide();
+          if (halves) {
+            const items = [];
+            for (const half of halves) {
+              items.push(...(await runChunk(half, depth + 1)));
+            }
+            return items;
+          }
+        }
+        throw err;
+      }
+
+      await applyFirstChunkStructure(result.suggestedProgram);
+      inputTokens += result.usage?.inputTokens ?? 0;
+      outputTokens += result.usage?.outputTokens ?? 0;
+      return Array.isArray(result.items) ? result.items : [];
+    };
+
+    for (let i = 0; i < chunks.length; i += 1) {
+      job.progress.current = i + 1;
+      await job.save();
+      try {
+        accumulated.push(...(await runChunk(chunks[i])));
+      } catch (err) {
+        // Одна сорвавшаяся часть не должна ронять весь импорт: остальные
+        // доводим и переносим. Терять 11 частей из-за одной нельзя.
+        failedChunks += 1;
+        logger?.warn?.(
           {
             jobId: String(job._id),
-            programId: String(program._id),
-            topics: blueprint?.length ?? 0,
-            renamed: Boolean(patch.title),
+            chunk: i + 1,
+            of: chunks.length,
+            err: String(err?.message ?? err),
           },
-          "program structure built from the imported file",
+          "chunk extraction failed",
         );
       }
     }
 
-    const drafts = normalizeDrafts(items, {
+    const drafts = normalizeDrafts(accumulated, {
       program: effectiveProgram,
       defaults: job.defaults,
     });
 
     job.draftItems = drafts;
     job.stats.detected = drafts.length;
-    job.stats.inputTokens = usage?.inputTokens ?? 0;
-    job.stats.outputTokens = usage?.outputTokens ?? 0;
-    job.status = "extracted";
+    job.stats.inputTokens = inputTokens;
+    job.stats.outputTokens = outputTokens;
+    job.progress.failedChunks = failedChunks;
+
+    // Все части провалились и распознавать нечего — это неудача, а не
+    // «пустой успех»: пустое задание молча выглядело бы как «нет вопросов».
+    if (drafts.length === 0 && failedChunks === chunks.length) {
+      job.status = "failed";
+      job.error =
+        "Ни одна часть файла не распозналась. Проверьте, что это читаемый " +
+        "текст или скан с вопросами, а не пустой документ.";
+    } else {
+      job.status = "extracted";
+      job.error = failedChunks
+        ? `Распозналось частей: ${chunks.length - failedChunks} из ${chunks.length}. ` +
+          `Часть материала могла не попасть в разбор.`
+        : null;
+    }
     job.finishedAt = new Date();
     await job.save();
 
@@ -328,6 +420,8 @@ export async function runExtraction(
       {
         jobId: String(job._id),
         extractor: job.extractor,
+        chunks: chunks.length,
+        failedChunks,
         detected: drafts.length,
       },
       "exam import extraction finished",
