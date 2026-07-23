@@ -61,7 +61,10 @@ function readApiKey() {
   return raw.trim().replace(/^["']|["']$/g, "");
 }
 
-function getClient() {
+// Экспортируется для генератора (generate.extractor): та же логика ключа
+// и клиента, дублировать её и ловить те же баги «invalid API key» дважды
+// не нужно.
+export function getClient() {
   if (!cachedClient) {
     const apiKey = readApiKey();
     // Передаём ключ явно, а не полагаемся на чтение env внутри SDK:
@@ -89,7 +92,7 @@ export function isConfigured() {
  * Показывать администратору сырой JSON от API — то же самое, что не
  * показывать ничего: он не подсказывает, что чинить.
  */
-function describeApiError(err) {
+export function describeApiError(err) {
   const status = err?.status ?? err?.response?.status ?? null;
 
   if (err instanceof Anthropic.AuthenticationError || status === 401) {

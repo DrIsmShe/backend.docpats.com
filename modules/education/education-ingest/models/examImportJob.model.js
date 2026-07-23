@@ -90,8 +90,21 @@ const examImportJobSchema = new Schema(
       pageCount: { type: Number, default: null },
     },
 
-    // Имя экстрактора из реестра (manual | claude).
+    // Имя экстрактора из реестра (manual | claude | generate).
     extractor: { type: String, trim: true, maxlength: 50, default: "manual" },
+
+    // Задание на ГЕНЕРАЦИЮ вопросов моделью (extractor = "generate"). Для
+    // импорта из файла — null. topic и count здесь, чтобы фоновая генерация
+    // знала, что и сколько создавать, и чтобы оператор видел это в задании.
+    generationSpec: {
+      topic: { type: String, trim: true, maxlength: 500, default: null },
+      count: { type: Number, default: null },
+      difficulty: {
+        type: String,
+        enum: [...ITEM_DIFFICULTIES, "mixed"],
+        default: "mixed",
+      },
+    },
 
     // ─── Значения по умолчанию для создаваемых вопросов ───
     defaults: {

@@ -5,6 +5,7 @@ import { ValidationError } from "../../../../common/utils/errors.js";
 import {
   createJob,
   startExtraction,
+  createGenerationJob,
   listJobs,
   getJob,
   deleteJob,
@@ -15,6 +16,7 @@ import { listExtractors } from "../extractors/index.js";
 import {
   createJobSchema,
   runExtractionSchema,
+  generateSchema,
   updateDraftSchema,
   importDraftsSchema,
   listJobsQuerySchema,
@@ -73,6 +75,19 @@ export const listJobsController = asyncHandler(async (req, res) => {
 export const getJobController = asyncHandler(async (req, res) => {
   const job = await getJob(req.params.id);
   res.json({ job });
+});
+
+// Генерация вопросов моделью по теме. Создаёт задание и запускает его в
+// фоне (как загрузка файла), отвечает сразу — клиент следит опросом.
+export const generateController = asyncHandler(async (req, res) => {
+  const parsed = generateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+
+  const job = await createGenerationJob({
+    ...parsed.data,
+    actorId: req.educationActor?.userId ?? null,
+  });
+  res.status(202).json({ job });
 });
 
 // Удаление задания. Разбор распознанного — журнал, а не контент: вопросы,

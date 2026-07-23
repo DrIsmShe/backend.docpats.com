@@ -15,6 +15,10 @@ import { getExtractor, getActiveExtractorName } from "../extractors/index.js";
 import { planChunks } from "../extractors/chunker.js";
 import { resolveFileKind } from "../extractors/fileTypes.js";
 import {
+  generate as generateBatch,
+  GENERATION_BATCH_SIZE,
+} from "../extractors/generate.extractor.js";
+import {
   updateProgram,
   recountPublishedItems,
 } from "../../education-catalog/services/program.service.js";
@@ -501,6 +505,226 @@ export async function startExtraction(jobId, { buffer, payloadItems } = {}) {
   // Отдаём уже помеченное задание, а не то, что прочитали до обновления:
   // клиент по этому статусу решает, начинать ли опрос.
   return started ?? job;
+}
+
+// ─── Генерация вопросов моделью ───────────────────────────────────────
+// Тот же конвейер, что и импорт: результат ложится в draftItems задания,
+// оператор смотрит его в том же экране и переносит в банк. Разница только
+// в источнике — не файл, а тема, — поэтому «части» здесь это батчи, а не
+// куски документа.
+//
+// Крупный заказ бьём на батчи не из-за лимита (хотя и он есть), а ради
+// качества: на коротком батче модель тщательнее и меньше повторяется.
+const MAX_GENERATION_COUNT = 500;
+
+export async function runGeneration(jobId, { alreadyStarted = false } = {}) {
+  const job = await ExamImportJob.findById(jobId);
+  if (!job) throw new NotFoundError("Import job");
+  if (!alreadyStarted && !["pending", "failed"].includes(job.status)) {
+    throw new ConflictError(
+      `Job with status "${job.status}" cannot be re-run`,
+    );
+  }
+
+  const program = await ExamProgram.findById(job.programId)
+    .select("_id title blueprint languages")
+    .lean();
+  if (!program) throw new NotFoundError("Exam program");
+
+  if (!alreadyStarted) {
+    job.status = "extracting";
+    job.startedAt = new Date();
+    job.error = null;
+    await job.save();
+  }
+
+  const spec = job.generationSpec ?? {};
+  const total = Math.max(1, Math.min(spec.count ?? 0, MAX_GENERATION_COUNT));
+  const batches = Math.ceil(total / GENERATION_BATCH_SIZE);
+
+  try {
+    job.progress = { current: 0, total: batches, failedChunks: 0 };
+    await job.save();
+
+    let effectiveProgram = program;
+    const accumulated = [];
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let failedBatches = 0;
+
+    // На первом успешном батче строим структуру теста из предложения модели,
+    // как и импорт. Язык здесь известен заранее (его выбрал оператор), но
+    // название и разделы всё равно берём из suggestedProgram.
+    const applyFirstBatchStructure = async (suggestedProgram) => {
+      if ((effectiveProgram.blueprint?.length ?? 0) === 0) {
+        const blueprint = buildBlueprintFromSuggestion(suggestedProgram);
+        const patch = {};
+        if (blueprint) patch.blueprint = blueprint;
+        const suggestedTitle = String(suggestedProgram?.title ?? "").trim();
+        if (
+          suggestedTitle &&
+          /^(черновик генерации|генерация|черновик импорта)/i.test(
+            effectiveProgram.title,
+          )
+        ) {
+          patch.title = suggestedTitle.slice(0, 300);
+        }
+        if (Object.keys(patch).length > 0) {
+          effectiveProgram = await updateProgram(effectiveProgram._id, patch);
+        }
+      }
+    };
+
+    for (let i = 0; i < batches; i += 1) {
+      job.progress.current = i + 1;
+      await job.save();
+
+      const remaining = total - accumulated.length;
+      const batchCount = Math.min(GENERATION_BATCH_SIZE, remaining);
+      if (batchCount <= 0) break;
+
+      try {
+        const result = await generateBatch({
+          topic: spec.topic,
+          count: batchCount,
+          lang: job.defaults.lang,
+          difficulty: spec.difficulty ?? "mixed",
+          program: effectiveProgram,
+          // Не повторять уже созданное: передаём тексты накопленных вопросов.
+          avoidStems: accumulated.map((it) => it.stem),
+        });
+        await applyFirstBatchStructure(result.suggestedProgram);
+        inputTokens += result.usage?.inputTokens ?? 0;
+        outputTokens += result.usage?.outputTokens ?? 0;
+        accumulated.push(...result.items);
+      } catch (err) {
+        failedBatches += 1;
+        logger?.warn?.(
+          {
+            jobId: String(job._id),
+            batch: i + 1,
+            of: batches,
+            err: String(err?.message ?? err),
+          },
+          "generation batch failed",
+        );
+      }
+    }
+
+    const drafts = normalizeDrafts(accumulated, {
+      program: effectiveProgram,
+      defaults: job.defaults,
+    });
+
+    job.draftItems = drafts;
+    job.stats.detected = drafts.length;
+    job.stats.inputTokens = inputTokens;
+    job.stats.outputTokens = outputTokens;
+    job.progress.failedChunks = failedBatches;
+
+    if (drafts.length === 0) {
+      job.status = "failed";
+      job.error =
+        "Модель не сгенерировала ни одного вопроса. Уточните тему и повторите.";
+    } else {
+      job.status = "extracted";
+      job.error =
+        failedBatches && drafts.length < total
+          ? `Сгенерировано ${drafts.length} из ${total}: часть батчей не удалась, ` +
+            `можно догенерировать в этот же тест.`
+          : null;
+    }
+    job.finishedAt = new Date();
+    await job.save();
+
+    logger?.info?.(
+      {
+        jobId: String(job._id),
+        topic: spec.topic,
+        requested: total,
+        generated: drafts.length,
+        failedBatches,
+      },
+      "exam question generation finished",
+    );
+
+    return job.toObject();
+  } catch (err) {
+    job.status = "failed";
+    job.error = String(err?.message ?? err).slice(0, 2000);
+    job.finishedAt = new Date();
+    await job.save();
+    throw err;
+  }
+}
+
+// Асинхронный запуск генерации — тот же приём, что startExtraction: сразу
+// метим extracting и возвращаем управление, работа идёт в фоне.
+export async function startGeneration(jobId) {
+  const started = await ExamImportJob.findOneAndUpdate(
+    { _id: jobId, status: { $in: ["pending", "failed"] } },
+    { $set: { status: "extracting", startedAt: new Date(), error: null } },
+    { new: true },
+  ).lean();
+  if (!started) {
+    throw new ConflictError("Задание нельзя запустить в текущем статусе");
+  }
+
+  runGeneration(jobId, { alreadyStarted: true }).catch((err) => {
+    logger?.error?.(
+      { jobId: String(jobId), err: String(err?.message ?? err) },
+      "background generation failed",
+    );
+  });
+
+  return started;
+}
+
+// Создать задание генерации и сразу запустить его в фоне.
+export async function createGenerationJob({
+  programId,
+  topic,
+  count,
+  lang,
+  difficulty,
+  sourceNote,
+  actorId,
+}) {
+  const cleanTopic = String(topic ?? "").trim();
+  if (!cleanTopic) throw new ValidationError("Укажите тему для генерации");
+  const n = Number(count);
+  if (!Number.isInteger(n) || n < 1) {
+    throw new ValidationError("Число вопросов должно быть целым и больше нуля");
+  }
+  if (n > MAX_GENERATION_COUNT) {
+    throw new ValidationError(
+      `За один заказ можно сгенерировать не больше ${MAX_GENERATION_COUNT} вопросов. ` +
+        `Для большего объёма запустите генерацию ещё раз в тот же тест.`,
+    );
+  }
+
+  const job = await ExamImportJob.create({
+    programId,
+    extractor: "generate",
+    // Файла нет — генерация не из документа. Имя для списка задаём по теме.
+    file: { originalName: `Генерация: ${cleanTopic}`.slice(0, 300) },
+    generationSpec: { topic: cleanTopic, count: n, difficulty: difficulty ?? "mixed" },
+    defaults: {
+      lang: lang ?? "ru",
+      source: {
+        // Происхождение — машинное: гейт ревью обязателен.
+        kind: "ai_generated",
+        // Заметка о происхождении, если оператор указал (например, «по
+        // мотивам открытого банка X»). В orган/лицензию не пишем: это не
+        // заимствование, а авторская генерация.
+        licenseNote: sourceNote ? String(sourceNote).slice(0, 2000) : null,
+      },
+    },
+    status: "pending",
+    createdBy: actorId ?? null,
+  });
+
+  return startGeneration(job._id);
 }
 
 // ─── deleteJob ────────────────────────────────────────────────────────

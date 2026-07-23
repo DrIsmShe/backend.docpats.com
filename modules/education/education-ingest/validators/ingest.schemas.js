@@ -48,6 +48,19 @@ export const createJobSchema = z.object({
     .optional(),
 });
 
+// ─── GENERATE (модель пишет вопросы по теме) ───
+export const generateSchema = z.object({
+  // Тест-контейнер: новый создаём отдельно на клиенте (как в импорте),
+  // сюда приходит уже его id.
+  programId: objectIdField,
+  topic: z.string().trim().min(2).max(500),
+  count: z.number().int().min(1).max(500),
+  lang: z.enum(EXAM_LANGUAGES).optional(),
+  difficulty: z.enum([...ITEM_DIFFICULTIES, "mixed"]).optional(),
+  // Необязательная пометка о происхождении («по мотивам открытого банка X»).
+  sourceNote: z.string().trim().max(2000).nullish(),
+});
+
 // ─── RUN (ручной экстрактор: вопросы приходят готовыми) ───
 const manualDraftSchema = z.object({
   stem: z.string().trim().min(1).max(8000),

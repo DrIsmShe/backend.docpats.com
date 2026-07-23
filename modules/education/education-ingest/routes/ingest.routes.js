@@ -63,6 +63,8 @@ router.get("/import/extractors", requireAuthor, ctrl.listExtractorsController);
 
 router.get("/import/jobs", requireAuthor, ctrl.listJobsController);
 router.post("/import/jobs", requireAuthor, ctrl.createJobController);
+// Генерация вопросов моделью по теме — своё задание, без файла.
+router.post("/import/generate", requireAuthor, ctrl.generateController);
 router.get("/import/jobs/:id", requireAuthor, ctrl.getJobController);
 router.delete("/import/jobs/:id", requireAuthor, ctrl.deleteJobController);
 
