@@ -63,13 +63,17 @@ function guestActor(req) {
   return { userId: null, guestSessionId: req.sessionID };
 }
 
-// ─── Витрина: только бесплатные опубликованные тесты ──────────────────
+// ─── Витрина: тот же каталог, что и у зарегистрированных ──────────────
+//
+// Гость видит ВСЕ опубликованные тесты. Ограничивает его не список, а
+// квота: 20 вопросов против 250 в месяц. Прятать каталог за регистрацией
+// бессмысленно — человек должен увидеть, ради чего регистрируется.
 router.get(
   "/programs",
   asyncHandler(async (req, res) => {
-    // scope=public по умолчанию уже отсекает черновики и приватные
-    // клинические программы — добавляем только витринность.
-    const items = await listPrograms({ isFree: true });
+    // scope=public по умолчанию отсекает черновики и приватные
+    // клинические программы — этого достаточно.
+    const items = await listPrograms({});
     res.json({ items });
   }),
 );
@@ -79,8 +83,8 @@ router.get(
   asyncHandler(async (req, res) => {
     // getProgramById бросает 404, если теста нет вовсе.
     const program = await getProgramById(req.params.id);
-    if (program.status !== "published" || !program.isFree) {
-      // Не говорим «есть, но не для вас»: для гостя такого теста просто нет.
+    // Черновики и приватные клинические тесты гостю не показываем.
+    if (program.status !== "published" || program.ownerClinicId) {
       throw new NotFoundError("Exam program");
     }
     res.json(program);

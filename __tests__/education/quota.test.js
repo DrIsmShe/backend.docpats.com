@@ -92,8 +92,8 @@ async function answerN(attempt, actor, n) {
 }
 
 describe("квота: гость", () => {
-  it("демо-доступ — 20 вопросов, тест только с isFree", async () => {
-    const program = await makeProgram({ isFree: true });
+  it("демо-доступ — 20 вопросов, без периода восстановления", async () => {
+    const program = await makeProgram();
     await seedItems(program._id, 30);
 
     const quota = await getExamQuota({ guestSessionId: "sess-guest-1" });
@@ -104,21 +104,22 @@ describe("квота: гость", () => {
     expect(quota.periodStart).toBeNull();
   });
 
-  it("платный тест гостю не открывается", async () => {
+  it("гостю открыт любой опубликованный тест, ограничивает только квота", async () => {
+    // Раньше демо жило под флагом isFree; теперь список у гостя и у
+    // зарегистрированного один, разная только квота.
     const program = await makeProgram({ isFree: false });
-    await seedItems(program._id, 5);
+    await seedItems(program._id, 30);
 
-    await expect(
-      startAttempt({
-        guestSessionId: "sess-guest-2",
-        programId: program._id,
-        questionCount: 5,
-      }),
-    ).rejects.toMatchObject({ status: 403 });
+    const attempt = await startAttempt({
+      guestSessionId: "sess-any-program",
+      programId: program._id,
+      questionCount: 20,
+    });
+    expect(attempt.questions).toHaveLength(20);
   });
 
   it("отвеченные вопросы списывают квоту, исчерпание даёт 402 с апселлом", async () => {
-    const program = await makeProgram({ isFree: true });
+    const program = await makeProgram();
     await seedItems(program._id, 40);
     const actor = { guestSessionId: "sess-guest-3" };
 
@@ -146,7 +147,7 @@ describe("квота: гость", () => {
   });
 
   it("гости не видят чужой расход", async () => {
-    const program = await makeProgram({ isFree: true });
+    const program = await makeProgram();
     await seedItems(program._id, 30);
 
     const a = { guestSessionId: "sess-a" };
@@ -251,7 +252,7 @@ describe("квота: зарегистрированный", () => {
 
 describe("assertCanStart", () => {
   it("урезает заказ до остатка вместо отказа", async () => {
-    const program = await makeProgram({ isFree: true });
+    const program = await makeProgram();
     await seedItems(program._id, 40);
     const actor = { guestSessionId: "sess-partial" };
 
@@ -291,7 +292,7 @@ describe("assertCanStart", () => {
 
 describe("перенос гостевой попытки в аккаунт", () => {
   it("после регистрации результат остаётся у человека, а квота — чистой", async () => {
-    const program = await makeProgram({ isFree: true });
+    const program = await makeProgram();
     await seedItems(program._id, 30);
     const actor = { guestSessionId: "sess-claim" };
 
@@ -322,7 +323,7 @@ describe("перенос гостевой попытки в аккаунт", () 
   });
 
   it("чужие гостевые попытки не переезжают", async () => {
-    const program = await makeProgram({ isFree: true });
+    const program = await makeProgram();
     await seedItems(program._id, 10);
     await startAttempt({
       guestSessionId: "sess-other",
