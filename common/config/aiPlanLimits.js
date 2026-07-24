@@ -75,6 +75,19 @@ export const PLAN_LIMITS = {
     videoMinutes: 600,
     docpatsCommissionPct: 12,
   },
+  // «Базовый» — вход для врачей: половина лимитов Start (doctor_basic) за
+  // половину цены. Нечётные лимиты (3, 5) округлены вверх; комиссия — не
+  // лимит, поэтому остаётся как у Start.
+  doctor_lite: {
+    examQuestions: 250,
+    aiAnalyses: 5,
+    aiArticles: 2,
+    soapEpicrises: 5,
+    aiPatientConsultations: 3,
+    patientsInOffice: 25,
+    videoMinutes: 60,
+    docpatsCommissionPct: 15,
+  },
   doctor_basic: {
     examQuestions: 500,
     aiAnalyses: 10,
@@ -147,6 +160,7 @@ export const PLAN_LIMITS = {
 export const PLAN_PRICES = {
   patient_std: { monthly: 9, yearly: 90 },
   patient_pro: { monthly: 19, yearly: 190 },
+  doctor_lite: { monthly: 9, yearly: 90 },
   doctor_basic: { monthly: 19, yearly: 190 },
   doctor_super: { monthly: 49, yearly: 490 },
   doctor_pro: { monthly: 99, yearly: 990 },
