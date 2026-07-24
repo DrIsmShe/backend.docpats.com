@@ -66,13 +66,13 @@ export const PLAN_LIMITS = {
   // Middleware requireDoctorPatientLimit трактует -1 как безлимит.
   doctor_trial: {
     examQuestions: -1,
-    // Первые 6 месяцев — даём как Doctor Growth.
-    aiAnalyses: 50,
-    aiArticles: 15,
-    soapEpicrises: 50,
-    aiPatientConsultations: 50,
-    patientsInOffice: 500,
-    videoMinutes: 600,
+    // Первые 6 месяцев — даём как Doctor Growth (значения синхронны с doctor_super).
+    aiAnalyses: 60,
+    aiArticles: 18,
+    soapEpicrises: 60,
+    aiPatientConsultations: 60,
+    patientsInOffice: 600,
+    videoMinutes: 720,
     docpatsCommissionPct: 12,
   },
   // «Базовый» — вход для врачей: лимиты втрое меньше Start (doctor_basic)
@@ -100,12 +100,12 @@ export const PLAN_LIMITS = {
   },
   doctor_super: {
     examQuestions: -1,
-    aiAnalyses: 50,
-    aiArticles: 15,
-    soapEpicrises: 50,
-    aiPatientConsultations: 50,
-    patientsInOffice: 500,
-    videoMinutes: 600,
+    aiAnalyses: 60,
+    aiArticles: 18,
+    soapEpicrises: 60,
+    aiPatientConsultations: 60,
+    patientsInOffice: 600,
+    videoMinutes: 720,
     docpatsCommissionPct: 12,
   },
   doctor_pro: {
