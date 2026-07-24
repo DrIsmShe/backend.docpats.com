@@ -355,6 +355,18 @@ export async function runExtraction(
         if (err?.details?.overflow && chunk && depth < 4) {
           const halves = chunk.subdivide();
           if (halves) {
+            // Логируем: деление молча — это минуты лишней работы на плотных
+            // частях, и без записи в мониторинге такой файл выглядит
+            // «зависшим». Видя переполнения, размер части можно подстроить.
+            logger?.info?.(
+              {
+                jobId: String(job._id),
+                chunk: chunk.label,
+                depth,
+                into: halves.length,
+              },
+              "chunk overflowed output limit, splitting",
+            );
             const items = [];
             for (const half of halves) {
               items.push(...(await runChunk(half, depth + 1)));
