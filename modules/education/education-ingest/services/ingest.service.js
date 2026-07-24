@@ -383,9 +383,28 @@ export async function runExtraction(
       return Array.isArray(result.items) ? result.items : [];
     };
 
+    let cancelled = false;
     for (let i = 0; i < chunks.length; i += 1) {
-      job.progress.current = i + 1;
-      await job.save();
+      // Отмена приходит из другого запроса (cancelJob помечает задание в
+      // базе), а этот прогон держит свою копию job в памяти и о правке не
+      // знает — поэтому перед каждой частью перечитываем статус. Прервать
+      // на середине части нельзя (вызов модели уже идёт), но между частями
+      // — точка выхода, и накопленное не теряется.
+      const fresh = await ExamImportJob.findById(job._id)
+        .select("status")
+        .lean();
+      if (fresh?.status === "cancelled") {
+        cancelled = true;
+        break;
+      }
+
+      // Прогресс пишем точечно, а не job.save(): полный save затёр бы
+      // статус cancelled, если отмена пришла между итерациями.
+      await ExamImportJob.updateOne(
+        { _id: job._id },
+        { $set: { "progress.current": i + 1 } },
+      );
+
       try {
         accumulated.push(...(await runChunk(chunks[i])));
       } catch (err) {
@@ -409,10 +428,40 @@ export async function runExtraction(
       defaults: job.defaults,
     });
 
+    // Остановлено оператором: сохраняем то, что успели распознать — эти
+    // вопросы не выбрасываем, оператор сам решит, нужны ли они. Статус
+    // остаётся cancelled, минуя обычные extracted/failed.
+    if (cancelled) {
+      await ExamImportJob.updateOne(
+        { _id: job._id },
+        {
+          $set: {
+            draftItems: drafts,
+            "stats.detected": drafts.length,
+            "stats.inputTokens": inputTokens,
+            "stats.outputTokens": outputTokens,
+            "progress.failedChunks": failedChunks,
+            status: "cancelled",
+            error: `Распознавание остановлено. Успело распознаться ${drafts.length} вопросов — их можно проверить и перенести или удалить задание.`,
+            finishedAt: new Date(),
+          },
+        },
+      );
+      logger?.info?.(
+        { jobId: String(job._id), detected: drafts.length },
+        "exam import extraction cancelled by operator",
+      );
+      const doc = await ExamImportJob.findById(job._id);
+      return doc.toObject();
+    }
+
     job.draftItems = drafts;
     job.stats.detected = drafts.length;
     job.stats.inputTokens = inputTokens;
     job.stats.outputTokens = outputTokens;
+    // Прогресс в цикле обновлялся через updateOne, локальная копия отстала —
+    // выставляем на «все части пройдены», иначе финальный save вернёт старое.
+    job.progress.current = chunks.length;
     job.progress.failedChunks = failedChunks;
 
     // Все части провалились и распознавать нечего — это неудача, а не
@@ -807,6 +856,41 @@ export async function deleteJob(jobId) {
     // они остаются, и в интерфейсе об этом честно пишем.
     importedItems: job.stats?.imported ?? 0,
   };
+}
+
+// ─── cancelJob ────────────────────────────────────────────────────────
+// Останавливает идущее распознавание по кнопке оператора.
+//
+// Сам фоновый прогон в Node не прервать на полуслове — вызов модели уже
+// летит. Поэтому отмена — это флаг в базе: цикл runExtraction перечитывает
+// статус перед каждой частью и выходит, увидев cancelled, сохранив всё,
+// что успел распознать. Между частями пауза невелика, так что реакция на
+// кнопку — секунды, а не минуты.
+export async function cancelJob(jobId) {
+  const job = await ExamImportJob.findById(jobId).select("status").lean();
+  if (!job) throw new NotFoundError("Import job");
+
+  // Отменять есть смысл только то, что ещё в работе.
+  if (job.status !== "extracting" && job.status !== "pending") {
+    throw new ConflictError(
+      `Задание в статусе «${job.status}» уже не выполняется — отменять нечего`,
+    );
+  }
+
+  // pending мог ещё не начать прогон (файла нет / не запущен) — тогда цикл
+  // его не подхватит, но статус всё равно ставим: задание больше не висит.
+  await ExamImportJob.updateOne(
+    { _id: jobId },
+    {
+      $set: {
+        status: "cancelled",
+        error: "Распознавание остановлено оператором.",
+        finishedAt: new Date(),
+      },
+    },
+  );
+
+  return { cancelled: true, id: String(jobId) };
 }
 
 // ─── listJobs / getJob ────────────────────────────────────────────────

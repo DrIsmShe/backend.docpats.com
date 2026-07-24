@@ -67,6 +67,9 @@ router.post("/import/jobs", requireAuthor, ctrl.createJobController);
 router.post("/import/generate", requireAuthor, ctrl.generateController);
 router.get("/import/jobs/:id", requireAuthor, ctrl.getJobController);
 router.delete("/import/jobs/:id", requireAuthor, ctrl.deleteJobController);
+// Остановить идущее распознавание. Не удаляет задание — помечает
+// cancelled и сохраняет то, что успело распознаться.
+router.post("/import/jobs/:id/cancel", requireAuthor, ctrl.cancelJobController);
 
 router.post(
   "/import/jobs/:id/run",

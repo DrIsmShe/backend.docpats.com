@@ -9,6 +9,7 @@ import {
   listJobs,
   getJob,
   deleteJob,
+  cancelJob,
   updateDraft,
   importDrafts,
 } from "../services/ingest.service.js";
@@ -94,6 +95,11 @@ export const generateController = asyncHandler(async (req, res) => {
 // уже перенесённые в банк, остаются на месте.
 export const deleteJobController = asyncHandler(async (req, res) => {
   const result = await deleteJob(req.params.id);
+  res.json(result);
+});
+
+export const cancelJobController = asyncHandler(async (req, res) => {
+  const result = await cancelJob(req.params.id);
   res.json(result);
 });
 
