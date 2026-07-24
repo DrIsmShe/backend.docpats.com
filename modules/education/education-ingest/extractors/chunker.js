@@ -151,7 +151,14 @@ export async function planChunks({ bytes, kind, mimeType, fileName }) {
   if (kind === FILE_KINDS.PDF) {
     return chunkPdf(bytes, fileName);
   }
-  if (kind === FILE_KINDS.TEXT || kind === FILE_KINDS.DOCX) {
+  // .doc наравне с .docx и текстом: все три fileToText приводит к тексту,
+  // а большой текст обязательно резать по частям, иначе ответ модели не
+  // влезает в лимит вывода и проход падает целиком.
+  if (
+    kind === FILE_KINDS.TEXT ||
+    kind === FILE_KINDS.DOCX ||
+    kind === FILE_KINDS.DOC
+  ) {
     return chunkText(bytes, kind, fileName);
   }
   // Изображение и всё прочее — одним куском.
