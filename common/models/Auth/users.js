@@ -235,7 +235,7 @@ const ReissueHistorySchema = new mongoose.Schema(
 const PLAN_TO_MAX_PATIENTS = {
   // Новые ключи (тарифная сетка v3) — совпадают с patientsInOffice в aiPlanLimits.js
   doctor_lite: 17, // «Базовый» — втрое меньше Start (50/3 ≈ 17)
-  doctor_basic: 50,
+  doctor_basic: 100,
   doctor_super: 500,
   doctor_pro: -1, // -1 = безлимит (middleware requireDoctorPatientLimit это понимает)
   doctor_trial: 500, // как Growth во время trial
