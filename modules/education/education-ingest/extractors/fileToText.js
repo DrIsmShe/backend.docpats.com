@@ -129,6 +129,32 @@ export async function fileToText(buffer, { kind, fileName } = {}) {
         "docx conversion produced warnings",
       );
     }
+  } else if (kind === FILE_KINDS.DOC) {
+    // Старый бинарный формат Word (OLE2). mammoth его не читает — он
+    // умеет только .docx, — поэтому отдельный парсер. word-extractor на
+    // чистом JS, без нативных бинарников: важно, чтобы работало и на
+    // Linux-VPS без внешних утилит вроде antiword.
+    //
+    // Кодировку он берёт из самого документа (Unicode или code page),
+    // поэтому decodeText здесь не нужен — в отличие от текстовых файлов.
+    const WordExtractor = (await import("word-extractor")).default;
+    let doc;
+    try {
+      doc = await new WordExtractor().extract(buffer);
+    } catch (err) {
+      logger?.warn?.(
+        { fileName, err: String(err?.message ?? err) },
+        "legacy .doc extraction failed",
+      );
+      throw new ValidationError(
+        "Не удалось прочитать файл .doc — возможно, он повреждён или это " +
+          "переименованный файл другого формата. Откройте его в Word и " +
+          "сохраните как .docx или PDF.",
+      );
+    }
+    // getBody() — основной текст; сноски и колонтитулы для банка вопросов
+    // не нужны, они только зашумили бы распознавание.
+    text = doc.getBody() ?? "";
   } else {
     const decoded = decodeText(buffer);
     const lower = String(fileName ?? "").toLowerCase();

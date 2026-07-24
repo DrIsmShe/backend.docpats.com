@@ -22,6 +22,7 @@ export const FILE_KINDS = {
   IMAGE: "image", // уходит в API как image-блок
   TEXT: "text", // читаем сами, отдаём модели текстом
   DOCX: "docx", // конвертируем в текст через mammoth
+  DOC: "doc", // старый бинарный Word (OLE2) — через word-extractor
 };
 
 // Изображения перечислены явно: media_type уходит в API как есть,
@@ -57,6 +58,11 @@ const MIME_TO_KIND = {
 
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
     FILE_KINDS.DOCX,
+
+  // Старый бинарный Word. Браузер обычно отдаёт application/msword, но
+  // нередко и application/octet-stream — тогда тип ловится по расширению.
+  "application/msword": FILE_KINDS.DOC,
+  "application/vnd.ms-word": FILE_KINDS.DOC,
 };
 
 const EXT_TO_KIND = {
@@ -81,14 +87,13 @@ const EXT_TO_KIND = {
   ".xml": FILE_KINDS.TEXT,
 
   ".docx": FILE_KINDS.DOCX,
+  ".doc": FILE_KINDS.DOC,
 };
 
 // Форматы, которые мы осознанно НЕ поддерживаем. Отказ с конкретным
 // советом полезнее, чем «неподдерживаемый тип файла»: в девяти случаях из
 // десяти пересохранить файл — минутное дело.
 const UNSUPPORTED_HINTS = {
-  ".doc":
-    "Старый формат Word (.doc) не читается. Откройте файл в Word и сохраните как .docx или PDF.",
   ".xls":
     "Excel не читается напрямую. Сохраните лист как CSV (Файл → Сохранить как → CSV) и загрузите его.",
   ".xlsx":
@@ -168,7 +173,7 @@ export function resolveFileKind({ mimeType, fileName } = {}) {
 
   throw new ValidationError(
     `Формат файла не распознан${ext ? ` (${ext})` : ""}. ` +
-      "Поддерживаются PDF, изображения (JPG, PNG, WebP, GIF), Word (.docx) " +
+      "Поддерживаются PDF, изображения (JPG, PNG, WebP, GIF), Word (.doc, .docx) " +
       "и текстовые файлы (TXT, MD, CSV, HTML, RTF). " +
       "Файл другого формата пересохраните в PDF.",
   );

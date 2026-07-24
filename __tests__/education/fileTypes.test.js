@@ -49,6 +49,21 @@ describe("resolveFileKind", () => {
     ).toBe(FILE_KINDS.TEXT);
   });
 
+  it("принимает старый .doc, в том числе как octet-stream", () => {
+    // Браузер отдаёт .doc то как application/msword, то как octet-stream —
+    // оба должны опознаваться как бинарный Word.
+    expect(
+      resolveFileKind({ mimeType: "application/msword", fileName: "t.doc" })
+        .kind,
+    ).toBe(FILE_KINDS.DOC);
+    expect(
+      resolveFileKind({
+        mimeType: "application/octet-stream",
+        fileName: "тесты.doc",
+      }).kind,
+    ).toBe(FILE_KINDS.DOC);
+  });
+
   it("принимает .csv, который Windows отдаёт как Excel", () => {
     // Классика: application/vnd.ms-excel у обычного текстового CSV.
     expect(
@@ -74,9 +89,6 @@ describe("resolveFileKind", () => {
   it("на отказ даёт конкретный совет, а не общий отлуп", () => {
     expect(() => resolveFileKind({ fileName: "лекция.pptx" })).toThrow(
       /Экспортируйте презентацию в PDF/i,
-    );
-    expect(() => resolveFileKind({ fileName: "старый.doc" })).toThrow(
-      /сохраните как \.docx или PDF/i,
     );
     expect(() => resolveFileKind({ fileName: "архив.zip" })).toThrow(
       /Распакуйте/i,

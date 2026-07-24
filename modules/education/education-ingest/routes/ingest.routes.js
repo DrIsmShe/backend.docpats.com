@@ -30,7 +30,7 @@ const upload = multer({
       return cb(
         new ValidationError(
           `Неподдерживаемый файл: ${file.originalname}. ` +
-            "Принимаются PDF, изображения, Word (.docx) и текстовые файлы (TXT, MD, CSV, HTML, RTF).",
+            "Принимаются PDF, изображения, Word (.doc, .docx) и текстовые файлы (TXT, MD, CSV, HTML, RTF).",
         ),
       );
     }
