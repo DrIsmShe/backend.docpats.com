@@ -1,0 +1,303 @@
+// server/modules/radiology/labs-station/lab.service.js
+//
+// Станция «Анализы»: жизненный цикл кейса + прохождение. Переиспользует
+// движки арены — combineTotal (взвешивание компонентов), gradeImpression
+// (оценка свободного текста) и awardForAttempt (начисление XP/серии), —
+// поэтому своей игровой логики здесь нет, только доменная.
+
+import LabCase from "./models/labCase.model.js";
+import LabAttempt from "./models/labAttempt.model.js";
+import { combineTotal } from "../radiology-attempts/services/scoring.service.js";
+import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
+import { awardForAttempt } from "../game/game.service.js";
+import { recordRadiologyEvent } from "../audit/audit.service.js";
+import {
+  ValidationError,
+  NotFoundError,
+  ConflictError,
+  ForbiddenError,
+} from "../../../common/utils/errors.js";
+
+// Веса компонентов оценки станции. Здесь главное — правильно выделить
+// значимые отклонения и поставить диагноз.
+const WEIGHTS = { detection: 0.5, diagnosis: 0.35, impression: 0.15 };
+const PASS = 0.7;
+
+const normKey = (s) => String(s ?? "").trim().toLowerCase();
+
+// ─── Скоринг ──────────────────────────────────────────────────────────
+function scoreLab(caseDoc, response) {
+  const panelKeys = new Set((caseDoc.panel ?? []).map((p) => p.key));
+  const gt = new Set(caseDoc.significantAbnormal ?? []);
+  const flags = new Set((response.flags ?? []).filter((k) => panelKeys.has(k)));
+
+  let tp = 0;
+  let fp = 0;
+  for (const k of flags) (gt.has(k) ? (tp += 1) : (fp += 1));
+  const fn = [...gt].filter((k) => !flags.has(k)).length;
+
+  let detection;
+  if (gt.size === 0) detection = fp === 0 ? 1 : Math.max(0, 1 - 0.34 * fp);
+  else detection = tp + fn + fp > 0 ? tp / (tp + fn + fp) : 0; // Жаккар
+
+  const accepted = new Set(
+    (caseDoc.impression?.diagnosisKeys ?? []).map(normKey).filter(Boolean),
+  );
+  const given = (response.diagnosisKeys ?? []).map(normKey);
+  const diagnosis =
+    accepted.size === 0 ? null : given.some((k) => accepted.has(k)) ? 1 : 0;
+
+  const nameByKey = new Map((caseDoc.panel ?? []).map((p) => [p.key, p.name]));
+  const matches = [...gt].map((k) => ({
+    key: k,
+    name: nameByKey.get(k) ?? k,
+    outcome: flags.has(k) ? "hit" : "missed",
+  }));
+
+  return { detection, diagnosis, matches, falsePositives: fp };
+}
+
+// ─── Гейт публикации ──────────────────────────────────────────────────
+export function collectLabBlockers(doc) {
+  const b = [];
+  if ((doc.panel?.length ?? 0) < 2) b.push("добавьте минимум 2 показателя в панель");
+  if (!(doc.impression?.diagnosisKeys?.length ?? 0))
+    b.push("укажите принятый диагноз");
+  if (["public_government", "licensed"].includes(doc.source?.kind) && !doc.source?.authority)
+    b.push("для заимствованного материала не указан орган/издание");
+  if (doc.source?.kind === "licensed" && !doc.source?.licenseNote)
+    b.push("для лицензионного материала не указаны условия");
+  return b;
+}
+
+// ─── CRUD ─────────────────────────────────────────────────────────────
+export async function createLabCase(input, actorId, actorRole) {
+  const doc = await LabCase.create({
+    title: input.title,
+    clinicalContext: input.clinicalContext ?? "",
+    difficulty: input.difficulty ?? "medium",
+    categoryId: input.categoryId ?? null,
+    panel: input.panel ?? [],
+    significantAbnormal: input.significantAbnormal ?? [],
+    impression: input.impression ?? {},
+    source: input.source,
+    status: "draft",
+    createdBy: actorId,
+  });
+  recordRadiologyEvent({
+    action: "lab.create",
+    actorId,
+    actorRole,
+    metadata: { panel: doc.panel.length },
+  });
+  return doc.toObject();
+}
+
+export async function updateLabCase(caseId, patch) {
+  const doc = await LabCase.findById(caseId);
+  if (!doc) throw new NotFoundError("Lab case");
+  if (doc.status === "archived") {
+    throw new ConflictError("Архивный кейс редактировать нельзя");
+  }
+  const FIELDS = [
+    "title",
+    "clinicalContext",
+    "difficulty",
+    "categoryId",
+    "panel",
+    "significantAbnormal",
+    "impression",
+    "source",
+  ];
+  for (const f of FIELDS) if (patch[f] !== undefined) doc[f] = patch[f];
+  await doc.save();
+  return doc.toObject();
+}
+
+// Статус: publish (с гейтом) / draft / archived. Полного review-цикла у
+// станции анализов нет — здесь автор и рецензент один админ.
+export async function setLabStatus(caseId, status, actorId, actorRole) {
+  const doc = await LabCase.findById(caseId);
+  if (!doc) throw new NotFoundError("Lab case");
+
+  if (status === "published") {
+    const blockers = collectLabBlockers(doc);
+    if (blockers.length) {
+      throw new ValidationError(`Опубликовать нельзя: ${blockers.join("; ")}`, {
+        blockers,
+      });
+    }
+    doc.status = "published";
+    doc.publishedAt = doc.publishedAt ?? new Date();
+  } else if (status === "draft" || status === "archived") {
+    doc.status = status;
+  } else {
+    throw new ValidationError("Неизвестный статус");
+  }
+  await doc.save();
+  recordRadiologyEvent({
+    action: `lab.${status}`,
+    actorId,
+    actorRole,
+    metadata: {},
+  });
+  return doc.toObject();
+}
+
+export async function listLabCases({ isEditor, scope, status }) {
+  const query = {};
+  if (isEditor && scope === "all") {
+    if (status) query.status = status;
+  } else {
+    query.status = "published";
+  }
+  return LabCase.find(query)
+    .sort({ createdAt: -1 })
+    .limit(200)
+    .select("-significantAbnormal -impression")
+    .lean();
+}
+
+export async function getLabCaseFull(caseId) {
+  const doc = await LabCase.findById(caseId).lean();
+  if (!doc) throw new NotFoundError("Lab case");
+  return { ...doc, publishBlockers: collectLabBlockers(doc) };
+}
+
+export function sanitizeLabForLearner(doc) {
+  return {
+    _id: doc._id,
+    title: doc.title,
+    clinicalContext: doc.clinicalContext,
+    difficulty: doc.difficulty,
+    panel: (doc.panel ?? []).map((p) => ({
+      key: p.key,
+      name: p.name,
+      value: p.value,
+      unit: p.unit,
+      refRange: p.refRange,
+    })),
+  };
+}
+
+// ─── Прохождение ──────────────────────────────────────────────────────
+export async function startLabAttempt(caseId, userId) {
+  const caseDoc = await LabCase.findById(caseId).lean();
+  if (!caseDoc || caseDoc.status !== "published") {
+    throw new NotFoundError("Lab case");
+  }
+  const attempt = await LabAttempt.create({ caseId, userId, status: "in_progress" });
+  recordRadiologyEvent({
+    action: "lab.attempt_start",
+    actorId: userId,
+    attemptId: attempt._id,
+  });
+  return { attempt: attempt.toObject(), case: sanitizeLabForLearner(caseDoc) };
+}
+
+function buildLabReview(caseDoc, attempt) {
+  const nameByKey = new Map((caseDoc.panel ?? []).map((p) => [p.key, p.name]));
+  return {
+    significantAbnormal: (caseDoc.significantAbnormal ?? []).map((k) => ({
+      key: k,
+      name: nameByKey.get(k) ?? k,
+    })),
+    impression: {
+      correctText: caseDoc.impression?.correctText ?? "",
+      diagnosisKeys: caseDoc.impression?.diagnosisKeys ?? [],
+    },
+    matches: attempt.matches,
+    falsePositives: attempt.falsePositives,
+  };
+}
+
+export async function submitLabAttempt(attemptId, userId, response) {
+  const attempt = await LabAttempt.findById(attemptId);
+  if (!attempt) throw new NotFoundError("Lab attempt");
+  if (String(attempt.userId) !== String(userId)) {
+    throw new ForbiddenError("Это чужая попытка");
+  }
+  if (attempt.status === "submitted") throw new ConflictError("Попытка уже сдана");
+
+  const caseDoc = await LabCase.findById(attempt.caseId).lean();
+  if (!caseDoc) throw new NotFoundError("Lab case");
+
+  const resp = {
+    flags: response.flags ?? [],
+    impressionText: response.impressionText ?? "",
+    diagnosisKeys: response.diagnosisKeys ?? [],
+  };
+
+  const det = scoreLab(caseDoc, resp);
+  const aiFeedback = await gradeImpression({
+    impressionText: resp.impressionText,
+    correctText: caseDoc.impression?.correctText ?? "",
+    diagnosisSynonyms: caseDoc.impression?.diagnosisSynonyms ?? [],
+  });
+
+  const { total, passed } = combineTotal(
+    { detection: det.detection, diagnosis: det.diagnosis, impression: aiFeedback?.score ?? null },
+    WEIGHTS,
+    PASS,
+  );
+
+  attempt.response = resp;
+  attempt.matches = det.matches;
+  attempt.falsePositives = det.falsePositives;
+  attempt.aiFeedback = aiFeedback;
+  attempt.score = {
+    total,
+    passed,
+    detection: det.detection,
+    diagnosis: det.diagnosis,
+    impression: aiFeedback?.score ?? null,
+  };
+  attempt.status = "submitted";
+  attempt.submittedAt = new Date();
+  await attempt.save();
+
+  // Статистика кейса.
+  const c = await LabCase.findById(attempt.caseId).select("stats");
+  if (c) {
+    const n = c.stats.attempts ?? 0;
+    c.stats.attempts = n + 1;
+    c.stats.avgScore = ((c.stats.avgScore ?? 0) * n + total) / (n + 1);
+    await c.save();
+  }
+
+  // Общий игровой слой арены (XP/серия/достижения). Тихо.
+  let game = null;
+  try {
+    game = await awardForAttempt({
+      userId,
+      score: total,
+      passed,
+      falseAlarms: det.falsePositives,
+      caughtCritical: false,
+    });
+  } catch {
+    /* игровой слой не критичен */
+  }
+
+  recordRadiologyEvent({
+    action: "lab.attempt_submit",
+    actorId: userId,
+    attemptId: attempt._id,
+    metadata: { total: Math.round(total * 100) / 100, passed },
+  });
+
+  return { attempt: attempt.toObject(), review: buildLabReview(caseDoc, attempt), game };
+}
+
+export async function getLabAttempt(attemptId, userId) {
+  const attempt = await LabAttempt.findById(attemptId).lean();
+  if (!attempt) throw new NotFoundError("Lab attempt");
+  if (String(attempt.userId) !== String(userId)) {
+    throw new ForbiddenError("Это чужая попытка");
+  }
+  if (attempt.status === "submitted") {
+    const caseDoc = await LabCase.findById(attempt.caseId).lean();
+    return { attempt, review: caseDoc ? buildLabReview(caseDoc, attempt) : null };
+  }
+  return { attempt, review: null };
+}

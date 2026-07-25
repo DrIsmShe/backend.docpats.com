@@ -23,6 +23,7 @@ import uploadFileRoutes from "./common/routes/uploadFileRoutes.js";
 import emailLimiter from "./common/middlewares/rateLimiter.js";
 import { scheduleTrialReminders } from "./jobs/checkTrialReminders.js";
 import { scheduleNotificationDigest } from "./jobs/notificationDigest.job.js";
+import { scheduleWeeklyCaseNotification } from "./jobs/radiologyWeeklyCase.job.js";
 import User, { decrypt as decryptUser } from "./common/models/Auth/users.js";
 import NewPatientPolyclinic from "./common/models/PatientProfile/patientProfile.js";
 import "./common/models/Comments/CommentDocpats.js";
@@ -51,6 +52,7 @@ import paymentsRouter from "./modules/payments/payments.routes.js";
 import paymentsWebhookRouter from "./modules/payments/webhook.routes.js";
 import educationRoutes from "./modules/education/index.js";
 import educationGuestRoutes from "./modules/education/education-guest/index.js";
+import radiologyRoutes from "./modules/radiology/index.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -323,6 +325,11 @@ app.use("/api/v1/clinic", clinicRoutes);
 // /api/v1/public, который смонтирован до session-middleware).
 app.use("/api/v1/education/guest", educationGuestRoutes);
 app.use("/api/v1/education", educationRoutes);
+// Лучевая диагностика — глобальный модуль (без tenantMiddleware), опирается
+// на req.session, поэтому монтируется после session-middleware, рядом с
+// education. Гостевого контура пока нет: тренажёр чтения снимков закрыт
+// авторизацией целиком.
+app.use("/api/v1/radiology", radiologyRoutes);
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
 await import("./common/models/index.js")
@@ -400,6 +407,7 @@ async function bootstrap(startPort = PORT) {
     initCallGateway(nsp);
     scheduleTrialReminders();
     scheduleNotificationDigest();
+    scheduleWeeklyCaseNotification();
     app.set("io", io);
     setSimulationIo(io);
     server.listen(startPort, () =>

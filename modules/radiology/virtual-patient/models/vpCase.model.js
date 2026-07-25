@@ -1,0 +1,81 @@
+// server/modules/radiology/virtual-patient/models/vpCase.model.js
+//
+// VirtualPatientCase — флагманский режим арены. Клинический сценарий, где
+// игрок ведёт диагностику как врач: видит жалобу, ЗАКАЗЫВАЕТ обследования
+// (осмотр, анализы, снимки) и ставит диагноз. Учит не только «читать»
+// исследование, но и решать, какое назначить.
+//
+// Результаты обследований встроены в кейс (self-contained), а не ссылаются
+// на кейсы других станций — так автор пишет цельный сценарий, а игрок не
+// уходит со страницы.
+
+import mongoose from "mongoose";
+import { DIFFICULTIES, CASE_STATUSES, SOURCE_KINDS } from "../../constants.js";
+
+const { Schema } = mongoose;
+
+// Одно доступное обследование. necessary — нужно ли его было назначить
+// (эталон); на этом держится оценка «разумного набора».
+const investigationSchema = new Schema(
+  {
+    key: { type: String, required: true, trim: true, maxlength: 40 },
+    name: { type: String, required: true, trim: true, maxlength: 160 }, // «Общий анализ крови»
+    category: { type: String, trim: true, maxlength: 60, default: "" }, // «Лаборатория» / «Лучевая» / «Осмотр»
+    // Результат раскрывается, когда игрок «назначает» обследование.
+    resultText: { type: String, trim: true, maxlength: 4000, default: "" },
+    imageUrl: { type: String, trim: true, maxlength: 1000, default: null }, // для лучевых
+    necessary: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
+const diagnosisSchema = new Schema(
+  {
+    correctText: { type: String, trim: true, maxlength: 4000, default: "" },
+    diagnosisKeys: { type: [String], default: [] },
+    diagnosisSynonyms: { type: [String], default: [] },
+  },
+  { _id: false },
+);
+
+const sourceSchema = new Schema(
+  {
+    kind: { type: String, enum: SOURCE_KINDS, required: true },
+    authority: { type: String, trim: true, maxlength: 300, default: null },
+    url: { type: String, trim: true, maxlength: 1000, default: null },
+    licenseNote: { type: String, trim: true, maxlength: 2000, default: null },
+  },
+  { _id: false },
+);
+
+const vpCaseSchema = new Schema(
+  {
+    title: { type: String, required: true, trim: true, maxlength: 300 },
+    // Жалоба и вводная — видны сразу.
+    presentation: { type: String, trim: true, maxlength: 4000, default: "" },
+    difficulty: { type: String, enum: DIFFICULTIES, default: "medium", index: true },
+    categoryId: { type: Schema.Types.ObjectId, ref: "ExamCategory", default: null },
+
+    investigations: { type: [investigationSchema], default: [] },
+    diagnosis: { type: diagnosisSchema, default: () => ({}) },
+
+    source: { type: sourceSchema, required: true },
+    status: { type: String, enum: CASE_STATUSES, default: "draft", index: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    publishedAt: { type: Date, default: null },
+
+    stats: {
+      attempts: { type: Number, default: 0 },
+      avgScore: { type: Number, default: 0 },
+    },
+  },
+  { timestamps: true, collection: "vp_cases" },
+);
+
+vpCaseSchema.index({ status: 1, difficulty: 1 });
+
+const VirtualPatientCase =
+  mongoose.models.VirtualPatientCase ||
+  mongoose.model("VirtualPatientCase", vpCaseSchema, "vp_cases");
+
+export default VirtualPatientCase;

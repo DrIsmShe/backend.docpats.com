@@ -1,0 +1,50 @@
+// server/modules/radiology/constants.js
+//
+// Общие справочники модуля лучевой диагностики. Enum'ы моделей,
+// zod-валидаторы и сервисы ссылаются СЮДА — рассинхрон здесь ломает сразу
+// несколько подмодулей (ровно как constants.js в education).
+
+// Модальности исследований. Каждая, у которой есть плагин в
+// reading-systems/, читается по своим правилам («одна система на одно
+// исследование»). Список шире, чем набор реализованных систем: модель
+// принимает будущие модальности, а reading-systems отдаёт те, что готовы.
+export const MODALITIES = ["cxr", "ct", "mri", "us", "ecg", "mammography", "other"];
+
+// Форма разметки находки на изображении. Координаты у всех НОРМАЛИЗОВАНЫ
+// к 0..1 от ширины/высоты кадра — тогда разметка не зависит от того, в
+// каком разрешении показали срез (и эталон эксперта, и ответ учащегося
+// сравниваются в одной системе координат).
+export const FINDING_SHAPES = ["point", "rect", "ellipse", "polygon"];
+
+// Значимость находки. Пропустить critical на экзамене куда хуже, чем
+// incidental, — скоринг взвешивает находки этими коэффициентами.
+export const SIGNIFICANCES = ["critical", "major", "incidental"];
+export const SIGNIFICANCE_WEIGHT = { critical: 3, major: 2, incidental: 1 };
+
+// Жизненный цикл кейса — тот же, что у вопроса education: наружу только
+// через ревью человеком. Машинный/чужой контент не публикуется молча.
+export const CASE_STATUSES = [
+  "draft",
+  "in_review",
+  "published",
+  "rejected",
+  "archived",
+];
+
+// Режимы прохождения (аналог tutor/timed из education):
+//   learn — с подсказками, эталон эксперта показывается после сдачи;
+//   exam  — вслепую, оценка в конце.
+export const ATTEMPT_MODES = ["learn", "exam"];
+export const ATTEMPT_STATUSES = ["in_progress", "submitted"];
+
+export const DIFFICULTIES = ["easy", "medium", "hard"];
+
+// Происхождение материала — юридически значимое поле, как в education.
+// Копировать чужие коммерческие атласы нельзя; заимствованный материал
+// требует указания органа/лицензии перед публикацией.
+export const SOURCE_KINDS = [
+  "original",
+  "public_government",
+  "licensed",
+  "ai_generated",
+];
