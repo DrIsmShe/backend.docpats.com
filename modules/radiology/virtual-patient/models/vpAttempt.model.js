@@ -27,6 +27,9 @@ const vpAttemptSchema = new Schema(
     response: {
       ordered: { type: [String], default: [] }, // ключи назначенных обследований
       diagnosisKeys: { type: [String], default: [] },
+      // Формулировка диагноза как её написал учащийся: она и оценивается,
+      // и нужна в разборе — без неё ответ врача в записи попытки терялся.
+      diagnosisText: { type: String, trim: true, maxlength: 4000, default: "" },
       reasoningText: { type: String, trim: true, maxlength: 4000, default: "" },
     },
 

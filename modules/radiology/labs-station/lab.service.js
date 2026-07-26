@@ -9,6 +9,7 @@ import LabCase from "./models/labCase.model.js";
 import LabAttempt from "./models/labAttempt.model.js";
 import { combineTotal } from "../radiology-attempts/services/scoring.service.js";
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
+import { gradeDiagnosis } from "../radiology-attempts/services/diagnosisMatcher.js";
 import { awardForAttempt } from "../game/game.service.js";
 import { recordRadiologyEvent } from "../audit/audit.service.js";
 import {
@@ -22,8 +23,6 @@ import {
 // значимые отклонения и поставить диагноз.
 const WEIGHTS = { detection: 0.5, diagnosis: 0.35, impression: 0.15 };
 const PASS = 0.7;
-
-const normKey = (s) => String(s ?? "").trim().toLowerCase();
 
 // ─── Скоринг ──────────────────────────────────────────────────────────
 function scoreLab(caseDoc, response) {
@@ -40,12 +39,14 @@ function scoreLab(caseDoc, response) {
   if (gt.size === 0) detection = fp === 0 ? 1 : Math.max(0, 1 - 0.34 * fp);
   else detection = tp + fn + fp > 0 ? tp / (tp + fn + fp) : 0; // Жаккар
 
-  const accepted = new Set(
-    (caseDoc.impression?.diagnosisKeys ?? []).map(normKey).filter(Boolean),
-  );
-  const given = (response.diagnosisKeys ?? []).map(normKey);
-  const diagnosis =
-    accepted.size === 0 ? null : given.some((k) => accepted.has(k)) ? 1 : 0;
+  // Диагноз: точное совпадение ключа ИЛИ вхождение ключа/синонима в
+  // развёрнутую формулировку — см. diagnosisMatcher.
+  const { score: diagnosis } = gradeDiagnosis({
+    givenKeys: response.diagnosisKeys,
+    givenText: response.diagnosisText,
+    acceptedKeys: caseDoc.impression?.diagnosisKeys,
+    synonyms: caseDoc.impression?.diagnosisSynonyms,
+  });
 
   const nameByKey = new Map((caseDoc.panel ?? []).map((p) => [p.key, p.name]));
   const matches = [...gt].map((k) => ({
@@ -226,6 +227,7 @@ export async function submitLabAttempt(attemptId, userId, response) {
     flags: response.flags ?? [],
     impressionText: response.impressionText ?? "",
     diagnosisKeys: response.diagnosisKeys ?? [],
+    diagnosisText: response.diagnosisText ?? "",
   };
 
   const det = scoreLab(caseDoc, resp);

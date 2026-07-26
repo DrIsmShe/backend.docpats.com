@@ -39,6 +39,9 @@ const labAttemptSchema = new Schema(
       flags: { type: [String], default: [] },
       impressionText: { type: String, trim: true, maxlength: 4000, default: "" },
       diagnosisKeys: { type: [String], default: [] },
+      // Формулировка диагноза как её написал учащийся: она и оценивается,
+      // и нужна в разборе — без неё ответ врача в записи попытки терялся.
+      diagnosisText: { type: String, trim: true, maxlength: 4000, default: "" },
     },
 
     score: { type: scoreSchema, default: () => ({}) },

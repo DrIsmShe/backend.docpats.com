@@ -84,6 +84,9 @@ const radiologyAttemptSchema = new Schema(
       reviewedChecklist: { type: [String], default: [] },
       impressionText: { type: String, trim: true, maxlength: 4000, default: "" },
       diagnosisKeys: { type: [String], default: [] },
+      // Формулировка диагноза как её написал учащийся: она и оценивается,
+      // и нужна в разборе — без неё ответ врача в записи попытки терялся.
+      diagnosisText: { type: String, trim: true, maxlength: 4000, default: "" },
     },
 
     // ─── Оценка и разбор ───

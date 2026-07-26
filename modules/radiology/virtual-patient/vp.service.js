@@ -13,6 +13,7 @@ import VirtualPatientAttempt from "./models/vpAttempt.model.js";
 import { combineTotal } from "../radiology-attempts/services/scoring.service.js";
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
 import { awardForAttempt } from "../game/game.service.js";
+import { gradeDiagnosis } from "../radiology-attempts/services/diagnosisMatcher.js";
 import { recordRadiologyEvent } from "../audit/audit.service.js";
 import {
   ValidationError,
@@ -24,8 +25,6 @@ import {
 // Диагноз здесь — главное; разумный набор обследований и обоснование — рядом.
 const WEIGHTS = { diagnosis: 0.55, workup: 0.3, reasoning: 0.15 };
 const PASS = 0.7;
-
-const normKey = (s) => String(s ?? "").trim().toLowerCase();
 
 // ─── Скоринг ──────────────────────────────────────────────────────────
 function scoreVp(caseDoc, response) {
@@ -45,12 +44,14 @@ function scoreVp(caseDoc, response) {
     workup = Math.max(0, Math.min(1, covered - 0.1 * overKeys.length));
   }
 
-  const accepted = new Set(
-    (caseDoc.diagnosis?.diagnosisKeys ?? []).map(normKey).filter(Boolean),
-  );
-  const given = (response.diagnosisKeys ?? []).map(normKey);
-  const diagnosis =
-    accepted.size === 0 ? null : given.some((k) => accepted.has(k)) ? 1 : 0;
+  // Диагноз: точное совпадение ключа ИЛИ вхождение ключа/синонима в
+  // развёрнутую формулировку — см. diagnosisMatcher.
+  const { score: diagnosis } = gradeDiagnosis({
+    givenKeys: response.diagnosisKeys,
+    givenText: response.diagnosisText,
+    acceptedKeys: caseDoc.diagnosis?.diagnosisKeys,
+    synonyms: caseDoc.diagnosis?.diagnosisSynonyms,
+  });
 
   const nameByKey = new Map(caseDoc.investigations.map((i) => [i.key, i.name]));
   return {
@@ -227,6 +228,7 @@ export async function submitVpAttempt(attemptId, userId, response) {
   const resp = {
     ordered: attempt.response.ordered ?? [],
     diagnosisKeys: response.diagnosisKeys ?? [],
+    diagnosisText: response.diagnosisText ?? "",
     reasoningText: response.reasoningText ?? "",
   };
 

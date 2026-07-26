@@ -97,6 +97,7 @@ export async function submitAttempt(attemptId, userId, response) {
     reviewedChecklist: response.reviewedChecklist ?? [],
     impressionText: response.impressionText ?? "",
     diagnosisKeys: response.diagnosisKeys ?? [],
+    diagnosisText: response.diagnosisText ?? "",
   };
 
   // 1. Детерминированное ядро.

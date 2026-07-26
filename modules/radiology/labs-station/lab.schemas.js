@@ -57,7 +57,13 @@ export const statusLabSchema = z.object({
 export const submitLabSchema = z.object({
   flags: z.array(z.string().trim().min(1).max(40)).max(40).optional(),
   impressionText: z.string().trim().max(4000).optional(),
-  diagnosisKeys: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
+  // Ключи от учащегося: клиент присылает и фразу целиком, и отдельные слова.
+  // 400 вместо 120 — развёрнутая клиническая формулировка («…активная стадия
+  // (DAS28 > 5,1), эрозивная форма, II рентгенологическая стадия…») длиннее
+  // 120 символов, и раньше сдача падала в 400, теряя ответ.
+  diagnosisKeys: z.array(z.string().trim().min(1).max(400)).max(40).optional(),
+  // Формулировка целиком — по ней диагноз и оценивается (diagnosisMatcher).
+  diagnosisText: z.string().trim().max(4000).optional(),
 });
 
 // Запрос на ИИ-проверку кейса (второй проход). Проверяем ТО, ЧТО СЕЙЧАС В

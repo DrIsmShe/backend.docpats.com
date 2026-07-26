@@ -17,6 +17,7 @@
 // Порог совпадения (matchRadius) задаёт система чтения модальности.
 
 import { SIGNIFICANCE_WEIGHT } from "../../constants.js";
+import { gradeDiagnosis } from "./diagnosisMatcher.js";
 
 // ─── Геометрия ────────────────────────────────────────────────────────
 // Центр разметки в нормализованных координатах (0..1). Форму coords
@@ -146,17 +147,17 @@ function checklistScore(response, rs) {
   return done / required.length;
 }
 
-function normKey(s) {
-  return String(s ?? "").trim().toLowerCase();
-}
-
+// Диагноз: точное совпадение ключа ИЛИ вхождение ключа/синонима в
+// развёрнутую формулировку учащегося. null — автор не задал ключ диагноза,
+// компонент исключается из нормировки.
 function diagnosisScore(caseDoc, response) {
-  const accepted = new Set(
-    (caseDoc.impression?.diagnosisKeys ?? []).map(normKey).filter(Boolean),
-  );
-  if (accepted.size === 0) return null; // автор не задал ключ диагноза
-  const given = (response.diagnosisKeys ?? []).map(normKey);
-  return given.some((k) => accepted.has(k)) ? 1 : 0;
+  const { score } = gradeDiagnosis({
+    givenKeys: response.diagnosisKeys,
+    givenText: response.diagnosisText,
+    acceptedKeys: caseDoc.impression?.diagnosisKeys,
+    synonyms: caseDoc.impression?.diagnosisSynonyms,
+  });
+  return score;
 }
 
 function clamp01(x) {
