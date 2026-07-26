@@ -16,6 +16,7 @@ import {
   submitVpAttempt,
   getVpAttempt,
 } from "./vp.service.js";
+import { generateVpCase } from "../ai/caseGenerator.js";
 import {
   createVpSchema,
   updateVpSchema,
@@ -23,6 +24,7 @@ import {
   orderVpSchema,
   submitVpSchema,
   listVpQuerySchema,
+  aiGenerateVpSchema,
 } from "./vp.schemas.js";
 
 function throwZod(parsed) {
@@ -40,6 +42,15 @@ export const listVpController = asyncHandler(async (req, res) => {
     status: parsed.data.status,
   });
   res.json({ items, count: items.length });
+});
+
+// ИИ-генерация сценария ЦЕЛИКОМ по теме. Только автору. Ничего не сохраняет:
+// возвращает заготовку для формы — автор проверяет и сохраняет сам.
+export const aiGenerateVpController = asyncHandler(async (req, res) => {
+  const parsed = aiGenerateVpSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const draft = await generateVpCase(parsed.data);
+  res.json({ draft });
 });
 
 export const createVpController = asyncHandler(async (req, res) => {

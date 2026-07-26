@@ -125,6 +125,15 @@ export const reviewCaseSchema = z.object({
   reason: z.string().trim().max(2000).optional(),
 });
 
+// ИИ-генерация кейса ЦЕЛИКОМ по теме (снимка ещё нет — ИИ описывает, какие
+// находки на нём должны быть; расставляет их автор на холсте).
+export const aiGenerateCaseSchema = z.object({
+  modality: z.enum(MODALITIES),
+  topic: z.string().trim().min(3).max(500),
+  difficulty: z.enum(DIFFICULTIES).optional(),
+  hint: z.string().trim().max(1000).optional(),
+});
+
 export const listCasesQuerySchema = z.object({
   modality: z.enum(MODALITIES).optional(),
   difficulty: z.enum(DIFFICULTIES).optional(),

@@ -9,6 +9,9 @@ import { requireAuthor } from "../middlewares/radiologyAuth.js";
 
 const router = express.Router();
 
+// ИИ-генерация сценария по теме — только автору.
+router.post("/vp/ai/generate", requireAuthor, ctrl.aiGenerateVpController);
+
 router.get("/vp/cases", ctrl.listVpController);
 router.post("/vp/cases", requireAuthor, ctrl.createVpController);
 router.get("/vp/cases/:id", ctrl.getVpController);

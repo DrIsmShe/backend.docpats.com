@@ -60,6 +60,13 @@ export const submitLabSchema = z.object({
   diagnosisKeys: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
 });
 
+// Запрос на ИИ-генерацию кейса целиком: тема обязательна, остальное — подсказки.
+export const aiGenerateLabSchema = z.object({
+  topic: z.string().trim().min(3).max(500),
+  difficulty: z.enum(DIFFICULTIES).optional(),
+  hint: z.string().trim().max(1000).optional(),
+});
+
 export const listLabQuerySchema = z.object({
   scope: z.enum(["published", "all"]).optional(),
   status: z.string().optional(),

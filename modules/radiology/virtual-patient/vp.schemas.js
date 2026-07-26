@@ -62,6 +62,13 @@ export const submitVpSchema = z.object({
   reasoningText: z.string().trim().max(4000).optional(),
 });
 
+// Запрос на ИИ-генерацию сценария целиком: тема обязательна, остальное — подсказки.
+export const aiGenerateVpSchema = z.object({
+  topic: z.string().trim().min(3).max(500),
+  difficulty: z.enum(DIFFICULTIES).optional(),
+  hint: z.string().trim().max(1000).optional(),
+});
+
 export const listVpQuerySchema = z.object({
   scope: z.enum(["published", "all"]).optional(),
   status: z.string().optional(),

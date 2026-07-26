@@ -17,6 +17,9 @@ router.post("/uploads", requireAuthor, upload.single("image"), ctrl.uploadImageC
 // ИИ-черновик кейса по снимку — только автору.
 router.post("/ai/draft", requireAuthor, ctrl.aiDraftController);
 
+// ИИ-кейс целиком по теме (снимок автор добавит сам) — только автору.
+router.post("/ai/generate", requireAuthor, ctrl.aiGenerateController);
+
 router.get("/cases", ctrl.listCasesController);
 router.post("/cases", requireAuthor, ctrl.createCaseController);
 router.get("/cases/:id", ctrl.getCaseController);

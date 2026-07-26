@@ -7,6 +7,7 @@ import { uploadFile } from "../../../../common/middlewares/uploadMiddleware.js";
 import { isAuthorRole } from "../../middlewares/radiologyAuth.js";
 import { listReadingSystems } from "../../reading-systems/index.js";
 import { draftCase, isConfigured as aiConfigured } from "../../ai/aiDrafter.js";
+import { generateRadiologyCase } from "../../ai/caseGenerator.js";
 import {
   createCase,
   updateCase,
@@ -22,6 +23,7 @@ import {
   updateCaseSchema,
   reviewCaseSchema,
   listCasesQuerySchema,
+  aiGenerateCaseSchema,
 } from "../validators/case.schemas.js";
 
 function throwZod(parsed) {
@@ -50,6 +52,17 @@ export const aiDraftController = asyncHandler(async (req, res) => {
     hint: typeof hint === "string" ? hint.slice(0, 500) : "",
     imageIndex: Number(imageIndex) || 0,
   });
+  res.json({ draft });
+});
+
+// ИИ-кейс ЦЕЛИКОМ по теме — без снимка. Возвращает контекст, заключение,
+// ключи диагноза и ПЛАН находок (что должно быть на снимке и где искать).
+// Координаты ИИ здесь не придумывает: снимка ещё нет, а выдуманная точка была
+// бы ложным эталоном — находки автор расставляет на холсте сам.
+export const aiGenerateController = asyncHandler(async (req, res) => {
+  const parsed = aiGenerateCaseSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const draft = await generateRadiologyCase(parsed.data);
   res.json({ draft });
 });
 

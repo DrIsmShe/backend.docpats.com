@@ -15,12 +15,14 @@ import {
   getLabAttempt,
 } from "./lab.service.js";
 import LabCase from "./models/labCase.model.js";
+import { generateLabCase } from "../ai/caseGenerator.js";
 import {
   createLabSchema,
   updateLabSchema,
   statusLabSchema,
   submitLabSchema,
   listLabQuerySchema,
+  aiGenerateLabSchema,
 } from "./lab.schemas.js";
 import { NotFoundError } from "../../../common/utils/errors.js";
 
@@ -39,6 +41,16 @@ export const listLabCasesController = asyncHandler(async (req, res) => {
     status: parsed.data.status,
   });
   res.json({ items, count: items.length });
+});
+
+// ИИ-генерация кейса ЦЕЛИКОМ по теме. Только автору. Ничего не сохраняет:
+// возвращает заготовку, которой клиент заполняет форму, — эксперт проверяет
+// значения и сам решает, сохранять и публиковать ли.
+export const aiGenerateLabCaseController = asyncHandler(async (req, res) => {
+  const parsed = aiGenerateLabSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const draft = await generateLabCase(parsed.data);
+  res.json({ draft });
 });
 
 export const createLabCaseController = asyncHandler(async (req, res) => {
