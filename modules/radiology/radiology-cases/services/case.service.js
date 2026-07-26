@@ -14,6 +14,7 @@ import {
   hasReadingSystem,
 } from "../../reading-systems/index.js";
 import { findingsForModality } from "../../lexicon/lexicon.js";
+import { recordCaseStats } from "../../radiology-attempts/services/caseStats.service.js";
 import { recordRadiologyEvent } from "../../audit/audit.service.js";
 import {
   ValidationError,
@@ -294,13 +295,14 @@ export function sanitizeForLearner(doc) {
   };
 }
 
-// Инкрементально обновляет статистику кейса после сдачи попытки.
-export async function recordAttemptStats(caseId, totalScore) {
-  const doc = await RadiologyCase.findById(caseId).select("stats");
-  if (!doc) return;
-  const n = doc.stats.attempts ?? 0;
-  const avg = doc.stats.avgScore ?? 0;
-  doc.stats.attempts = n + 1;
-  doc.stats.avgScore = (avg * n + totalScore) / (n + 1);
-  await doc.save();
+// Инкрементально обновляет статистику кейса после сдачи попытки. Средний
+// балл считается только по первым зачётным попыткам — см. caseStats.service.
+export async function recordAttemptStats(caseId, totalScore, opts = {}) {
+  await recordCaseStats({
+    CaseModel: RadiologyCase,
+    caseId,
+    total: totalScore,
+    isFirstCounted: Boolean(opts.isFirstCounted),
+    durationMs: opts.durationMs ?? null,
+  });
 }

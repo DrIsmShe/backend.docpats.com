@@ -19,7 +19,14 @@ router.get("/vp/cases/:id", ctrl.getVpController);
 router.patch("/vp/cases/:id", requireAuthor, ctrl.updateVpController);
 router.post("/vp/cases/:id/status", requireAuthor, ctrl.statusVpController);
 
+// Образец «типового ответа чат-бота» для сигналов добросовестности — автору.
+router.post("/vp/cases/:id/ai/baseline", requireAuthor, ctrl.aiBaselineVpController);
+
+// Условия попытки до старта (зачёт/тренировка, лимит, следующий зачёт).
+router.get("/vp/cases/:id/policy", ctrl.vpPolicyController);
 router.post("/vp/cases/:id/attempts", ctrl.startVpController);
+// Предварительный дифдиагноз — до заказа обследований.
+router.post("/vp/attempts/:id/commit", ctrl.commitVpController);
 router.post("/vp/attempts/:id/order", ctrl.orderVpController);
 router.post("/vp/attempts/:id/submit", ctrl.submitVpController);
 router.get("/vp/attempts/:id", ctrl.getVpAttemptController);

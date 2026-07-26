@@ -91,6 +91,9 @@ export const createCaseSchema = z.object({
   title: z.string().trim().min(2).max(300),
   clinicalContext: z.string().trim().max(4000).optional(),
   difficulty: z.enum(DIFFICULTIES).optional(),
+  // Лимит времени зачётной попытки, секунды. null — берётся значение по
+  // станции (attemptPolicy.DEFAULT_TIME_LIMIT_SEC); в тренировке лимита нет.
+  timeLimitSec: z.number().int().min(30).max(7200).nullish(),
   categoryId: objectIdField.nullish(),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
   images: z.array(imageSchema).min(1).max(60),
@@ -108,6 +111,7 @@ export const updateCaseSchema = z
     title: z.string().trim().min(2).max(300).optional(),
     clinicalContext: z.string().trim().max(4000).optional(),
     difficulty: z.enum(DIFFICULTIES).optional(),
+    timeLimitSec: z.number().int().min(30).max(7200).nullish(),
     categoryId: objectIdField.nullish(),
     tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
     images: z.array(imageSchema).min(1).max(60).optional(),

@@ -7,6 +7,8 @@ const router = express.Router();
 
 // Старт попытки по кейсу. Роль learner уже проверена агрегатором модуля
 // (router.use(requireLearner) в radiology/index.js).
+// Условия попытки до старта (зачёт/тренировка, лимит, следующий зачёт).
+router.get("/cases/:id/policy", ctrl.attemptPolicyController);
 router.post("/cases/:id/attempts", ctrl.startAttemptController);
 
 router.get("/attempts", ctrl.listAttemptsController);

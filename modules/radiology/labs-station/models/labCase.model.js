@@ -73,9 +73,22 @@ const labCaseSchema = new Schema(
     createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     publishedAt: { type: Date, default: null },
 
+    // Лимит времени зачётной попытки, секунды. null — значение по станции из
+    // attemptPolicy.DEFAULT_TIME_LIMIT_SEC; в тренировке лимита нет.
+    timeLimitSec: { type: Number, default: null, min: 30, max: 7200 },
+
+    // Типовой ответ чат-бота на кейс — для сигнала дословного переноса.
+    aiBaseline: {
+      text: { type: String, default: "" },
+      model: { type: String, default: "" },
+      generatedAt: { type: Date, default: null },
+    },
+
     stats: {
-      attempts: { type: Number, default: 0 },
-      avgScore: { type: Number, default: 0 },
+      attempts: { type: Number, default: 0 }, // все сдачи, включая тренировки
+      avgScore: { type: Number, default: 0 }, // ТОЛЬКО первые зачётные
+      countedAttempts: { type: Number, default: 0 },
+      avgDurationMs: { type: Number, default: null },
     },
   },
   { timestamps: true, collection: "lab_cases" },

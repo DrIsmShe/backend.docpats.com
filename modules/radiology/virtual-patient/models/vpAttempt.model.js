@@ -4,6 +4,8 @@
 // слой арены (game.service), поэтому своего профиля нет.
 
 import mongoose from "mongoose";
+import { ATTEMPT_STATUSES } from "../../constants.js";
+import { attemptPolicyFields } from "../../radiology-attempts/models/attemptPolicyFields.js";
 
 const { Schema } = mongoose;
 
@@ -14,6 +16,24 @@ const scoreSchema = new Schema(
     diagnosis: { type: Number, default: null },
     workup: { type: Number, default: null }, // разумность набора обследований
     reasoning: { type: Number, default: null },
+    // Предварительная версия: попал ли верный диагноз в дифференциальный ряд,
+    // названный ДО раскрытия результатов обследований.
+    prior: { type: Number, default: null },
+  },
+  { _id: false },
+);
+
+// Предварительная фиксация дифдиагноза. Хранится с временем и числом уже
+// заказанных обследований: «назвал по одной жалобе» и «назвал, посмотрев
+// половину анализов» — разные вещи, и в разборе это видно.
+const commitmentSchema = new Schema(
+  {
+    text: { type: String, trim: true, maxlength: 2000, default: "" },
+    committedAt: { type: Date, default: null },
+    orderedBefore: { type: Number, default: 0 },
+    hit: { type: Boolean, default: false },
+    matched: { type: String, default: "" },
+    itemCount: { type: Number, default: 0 },
   },
   { _id: false },
 );
@@ -22,10 +42,32 @@ const vpAttemptSchema = new Schema(
   {
     caseId: { type: Schema.Types.ObjectId, ref: "VirtualPatientCase", required: true, index: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    status: { type: String, enum: ["in_progress", "submitted"], default: "in_progress" },
+    // Список статусов — общий (constants.js): в нём есть expired.
+    status: { type: String, enum: ATTEMPT_STATUSES, default: "in_progress" },
+    // Режим, зачётность, лимит времени, сигналы добросовестности — общие для
+    // всех станций арены (attemptPolicyFields.js).
+    ...attemptPolicyFields(),
+
+    // Предварительный дифряд: фиксируется до заказа обследований.
+    commitment: { type: commitmentSchema, default: () => ({}) },
 
     response: {
       ordered: { type: [String], default: [] }, // ключи назначенных обследований
+      // Когда именно заказано каждое обследование — путь решения, а не только
+      // его итог. По нему видно, шёл ли врач от жалобы к подтверждению.
+      orderLog: {
+        type: [
+          new Schema(
+            {
+              key: { type: String, required: true },
+              at: { type: Date, default: Date.now },
+              necessary: { type: Boolean, default: false },
+            },
+            { _id: false },
+          ),
+        ],
+        default: [],
+      },
       diagnosisKeys: { type: [String], default: [] },
       // Формулировка диагноза как её написал учащийся: она и оценивается,
       // и нужна в разборе — без неё ответ врача в записи попытки терялся.

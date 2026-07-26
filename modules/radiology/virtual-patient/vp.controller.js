@@ -15,9 +15,12 @@ import {
   orderInvestigation,
   submitVpAttempt,
   getVpAttempt,
+  getVpPolicy,
+  commitDifferential,
 } from "./vp.service.js";
 import { generateVpCase } from "../ai/caseGenerator.js";
 import { verifyVpCase } from "../ai/caseVerifier.js";
+import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
 import {
   createVpSchema,
   updateVpSchema,
@@ -27,6 +30,9 @@ import {
   listVpQuerySchema,
   aiGenerateVpSchema,
   aiVerifyVpSchema,
+  startVpSchema,
+  vpPolicyQuerySchema,
+  commitVpSchema,
 } from "./vp.schemas.js";
 
 function throwZod(parsed) {
@@ -92,8 +98,53 @@ export const statusVpController = asyncHandler(async (req, res) => {
   res.json({ case: doc });
 });
 
+// «Типовой ответ чат-бота» на сценарий — образец для сигнала дословного
+// переноса. В промпт уходит только то, что видит учащийся в начале: жалоба и
+// анамнез. Результаты обследований не передаём — их врач раскрывает по одному,
+// и чат-бот в реальности их тоже не увидит.
+export const aiBaselineVpController = asyncHandler(async (req, res) => {
+  const doc = await VirtualPatientCase.findById(req.params.id);
+  if (!doc) throw new NotFoundError("VP case");
+  const { text, model } = await generateBaselineAnswer({
+    station: "vp",
+    title: doc.title,
+    context: doc.presentation ?? "",
+  });
+  doc.aiBaseline = { text, model, generatedAt: new Date() };
+  await doc.save();
+  res.json({ aiBaseline: doc.aiBaseline });
+});
+
+// Условия попытки ДО старта: зачёт или тренировка, лимит времени, когда
+// откроется следующая зачётная. Страница печатает это врачу до первого клика.
+export const vpPolicyController = asyncHandler(async (req, res) => {
+  const parsed = vpPolicyQuerySchema.safeParse(req.query ?? {});
+  if (!parsed.success) throwZod(parsed);
+  res.json({
+    policy: await getVpPolicy(req.params.id, req.radiologyActor.userId, parsed.data.mode ?? "learn"),
+  });
+});
+
 export const startVpController = asyncHandler(async (req, res) => {
-  res.status(201).json(await startVpAttempt(req.params.id, req.radiologyActor.userId));
+  const parsed = startVpSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  res
+    .status(201)
+    .json(await startVpAttempt(req.params.id, req.radiologyActor.userId, parsed.data.mode ?? "learn"));
+});
+
+// Предварительная фиксация дифдиагноза. Ответ без обратной связи: сказать
+// «угадал» здесь означало бы выдать ответ до конца сценария.
+export const commitVpController = asyncHandler(async (req, res) => {
+  const parsed = commitVpSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  res.json({
+    commitment: await commitDifferential(
+      req.params.id,
+      req.radiologyActor.userId,
+      parsed.data.text,
+    ),
+  });
 });
 
 export const orderVpController = asyncHandler(async (req, res) => {

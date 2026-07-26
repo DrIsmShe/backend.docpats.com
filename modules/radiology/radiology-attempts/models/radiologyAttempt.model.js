@@ -8,11 +8,8 @@
 // «санитизованный» кейс без findings/impression (см. attempt.service.js).
 
 import mongoose from "mongoose";
-import {
-  ATTEMPT_MODES,
-  ATTEMPT_STATUSES,
-  FINDING_SHAPES,
-} from "../../constants.js";
+import { ATTEMPT_STATUSES, FINDING_SHAPES } from "../../constants.js";
+import { attemptPolicyFields } from "./attemptPolicyFields.js";
 
 const { Schema } = mongoose;
 
@@ -70,7 +67,9 @@ const radiologyAttemptSchema = new Schema(
       required: true,
       index: true,
     },
-    mode: { type: String, enum: ATTEMPT_MODES, default: "learn" },
+    // Режим, зачётность, лимит времени, сигналы добросовестности — общие для
+    // всех станций арены (attemptPolicyFields.js).
+    ...attemptPolicyFields(),
     status: {
       type: String,
       enum: ATTEMPT_STATUSES,
@@ -101,7 +100,6 @@ const radiologyAttemptSchema = new Schema(
 
     startedAt: { type: Date, default: Date.now },
     submittedAt: { type: Date, default: null },
-    durationMs: { type: Number, default: null },
   },
   { timestamps: true, collection: "radiology_attempts" },
 );

@@ -47,6 +47,22 @@ export const startAttemptSchema = z.object({
   mode: z.enum(ATTEMPT_MODES).optional(),
 });
 
+export const policyQuerySchema = z.object({
+  mode: z.enum(ATTEMPT_MODES).optional(),
+});
+
+// Сигналы добросовестности от клиента. Данные НЕ доверенные (браузер можно
+// научить присылать нули), поэтому это подсказка автору, а не доказательство,
+// и на балл они не влияют — см. integrity.service.js.
+export const integritySignalsSchema = z
+  .object({
+    pasteEvents: z.number().int().min(0).max(1000).optional(),
+    pastedChars: z.number().int().min(0).max(1000000).optional(),
+    hiddenMs: z.number().int().min(0).max(100000000).optional(),
+    focusLosses: z.number().int().min(0).max(10000).optional(),
+  })
+  .optional();
+
 export const submitAttemptSchema = z.object({
   findings: z.array(responseFindingSchema).max(50).optional(),
   reviewedChecklist: z.array(z.string().trim().min(1).max(40)).max(30).optional(),
@@ -58,6 +74,7 @@ export const submitAttemptSchema = z.object({
   diagnosisKeys: z.array(z.string().trim().min(1).max(400)).max(40).optional(),
   // Формулировка целиком — по ней диагноз и оценивается (diagnosisMatcher).
   diagnosisText: z.string().trim().max(4000).optional(),
+  integrity: integritySignalsSchema,
 });
 
 export const listAttemptsQuerySchema = z.object({

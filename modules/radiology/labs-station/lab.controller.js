@@ -13,10 +13,12 @@ import {
   startLabAttempt,
   submitLabAttempt,
   getLabAttempt,
+  getLabPolicy,
 } from "./lab.service.js";
 import LabCase from "./models/labCase.model.js";
 import { generateLabCase } from "../ai/caseGenerator.js";
 import { verifyLabCase } from "../ai/caseVerifier.js";
+import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
 import {
   createLabSchema,
   updateLabSchema,
@@ -25,6 +27,8 @@ import {
   listLabQuerySchema,
   aiGenerateLabSchema,
   aiVerifyLabSchema,
+  startLabSchema,
+  labPolicyQuerySchema,
 } from "./lab.schemas.js";
 import { NotFoundError } from "../../../common/utils/errors.js";
 
@@ -98,8 +102,47 @@ export const statusLabCaseController = asyncHandler(async (req, res) => {
   res.json({ case: doc });
 });
 
+// Сохранить «типовой ответ чат-бота» на кейс. Нужен как образец для сравнения
+// с заключениями врачей: дословное совпадение длинными цепочками видно в
+// сигналах добросовестности. На оценку не влияет.
+export const aiBaselineLabController = asyncHandler(async (req, res) => {
+  const doc = await LabCase.findById(req.params.id);
+  if (!doc) throw new NotFoundError("Lab case");
+  const { text, model } = await generateBaselineAnswer({
+    station: "labs",
+    title: doc.title,
+    context: doc.clinicalContext ?? "",
+    data: (doc.panel ?? []).map(
+      (p) => `${p.name}: ${p.value}${p.unit ? " " + p.unit : ""}${p.refRange ? ` (норма ${p.refRange})` : ""}`,
+    ),
+  });
+  doc.aiBaseline = { text, model, generatedAt: new Date() };
+  await doc.save();
+  res.json({ aiBaseline: doc.aiBaseline });
+});
+
+// Условия попытки ДО старта: зачёт или тренировка, лимит времени, когда
+// откроется следующая зачётная попытка по этому кейсу.
+export const labPolicyController = asyncHandler(async (req, res) => {
+  const parsed = labPolicyQuerySchema.safeParse(req.query ?? {});
+  if (!parsed.success) throwZod(parsed);
+  res.json({
+    policy: await getLabPolicy(
+      req.params.id,
+      req.radiologyActor.userId,
+      parsed.data.mode ?? "learn",
+    ),
+  });
+});
+
 export const startLabAttemptController = asyncHandler(async (req, res) => {
-  res.status(201).json(await startLabAttempt(req.params.id, req.radiologyActor.userId));
+  const parsed = startLabSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  res
+    .status(201)
+    .json(
+      await startLabAttempt(req.params.id, req.radiologyActor.userId, parsed.data.mode ?? "learn"),
+    );
 });
 
 export const submitLabAttemptController = asyncHandler(async (req, res) => {

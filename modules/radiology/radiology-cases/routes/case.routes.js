@@ -23,6 +23,9 @@ router.post("/ai/generate", requireAuthor, ctrl.aiGenerateController);
 // ИИ-проверка кейса вторым проходом — только автору.
 router.post("/ai/verify", requireAuthor, ctrl.aiVerifyController);
 
+// Образец «типового ответа чат-бота» для сигналов добросовестности — автору.
+router.post("/cases/:id/ai/baseline", requireAuthor, ctrl.aiBaselineController);
+
 router.get("/cases", ctrl.listCasesController);
 router.post("/cases", requireAuthor, ctrl.createCaseController);
 router.get("/cases/:id", ctrl.getCaseController);

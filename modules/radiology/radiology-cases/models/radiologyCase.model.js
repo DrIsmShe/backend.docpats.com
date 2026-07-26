@@ -144,9 +144,29 @@ const radiologyCaseSchema = new Schema(
     publishedAt: { type: Date, default: null },
 
     // ─── Статистика для аналитики (заполняется при сдаче попыток) ───
+    // Лимит времени зачётной попытки, секунды. null — берётся значение по
+    // станции из attemptPolicy.DEFAULT_TIME_LIMIT_SEC. В тренировке лимита
+    // нет вообще.
+    timeLimitSec: { type: Number, default: null, min: 30, max: 7200 },
+
+    // Типовой ответ чат-бота на этот кейс: нужен, чтобы заметить дословно
+    // перенесённое заключение (integrity.service.js). Заполняется автором по
+    // кнопке, не влияет на оценку.
+    aiBaseline: {
+      text: { type: String, default: "" },
+      model: { type: String, default: "" },
+      generatedAt: { type: Date, default: null },
+    },
+
     stats: {
-      attempts: { type: Number, default: 0 },
-      avgScore: { type: Number, default: 0 }, // 0..1
+      attempts: { type: Number, default: 0 }, // все сдачи, включая тренировки
+      avgScore: { type: Number, default: 0 }, // 0..1, ТОЛЬКО первые зачётные
+      // Первые зачётные попытки: знаменатель avgScore. Средний балл по всем
+      // сдачам подряд врал бы — повтор после разбора всегда высокий.
+      countedAttempts: { type: Number, default: 0 },
+      // Средняя длительность зачётной попытки: база для сигнала «сдал
+      // подозрительно быстро».
+      avgDurationMs: { type: Number, default: null },
     },
   },
   { timestamps: true, collection: "radiology_cases" },

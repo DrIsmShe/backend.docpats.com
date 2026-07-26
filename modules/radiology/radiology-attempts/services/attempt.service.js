@@ -14,6 +14,13 @@ import {
   recordAttemptStats,
 } from "../../radiology-cases/services/case.service.js";
 import { scoreDeterministic, combineTotal } from "./scoring.service.js";
+import {
+  previewPolicy,
+  resolveAttemptStart,
+  isExpired,
+  secondsLeft,
+} from "./attemptPolicy.js";
+import { assessIntegrity } from "./integrity.service.js";
 import { gradeImpression } from "./impressionGrader.js";
 import { findingsForModality } from "../../lexicon/lexicon.js";
 import {
@@ -30,18 +37,87 @@ import {
   ServiceUnavailableError,
 } from "../../../../common/utils/errors.js";
 
+/**
+ * Условия попытки ДО старта: пойдёт ли в зачёт, сколько времени даётся,
+ * когда откроется следующая зачётная. Страница задания печатает это врачу
+ * до первого клика — правила, о которых узнают после, правилами не являются.
+ */
+export async function getAttemptPolicy(caseId, userId, mode = "learn") {
+  const caseDoc = await RadiologyCase.findById(caseId)
+    .select("status timeLimitSec title modality")
+    .lean();
+  if (!caseDoc || caseDoc.status !== "published") {
+    throw new NotFoundError("Radiology case");
+  }
+  // Веса берём из системы чтения этой модальности — правила на странице
+  // задания печатают ровно те цифры, по которым потом считается балл.
+  const rs = getReadingSystem(caseDoc.modality);
+  return previewPolicy({
+    AttemptModel: RadiologyAttempt,
+    station: "radiology",
+    caseId,
+    userId,
+    mode,
+    caseTimeLimitSec: caseDoc.timeLimitSec ?? null,
+    scoring: rs
+      ? { weights: rs.scoring.weights, passThreshold: rs.scoring.passThreshold }
+      : null,
+  });
+}
+
 export async function startAttempt(caseId, userId, mode = "learn") {
   const caseDoc = await RadiologyCase.findById(caseId).lean();
   if (!caseDoc || caseDoc.status !== "published") {
     throw new NotFoundError("Radiology case");
   }
 
-  const attempt = await RadiologyAttempt.create({
+  // Незакрытая попытка по этому кейсу: продолжаем её, а не начинаем новую.
+  // Закрыл вкладку и вернулся — тот же таймер, тот же зачёт. Раньше каждое
+  // открытие страницы плодило запись in_progress, и они не чистились.
+  const open = await RadiologyAttempt.findOne({
+    caseId,
+    userId,
+    status: "in_progress",
+  }).sort({ startedAt: -1 });
+
+  if (open) {
+    if (!isExpired(open)) {
+      return {
+        attempt: open.toObject(),
+        case: sanitizeForLearner(caseDoc),
+        resumed: true,
+        secondsLeft: secondsLeft(open),
+      };
+    }
+    // Лимит истёк, а попытку так и не сдали. Помечаем просроченной, но НЕ
+    // удаляем: по ней считается «зачёт раз в 24 часа», иначе зачёт можно
+    // было бы отменять, дав попытке сгореть.
+    open.status = "expired";
+    open.durationMs = Date.now() - new Date(open.startedAt).getTime();
+    await open.save();
+    recordRadiologyEvent({
+      action: "attempt.expired",
+      actorId: userId,
+      caseId,
+      attemptId: open._id,
+      metadata: { mode: open.mode, counted: open.counted },
+    });
+  }
+
+  const { fields } = await resolveAttemptStart({
+    AttemptModel: RadiologyAttempt,
+    station: "radiology",
     caseId,
     userId,
     mode,
+    caseTimeLimitSec: caseDoc.timeLimitSec ?? null,
+  });
+
+  const attempt = await RadiologyAttempt.create({
+    caseId,
+    userId,
     status: "in_progress",
-    startedAt: new Date(),
+    ...fields,
   });
 
   recordRadiologyEvent({
@@ -49,10 +125,20 @@ export async function startAttempt(caseId, userId, mode = "learn") {
     actorId: userId,
     caseId,
     attemptId: attempt._id,
-    metadata: { mode },
+    metadata: {
+      mode: fields.mode,
+      counted: fields.counted,
+      countedReason: fields.countedReason,
+      attemptNo: fields.attemptNo,
+    },
   });
 
-  return { attempt: attempt.toObject(), case: sanitizeForLearner(caseDoc) };
+  return {
+    attempt: attempt.toObject(),
+    case: sanitizeForLearner(caseDoc),
+    resumed: false,
+    secondsLeft: secondsLeft(attempt),
+  };
 }
 
 // Разбор, который раскрывается после сдачи: эталон эксперта + как ответ
@@ -86,6 +172,20 @@ export async function submitAttempt(attemptId, userId, response) {
   if (attempt.status === "submitted") {
     throw new ConflictError("Попытка уже сдана");
   }
+  if (attempt.status === "expired") {
+    throw new ConflictError("Попытка просрочена: лимит времени истёк");
+  }
+
+  // Дедлайн считается от startedAt, сохранённого в базе, — клиентский таймер
+  // обходится, этот нет. Сдачу после лимита принимаем (терять ответ жалко),
+  // но зачётность снимаем: иначе лимит времени был бы декоративным.
+  const late = isExpired(attempt);
+  if (late && attempt.counted) {
+    attempt.counted = false;
+    attempt.isFirstCounted = false;
+    attempt.countedReason = "late";
+  }
+  attempt.lateSubmit = late;
 
   const caseDoc = await RadiologyCase.findById(attempt.caseId).lean();
   if (!caseDoc) throw new NotFoundError("Radiology case");
@@ -134,9 +234,28 @@ export async function submitAttempt(attemptId, userId, response) {
   attempt.durationMs = attempt.startedAt
     ? attempt.submittedAt.getTime() - new Date(attempt.startedAt).getTime()
     : null;
+
+  // Сигналы добросовестности: только для зачётных попыток и только как
+  // пометка автору — балл они не меняют (см. integrity.service.js).
+  if (attempt.counted) {
+    attempt.integrity = assessIntegrity({
+      signals: response.integrity ?? {},
+      durationMs: attempt.durationMs,
+      avgDurationMs: caseDoc.stats?.avgDurationMs ?? null,
+      sampleSize: caseDoc.stats?.countedAttempts ?? 0,
+      answerText: resp.impressionText,
+      expertText: caseDoc.impression?.correctText ?? "",
+      aiBaselineText: caseDoc.aiBaseline?.text ?? "",
+      firstCountedAttempt: attempt.isFirstCounted,
+    });
+  }
   await attempt.save();
 
-  await recordAttemptStats(attempt.caseId, total);
+  // Статистика кейса: средний балл — только по первым зачётным попыткам.
+  await recordAttemptStats(attempt.caseId, total, {
+    isFirstCounted: attempt.isFirstCounted,
+    durationMs: attempt.durationMs,
+  });
 
   // Игровой слой «Диагностической арены»: начисляем XP, ведём серию и
   // достижения. Тихо — сбой геймификации не должен ронять сдачу попытки.
@@ -151,6 +270,8 @@ export async function submitAttempt(attemptId, userId, response) {
       passed,
       falseAlarms: det.falseAlarms,
       caughtCritical,
+      counted: attempt.counted,
+      isFirstCounted: attempt.isFirstCounted,
     });
   } catch {
     /* игровой слой не критичен для результата */
@@ -158,16 +279,20 @@ export async function submitAttempt(attemptId, userId, response) {
 
   // «Работа над ошибками»: слабый результат кладёт кейс на повторение,
   // уверенный — двигает интервал. Тихо — не критично для сдачи.
+  // Только зачётные попытки: иначе кейс «закрывался» бы тренировочным
+  // прогоном сразу после разбора, где виден правильный ответ.
   try {
-    await updateReviewItem({
-      userId,
-      caseId: attempt.caseId,
-      caseTitle: caseDoc.title,
-      modality: caseDoc.modality,
-      score: total,
-      passed,
-      missed: det.matches.filter((m) => m.outcome === "missed").length,
-    });
+    if (attempt.counted)
+      await updateReviewItem({
+        userId,
+        caseId: attempt.caseId,
+        station: "radiology",
+        caseTitle: caseDoc.title,
+        modality: caseDoc.modality,
+        score: total,
+        passed,
+        missed: det.matches.filter((m) => m.outcome === "missed").length,
+      });
   } catch {
     /* очередь повторения не критична */
   }
@@ -181,6 +306,13 @@ export async function submitAttempt(attemptId, userId, response) {
       total: Math.round(total * 100) / 100,
       passed,
       falseAlarms: det.falseAlarms,
+      mode: attempt.mode,
+      counted: attempt.counted,
+      countedReason: attempt.countedReason,
+      attemptNo: attempt.attemptNo,
+      lateSubmit: attempt.lateSubmit,
+      // Структурные пометки, не PHI: сами тексты в аудит не уходят.
+      integrityFlags: attempt.integrity?.flags ?? [],
     },
   });
 

@@ -8,11 +8,13 @@ import {
   getAttempt,
   listAttempts,
   aiAnalyzeAttempt,
+  getAttemptPolicy,
 } from "../services/attempt.service.js";
 import {
   startAttemptSchema,
   submitAttemptSchema,
   listAttemptsQuerySchema,
+  policyQuerySchema,
 } from "../validators/attempt.schemas.js";
 
 function throwZod(parsed) {
@@ -20,6 +22,21 @@ function throwZod(parsed) {
     issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
   });
 }
+
+// Условия попытки ДО старта: зачёт или тренировка, лимит времени, когда
+// откроется следующая зачётная. Правила, о которых узнают после ответа,
+// правилами не являются — поэтому отдельный запрос до старта.
+export const attemptPolicyController = asyncHandler(async (req, res) => {
+  const parsed = policyQuerySchema.safeParse(req.query ?? {});
+  if (!parsed.success) throwZod(parsed);
+  res.json({
+    policy: await getAttemptPolicy(
+      req.params.id,
+      req.radiologyActor.userId,
+      parsed.data.mode ?? "learn",
+    ),
+  });
+});
 
 export const startAttemptController = asyncHandler(async (req, res) => {
   const parsed = startAttemptSchema.safeParse(req.body ?? {});

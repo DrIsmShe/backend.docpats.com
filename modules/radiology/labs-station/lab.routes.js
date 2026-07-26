@@ -20,6 +20,11 @@ router.get("/labs/cases/:id", ctrl.getLabCaseController);
 router.patch("/labs/cases/:id", requireAuthor, ctrl.updateLabCaseController);
 router.post("/labs/cases/:id/status", requireAuthor, ctrl.statusLabCaseController);
 
+// Образец «типового ответа чат-бота» для сигналов добросовестности — автору.
+router.post("/labs/cases/:id/ai/baseline", requireAuthor, ctrl.aiBaselineLabController);
+
+// Условия попытки до старта (зачёт/тренировка, лимит, следующий зачёт).
+router.get("/labs/cases/:id/policy", ctrl.labPolicyController);
 router.post("/labs/cases/:id/attempts", ctrl.startLabAttemptController);
 router.get("/labs/attempts/:id", ctrl.getLabAttemptController);
 router.post("/labs/attempts/:id/submit", ctrl.submitLabAttemptController);

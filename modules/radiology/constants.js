@@ -31,11 +31,18 @@ export const CASE_STATUSES = [
   "archived",
 ];
 
-// Режимы прохождения (аналог tutor/timed из education):
-//   learn — с подсказками, эталон эксперта показывается после сдачи;
-//   exam  — вслепую, оценка в конце.
+// Режимы прохождения:
+//   learn — тренировка: без таймера, сколько угодно раз, ИИ разрешён
+//           открыто, НЕ в зачёт (ни XP, ни статистика кейса);
+//   exam  — зачёт: лимит времени, одна зачётная попытка на кейс раз в 24 ч,
+//           только эти попытки формируют XP, ранг и статистику.
+// Правила целиком — radiology-attempts/services/attemptPolicy.js.
 export const ATTEMPT_MODES = ["learn", "exam"];
-export const ATTEMPT_STATUSES = ["in_progress", "submitted"];
+
+// expired — зачётная попытка, у которой истёк лимит времени и её бросили, не
+// сдав. Запись остаётся: по ней считается «слот раз в 24 часа», иначе зачёт
+// можно было бы отменять, дав попытке сгореть.
+export const ATTEMPT_STATUSES = ["in_progress", "submitted", "expired"];
 
 export const DIFFICULTIES = ["easy", "medium", "hard"];
 

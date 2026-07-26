@@ -8,6 +8,7 @@
 // оценки арена не изобретает, только переводит её в прогресс.
 
 import RadiologyPlayer from "./radiologyPlayer.model.js";
+import { xpFactorFor } from "../radiology-attempts/services/attemptPolicy.js";
 import RadiologyCase from "../radiology-cases/models/radiologyCase.model.js";
 import User from "../../../common/models/Auth/users.js";
 
@@ -98,18 +99,30 @@ export async function awardForAttempt({
   passed,
   falseAlarms = 0,
   caughtCritical = false,
+  counted = false,
+  isFirstCounted = false,
 }) {
   const player =
     (await RadiologyPlayer.findOne({ userId })) ||
     new RadiologyPlayer({ userId });
 
   const rankBefore = computeRank(player.xp).index;
-  const pointsAwarded = pointsFor(score, passed);
-  player.xp += pointsAwarded;
-  player.casesCompleted += 1;
-  if ((score ?? 0) > player.bestScore) player.bestScore = score;
 
-  // Серия дней.
+  // Тренировка — ноль XP, повторный зачёт — доля. Правило живёт в
+  // attemptPolicy рядом с остальными условиями попытки, здесь только
+  // начисление. Без этого один кейс, пройденный десять раз после разбора,
+  // накручивал ранг и лидерборд.
+  const factor = xpFactorFor({ counted, isFirstCounted });
+  const pointsAwarded = factor > 0 ? Math.max(1, Math.round(pointsFor(score, passed) * factor)) : 0;
+  player.xp += pointsAwarded;
+
+  // Счётчик уникальных кейсов — только на первой зачётной попытке. Раньше он
+  // считал сдачи, и достижение «Полсотни» брали одним кейсом.
+  if (isFirstCounted) player.casesCompleted += 1;
+  if (counted && (score ?? 0) > player.bestScore) player.bestScore = score;
+
+  // Серия дней держится на любой сдаче, включая тренировочную: она про
+  // регулярность занятий, а накрутить ею ранг нельзя.
   const today = dayString(new Date());
   const yesterday = dayString(new Date(Date.now() - 86400000));
   if (player.lastPlayedDay !== today) {
@@ -118,19 +131,26 @@ export async function awardForAttempt({
     if (player.streak > player.longestStreak) player.longestStreak = player.streak;
   }
 
-  const unlocked = evaluateAchievements(player, {
-    score,
-    passed,
-    falseAlarms,
-    caughtCritical,
-    perfect: (score ?? 0) >= 0.999,
-  });
+  // Достижения — только за зачётные попытки; «Идеальное чтение» на тренировке
+  // после раскрытого разбора ничего не значит.
+  const unlocked = counted
+    ? evaluateAchievements(player, {
+        score,
+        passed,
+        falseAlarms,
+        caughtCritical,
+        perfect: (score ?? 0) >= 0.999,
+      })
+    : [];
 
   const rankAfter = computeRank(player.xp);
   await player.save();
 
   return {
     pointsAwarded,
+    counted,
+    // Почему столько: клиент печатает это словами на экране результата.
+    xpReason: counted ? (isFirstCounted ? "first_counted" : "repeat_counted") : "training",
     xp: player.xp,
     rank: rankAfter,
     rankedUp: rankAfter.index > rankBefore,

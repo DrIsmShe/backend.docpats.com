@@ -14,6 +14,15 @@ import { combineTotal } from "../radiology-attempts/services/scoring.service.js"
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
 import { awardForAttempt } from "../game/game.service.js";
 import { gradeDiagnosis } from "../radiology-attempts/services/diagnosisMatcher.js";
+import {
+  previewPolicy,
+  resolveAttemptStart,
+  isExpired,
+  secondsLeft,
+} from "../radiology-attempts/services/attemptPolicy.js";
+import { assessIntegrity } from "../radiology-attempts/services/integrity.service.js";
+import { recordCaseStats } from "../radiology-attempts/services/caseStats.service.js";
+import { updateReviewItem } from "../review/review.service.js";
 import { recordRadiologyEvent } from "../audit/audit.service.js";
 import {
   ValidationError,
@@ -22,9 +31,40 @@ import {
   ForbiddenError,
 } from "../../../common/utils/errors.js";
 
-// Диагноз здесь — главное; разумный набор обследований и обоснование — рядом.
-const WEIGHTS = { diagnosis: 0.55, workup: 0.3, reasoning: 0.15 };
+// Веса компонентов. Смещены в сторону того, что нельзя переслать в чужую
+// модель: путь обследования (заказы по одному, с фиксацией) и предварительный
+// дифдиагноз, названный ДО раскрытия результатов. Свободный текст обоснования
+// — самая пересылаемая часть, поэтому его вес самый маленький.
+const WEIGHTS = { diagnosis: 0.35, workup: 0.3, prior: 0.2, reasoning: 0.15 };
 const PASS = 0.7;
+
+/** Сколько диагнозов перечислено в предварительной версии. */
+function countItems(text) {
+  return String(text ?? "")
+    .split(/[,;\n]+|\bили\b/gi)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 1).length;
+}
+
+/**
+ * Предварительный дифдиагноз: попал ли верный ответ в ряд, названный до
+ * результатов обследований. Это самый честный из доступных нам сигналов
+ * собственного знания: по одной жалобе чужая модель почти не помогает.
+ *
+ * Список из десятка диагнозов «на всякий случай» — не знание, а перебор,
+ * поэтому за размашистый ряд ставится половина.
+ */
+function scorePrior(caseDoc, commitment) {
+  if (!commitment?.committedAt) return { prior: null, hit: false, matched: "" };
+  const { score, matched } = gradeDiagnosis({
+    givenText: commitment.text,
+    acceptedKeys: caseDoc.diagnosis?.diagnosisKeys,
+    synonyms: caseDoc.diagnosis?.diagnosisSynonyms,
+  });
+  if (score !== 1) return { prior: 0, hit: false, matched: "" };
+  const items = countItems(commitment.text);
+  return { prior: items > 5 ? 0.5 : 1, hit: true, matched: matched ?? "" };
+}
 
 // ─── Скоринг ──────────────────────────────────────────────────────────
 function scoreVp(caseDoc, response) {
@@ -163,12 +203,121 @@ export function sanitizeVpForLearner(doc) {
 }
 
 // ─── Прохождение ──────────────────────────────────────────────────────
-export async function startVpAttempt(caseId, userId) {
+/** Условия попытки до старта: зачёт или тренировка, лимит, когда следующий зачёт. */
+export async function getVpPolicy(caseId, userId, mode = "learn") {
+  const caseDoc = await VirtualPatientCase.findById(caseId).select("status timeLimitSec").lean();
+  if (!caseDoc || caseDoc.status !== "published") throw new NotFoundError("VP case");
+  return previewPolicy({
+    AttemptModel: VirtualPatientAttempt,
+    station: "vp",
+    caseId,
+    userId,
+    mode,
+    caseTimeLimitSec: caseDoc.timeLimitSec ?? null,
+    scoring: { weights: WEIGHTS, passThreshold: PASS },
+  });
+}
+
+export async function startVpAttempt(caseId, userId, mode = "learn") {
   const caseDoc = await VirtualPatientCase.findById(caseId).lean();
   if (!caseDoc || caseDoc.status !== "published") throw new NotFoundError("VP case");
-  const attempt = await VirtualPatientAttempt.create({ caseId, userId, status: "in_progress" });
-  recordRadiologyEvent({ action: "vp.attempt_start", actorId: userId, attemptId: attempt._id });
-  return { attempt: attempt.toObject(), case: sanitizeVpForLearner(caseDoc) };
+
+  // Незакрытую попытку продолжаем — вместе с уже раскрытыми обследованиями и
+  // зафиксированным дифрядом. Просроченную помечаем, но не удаляем: по ней
+  // считается слот «зачёт раз в 24 часа».
+  const open = await VirtualPatientAttempt.findOne({
+    caseId,
+    userId,
+    status: "in_progress",
+  }).sort({ startedAt: -1 });
+  if (open) {
+    if (!isExpired(open)) {
+      return {
+        attempt: open.toObject(),
+        case: sanitizeVpForLearner(caseDoc),
+        resumed: true,
+        secondsLeft: secondsLeft(open),
+      };
+    }
+    open.status = "expired";
+    open.durationMs = Date.now() - new Date(open.startedAt).getTime();
+    await open.save();
+  }
+
+  const { fields } = await resolveAttemptStart({
+    AttemptModel: VirtualPatientAttempt,
+    station: "vp",
+    caseId,
+    userId,
+    mode,
+    caseTimeLimitSec: caseDoc.timeLimitSec ?? null,
+  });
+  const attempt = await VirtualPatientAttempt.create({
+    caseId,
+    userId,
+    status: "in_progress",
+    ...fields,
+  });
+  recordRadiologyEvent({
+    action: "vp.attempt_start",
+    actorId: userId,
+    attemptId: attempt._id,
+    metadata: { mode: fields.mode, counted: fields.counted, attemptNo: fields.attemptNo },
+  });
+  return {
+    attempt: attempt.toObject(),
+    case: sanitizeVpForLearner(caseDoc),
+    resumed: false,
+    secondsLeft: secondsLeft(attempt),
+  };
+}
+
+/**
+ * Предварительная фиксация дифдиагноза — до раскрытия результатов.
+ *
+ * Обратной связи здесь НЕТ намеренно: врачу возвращается только факт
+ * фиксации. Скажи мы сразу «угадал» — и предварительная версия превратилась
+ * бы в подсказку, а вместе с ней исчез бы смысл всей затеи.
+ */
+export async function commitDifferential(attemptId, userId, text) {
+  const attempt = await VirtualPatientAttempt.findById(attemptId);
+  if (!attempt) throw new NotFoundError("VP attempt");
+  if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка");
+  if (attempt.status !== "in_progress") throw new ConflictError("Попытка уже закрыта");
+  if (isExpired(attempt)) throw new ConflictError("Время попытки истекло");
+  if (attempt.commitment?.committedAt) {
+    throw new ConflictError("Предварительный диагноз уже зафиксирован — менять его нельзя");
+  }
+
+  const caseDoc = await VirtualPatientCase.findById(attempt.caseId)
+    .select("diagnosis")
+    .lean();
+  if (!caseDoc) throw new NotFoundError("VP case");
+
+  const graded = scorePrior(caseDoc, { text, committedAt: new Date() });
+  attempt.commitment = {
+    text: String(text ?? "").trim(),
+    committedAt: new Date(),
+    orderedBefore: attempt.response.ordered?.length ?? 0,
+    hit: graded.hit,
+    matched: graded.matched,
+    itemCount: countItems(text),
+  };
+  await attempt.save();
+
+  recordRadiologyEvent({
+    action: "vp.commit_prior",
+    actorId: userId,
+    attemptId: attempt._id,
+    // Только структура: сама формулировка врача в аудит не уходит.
+    metadata: { itemCount: attempt.commitment.itemCount, orderedBefore: attempt.commitment.orderedBefore },
+  });
+
+  return {
+    committedAt: attempt.commitment.committedAt,
+    orderedBefore: attempt.commitment.orderedBefore,
+    itemCount: attempt.commitment.itemCount,
+  };
 }
 
 // Назначить обследование: раскрываем результат И фиксируем заказ.
@@ -177,6 +326,17 @@ export async function orderInvestigation(attemptId, userId, key) {
   if (!attempt) throw new NotFoundError("VP attempt");
   if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка");
   if (attempt.status === "submitted") throw new ConflictError("Попытка уже сдана");
+  if (attempt.status === "expired") throw new ConflictError("Попытка просрочена");
+  if (isExpired(attempt)) throw new ConflictError("Время попытки истекло");
+
+  // В зачёте порядок жёсткий: сначала своя версия по жалобе, потом
+  // обследования. Иначе «предварительный» диагноз перестаёт быть
+  // предварительным, и компонент prior ничего не измеряет.
+  if (attempt.mode === "exam" && !attempt.commitment?.committedAt) {
+    throw new ConflictError(
+      "Сначала зафиксируйте предварительный дифдиагноз по жалобе и анамнезу",
+    );
+  }
 
   const caseDoc = await VirtualPatientCase.findById(attempt.caseId).lean();
   if (!caseDoc) throw new NotFoundError("VP case");
@@ -185,6 +345,13 @@ export async function orderInvestigation(attemptId, userId, key) {
 
   if (!attempt.response.ordered.includes(key)) {
     attempt.response.ordered.push(key);
+    // Путь решения: что и когда заказано. В разборе видно, шёл ли врач от
+    // жалобы к подтверждению или заказал всё подряд.
+    attempt.response.orderLog.push({
+      key,
+      at: new Date(),
+      necessary: Boolean(inv.necessary),
+    });
     await attempt.save();
   }
   return {
@@ -203,6 +370,23 @@ function buildVpReview(caseDoc, attempt) {
       correctText: caseDoc.diagnosis?.correctText ?? "",
       diagnosisKeys: caseDoc.diagnosis?.diagnosisKeys ?? [],
     },
+    // Предварительная версия рядом с итоговой: главный обучающий момент
+    // сценария — увидеть, о чём думал сам до результатов.
+    commitment: attempt.commitment?.committedAt
+      ? {
+          text: attempt.commitment.text,
+          hit: attempt.commitment.hit,
+          matched: attempt.commitment.matched,
+          itemCount: attempt.commitment.itemCount,
+          orderedBefore: attempt.commitment.orderedBefore,
+        }
+      : null,
+    // Путь: в каком порядке заказывались обследования.
+    orderLog: (attempt.response.orderLog ?? []).map((o) => ({
+      name: caseDoc.investigations?.find((i) => i.key === o.key)?.name ?? o.key,
+      necessary: o.necessary,
+      at: o.at,
+    })),
     workupDetail: attempt.workupDetail,
     // Полный список обследований с пометкой «нужное» и «назначал ли» —
     // чтобы учащийся увидел, что стоило заказать.
@@ -220,6 +404,17 @@ export async function submitVpAttempt(attemptId, userId, response) {
   if (!attempt) throw new NotFoundError("VP attempt");
   if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка");
   if (attempt.status === "submitted") throw new ConflictError("Попытка уже сдана");
+  if (attempt.status === "expired") {
+    throw new ConflictError("Попытка просрочена: лимит времени истёк");
+  }
+
+  const late = isExpired(attempt);
+  if (late && attempt.counted) {
+    attempt.counted = false;
+    attempt.isFirstCounted = false;
+    attempt.countedReason = "late";
+  }
+  attempt.lateSubmit = late;
 
   const caseDoc = await VirtualPatientCase.findById(attempt.caseId).lean();
   if (!caseDoc) throw new NotFoundError("VP case");
@@ -227,12 +422,16 @@ export async function submitVpAttempt(attemptId, userId, response) {
   // ordered берём из уже зафиксированных заказов (не из тела запроса).
   const resp = {
     ordered: attempt.response.ordered ?? [],
+    orderLog: attempt.response.orderLog ?? [],
     diagnosisKeys: response.diagnosisKeys ?? [],
     diagnosisText: response.diagnosisText ?? "",
     reasoningText: response.reasoningText ?? "",
   };
 
   const det = scoreVp(caseDoc, resp);
+  // Предварительная версия оценивается по тому, что было зафиксировано ДО
+  // результатов; пересчитываем здесь, а не доверяем сохранённому hit.
+  const prior = scorePrior(caseDoc, attempt.commitment);
   const aiFeedback = await gradeImpression({
     impressionText: resp.reasoningText,
     correctText: caseDoc.diagnosis?.correctText ?? "",
@@ -240,7 +439,12 @@ export async function submitVpAttempt(attemptId, userId, response) {
   });
 
   const { total, passed } = combineTotal(
-    { diagnosis: det.diagnosis, workup: det.workup, reasoning: aiFeedback?.score ?? null },
+    {
+      diagnosis: det.diagnosis,
+      workup: det.workup,
+      prior: prior.prior,
+      reasoning: aiFeedback?.score ?? null,
+    },
     WEIGHTS,
     PASS,
   );
@@ -253,19 +457,41 @@ export async function submitVpAttempt(attemptId, userId, response) {
     passed,
     diagnosis: det.diagnosis,
     workup: det.workup,
+    prior: prior.prior,
     reasoning: aiFeedback?.score ?? null,
   };
+  if (attempt.commitment?.committedAt) {
+    attempt.commitment.hit = prior.hit;
+    attempt.commitment.matched = prior.matched;
+  }
   attempt.status = "submitted";
   attempt.submittedAt = new Date();
+  attempt.durationMs = attempt.startedAt
+    ? attempt.submittedAt.getTime() - new Date(attempt.startedAt).getTime()
+    : null;
+
+  if (attempt.counted) {
+    attempt.integrity = assessIntegrity({
+      signals: response.integrity ?? {},
+      durationMs: attempt.durationMs,
+      avgDurationMs: caseDoc.stats?.avgDurationMs ?? null,
+      sampleSize: caseDoc.stats?.countedAttempts ?? 0,
+      answerText: resp.reasoningText,
+      expertText: caseDoc.diagnosis?.correctText ?? "",
+      aiBaselineText: caseDoc.aiBaseline?.text ?? "",
+      firstCountedAttempt: attempt.isFirstCounted,
+    });
+  }
   await attempt.save();
 
-  const c = await VirtualPatientCase.findById(attempt.caseId).select("stats");
-  if (c) {
-    const n = c.stats.attempts ?? 0;
-    c.stats.attempts = n + 1;
-    c.stats.avgScore = ((c.stats.avgScore ?? 0) * n + total) / (n + 1);
-    await c.save();
-  }
+  // Статистика кейса: средний балл — только по первым зачётным попыткам.
+  await recordCaseStats({
+    CaseModel: VirtualPatientCase,
+    caseId: attempt.caseId,
+    total,
+    isFirstCounted: attempt.isFirstCounted,
+    durationMs: attempt.durationMs,
+  });
 
   let game = null;
   try {
@@ -275,16 +501,46 @@ export async function submitVpAttempt(attemptId, userId, response) {
       passed,
       falseAlarms: det.overordered,
       caughtCritical: false,
+      counted: attempt.counted,
+      isFirstCounted: attempt.isFirstCounted,
     });
   } catch {
     /* игровой слой не критичен */
+  }
+
+  // Очередь повторения — только по зачётным попыткам. «Пропущенное» здесь —
+  // не назначенные нужные обследования.
+  try {
+    if (attempt.counted)
+      await updateReviewItem({
+        userId,
+        caseId: attempt.caseId,
+        station: "vp",
+        caseTitle: caseDoc.title,
+        score: total,
+        passed,
+        missed: det.workupDetail?.missedNecessary?.length ?? 0,
+      });
+  } catch {
+    /* очередь повторения не критична */
   }
 
   recordRadiologyEvent({
     action: "vp.attempt_submit",
     actorId: userId,
     attemptId: attempt._id,
-    metadata: { total: Math.round(total * 100) / 100, passed, ordered: resp.ordered.length },
+    metadata: {
+      total: Math.round(total * 100) / 100,
+      passed,
+      ordered: resp.ordered.length,
+      mode: attempt.mode,
+      counted: attempt.counted,
+      countedReason: attempt.countedReason,
+      attemptNo: attempt.attemptNo,
+      lateSubmit: attempt.lateSubmit,
+      priorCommitted: Boolean(attempt.commitment?.committedAt),
+      integrityFlags: attempt.integrity?.flags ?? [],
+    },
   });
 
   return { attempt: attempt.toObject(), review: buildVpReview(caseDoc, attempt), game };

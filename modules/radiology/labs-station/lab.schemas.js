@@ -1,7 +1,8 @@
 // server/modules/radiology/labs-station/lab.schemas.js
 
 import { z } from "zod";
-import { DIFFICULTIES, SOURCE_KINDS } from "../constants.js";
+import { ATTEMPT_MODES, DIFFICULTIES, SOURCE_KINDS } from "../constants.js";
+import { integritySignalsSchema } from "../radiology-attempts/validators/attempt.schemas.js";
 
 const objectIdField = z.string().regex(/^[a-fA-F0-9]{24}$/, "Invalid id");
 
@@ -28,6 +29,9 @@ const sourceSchema = z.object({
 
 export const createLabSchema = z.object({
   title: z.string().trim().min(2).max(300),
+  // Лимит времени зачётной попытки, секунды. null — берётся значение по
+  // станции (attemptPolicy.DEFAULT_TIME_LIMIT_SEC); в тренировке лимита нет.
+  timeLimitSec: z.number().int().min(30).max(7200).nullish(),
   clinicalContext: z.string().trim().max(4000).optional(),
   difficulty: z.enum(DIFFICULTIES).optional(),
   categoryId: objectIdField.nullish(),
@@ -42,6 +46,7 @@ export const updateLabSchema = z
     title: z.string().trim().min(2).max(300).optional(),
     clinicalContext: z.string().trim().max(4000).optional(),
     difficulty: z.enum(DIFFICULTIES).optional(),
+    timeLimitSec: z.number().int().min(30).max(7200).nullish(),
     categoryId: objectIdField.nullish(),
     panel: z.array(panelItemSchema).min(1).max(40).optional(),
     significantAbnormal: z.array(z.string().trim().min(1).max(40)).max(40).optional(),
@@ -54,8 +59,19 @@ export const statusLabSchema = z.object({
   status: z.enum(["draft", "published", "archived"]),
 });
 
+export const startLabSchema = z.object({
+  mode: z.enum(ATTEMPT_MODES).optional(),
+});
+
+export const labPolicyQuerySchema = z.object({
+  mode: z.enum(ATTEMPT_MODES).optional(),
+});
+
 export const submitLabSchema = z.object({
   flags: z.array(z.string().trim().min(1).max(40)).max(40).optional(),
+  // Сигналы добросовестности: вставки в поля, уход со вкладки. Не доверенные,
+  // на балл не влияют (integrity.service.js).
+  integrity: integritySignalsSchema,
   impressionText: z.string().trim().max(4000).optional(),
   // Ключи от учащегося: клиент присылает и фразу целиком, и отдельные слова.
   // 400 вместо 120 — развёрнутая клиническая формулировка («…активная стадия

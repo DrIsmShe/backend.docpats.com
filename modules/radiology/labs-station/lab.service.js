@@ -10,6 +10,15 @@ import LabAttempt from "./models/labAttempt.model.js";
 import { combineTotal } from "../radiology-attempts/services/scoring.service.js";
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
 import { gradeDiagnosis } from "../radiology-attempts/services/diagnosisMatcher.js";
+import {
+  previewPolicy,
+  resolveAttemptStart,
+  isExpired,
+  secondsLeft,
+} from "../radiology-attempts/services/attemptPolicy.js";
+import { assessIntegrity } from "../radiology-attempts/services/integrity.service.js";
+import { recordCaseStats } from "../radiology-attempts/services/caseStats.service.js";
+import { updateReviewItem } from "../review/review.service.js";
 import { awardForAttempt } from "../game/game.service.js";
 import { recordRadiologyEvent } from "../audit/audit.service.js";
 import {
@@ -182,18 +191,67 @@ export function sanitizeLabForLearner(doc) {
 }
 
 // ─── Прохождение ──────────────────────────────────────────────────────
-export async function startLabAttempt(caseId, userId) {
+/** Условия попытки до старта: зачёт или тренировка, лимит, когда следующий зачёт. */
+export async function getLabPolicy(caseId, userId, mode = "learn") {
+  const caseDoc = await LabCase.findById(caseId).select("status timeLimitSec").lean();
+  if (!caseDoc || caseDoc.status !== "published") throw new NotFoundError("Lab case");
+  return previewPolicy({
+    AttemptModel: LabAttempt,
+    station: "labs",
+    caseId,
+    userId,
+    mode,
+    caseTimeLimitSec: caseDoc.timeLimitSec ?? null,
+    scoring: { weights: WEIGHTS, passThreshold: PASS },
+  });
+}
+
+export async function startLabAttempt(caseId, userId, mode = "learn") {
   const caseDoc = await LabCase.findById(caseId).lean();
   if (!caseDoc || caseDoc.status !== "published") {
     throw new NotFoundError("Lab case");
   }
-  const attempt = await LabAttempt.create({ caseId, userId, status: "in_progress" });
+
+  // Незакрытую попытку продолжаем; просроченную помечаем и заводим новую —
+  // запись остаётся, чтобы слот «зачёт раз в 24 часа» не восстанавливался.
+  const open = await LabAttempt.findOne({ caseId, userId, status: "in_progress" }).sort({
+    startedAt: -1,
+  });
+  if (open) {
+    if (!isExpired(open)) {
+      return {
+        attempt: open.toObject(),
+        case: sanitizeLabForLearner(caseDoc),
+        resumed: true,
+        secondsLeft: secondsLeft(open),
+      };
+    }
+    open.status = "expired";
+    open.durationMs = Date.now() - new Date(open.startedAt).getTime();
+    await open.save();
+  }
+
+  const { fields } = await resolveAttemptStart({
+    AttemptModel: LabAttempt,
+    station: "labs",
+    caseId,
+    userId,
+    mode,
+    caseTimeLimitSec: caseDoc.timeLimitSec ?? null,
+  });
+  const attempt = await LabAttempt.create({ caseId, userId, status: "in_progress", ...fields });
   recordRadiologyEvent({
     action: "lab.attempt_start",
     actorId: userId,
     attemptId: attempt._id,
+    metadata: { mode: fields.mode, counted: fields.counted, attemptNo: fields.attemptNo },
   });
-  return { attempt: attempt.toObject(), case: sanitizeLabForLearner(caseDoc) };
+  return {
+    attempt: attempt.toObject(),
+    case: sanitizeLabForLearner(caseDoc),
+    resumed: false,
+    secondsLeft: secondsLeft(attempt),
+  };
 }
 
 function buildLabReview(caseDoc, attempt) {
@@ -219,6 +277,19 @@ export async function submitLabAttempt(attemptId, userId, response) {
     throw new ForbiddenError("Это чужая попытка");
   }
   if (attempt.status === "submitted") throw new ConflictError("Попытка уже сдана");
+  if (attempt.status === "expired") {
+    throw new ConflictError("Попытка просрочена: лимит времени истёк");
+  }
+
+  // Дедлайн проверяется на сервере от сохранённого startedAt. Сдачу после
+  // лимита принимаем, но зачётность снимаем.
+  const late = isExpired(attempt);
+  if (late && attempt.counted) {
+    attempt.counted = false;
+    attempt.isFirstCounted = false;
+    attempt.countedReason = "late";
+  }
+  attempt.lateSubmit = late;
 
   const caseDoc = await LabCase.findById(attempt.caseId).lean();
   if (!caseDoc) throw new NotFoundError("Lab case");
@@ -256,16 +327,32 @@ export async function submitLabAttempt(attemptId, userId, response) {
   };
   attempt.status = "submitted";
   attempt.submittedAt = new Date();
+  attempt.durationMs = attempt.startedAt
+    ? attempt.submittedAt.getTime() - new Date(attempt.startedAt).getTime()
+    : null;
+
+  if (attempt.counted) {
+    attempt.integrity = assessIntegrity({
+      signals: response.integrity ?? {},
+      durationMs: attempt.durationMs,
+      avgDurationMs: caseDoc.stats?.avgDurationMs ?? null,
+      sampleSize: caseDoc.stats?.countedAttempts ?? 0,
+      answerText: resp.impressionText,
+      expertText: caseDoc.impression?.correctText ?? "",
+      aiBaselineText: caseDoc.aiBaseline?.text ?? "",
+      firstCountedAttempt: attempt.isFirstCounted,
+    });
+  }
   await attempt.save();
 
-  // Статистика кейса.
-  const c = await LabCase.findById(attempt.caseId).select("stats");
-  if (c) {
-    const n = c.stats.attempts ?? 0;
-    c.stats.attempts = n + 1;
-    c.stats.avgScore = ((c.stats.avgScore ?? 0) * n + total) / (n + 1);
-    await c.save();
-  }
+  // Статистика кейса: средний балл — только по первым зачётным попыткам.
+  await recordCaseStats({
+    CaseModel: LabCase,
+    caseId: attempt.caseId,
+    total,
+    isFirstCounted: attempt.isFirstCounted,
+    durationMs: attempt.durationMs,
+  });
 
   // Общий игровой слой арены (XP/серия/достижения). Тихо.
   let game = null;
@@ -276,16 +363,43 @@ export async function submitLabAttempt(attemptId, userId, response) {
       passed,
       falseAlarms: det.falsePositives,
       caughtCritical: false,
+      counted: attempt.counted,
+      isFirstCounted: attempt.isFirstCounted,
     });
   } catch {
     /* игровой слой не критичен */
+  }
+
+  // Очередь повторения — только по зачётным попыткам.
+  try {
+    if (attempt.counted)
+      await updateReviewItem({
+        userId,
+        caseId: attempt.caseId,
+        station: "labs",
+        caseTitle: caseDoc.title,
+        score: total,
+        passed,
+        missed: det.matches.filter((m) => m.outcome === "missed").length,
+      });
+  } catch {
+    /* очередь повторения не критична */
   }
 
   recordRadiologyEvent({
     action: "lab.attempt_submit",
     actorId: userId,
     attemptId: attempt._id,
-    metadata: { total: Math.round(total * 100) / 100, passed },
+    metadata: {
+      total: Math.round(total * 100) / 100,
+      passed,
+      mode: attempt.mode,
+      counted: attempt.counted,
+      countedReason: attempt.countedReason,
+      attemptNo: attempt.attemptNo,
+      lateSubmit: attempt.lateSubmit,
+      integrityFlags: attempt.integrity?.flags ?? [],
+    },
   });
 
   return { attempt: attempt.toObject(), review: buildLabReview(caseDoc, attempt), game };

@@ -5,6 +5,8 @@
 // слой арены (game.service), поэтому отдельного «профиля» здесь нет.
 
 import mongoose from "mongoose";
+import { ATTEMPT_STATUSES } from "../../constants.js";
+import { attemptPolicyFields } from "../../radiology-attempts/models/attemptPolicyFields.js";
 
 const { Schema } = mongoose;
 
@@ -32,7 +34,12 @@ const labAttemptSchema = new Schema(
   {
     caseId: { type: Schema.Types.ObjectId, ref: "LabCase", required: true, index: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    status: { type: String, enum: ["in_progress", "submitted"], default: "in_progress" },
+    // Список статусов — общий (constants.js), а не свой: в нём есть expired,
+    // и локальная копия enum'а уже один раз разъехалась с реальностью.
+    status: { type: String, enum: ATTEMPT_STATUSES, default: "in_progress" },
+    // Режим, зачётность, лимит времени, сигналы добросовестности — общие для
+    // всех станций арены (attemptPolicyFields.js).
+    ...attemptPolicyFields(),
 
     response: {
       // Ключи показателей, которые учащийся отметил как отклонённые.

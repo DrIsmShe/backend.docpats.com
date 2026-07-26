@@ -1,7 +1,8 @@
 // server/modules/radiology/virtual-patient/vp.schemas.js
 
 import { z } from "zod";
-import { DIFFICULTIES, SOURCE_KINDS } from "../constants.js";
+import { ATTEMPT_MODES, DIFFICULTIES, SOURCE_KINDS } from "../constants.js";
+import { integritySignalsSchema } from "../radiology-attempts/validators/attempt.schemas.js";
 
 const objectIdField = z.string().regex(/^[a-fA-F0-9]{24}$/, "Invalid id");
 
@@ -29,6 +30,9 @@ const sourceSchema = z.object({
 
 export const createVpSchema = z.object({
   title: z.string().trim().min(2).max(300),
+  // Лимит времени зачётной попытки, секунды. null — берётся значение по
+  // станции (attemptPolicy.DEFAULT_TIME_LIMIT_SEC); в тренировке лимита нет.
+  timeLimitSec: z.number().int().min(30).max(7200).nullish(),
   presentation: z.string().trim().max(4000).optional(),
   difficulty: z.enum(DIFFICULTIES).optional(),
   categoryId: objectIdField.nullish(),
@@ -42,6 +46,7 @@ export const updateVpSchema = z
     title: z.string().trim().min(2).max(300).optional(),
     presentation: z.string().trim().max(4000).optional(),
     difficulty: z.enum(DIFFICULTIES).optional(),
+    timeLimitSec: z.number().int().min(30).max(7200).nullish(),
     categoryId: objectIdField.nullish(),
     investigations: z.array(investigationSchema).min(1).max(30).optional(),
     diagnosis: diagnosisSchema.optional(),
@@ -57,6 +62,21 @@ export const orderVpSchema = z.object({
   key: z.string().trim().min(1).max(40),
 });
 
+export const startVpSchema = z.object({
+  mode: z.enum(ATTEMPT_MODES).optional(),
+});
+
+export const vpPolicyQuerySchema = z.object({
+  mode: z.enum(ATTEMPT_MODES).optional(),
+});
+
+// Предварительный дифдиагноз: короткий список, а не заключение. Ограничение
+// длины здесь заодно и педагогическое — просят перечислить версии, а не
+// написать эссе.
+export const commitVpSchema = z.object({
+  text: z.string().trim().min(2).max(2000),
+});
+
 export const submitVpSchema = z.object({
   // Ключи от учащегося: клиент присылает и фразу целиком, и отдельные слова.
   // 400 вместо 120 — развёрнутая клиническая формулировка («…активная стадия
@@ -66,6 +86,7 @@ export const submitVpSchema = z.object({
   // Формулировка целиком — по ней диагноз и оценивается (diagnosisMatcher).
   diagnosisText: z.string().trim().max(4000).optional(),
   reasoningText: z.string().trim().max(4000).optional(),
+  integrity: integritySignalsSchema,
 });
 
 // Запрос на ИИ-проверку сценария (второй проход). Приходит содержимое формы,

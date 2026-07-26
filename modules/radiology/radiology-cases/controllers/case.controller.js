@@ -2,13 +2,15 @@
 
 import sharp from "sharp";
 import { asyncHandler } from "../../../../common/middlewares/errorHandler.js";
-import { ValidationError } from "../../../../common/utils/errors.js";
+import { ValidationError, NotFoundError } from "../../../../common/utils/errors.js";
+import RadiologyCase from "../models/radiologyCase.model.js";
 import { uploadFile } from "../../../../common/middlewares/uploadMiddleware.js";
 import { isAuthorRole } from "../../middlewares/radiologyAuth.js";
 import { listReadingSystems } from "../../reading-systems/index.js";
 import { draftCase, isConfigured as aiConfigured } from "../../ai/aiDrafter.js";
 import { generateRadiologyCase } from "../../ai/caseGenerator.js";
 import { verifyRadiologyCase } from "../../ai/caseVerifier.js";
+import { generateBaselineAnswer } from "../../ai/baselineAnswer.js";
 import {
   createCase,
   updateCase,
@@ -74,6 +76,22 @@ export const aiVerifyController = asyncHandler(async (req, res) => {
   if (!parsed.success) throwZod(parsed);
   const review = await verifyRadiologyCase(parsed.data);
   res.json({ review });
+});
+
+// «Типовой ответ чат-бота» на кейс — образец для сигнала дословного переноса
+// в заключениях врачей (integrity.service.js). Снимок модели не передаём:
+// в реальности врач тоже приносит в чат текстовое описание, а не разметку.
+export const aiBaselineController = asyncHandler(async (req, res) => {
+  const doc = await RadiologyCase.findById(req.params.id);
+  if (!doc) throw new NotFoundError("Radiology case");
+  const { text, model } = await generateBaselineAnswer({
+    station: "radiology",
+    title: doc.title,
+    context: doc.clinicalContext ?? "",
+  });
+  doc.aiBaseline = { text, model, generatedAt: new Date() };
+  await doc.save();
+  res.json({ aiBaseline: doc.aiBaseline });
 });
 
 // Загрузка снимка автором. Переиспользует общий uploadFile: он переэнкодит

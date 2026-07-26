@@ -14,7 +14,13 @@ const { Schema } = mongoose;
 const radiologyReviewItemSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    // ref остаётся RadiologyCase: populate по этой ссылке нигде не делается, а
+    // станция определяется полем station. Кейсы разных станций лежат в разных
+    // коллекциях, поэтому пара (station, caseId) уникальна по-настоящему.
     caseId: { type: Schema.Types.ObjectId, ref: "RadiologyCase", required: true },
+    // Станция арены: снимки, «Анализы», «Виртуальный пациент». Раньше очередь
+    // была только у снимков — отсюда default.
+    station: { type: String, enum: ["radiology", "labs", "vp"], default: "radiology", index: true },
     caseTitle: { type: String, default: "" },
     modality: { type: String, default: "" },
 
@@ -26,7 +32,7 @@ const radiologyReviewItemSchema = new Schema(
   { timestamps: true, collection: "radiology_review_items" },
 );
 
-radiologyReviewItemSchema.index({ userId: 1, caseId: 1 }, { unique: true });
+radiologyReviewItemSchema.index({ userId: 1, station: 1, caseId: 1 }, { unique: true });
 radiologyReviewItemSchema.index({ userId: 1, dueAt: 1 });
 
 const RadiologyReviewItem =

@@ -25,11 +25,11 @@ export default defineReadingSystem({
   ],
   scoring: {
     weights: {
-      detection: 0.35,
-      classification: 0.15,
+      detection: 0.4,
+      classification: 0.2,
       checklist: 0.15,
-      diagnosis: 0.25,
-      aiImpression: 0.1,
+      diagnosis: 0.2,
+      aiImpression: 0.05,
     },
     matchRadius: 0.1,
     falseAlarmPenalty: 1,

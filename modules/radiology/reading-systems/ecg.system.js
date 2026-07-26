@@ -37,10 +37,10 @@ export default defineReadingSystem({
     // На ЭКГ система осмотра важна не меньше самой находки — вес чек-листа
     // чуть выше, чем у рентгена.
     weights: {
-      detection: 0.3,
-      classification: 0.15,
+      detection: 0.35,
+      classification: 0.2,
       checklist: 0.2,
-      diagnosis: 0.3,
+      diagnosis: 0.2,
       aiImpression: 0.05,
     },
     matchRadius: 0.1,
