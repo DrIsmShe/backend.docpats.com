@@ -16,6 +16,7 @@ import {
 } from "./lab.service.js";
 import LabCase from "./models/labCase.model.js";
 import { generateLabCase } from "../ai/caseGenerator.js";
+import { verifyLabCase } from "../ai/caseVerifier.js";
 import {
   createLabSchema,
   updateLabSchema,
@@ -23,6 +24,7 @@ import {
   submitLabSchema,
   listLabQuerySchema,
   aiGenerateLabSchema,
+  aiVerifyLabSchema,
 } from "./lab.schemas.js";
 import { NotFoundError } from "../../../common/utils/errors.js";
 
@@ -51,6 +53,15 @@ export const aiGenerateLabCaseController = asyncHandler(async (req, res) => {
   if (!parsed.success) throwZod(parsed);
   const draft = await generateLabCase(parsed.data);
   res.json({ draft });
+});
+
+// ИИ-проверка кейса вторым проходом. Возвращает ЗАМЕЧАНИЯ, ничего не правит
+// и не сохраняет: решение за автором-человеком.
+export const aiVerifyLabCaseController = asyncHandler(async (req, res) => {
+  const parsed = aiVerifyLabSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const review = await verifyLabCase(parsed.data);
+  res.json({ review });
 });
 
 export const createLabCaseController = asyncHandler(async (req, res) => {

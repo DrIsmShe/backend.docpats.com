@@ -8,6 +8,7 @@ import { isAuthorRole } from "../../middlewares/radiologyAuth.js";
 import { listReadingSystems } from "../../reading-systems/index.js";
 import { draftCase, isConfigured as aiConfigured } from "../../ai/aiDrafter.js";
 import { generateRadiologyCase } from "../../ai/caseGenerator.js";
+import { verifyRadiologyCase } from "../../ai/caseVerifier.js";
 import {
   createCase,
   updateCase,
@@ -24,6 +25,7 @@ import {
   reviewCaseSchema,
   listCasesQuerySchema,
   aiGenerateCaseSchema,
+  aiVerifyCaseSchema,
 } from "../validators/case.schemas.js";
 
 function throwZod(parsed) {
@@ -64,6 +66,14 @@ export const aiGenerateController = asyncHandler(async (req, res) => {
   if (!parsed.success) throwZod(parsed);
   const draft = await generateRadiologyCase(parsed.data);
   res.json({ draft });
+});
+
+// ИИ-проверка кейса вторым проходом: только замечания, без правок.
+export const aiVerifyController = asyncHandler(async (req, res) => {
+  const parsed = aiVerifyCaseSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const review = await verifyRadiologyCase(parsed.data);
+  res.json({ review });
 });
 
 // Загрузка снимка автором. Переиспользует общий uploadFile: он переэнкодит

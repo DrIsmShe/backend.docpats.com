@@ -20,6 +20,9 @@ router.post("/ai/draft", requireAuthor, ctrl.aiDraftController);
 // ИИ-кейс целиком по теме (снимок автор добавит сам) — только автору.
 router.post("/ai/generate", requireAuthor, ctrl.aiGenerateController);
 
+// ИИ-проверка кейса вторым проходом — только автору.
+router.post("/ai/verify", requireAuthor, ctrl.aiVerifyController);
+
 router.get("/cases", ctrl.listCasesController);
 router.post("/cases", requireAuthor, ctrl.createCaseController);
 router.get("/cases/:id", ctrl.getCaseController);

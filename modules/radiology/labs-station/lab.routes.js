@@ -12,6 +12,7 @@ const router = express.Router();
 // ИИ-генерация кейса по теме — до /labs/cases/:id, чтобы не конфликтовать
 // с ним по форме пути (у обоих 3 сегмента).
 router.post("/labs/ai/generate", requireAuthor, ctrl.aiGenerateLabCaseController);
+router.post("/labs/ai/verify", requireAuthor, ctrl.aiVerifyLabCaseController);
 
 router.get("/labs/cases", ctrl.listLabCasesController);
 router.post("/labs/cases", requireAuthor, ctrl.createLabCaseController);

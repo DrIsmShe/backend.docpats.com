@@ -11,6 +11,7 @@ const router = express.Router();
 
 // ИИ-генерация сценария по теме — только автору.
 router.post("/vp/ai/generate", requireAuthor, ctrl.aiGenerateVpController);
+router.post("/vp/ai/verify", requireAuthor, ctrl.aiVerifyVpController);
 
 router.get("/vp/cases", ctrl.listVpController);
 router.post("/vp/cases", requireAuthor, ctrl.createVpController);

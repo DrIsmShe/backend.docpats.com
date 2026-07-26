@@ -17,6 +17,7 @@ import {
   getVpAttempt,
 } from "./vp.service.js";
 import { generateVpCase } from "../ai/caseGenerator.js";
+import { verifyVpCase } from "../ai/caseVerifier.js";
 import {
   createVpSchema,
   updateVpSchema,
@@ -25,6 +26,7 @@ import {
   submitVpSchema,
   listVpQuerySchema,
   aiGenerateVpSchema,
+  aiVerifyVpSchema,
 } from "./vp.schemas.js";
 
 function throwZod(parsed) {
@@ -51,6 +53,14 @@ export const aiGenerateVpController = asyncHandler(async (req, res) => {
   if (!parsed.success) throwZod(parsed);
   const draft = await generateVpCase(parsed.data);
   res.json({ draft });
+});
+
+// ИИ-проверка сценария вторым проходом: только замечания, без правок.
+export const aiVerifyVpController = asyncHandler(async (req, res) => {
+  const parsed = aiVerifyVpSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const review = await verifyVpCase(parsed.data);
+  res.json({ review });
 });
 
 export const createVpController = asyncHandler(async (req, res) => {

@@ -125,6 +125,36 @@ export const reviewCaseSchema = z.object({
   reason: z.string().trim().max(2000).optional(),
 });
 
+// ИИ-проверка кейса (второй проход). Приходит содержимое формы, а не id:
+// рецензировать надо текущую версию автора, возможно ещё не сохранённую.
+// plannedFindings — и не размеченные находки из плана ИИ, и уже поставленные
+// на снимок (клиент сводит их в один список: важна медицинская суть, а не
+// координаты).
+export const aiVerifyCaseSchema = z.object({
+  modality: z.enum(MODALITIES),
+  draft: z.object({
+    title: z.string().trim().max(300).optional(),
+    clinicalContext: z.string().trim().max(4000).optional(),
+    plannedFindings: z
+      .array(
+        z.object({
+          label: z.string().trim().min(1).max(60),
+          significance: z.enum(SIGNIFICANCES).optional(),
+          location: z.string().trim().max(300).optional(),
+          explanation: z.string().trim().max(2000).optional(),
+        }),
+      )
+      .max(30),
+    impression: z
+      .object({
+        correctText: z.string().trim().max(4000).optional(),
+        diagnosisKeys: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
+        diagnosisSynonyms: z.array(z.string().trim().min(1).max(120)).max(50).optional(),
+      })
+      .optional(),
+  }),
+});
+
 // ИИ-генерация кейса ЦЕЛИКОМ по теме (снимка ещё нет — ИИ описывает, какие
 // находки на нём должны быть; расставляет их автор на холсте).
 export const aiGenerateCaseSchema = z.object({

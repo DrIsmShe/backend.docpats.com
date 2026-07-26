@@ -25,6 +25,16 @@ vi.mock("../../modules/radiology/ai/caseGenerator.js", () => ({
   isConfigured: () => true,
 }));
 
+const verifyLabCase = vi.fn();
+const verifyVpCase = vi.fn();
+const verifyRadiologyCase = vi.fn();
+vi.mock("../../modules/radiology/ai/caseVerifier.js", () => ({
+  verifyLabCase: (...a) => verifyLabCase(...a),
+  verifyVpCase: (...a) => verifyVpCase(...a),
+  verifyRadiologyCase: (...a) => verifyRadiologyCase(...a),
+  isConfigured: () => true,
+}));
+
 const { default: radiologyRoutes } = await import(
   "../../modules/radiology/index.js"
 );
@@ -63,7 +73,12 @@ const LAB_DRAFT = {
   usage: { inputTokens: 1, outputTokens: 2 },
 };
 
+const REVIEW = { verdict: "issues", issues: [{ target: "Hb", severity: "error", issue: "спорно", suggestion: "поправить" }], errorCount: 1, summary: "" };
+
 beforeEach(() => {
+  verifyLabCase.mockReset().mockResolvedValue(REVIEW);
+  verifyVpCase.mockReset().mockResolvedValue(REVIEW);
+  verifyRadiologyCase.mockReset().mockResolvedValue(REVIEW);
   generateLabCase.mockReset().mockResolvedValue(LAB_DRAFT);
   generateVpCase.mockReset().mockResolvedValue({ title: "ХОБЛ", investigations: [] });
   generateRadiologyCase.mockReset().mockResolvedValue({ title: "Пневмоторакс", plannedFindings: [] });
@@ -175,5 +190,96 @@ describe("POST /api/v1/radiology/ai/generate (лучевой кейс)", () => {
       .send({ modality: "cxr", topic: "пневмоторакс справа" })
       .expect(403);
     expect(generateRadiologyCase).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST .../ai/verify — второй проход", () => {
+  const LAB_BODY = {
+    draft: {
+      title: "Анемия",
+      panel: [
+        { name: "Hb", value: "92", unit: "г/л", refRange: "120–150", significant: true },
+        { name: "Ферритин", value: "4", unit: "нг/мл", refRange: "15–150", significant: true },
+      ],
+      impression: { correctText: "ЖДА", diagnosisKeys: ["жда"] },
+    },
+  };
+
+  it("учащемуся → 403, проверка не запускается", async () => {
+    const { userId } = await createTestDoctor({ role: "doctor" });
+    await request(appFor(userId))
+      .post("/api/v1/radiology/labs/ai/verify")
+      .send(LAB_BODY)
+      .expect(403);
+    expect(verifyLabCase).not.toHaveBeenCalled();
+  });
+
+  it("пустой draft → 400 до обращения к модели", async () => {
+    const { userId } = await createTestDoctor({ role: "admin" });
+    await request(appFor(userId))
+      .post("/api/v1/radiology/labs/ai/verify")
+      .send({ draft: { panel: [] } })
+      .expect(400);
+    expect(verifyLabCase).not.toHaveBeenCalled();
+  });
+
+  it("админу отдаёт замечания и передаёт кейс из формы", async () => {
+    const { userId } = await createTestDoctor({ role: "admin" });
+    const res = await request(appFor(userId))
+      .post("/api/v1/radiology/labs/ai/verify")
+      .send(LAB_BODY)
+      .expect(200);
+
+    expect(res.body.review.errorCount).toBe(1);
+    expect(verifyLabCase).toHaveBeenCalledTimes(1);
+    // Рецензируется именно содержимое формы, а не id сохранённого кейса.
+    expect(verifyLabCase.mock.calls[0][0].draft.panel).toHaveLength(2);
+  });
+
+  it("сценарий VP: админу 200, учащемуся 403", async () => {
+    const vpBody = {
+      draft: {
+        title: "ХОБЛ",
+        investigations: [
+          { name: "Спирометрия", category: "Функциональная", resultText: "ОФВ1/ФЖЕЛ 0,49", necessary: true },
+          { name: "D-димер", category: "Лаборатория", resultText: "норма", necessary: false },
+        ],
+        diagnosis: { diagnosisKeys: ["хобл"] },
+      },
+    };
+    const admin = await createTestDoctor({ role: "admin" });
+    await request(appFor(admin.userId))
+      .post("/api/v1/radiology/vp/ai/verify")
+      .send(vpBody)
+      .expect(200);
+
+    const learner = await createTestDoctor({ role: "doctor" });
+    await request(appFor(learner.userId))
+      .post("/api/v1/radiology/vp/ai/verify")
+      .send(vpBody)
+      .expect(403);
+    expect(verifyVpCase).toHaveBeenCalledTimes(1);
+  });
+
+  it("лучевой кейс: плохая модальность → 400, валидный → 200", async () => {
+    const { userId } = await createTestDoctor({ role: "admin" });
+    const draft = {
+      draft: {
+        title: "Пневмоторакс",
+        plannedFindings: [{ label: "pneumothorax", significance: "critical" }],
+        impression: { diagnosisKeys: ["пневмоторакс"] },
+      },
+    };
+    await request(appFor(userId))
+      .post("/api/v1/radiology/ai/verify")
+      .send({ modality: "телепатия", ...draft })
+      .expect(400);
+    expect(verifyRadiologyCase).not.toHaveBeenCalled();
+
+    await request(appFor(userId))
+      .post("/api/v1/radiology/ai/verify")
+      .send({ modality: "cxr", ...draft })
+      .expect(200);
+    expect(verifyRadiologyCase).toHaveBeenCalledTimes(1);
   });
 });

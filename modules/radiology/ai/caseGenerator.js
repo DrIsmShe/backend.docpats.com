@@ -15,100 +15,21 @@
 // публикация лучевого кейса всё равно проходит гейт ревью. Источник таких
 // кейсов честно помечается source.kind = "ai_generated" (см. constants.js).
 //
-// Клиент Anthropic переиспользуем из education-экстрактора — там же живёт
-// разбор ошибок API («invalid API key», перегрузка, лимиты).
+// Вызов модели, обработка ошибок API и нормализаторы — в ai/aiRunner.js:
+// тем же путём ходит верификатор кейса (ai/caseVerifier.js).
 
-import {
-  getClient,
-  describeApiError,
-} from "../../education/education-ingest/extractors/claude.extractor.js";
 import { findingsForModality } from "../lexicon/lexicon.js";
 import {
   ValidationError,
   ServiceUnavailableError,
 } from "../../../common/utils/errors.js";
-import logger from "../../../common/logger.js";
 import { DIFFICULTIES, SIGNIFICANCES } from "../constants.js";
+import { runJson, isConfigured, str, list } from "./aiRunner.js";
 
-// Модель. Задаётся теми же переменными, что у ИИ-помощника по снимку;
-// по умолчанию — актуальная Opus. Пин через RADIOLOGY_AI_MODEL в .env.
-const MODEL =
-  process.env.RADIOLOGY_AI_MODEL ||
-  process.env.EDUCATION_EXTRACTOR_MODEL ||
-  "claude-opus-5";
+// Реэкспорт: контроллеры спрашивают «настроен ли ИИ» у генератора.
+export { isConfigured };
 
-/** Настроен ли ИИ (тот же ключ, что у остальных ИИ-функций). */
-export function isConfigured() {
-  return Boolean(
-    (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || "").trim(),
-  );
-}
-
-const str = (v, max) => String(v ?? "").trim().slice(0, max);
-const list = (arr, max, itemMax) =>
-  (Array.isArray(arr) ? arr : [])
-    .map((s) => String(s ?? "").trim().slice(0, itemMax))
-    .filter(Boolean)
-    .slice(0, max);
 const difficultyOf = (v) => (DIFFICULTIES.includes(v) ? v : "medium");
-
-// Один вызов модели со structured outputs. Стрим — потому что кейс с
-// рассуждением может генерироваться дольше HTTP-таймаута.
-//
-// max_tokens ограничивает мышление И текст ответа вместе, поэтому берём запас:
-// оборванный ответ — это невалидный JSON, а не «немного короче».
-async function runJson({ system, instruction, schema, maxTokens = 16000 }) {
-  if (!isConfigured()) {
-    throw new ServiceUnavailableError(
-      "ИИ-генератор не настроен: задайте ANTHROPIC_API_KEY в .env сервера",
-    );
-  }
-
-  const client = getClient();
-  let message;
-  try {
-    const stream = client.messages.stream({
-      model: MODEL,
-      max_tokens: maxTokens,
-      thinking: { type: "adaptive" },
-      system,
-      output_config: { format: { type: "json_schema", schema } },
-      messages: [{ role: "user", content: instruction }],
-    });
-    message = await stream.finalMessage();
-  } catch (err) {
-    const described = describeApiError(err);
-    logger?.error?.(
-      { err, model: MODEL, status: err?.status ?? null },
-      "radiology AI case generation failed",
-    );
-    throw described.retryable
-      ? new ServiceUnavailableError(described.message)
-      : new ValidationError(described.message);
-  }
-
-  if (message.stop_reason === "refusal") {
-    throw new ValidationError("ИИ отказался сгенерировать кейс по этой теме");
-  }
-  if (message.stop_reason === "max_tokens") {
-    throw new ServiceUnavailableError(
-      "Ответ ИИ оборвался на пределе длины — сузьте тему кейса и попробуйте снова",
-    );
-  }
-  const textBlock = message.content.find((b) => b.type === "text");
-  if (!textBlock) throw new ServiceUnavailableError("ИИ вернул пустой ответ");
-  try {
-    return {
-      parsed: JSON.parse(textBlock.text),
-      usage: {
-        inputTokens: message.usage?.input_tokens ?? 0,
-        outputTokens: message.usage?.output_tokens ?? 0,
-      },
-    };
-  } catch {
-    throw new ServiceUnavailableError("ИИ вернул некорректный JSON");
-  }
-}
 
 // Общий блок «эталон»: заключение + принятые ключи диагноза.
 const impressionSchema = (correctDescription) => ({
@@ -338,6 +259,7 @@ export async function generateVpCase({ topic, difficulty, hint }) {
     system: VP_SYSTEM,
     instruction,
     schema: VP_SCHEMA,
+    what: "сценарий",
   });
 
   const investigations = (Array.isArray(parsed.investigations) ? parsed.investigations : [])

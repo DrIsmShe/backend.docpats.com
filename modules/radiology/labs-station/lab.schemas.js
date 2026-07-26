@@ -60,6 +60,30 @@ export const submitLabSchema = z.object({
   diagnosisKeys: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
 });
 
+// Запрос на ИИ-проверку кейса (второй проход). Проверяем ТО, ЧТО СЕЙЧАС В
+// ФОРМЕ, а не то, что когда-то вернул генератор: автор мог уже поправить
+// цифры, и рецензировать надо его версию. Поэтому кейс приходит целиком, а
+// не по id — он ещё может быть не сохранён.
+export const aiVerifyLabSchema = z.object({
+  draft: z.object({
+    title: z.string().trim().max(300).optional(),
+    clinicalContext: z.string().trim().max(4000).optional(),
+    panel: z
+      .array(
+        z.object({
+          name: z.string().trim().min(1).max(120),
+          value: z.string().trim().min(1).max(60),
+          unit: z.string().trim().max(40).optional(),
+          refRange: z.string().trim().max(60).optional(),
+          significant: z.boolean().optional(),
+        }),
+      )
+      .min(1)
+      .max(40),
+    impression: impressionSchema.optional(),
+  }),
+});
+
 // Запрос на ИИ-генерацию кейса целиком: тема обязательна, остальное — подсказки.
 export const aiGenerateLabSchema = z.object({
   topic: z.string().trim().min(3).max(500),

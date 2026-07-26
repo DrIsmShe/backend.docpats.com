@@ -62,6 +62,27 @@ export const submitVpSchema = z.object({
   reasoningText: z.string().trim().max(4000).optional(),
 });
 
+// Запрос на ИИ-проверку сценария (второй проход). Приходит содержимое формы,
+// а не id: рецензировать надо текущую версию автора, ещё не сохранённую.
+export const aiVerifyVpSchema = z.object({
+  draft: z.object({
+    title: z.string().trim().max(300).optional(),
+    presentation: z.string().trim().max(4000).optional(),
+    investigations: z
+      .array(
+        z.object({
+          name: z.string().trim().min(1).max(160),
+          category: z.string().trim().max(60).optional(),
+          resultText: z.string().trim().max(4000).optional(),
+          necessary: z.boolean().optional(),
+        }),
+      )
+      .min(1)
+      .max(30),
+    diagnosis: diagnosisSchema.optional(),
+  }),
+});
+
 // Запрос на ИИ-генерацию сценария целиком: тема обязательна, остальное — подсказки.
 export const aiGenerateVpSchema = z.object({
   topic: z.string().trim().min(3).max(500),
