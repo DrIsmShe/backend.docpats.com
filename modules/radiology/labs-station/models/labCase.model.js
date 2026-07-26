@@ -10,6 +10,7 @@
 // не всякое отклонение от референса клинически значимо.
 
 import mongoose from "mongoose";
+import { aiReviewField } from "../../ai/aiReviewFields.js";
 import {
   DIFFICULTIES,
   CASE_STATUSES,
@@ -62,6 +63,44 @@ const labCaseSchema = new Schema(
     // ─── Панель результатов (видна учащемуся) ───
     panel: { type: [panelItemSchema], default: [] },
 
+    // ─── Числовые варианты того же кейса ───
+    // Тот же диагноз, другие значения панели. Нужны против передачи ответов:
+    // «в этом кейсе значимы гемоглобин и ферритин» перестаёт работать, если у
+    // соседа другие цифры, а при повторном зачёте вариант меняется.
+    //
+    // Ключи показателей ОБЯЗАНЫ совпадать с основной панелью: вариант — это
+    // переопределение значений, а не другой кейс. Иначе разошлись бы разбор,
+    // статистика и эталон.
+    variants: {
+      type: [
+        new Schema(
+          {
+            label: { type: String, trim: true, maxlength: 60, default: "" },
+            panel: {
+              type: [
+                new Schema(
+                  {
+                    key: { type: String, required: true, trim: true, maxlength: 40 },
+                    value: { type: String, required: true, trim: true, maxlength: 60 },
+                    unit: { type: String, trim: true, maxlength: 40, default: "" },
+                    refRange: { type: String, trim: true, maxlength: 60, default: "" },
+                  },
+                  { _id: false },
+                ),
+              ],
+              default: [],
+            },
+            // Значимые отклонения ЭТОГО варианта: при других цифрах значимым
+            // может стать другой показатель.
+            significantAbnormal: { type: [String], default: [] },
+            note: { type: String, trim: true, maxlength: 500, default: "" },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+    },
+
     // ─── Эталон (учащемуся не отдаётся до сдачи) ───
     // Ключи показателей, которые учащийся ДОЛЖЕН отметить как значимо
     // отклонённые.
@@ -83,6 +122,11 @@ const labCaseSchema = new Schema(
       model: { type: String, default: "" },
       generatedAt: { type: Date, default: null },
     },
+
+    // Сохранённая ИИ-рецензия второго прохода и отметки «разобрано».
+    // Лежит в кейсе, а не в состоянии формы: гейт публикации опирается на
+    // разбор замечаний, а состояние React живёт до перезагрузки страницы.
+    ...aiReviewField(),
 
     stats: {
       attempts: { type: Number, default: 0 }, // все сдачи, включая тренировки

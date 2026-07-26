@@ -19,6 +19,8 @@ import LabCase from "./models/labCase.model.js";
 import { generateLabCase } from "../ai/caseGenerator.js";
 import { verifyLabCase } from "../ai/caseVerifier.js";
 import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
+import { generateLabVariants } from "../ai/caseVariants.js";
+import { saveAiReview, setAiReviewDismissed } from "../ai/aiReviewStore.js";
 import {
   createLabSchema,
   updateLabSchema,
@@ -27,6 +29,8 @@ import {
   listLabQuerySchema,
   aiGenerateLabSchema,
   aiVerifyLabSchema,
+  dismissAiIssuesSchema,
+  aiVariantsSchema,
   startLabSchema,
   labPolicyQuerySchema,
 } from "./lab.schemas.js";
@@ -65,7 +69,15 @@ export const aiVerifyLabCaseController = asyncHandler(async (req, res) => {
   const parsed = aiVerifyLabSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
   const review = await verifyLabCase(parsed.data);
-  res.json({ review });
+  // Кейс сохранён — прячем рецензию в него: гейт публикации должен переживать
+  // перезагрузку страницы. Сохраняется то, что посчитал сервер, а не то, что
+  // прислал браузер.
+  const stored = await saveAiReview({
+    CaseModel: LabCase,
+    caseId: parsed.data.caseId,
+    review,
+  });
+  res.json({ review, aiReview: stored });
 });
 
 export const createLabCaseController = asyncHandler(async (req, res) => {
@@ -100,6 +112,39 @@ export const statusLabCaseController = asyncHandler(async (req, res) => {
     req.radiologyActor.role,
   );
   res.json({ case: doc });
+});
+
+// Отметки «разобрано» на замечаниях сохранённой рецензии. Пока замечание не
+// разобрано, кейс не публикуется — и это состояние переживает перезагрузку
+// страницы, потому что живёт в кейсе, а не в браузере.
+export const dismissLabIssuesController = asyncHandler(async (req, res) => {
+  const parsed = dismissAiIssuesSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const saved = await setAiReviewDismissed({
+    CaseModel: LabCase,
+    caseId: req.params.id,
+    dismissed: parsed.data.dismissed,
+  });
+  if (!saved) throw new NotFoundError("Lab case");
+  res.json({ aiReview: saved });
+});
+
+// ИИ-варианты кейса: тот же диагноз, другие значения. Сохраняются сразу —
+// автор дальше правит их как обычные данные кейса или удаляет.
+export const aiVariantsLabController = asyncHandler(async (req, res) => {
+  const parsed = aiVariantsSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const doc = await LabCase.findById(req.params.id);
+  if (!doc) throw new NotFoundError("Lab case");
+  const variants = await generateLabVariants(doc, parsed.data.count ?? 2);
+  if (!variants.length) {
+    throw new ValidationError(
+      "ИИ не вернул ни одного пригодного варианта — попробуйте ещё раз",
+    );
+  }
+  doc.variants = variants;
+  await doc.save();
+  res.json({ variants: doc.variants });
 });
 
 // Сохранить «типовой ответ чат-бота» на кейс. Нужен как образец для сравнения

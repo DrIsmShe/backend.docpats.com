@@ -15,6 +15,7 @@ import {
 } from "../../reading-systems/index.js";
 import { findingsForModality } from "../../lexicon/lexicon.js";
 import { recordCaseStats } from "../../radiology-attempts/services/caseStats.service.js";
+import { unresolvedAiIssues } from "../../ai/aiReviewFields.js";
 import { recordRadiologyEvent } from "../../audit/audit.service.js";
 import {
   ValidationError,
@@ -126,6 +127,13 @@ export function collectPublishBlockers(doc) {
     blockers.push("для лицензионного материала не указаны условия");
   if (!hasReadingSystem(doc.modality))
     blockers.push(`нет системы чтения для модальности "${doc.modality}"`);
+  // Неразобранные замечания ИИ-рецензента. Блокируют ВСЕ, а не только
+  // severity=error: калибровка показала, что модель систематически занижает
+  // серьёзность, и промптом это не лечится. «Разобрано» ставит человек —
+  // гейт требует не согласия с ИИ, а того, чтобы замечание прочитали.
+  const openIssues = unresolvedAiIssues(doc.aiReview).length;
+  if (openIssues)
+    blockers.push(`разберите замечания ИИ-рецензента (${openIssues})`);
   return blockers;
 }
 

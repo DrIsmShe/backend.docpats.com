@@ -27,6 +27,30 @@ const sourceSchema = z.object({
   licenseNote: z.string().trim().max(2000).nullish(),
 });
 
+// Числовой вариант кейса: тот же диагноз, другие значения. Ключи показателей
+// обязаны существовать в основной панели — вариант переопределяет значения, а
+// не описывает другой кейс (проверяется в variantPicker/нормализации ИИ).
+const labVariantSchema = z.object({
+  label: z.string().trim().max(60).optional(),
+  note: z.string().trim().max(500).optional(),
+  panel: z
+    .array(
+      z.object({
+        key: z.string().trim().min(1).max(40),
+        value: z.string().trim().min(1).max(60),
+        unit: z.string().trim().max(40).optional(),
+        refRange: z.string().trim().max(60).optional(),
+      }),
+    )
+    .max(40),
+  significantAbnormal: z.array(z.string().trim().min(1).max(40)).max(40).optional(),
+});
+
+// Запрос на ИИ-генерацию вариантов: сколько сделать.
+export const aiVariantsSchema = z.object({
+  count: z.number().int().min(1).max(4).optional(),
+});
+
 export const createLabSchema = z.object({
   title: z.string().trim().min(2).max(300),
   // Лимит времени зачётной попытки, секунды. null — берётся значение по
@@ -36,6 +60,7 @@ export const createLabSchema = z.object({
   difficulty: z.enum(DIFFICULTIES).optional(),
   categoryId: objectIdField.nullish(),
   panel: z.array(panelItemSchema).min(1).max(40),
+  variants: z.array(labVariantSchema).max(4).optional(),
   significantAbnormal: z.array(z.string().trim().min(1).max(40)).max(40).optional(),
   impression: impressionSchema.optional(),
   source: sourceSchema,
@@ -49,6 +74,7 @@ export const updateLabSchema = z
     timeLimitSec: z.number().int().min(30).max(7200).nullish(),
     categoryId: objectIdField.nullish(),
     panel: z.array(panelItemSchema).min(1).max(40).optional(),
+    variants: z.array(labVariantSchema).max(4).optional(),
     significantAbnormal: z.array(z.string().trim().min(1).max(40)).max(40).optional(),
     impression: impressionSchema.optional(),
     source: sourceSchema.optional(),
@@ -87,6 +113,9 @@ export const submitLabSchema = z.object({
 // цифры, и рецензировать надо его версию. Поэтому кейс приходит целиком, а
 // не по id — он ещё может быть не сохранён.
 export const aiVerifyLabSchema = z.object({
+  // Если кейс уже сохранён, его id можно передать — тогда сервер сохранит
+  // рецензию в кейсе, и гейт публикации переживёт перезагрузку страницы.
+  caseId: z.string().regex(/^[a-fA-F0-9]{24}$/, "Invalid id").optional(),
   draft: z.object({
     title: z.string().trim().max(300).optional(),
     clinicalContext: z.string().trim().max(4000).optional(),
@@ -116,4 +145,9 @@ export const aiGenerateLabSchema = z.object({
 export const listLabQuerySchema = z.object({
   scope: z.enum(["published", "all"]).optional(),
   status: z.string().optional(),
+});
+
+// Отметки «разобрано» на замечаниях сохранённой рецензии: индексы в списке.
+export const dismissAiIssuesSchema = z.object({
+  dismissed: z.array(z.number().int().min(0).max(29)).max(30),
 });

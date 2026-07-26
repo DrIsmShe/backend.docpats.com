@@ -21,6 +21,8 @@ import {
 import { generateVpCase } from "../ai/caseGenerator.js";
 import { verifyVpCase } from "../ai/caseVerifier.js";
 import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
+import { generateVpVariants } from "../ai/caseVariants.js";
+import { saveAiReview, setAiReviewDismissed } from "../ai/aiReviewStore.js";
 import {
   createVpSchema,
   updateVpSchema,
@@ -30,6 +32,8 @@ import {
   listVpQuerySchema,
   aiGenerateVpSchema,
   aiVerifyVpSchema,
+  dismissAiIssuesSchema,
+  aiVariantsSchema,
   startVpSchema,
   vpPolicyQuerySchema,
   commitVpSchema,
@@ -66,7 +70,27 @@ export const aiVerifyVpController = asyncHandler(async (req, res) => {
   const parsed = aiVerifyVpSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
   const review = await verifyVpCase(parsed.data);
-  res.json({ review });
+  // Сохранённый кейс получает рецензию внутрь — гейт публикации переживает
+  // перезагрузку страницы.
+  const stored = await saveAiReview({
+    CaseModel: VirtualPatientCase,
+    caseId: parsed.data.caseId,
+    review,
+  });
+  res.json({ review, aiReview: stored });
+});
+
+// Отметки «разобрано» на замечаниях сохранённой рецензии.
+export const dismissVpIssuesController = asyncHandler(async (req, res) => {
+  const parsed = dismissAiIssuesSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const saved = await setAiReviewDismissed({
+    CaseModel: VirtualPatientCase,
+    caseId: req.params.id,
+    dismissed: parsed.data.dismissed,
+  });
+  if (!saved) throw new NotFoundError("VP case");
+  res.json({ aiReview: saved });
 });
 
 export const createVpController = asyncHandler(async (req, res) => {
@@ -96,6 +120,24 @@ export const statusVpController = asyncHandler(async (req, res) => {
   if (!parsed.success) throwZod(parsed);
   const doc = await setVpStatus(req.params.id, parsed.data.status, req.radiologyActor.userId, req.radiologyActor.role);
   res.json({ case: doc });
+});
+
+// ИИ-варианты сценария: тот же диагноз, другой пациент и другие числовые
+// результаты. Список нужных обследований не меняется.
+export const aiVariantsVpController = asyncHandler(async (req, res) => {
+  const parsed = aiVariantsSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const doc = await VirtualPatientCase.findById(req.params.id);
+  if (!doc) throw new NotFoundError("VP case");
+  const variants = await generateVpVariants(doc, parsed.data.count ?? 2);
+  if (!variants.length) {
+    throw new ValidationError(
+      "ИИ не вернул ни одного пригодного варианта — попробуйте ещё раз",
+    );
+  }
+  doc.variants = variants;
+  await doc.save();
+  res.json({ variants: doc.variants });
 });
 
 // «Типовой ответ чат-бота» на сценарий — образец для сигнала дословного

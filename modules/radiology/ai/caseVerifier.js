@@ -20,6 +20,7 @@
 // конкретному показателю/обследованию — иначе получился бы второй слой
 // выдумывания без следов. Решение принимает автор-человек.
 
+import { ISSUE_SEVERITIES } from "../constants.js";
 import { ValidationError } from "../../../common/utils/errors.js";
 import { runJson, isConfigured, str } from "./aiRunner.js";
 
@@ -27,7 +28,9 @@ export { isConfigured };
 
 // Уровни. error — кейс в таком виде учит неверному (публиковать нельзя);
 // warning — спорно или требует внимания эксперта.
-export const ISSUE_SEVERITIES = ["error", "warning"];
+// Серьёзность замечания живёт в constants.js: на неё ссылается схема кейса,
+// а модель не должна зависеть от ИИ-модуля. Реэкспорт — для совместимости.
+export { ISSUE_SEVERITIES };
 
 const ISSUE_SCHEMA = {
   type: "object",

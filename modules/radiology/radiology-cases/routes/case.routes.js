@@ -25,6 +25,8 @@ router.post("/ai/verify", requireAuthor, ctrl.aiVerifyController);
 
 // Образец «типового ответа чат-бота» для сигналов добросовестности — автору.
 router.post("/cases/:id/ai/baseline", requireAuthor, ctrl.aiBaselineController);
+// Отметки «разобрано» на замечаниях сохранённой ИИ-рецензии — автору.
+router.patch("/cases/:id/ai-review/dismissed", requireAuthor, ctrl.dismissIssuesController);
 
 router.get("/cases", ctrl.listCasesController);
 router.post("/cases", requireAuthor, ctrl.createCaseController);

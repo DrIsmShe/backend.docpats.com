@@ -21,6 +21,10 @@ router.post("/vp/cases/:id/status", requireAuthor, ctrl.statusVpController);
 
 // Образец «типового ответа чат-бота» для сигналов добросовестности — автору.
 router.post("/vp/cases/:id/ai/baseline", requireAuthor, ctrl.aiBaselineVpController);
+// ИИ-варианты сценария (тот же диагноз, другой пациент) — автору.
+router.post("/vp/cases/:id/ai/variants", requireAuthor, ctrl.aiVariantsVpController);
+// Отметки «разобрано» на замечаниях сохранённой ИИ-рецензии — автору.
+router.patch("/vp/cases/:id/ai-review/dismissed", requireAuthor, ctrl.dismissVpIssuesController);
 
 // Условия попытки до старта (зачёт/тренировка, лимит, следующий зачёт).
 router.get("/vp/cases/:id/policy", ctrl.vpPolicyController);

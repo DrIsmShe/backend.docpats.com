@@ -28,6 +28,27 @@ const sourceSchema = z.object({
   licenseNote: z.string().trim().max(2000).nullish(),
 });
 
+// Вариант сценария: тот же диагноз, другой пациент и другие числовые
+// результаты. Ключи обследований обязаны существовать в кейсе.
+const vpVariantSchema = z.object({
+  label: z.string().trim().max(60).optional(),
+  note: z.string().trim().max(500).optional(),
+  presentation: z.string().trim().max(4000).optional(),
+  results: z
+    .array(
+      z.object({
+        key: z.string().trim().min(1).max(40),
+        resultText: z.string().trim().max(4000),
+      }),
+    )
+    .max(30),
+});
+
+// Запрос на ИИ-генерацию вариантов сценария.
+export const aiVariantsSchema = z.object({
+  count: z.number().int().min(1).max(4).optional(),
+});
+
 export const createVpSchema = z.object({
   title: z.string().trim().min(2).max(300),
   // Лимит времени зачётной попытки, секунды. null — берётся значение по
@@ -37,6 +58,7 @@ export const createVpSchema = z.object({
   difficulty: z.enum(DIFFICULTIES).optional(),
   categoryId: objectIdField.nullish(),
   investigations: z.array(investigationSchema).min(1).max(30),
+  variants: z.array(vpVariantSchema).max(4).optional(),
   diagnosis: diagnosisSchema.optional(),
   source: sourceSchema,
 });
@@ -49,6 +71,7 @@ export const updateVpSchema = z
     timeLimitSec: z.number().int().min(30).max(7200).nullish(),
     categoryId: objectIdField.nullish(),
     investigations: z.array(investigationSchema).min(1).max(30).optional(),
+    variants: z.array(vpVariantSchema).max(4).optional(),
     diagnosis: diagnosisSchema.optional(),
     source: sourceSchema.optional(),
   })
@@ -92,6 +115,9 @@ export const submitVpSchema = z.object({
 // Запрос на ИИ-проверку сценария (второй проход). Приходит содержимое формы,
 // а не id: рецензировать надо текущую версию автора, ещё не сохранённую.
 export const aiVerifyVpSchema = z.object({
+  // Если кейс уже сохранён, его id можно передать — тогда сервер сохранит
+  // рецензию в кейсе, и гейт публикации переживёт перезагрузку страницы.
+  caseId: z.string().regex(/^[a-fA-F0-9]{24}$/, "Invalid id").optional(),
   draft: z.object({
     title: z.string().trim().max(300).optional(),
     presentation: z.string().trim().max(4000).optional(),
@@ -120,4 +146,9 @@ export const aiGenerateVpSchema = z.object({
 export const listVpQuerySchema = z.object({
   scope: z.enum(["published", "all"]).optional(),
   status: z.string().optional(),
+});
+
+// Отметки «разобрано» на замечаниях сохранённой рецензии: индексы в списке.
+export const dismissAiIssuesSchema = z.object({
+  dismissed: z.array(z.number().int().min(0).max(29)).max(30),
 });

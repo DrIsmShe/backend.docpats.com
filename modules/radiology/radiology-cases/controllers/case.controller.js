@@ -11,6 +11,7 @@ import { draftCase, isConfigured as aiConfigured } from "../../ai/aiDrafter.js";
 import { generateRadiologyCase } from "../../ai/caseGenerator.js";
 import { verifyRadiologyCase } from "../../ai/caseVerifier.js";
 import { generateBaselineAnswer } from "../../ai/baselineAnswer.js";
+import { saveAiReview, setAiReviewDismissed } from "../../ai/aiReviewStore.js";
 import {
   createCase,
   updateCase,
@@ -28,6 +29,7 @@ import {
   listCasesQuerySchema,
   aiGenerateCaseSchema,
   aiVerifyCaseSchema,
+  dismissAiIssuesSchema,
 } from "../validators/case.schemas.js";
 
 function throwZod(parsed) {
@@ -75,7 +77,27 @@ export const aiVerifyController = asyncHandler(async (req, res) => {
   const parsed = aiVerifyCaseSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
   const review = await verifyRadiologyCase(parsed.data);
-  res.json({ review });
+  // Сохранённый кейс получает рецензию внутрь — гейт публикации переживает
+  // перезагрузку страницы.
+  const stored = await saveAiReview({
+    CaseModel: RadiologyCase,
+    caseId: parsed.data.caseId,
+    review,
+  });
+  res.json({ review, aiReview: stored });
+});
+
+// Отметки «разобрано» на замечаниях сохранённой рецензии.
+export const dismissIssuesController = asyncHandler(async (req, res) => {
+  const parsed = dismissAiIssuesSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const saved = await setAiReviewDismissed({
+    CaseModel: RadiologyCase,
+    caseId: req.params.id,
+    dismissed: parsed.data.dismissed,
+  });
+  if (!saved) throw new NotFoundError("Radiology case");
+  res.json({ aiReview: saved });
 });
 
 // «Типовой ответ чат-бота» на кейс — образец для сигнала дословного переноса

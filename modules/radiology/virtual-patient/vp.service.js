@@ -23,6 +23,11 @@ import {
 import { assessIntegrity } from "../radiology-attempts/services/integrity.service.js";
 import { recordCaseStats } from "../radiology-attempts/services/caseStats.service.js";
 import { updateReviewItem } from "../review/review.service.js";
+import {
+  pickVariantIndex,
+  applyVpVariant,
+} from "../radiology-attempts/services/variantPicker.js";
+import { unresolvedAiIssues } from "../ai/aiReviewFields.js";
 import { recordRadiologyEvent } from "../audit/audit.service.js";
 import {
   ValidationError,
@@ -116,6 +121,13 @@ export function collectVpBlockers(doc) {
   if (!(doc.diagnosis?.diagnosisKeys?.length ?? 0)) b.push("укажите верный диагноз");
   if (["public_government", "licensed"].includes(doc.source?.kind) && !doc.source?.authority)
     b.push("для заимствованного материала не указан орган/издание");
+  // Неразобранные замечания ИИ-рецензента. Блокируют ВСЕ, а не только
+  // severity=error: калибровка показала, что модель систематически занижает
+  // серьёзность, и промптом это не лечится. «Разобрано» ставит человек —
+  // гейт требует не согласия с ИИ, а того, чтобы замечание прочитали.
+  const openIssues = unresolvedAiIssues(doc.aiReview).length;
+  if (openIssues)
+    b.push(`разберите замечания ИИ-рецензента (${openIssues})`);
   return b;
 }
 
@@ -127,6 +139,7 @@ export async function createVpCase(input, actorId, actorRole) {
     difficulty: input.difficulty ?? "medium",
     categoryId: input.categoryId ?? null,
     investigations: input.investigations ?? [],
+    variants: input.variants ?? [],
     diagnosis: input.diagnosis ?? {},
     source: input.source,
     status: "draft",
@@ -140,7 +153,7 @@ export async function updateVpCase(caseId, patch) {
   const doc = await VirtualPatientCase.findById(caseId);
   if (!doc) throw new NotFoundError("VP case");
   if (doc.status === "archived") throw new ConflictError("Архивный кейс редактировать нельзя");
-  const FIELDS = ["title", "presentation", "difficulty", "categoryId", "investigations", "diagnosis", "source"];
+  const FIELDS = ["title", "presentation", "difficulty", "categoryId", "investigations", "variants", "diagnosis", "source"];
   for (const f of FIELDS) if (patch[f] !== undefined) doc[f] = patch[f];
   await doc.save();
   return doc.toObject();
@@ -176,6 +189,8 @@ export async function listVpCases({ isEditor, scope, status }) {
   return VirtualPatientCase.find(query)
     .sort({ createdAt: -1 })
     .limit(200)
+    // variants и diagnosis наружу не отдаём: внутри варианта лежат тексты
+    // результатов обследований, то есть половина ответа.
     .select("_id title difficulty status createdAt")
     .lean();
 }
@@ -188,12 +203,20 @@ export async function getVpCaseFull(caseId) {
 
 // Учащемуся: жалоба + МЕНЮ обследований без результатов и без пометки
 // «нужное» — результат раскрывается только при заказе.
-export function sanitizeVpForLearner(doc) {
+/**
+ * Сценарий для учащегося. variantIndex — какой вариант ему достался (0 —
+ * базовый). Вариант меняет жалобу и числовые результаты, но НЕ список
+ * обследований: врач должен приходить к тому же набору назначений.
+ */
+export function sanitizeVpForLearner(doc, variantIndex = 0) {
+  const { presentation, variantLabel } = applyVpVariant(doc, variantIndex);
   return {
     _id: doc._id,
     title: doc.title,
-    presentation: doc.presentation,
+    presentation,
     difficulty: doc.difficulty,
+    variantLabel,
+    variantCount: doc.variants?.length ?? 0,
     investigations: (doc.investigations ?? []).map((i) => ({
       key: i.key,
       name: i.name,
@@ -234,7 +257,7 @@ export async function startVpAttempt(caseId, userId, mode = "learn") {
     if (!isExpired(open)) {
       return {
         attempt: open.toObject(),
-        case: sanitizeVpForLearner(caseDoc),
+        case: sanitizeVpForLearner(caseDoc, open.variantIndex ?? 0),
         resumed: true,
         secondsLeft: secondsLeft(open),
       };
@@ -252,11 +275,15 @@ export async function startVpAttempt(caseId, userId, mode = "learn") {
     mode,
     caseTimeLimitSec: caseDoc.timeLimitSec ?? null,
   });
+  // Вариант выбирается по номеру попытки — воспроизводимо и по кругу.
+  const variantIndex = pickVariantIndex(fields.attemptNo, caseDoc.variants?.length ?? 0);
   const attempt = await VirtualPatientAttempt.create({
     caseId,
     userId,
     status: "in_progress",
     ...fields,
+    variantIndex,
+    variantLabel: applyVpVariant(caseDoc, variantIndex).variantLabel,
   });
   recordRadiologyEvent({
     action: "vp.attempt_start",
@@ -266,7 +293,7 @@ export async function startVpAttempt(caseId, userId, mode = "learn") {
   });
   return {
     attempt: attempt.toObject(),
-    case: sanitizeVpForLearner(caseDoc),
+    case: sanitizeVpForLearner(caseDoc, variantIndex),
     resumed: false,
     secondsLeft: secondsLeft(attempt),
   };
@@ -340,7 +367,10 @@ export async function orderInvestigation(attemptId, userId, key) {
 
   const caseDoc = await VirtualPatientCase.findById(attempt.caseId).lean();
   if (!caseDoc) throw new NotFoundError("VP case");
-  const inv = caseDoc.investigations.find((i) => i.key === key);
+  // Результат отдаём из ТОГО варианта, который достался попытке, иначе врач
+  // увидел бы цифры из базового кейса, а оценивался бы по своим.
+  const { investigations } = applyVpVariant(caseDoc, attempt.variantIndex ?? 0);
+  const inv = investigations.find((i) => i.key === key);
   if (!inv) throw new NotFoundError("Investigation");
 
   if (!attempt.response.ordered.includes(key)) {

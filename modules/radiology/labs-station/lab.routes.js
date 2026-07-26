@@ -22,6 +22,10 @@ router.post("/labs/cases/:id/status", requireAuthor, ctrl.statusLabCaseControlle
 
 // Образец «типового ответа чат-бота» для сигналов добросовестности — автору.
 router.post("/labs/cases/:id/ai/baseline", requireAuthor, ctrl.aiBaselineLabController);
+// ИИ-варианты кейса (тот же диагноз, другие значения) — автору.
+router.post("/labs/cases/:id/ai/variants", requireAuthor, ctrl.aiVariantsLabController);
+// Отметки «разобрано» на замечаниях сохранённой ИИ-рецензии — автору.
+router.patch("/labs/cases/:id/ai-review/dismissed", requireAuthor, ctrl.dismissLabIssuesController);
 
 // Условия попытки до старта (зачёт/тренировка, лимит, следующий зачёт).
 router.get("/labs/cases/:id/policy", ctrl.labPolicyController);

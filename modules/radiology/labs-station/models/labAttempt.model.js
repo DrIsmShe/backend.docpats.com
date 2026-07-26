@@ -40,6 +40,11 @@ const labAttemptSchema = new Schema(
     // Режим, зачётность, лимит времени, сигналы добросовестности — общие для
     // всех станций арены (attemptPolicyFields.js).
     ...attemptPolicyFields(),
+    // Какой числовой вариант кейса достался этой попытке (0 — базовый кейс
+    // автора). Хранится, чтобы разбор и пересчёт оценки шли по тем же цифрам,
+    // которые видел врач.
+    variantIndex: { type: Number, default: 0 },
+    variantLabel: { type: String, trim: true, maxlength: 60, default: "" },
 
     response: {
       // Ключи показателей, которые учащийся отметил как отклонённые.

@@ -10,6 +10,7 @@
 // уходит со страницы.
 
 import mongoose from "mongoose";
+import { aiReviewField } from "../../ai/aiReviewFields.js";
 import { DIFFICULTIES, CASE_STATUSES, SOURCE_KINDS } from "../../constants.js";
 
 const { Schema } = mongoose;
@@ -59,6 +60,40 @@ const vpCaseSchema = new Schema(
     investigations: { type: [investigationSchema], default: [] },
     diagnosis: { type: diagnosisSchema, default: () => ({}) },
 
+    // ─── Варианты того же сценария ───
+    // Тот же диагноз, другая подача: другие цифры в жалобе и в результатах
+    // обследований. Против передачи ответов между врачами и против того, что
+    // повторный зачёт — это тот же текст слово в слово.
+    //
+    // Список нужных обследований (necessary) вариант НЕ меняет: меняются
+    // значения, а не логика разбора. results переопределяют resultText по
+    // ключу существующего обследования.
+    variants: {
+      type: [
+        new Schema(
+          {
+            label: { type: String, trim: true, maxlength: 60, default: "" },
+            presentation: { type: String, trim: true, maxlength: 4000, default: "" },
+            results: {
+              type: [
+                new Schema(
+                  {
+                    key: { type: String, required: true, trim: true, maxlength: 40 },
+                    resultText: { type: String, trim: true, maxlength: 4000, default: "" },
+                  },
+                  { _id: false },
+                ),
+              ],
+              default: [],
+            },
+            note: { type: String, trim: true, maxlength: 500, default: "" },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+    },
+
     source: { type: sourceSchema, required: true },
     status: { type: String, enum: CASE_STATUSES, default: "draft", index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
@@ -74,6 +109,11 @@ const vpCaseSchema = new Schema(
       model: { type: String, default: "" },
       generatedAt: { type: Date, default: null },
     },
+
+    // Сохранённая ИИ-рецензия второго прохода и отметки «разобрано».
+    // Лежит в кейсе, а не в состоянии формы: гейт публикации опирается на
+    // разбор замечаний, а состояние React живёт до перезагрузки страницы.
+    ...aiReviewField(),
 
     stats: {
       attempts: { type: Number, default: 0 }, // все сдачи, включая тренировки

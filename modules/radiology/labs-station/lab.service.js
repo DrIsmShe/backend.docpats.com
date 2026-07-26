@@ -17,8 +17,13 @@ import {
   secondsLeft,
 } from "../radiology-attempts/services/attemptPolicy.js";
 import { assessIntegrity } from "../radiology-attempts/services/integrity.service.js";
+import {
+  pickVariantIndex,
+  applyLabVariant,
+} from "../radiology-attempts/services/variantPicker.js";
 import { recordCaseStats } from "../radiology-attempts/services/caseStats.service.js";
 import { updateReviewItem } from "../review/review.service.js";
+import { unresolvedAiIssues } from "../ai/aiReviewFields.js";
 import { awardForAttempt } from "../game/game.service.js";
 import { recordRadiologyEvent } from "../audit/audit.service.js";
 import {
@@ -34,9 +39,13 @@ const WEIGHTS = { detection: 0.5, diagnosis: 0.35, impression: 0.15 };
 const PASS = 0.7;
 
 // ─── Скоринг ──────────────────────────────────────────────────────────
-function scoreLab(caseDoc, response) {
+// variantIndex: значимые отклонения берём у ТОГО варианта, который врач видел.
+// При других цифрах значимым может быть другой показатель, и оценивать по
+// базовому эталону значило бы наказывать за правильный ответ.
+function scoreLab(caseDoc, response, variantIndex = 0) {
   const panelKeys = new Set((caseDoc.panel ?? []).map((p) => p.key));
-  const gt = new Set(caseDoc.significantAbnormal ?? []);
+  const { significantAbnormal } = applyLabVariant(caseDoc, variantIndex);
+  const gt = new Set(significantAbnormal ?? []);
   const flags = new Set((response.flags ?? []).filter((k) => panelKeys.has(k)));
 
   let tp = 0;
@@ -77,6 +86,13 @@ export function collectLabBlockers(doc) {
     b.push("для заимствованного материала не указан орган/издание");
   if (doc.source?.kind === "licensed" && !doc.source?.licenseNote)
     b.push("для лицензионного материала не указаны условия");
+  // Неразобранные замечания ИИ-рецензента. Блокируют ВСЕ, а не только
+  // severity=error: калибровка показала, что модель систематически занижает
+  // серьёзность, и промптом это не лечится. «Разобрано» ставит человек —
+  // гейт требует не согласия с ИИ, а того, чтобы замечание прочитали.
+  const openIssues = unresolvedAiIssues(doc.aiReview).length;
+  if (openIssues)
+    b.push(`разберите замечания ИИ-рецензента (${openIssues})`);
   return b;
 }
 
@@ -89,6 +105,7 @@ export async function createLabCase(input, actorId, actorRole) {
     categoryId: input.categoryId ?? null,
     panel: input.panel ?? [],
     significantAbnormal: input.significantAbnormal ?? [],
+    variants: input.variants ?? [],
     impression: input.impression ?? {},
     source: input.source,
     status: "draft",
@@ -116,6 +133,7 @@ export async function updateLabCase(caseId, patch) {
     "categoryId",
     "panel",
     "significantAbnormal",
+    "variants",
     "impression",
     "source",
   ];
@@ -164,7 +182,9 @@ export async function listLabCases({ isEditor, scope, status }) {
   return LabCase.find(query)
     .sort({ createdAt: -1 })
     .limit(200)
-    .select("-significantAbnormal -impression")
+    // variants исключаем не для экономии: внутри варианта лежат его значимые
+    // отклонения, то есть ключ ответа.
+    .select("-significantAbnormal -impression -variants")
     .lean();
 }
 
@@ -174,13 +194,23 @@ export async function getLabCaseFull(caseId) {
   return { ...doc, publishBlockers: collectLabBlockers(doc) };
 }
 
-export function sanitizeLabForLearner(doc) {
+/**
+ * Кейс для учащегося. variantIndex — какой числовой вариант ему достался
+ * (0 = базовый кейс автора). Значения панели берутся из варианта, названия и
+ * ключи показателей — из кейса: вариант меняет цифры, а не структуру.
+ */
+export function sanitizeLabForLearner(doc, variantIndex = 0) {
+  const { panel, variantLabel } = applyLabVariant(doc, variantIndex);
   return {
     _id: doc._id,
     title: doc.title,
     clinicalContext: doc.clinicalContext,
     difficulty: doc.difficulty,
-    panel: (doc.panel ?? []).map((p) => ({
+    variantLabel,
+    // Врачу полезно знать, что у кейса есть варианты: это объясняет, почему
+    // цифры не совпадают с тем, что показал коллега.
+    variantCount: doc.variants?.length ?? 0,
+    panel: (panel ?? []).map((p) => ({
       key: p.key,
       name: p.name,
       value: p.value,
@@ -221,7 +251,7 @@ export async function startLabAttempt(caseId, userId, mode = "learn") {
     if (!isExpired(open)) {
       return {
         attempt: open.toObject(),
-        case: sanitizeLabForLearner(caseDoc),
+        case: sanitizeLabForLearner(caseDoc, open.variantIndex ?? 0),
         resumed: true,
         secondsLeft: secondsLeft(open),
       };
@@ -239,7 +269,17 @@ export async function startLabAttempt(caseId, userId, mode = "learn") {
     mode,
     caseTimeLimitSec: caseDoc.timeLimitSec ?? null,
   });
-  const attempt = await LabAttempt.create({ caseId, userId, status: "in_progress", ...fields });
+  // Какой числовой вариант достаётся этой попытке — решаем по её номеру, а
+  // не случайно: результат воспроизводим, а варианты идут по кругу.
+  const variantIndex = pickVariantIndex(fields.attemptNo, caseDoc.variants?.length ?? 0);
+  const attempt = await LabAttempt.create({
+    caseId,
+    userId,
+    status: "in_progress",
+    ...fields,
+    variantIndex,
+    variantLabel: applyLabVariant(caseDoc, variantIndex).variantLabel,
+  });
   recordRadiologyEvent({
     action: "lab.attempt_start",
     actorId: userId,
@@ -248,7 +288,7 @@ export async function startLabAttempt(caseId, userId, mode = "learn") {
   });
   return {
     attempt: attempt.toObject(),
-    case: sanitizeLabForLearner(caseDoc),
+    case: sanitizeLabForLearner(caseDoc, variantIndex),
     resumed: false,
     secondsLeft: secondsLeft(attempt),
   };
@@ -256,8 +296,11 @@ export async function startLabAttempt(caseId, userId, mode = "learn") {
 
 function buildLabReview(caseDoc, attempt) {
   const nameByKey = new Map((caseDoc.panel ?? []).map((p) => [p.key, p.name]));
+  // Разбор показывает эталон ТОГО варианта, который решал врач.
+  const { significantAbnormal } = applyLabVariant(caseDoc, attempt.variantIndex ?? 0);
   return {
-    significantAbnormal: (caseDoc.significantAbnormal ?? []).map((k) => ({
+    variantLabel: attempt.variantLabel ?? "",
+    significantAbnormal: (significantAbnormal ?? []).map((k) => ({
       key: k,
       name: nameByKey.get(k) ?? k,
     })),
@@ -301,7 +344,7 @@ export async function submitLabAttempt(attemptId, userId, response) {
     diagnosisText: response.diagnosisText ?? "",
   };
 
-  const det = scoreLab(caseDoc, resp);
+  const det = scoreLab(caseDoc, resp, attempt.variantIndex ?? 0);
   const aiFeedback = await gradeImpression({
     impressionText: resp.impressionText,
     correctText: caseDoc.impression?.correctText ?? "",

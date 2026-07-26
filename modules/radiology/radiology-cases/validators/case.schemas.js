@@ -136,6 +136,9 @@ export const reviewCaseSchema = z.object({
 // координаты).
 export const aiVerifyCaseSchema = z.object({
   modality: z.enum(MODALITIES),
+  // Если кейс уже сохранён, его id можно передать — тогда сервер сохранит
+  // рецензию в кейсе, и гейт публикации переживёт перезагрузку страницы.
+  caseId: z.string().regex(/^[a-fA-F0-9]{24}$/, "Invalid id").optional(),
   draft: z.object({
     title: z.string().trim().max(300).optional(),
     clinicalContext: z.string().trim().max(4000).optional(),
@@ -174,4 +177,9 @@ export const listCasesQuerySchema = z.object({
   status: z.string().optional(), // валидируется в сервисе по роли
   scope: z.enum(["published", "all"]).optional(),
   limit: z.coerce.number().int().min(1).max(200).optional(),
+});
+
+// Отметки «разобрано» на замечаниях сохранённой рецензии: индексы в списке.
+export const dismissAiIssuesSchema = z.object({
+  dismissed: z.array(z.number().int().min(0).max(29)).max(30),
 });

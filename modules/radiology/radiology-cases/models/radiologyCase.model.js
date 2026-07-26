@@ -17,6 +17,7 @@
 //      наружу только через ревью человеком.
 
 import mongoose from "mongoose";
+import { aiReviewField } from "../../ai/aiReviewFields.js";
 import {
   MODALITIES,
   FINDING_SHAPES,
@@ -157,6 +158,11 @@ const radiologyCaseSchema = new Schema(
       model: { type: String, default: "" },
       generatedAt: { type: Date, default: null },
     },
+
+    // Сохранённая ИИ-рецензия второго прохода и отметки «разобрано».
+    // Лежит в кейсе, а не в состоянии формы: гейт публикации опирается на
+    // разбор замечаний, а состояние React живёт до перезагрузки страницы.
+    ...aiReviewField(),
 
     stats: {
       attempts: { type: Number, default: 0 }, // все сдачи, включая тренировки
