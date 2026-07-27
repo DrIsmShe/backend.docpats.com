@@ -145,6 +145,12 @@ export const aiGenerateLabSchema = z.object({
 export const listLabQuerySchema = z.object({
   scope: z.enum(["published", "all"]).optional(),
   status: z.string().optional(),
+  difficulty: z.enum(DIFFICULTIES).optional(),
+  // Поиск и постраничность — как на станции снимков. Форма параметров у всех
+  // станций одна: интерфейс каталога переключает станции, не меняя запрос.
+  q: z.string().trim().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  skip: z.coerce.number().int().min(0).max(100000).optional(),
 });
 
 // Отметки «разобрано» на замечаниях сохранённой рецензии: индексы в списке.

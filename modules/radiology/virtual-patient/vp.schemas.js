@@ -146,6 +146,11 @@ export const aiGenerateVpSchema = z.object({
 export const listVpQuerySchema = z.object({
   scope: z.enum(["published", "all"]).optional(),
   status: z.string().optional(),
+  difficulty: z.enum(DIFFICULTIES).optional(),
+  // Форма параметров общая для всех станций — см. modules/radiology/catalog.js.
+  q: z.string().trim().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  skip: z.coerce.number().int().min(0).max(100000).optional(),
 });
 
 // Отметки «разобрано» на замечаниях сохранённой рецензии: индексы в списке.

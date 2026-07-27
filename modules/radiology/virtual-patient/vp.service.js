@@ -14,6 +14,7 @@ import { combineTotal } from "../radiology-attempts/services/scoring.service.js"
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
 import { awardForAttempt } from "../game/game.service.js";
 import { gradeDiagnosis } from "../radiology-attempts/services/diagnosisMatcher.js";
+import { paginate, titleFilter } from "../catalog.js";
 import {
   previewPolicy,
   resolveAttemptStart,
@@ -179,20 +180,28 @@ export async function setVpStatus(caseId, status, actorId, actorRole) {
   return doc.toObject();
 }
 
-export async function listVpCases({ isEditor, scope, status }) {
+export async function listVpCases({ isEditor, scope, status, difficulty, q, skip, limit }) {
   const query = {};
   if (isEditor && scope === "all") {
     if (status) query.status = status;
   } else {
     query.status = "published";
   }
-  return VirtualPatientCase.find(query)
-    .sort({ createdAt: -1 })
-    .limit(200)
-    // variants и diagnosis наружу не отдаём: внутри варианта лежат тексты
-    // результатов обследований, то есть половина ответа.
-    .select("_id title difficulty status createdAt")
-    .lean();
+  if (difficulty) query.difficulty = difficulty;
+
+  const byTitle = titleFilter(q);
+  if (byTitle) Object.assign(query, byTitle);
+
+  return paginate(VirtualPatientCase, {
+    query,
+    // Белый список полей, а не исключение: variants и diagnosis наружу
+    // отдавать нельзя (внутри варианта лежат тексты результатов обследований,
+    // то есть половина ответа), и при добавлении нового поля в модель
+    // безопаснее забыть включить его, чем забыть исключить.
+    select: "_id title difficulty status createdAt",
+    skip,
+    limit,
+  });
 }
 
 export async function getVpCaseFull(caseId) {

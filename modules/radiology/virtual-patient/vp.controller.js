@@ -48,12 +48,18 @@ function throwZod(parsed) {
 export const listVpController = asyncHandler(async (req, res) => {
   const parsed = listVpQuerySchema.safeParse(req.query);
   if (!parsed.success) throwZod(parsed);
-  const items = await listVpCases({
+  const page = await listVpCases({
     isEditor: isAuthorRole(req.radiologyActor.role),
-    scope: parsed.data.scope,
-    status: parsed.data.status,
+    ...parsed.data,
   });
-  res.json({ items, count: items.length });
+  res.json({
+    items: page.items,
+    count: page.items.length,
+    total: page.total,
+    skip: page.skip,
+    limit: page.limit,
+    hasMore: page.hasMore,
+  });
 });
 
 // ИИ-генерация сценария ЦЕЛИКОМ по теме. Только автору. Ничего не сохраняет:

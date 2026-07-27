@@ -234,7 +234,8 @@ describe("эталон варианта не утекает", () => {
   });
 
   it("в списке кейсов вариантов нет", async () => {
-    const items = await listLabCases({ isEditor: false, scope: "published" });
+    // Список стал постраничным ({ items, total, hasMore }) — проекция та же.
+    const { items } = await listLabCases({ isEditor: false, scope: "published" });
     expect(items).toHaveLength(1);
     expect(items[0].variants).toBeUndefined();
     expect(items[0].significantAbnormal).toBeUndefined();

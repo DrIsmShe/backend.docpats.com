@@ -45,12 +45,18 @@ function throwZod(parsed) {
 export const listLabCasesController = asyncHandler(async (req, res) => {
   const parsed = listLabQuerySchema.safeParse(req.query);
   if (!parsed.success) throwZod(parsed);
-  const items = await listLabCases({
+  const page = await listLabCases({
     isEditor: isAuthorRole(req.radiologyActor.role),
-    scope: parsed.data.scope,
-    status: parsed.data.status,
+    ...parsed.data,
   });
-  res.json({ items, count: items.length });
+  res.json({
+    items: page.items,
+    count: page.items.length,
+    total: page.total,
+    skip: page.skip,
+    limit: page.limit,
+    hasMore: page.hasMore,
+  });
 });
 
 // ИИ-генерация кейса ЦЕЛИКОМ по теме. Только автору. Ничего не сохраняет:

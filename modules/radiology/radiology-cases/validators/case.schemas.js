@@ -176,7 +176,11 @@ export const listCasesQuerySchema = z.object({
   difficulty: z.enum(DIFFICULTIES).optional(),
   status: z.string().optional(), // валидируется в сервисе по роли
   scope: z.enum(["published", "all"]).optional(),
-  limit: z.coerce.number().int().min(1).max(200).optional(),
+  // Поиск по названию. Ограничение длины — не косметика: строка уходит в
+  // regexp, и осмысленный поиск в 200 символов не помещается.
+  q: z.string().trim().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  skip: z.coerce.number().int().min(0).max(100000).optional(),
 });
 
 // Отметки «разобрано» на замечаниях сохранённой рецензии: индексы в списке.

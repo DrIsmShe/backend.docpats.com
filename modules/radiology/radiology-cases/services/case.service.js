@@ -16,6 +16,7 @@ import {
 import { findingsForModality } from "../../lexicon/lexicon.js";
 import { recordCaseStats } from "../../radiology-attempts/services/caseStats.service.js";
 import { unresolvedAiIssues } from "../../ai/aiReviewFields.js";
+import { paginate, titleFilter } from "../../catalog.js";
 import { recordRadiologyEvent } from "../../audit/audit.service.js";
 import {
   ValidationError,
@@ -245,12 +246,18 @@ export async function listCases({ filters, isEditor }) {
     query.status = "published";
   }
 
-  const docs = await RadiologyCase.find(query)
-    .sort({ createdAt: -1 })
-    .limit(Math.min(filters.limit ?? 50, 200))
-    .select("-findings -impression") // список без эталона в любом случае
-    .lean();
-  return docs;
+  // Поиск по названию считает база. Раньше его не было вовсе, и фильтровать
+  // приходилось на клиенте — то есть только по той части каталога, которая
+  // доехала. Со страницей в 24 кейса это перестало бы работать сразу.
+  const byTitle = titleFilter(filters.q);
+  if (byTitle) Object.assign(query, byTitle);
+
+  return paginate(RadiologyCase, {
+    query,
+    select: "-findings -impression", // список без эталона в любом случае
+    skip: filters.skip,
+    limit: filters.limit,
+  });
 }
 
 // Полный кейс — только редактору (для авторинга/ревью).

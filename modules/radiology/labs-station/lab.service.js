@@ -10,6 +10,7 @@ import LabAttempt from "./models/labAttempt.model.js";
 import { combineTotal } from "../radiology-attempts/services/scoring.service.js";
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
 import { gradeDiagnosis } from "../radiology-attempts/services/diagnosisMatcher.js";
+import { paginate, titleFilter } from "../catalog.js";
 import {
   previewPolicy,
   resolveAttemptStart,
@@ -172,20 +173,26 @@ export async function setLabStatus(caseId, status, actorId, actorRole) {
   return doc.toObject();
 }
 
-export async function listLabCases({ isEditor, scope, status }) {
+export async function listLabCases({ isEditor, scope, status, difficulty, q, skip, limit }) {
   const query = {};
   if (isEditor && scope === "all") {
     if (status) query.status = status;
   } else {
     query.status = "published";
   }
-  return LabCase.find(query)
-    .sort({ createdAt: -1 })
-    .limit(200)
+  if (difficulty) query.difficulty = difficulty;
+
+  const byTitle = titleFilter(q);
+  if (byTitle) Object.assign(query, byTitle);
+
+  return paginate(LabCase, {
+    query,
     // variants исключаем не для экономии: внутри варианта лежат его значимые
     // отклонения, то есть ключ ответа.
-    .select("-significantAbnormal -impression -variants")
-    .lean();
+    select: "-significantAbnormal -impression -variants",
+    skip,
+    limit,
+  });
 }
 
 export async function getLabCaseFull(caseId) {

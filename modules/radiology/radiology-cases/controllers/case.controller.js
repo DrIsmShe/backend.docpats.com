@@ -145,11 +145,21 @@ export const listCasesController = asyncHandler(async (req, res) => {
   const parsed = listCasesQuerySchema.safeParse(req.query);
   if (!parsed.success) throwZod(parsed);
 
-  const items = await listCases({
+  // total — сколько всего подходит под фильтр, а не сколько уехало в ответе.
+  // Без него интерфейс не отличает «это весь каталог» от «это первая
+  // страница», а именно на этом раньше строилась ложная надпись «всего N».
+  const page = await listCases({
     filters: parsed.data,
     isEditor: isAuthorRole(req.radiologyActor.role),
   });
-  res.json({ items, count: items.length });
+  res.json({
+    items: page.items,
+    count: page.items.length,
+    total: page.total,
+    skip: page.skip,
+    limit: page.limit,
+    hasMore: page.hasMore,
+  });
 });
 
 export const createCaseController = asyncHandler(async (req, res) => {
