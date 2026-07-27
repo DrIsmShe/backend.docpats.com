@@ -49,6 +49,10 @@ router.use(requireClinician);
 // разбирает. Врач должен видеть протокол ДО того, как отправит материал.
 router.get("/modalities", ctrl.listModalitiesController);
 
+// Показатели, которые модуль узнаёт по ключу: по ним работают пороги
+// критических значений и связки. Форма ввода панели строится из этого списка.
+router.get("/labs/analytes", ctrl.listAnalytesController);
+
 // Дела.
 router.post("/cases", ctrl.createCaseController);
 router.get("/cases", ctrl.listCasesController);

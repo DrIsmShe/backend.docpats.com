@@ -4,6 +4,7 @@ import { asyncHandler } from "../../../../common/middlewares/errorHandler.js";
 import { ValidationError } from "../../../../common/utils/errors.js";
 import logger from "../../../../common/logger.js";
 import { describeModalities } from "../services/registry.js";
+import { describeAnalytes } from "../../labs/labRules.js";
 import {
   createCase,
   listCases,
@@ -41,6 +42,18 @@ function throwZod(parsed) {
 /** Справочник подмодулей: что умеет каждая модальность и по какому протоколу. */
 export const listModalitiesController = asyncHandler(async (req, res) => {
   res.json({ modalities: describeModalities(), advisoryNotice: ADVISORY_NOTICE });
+});
+
+/**
+ * Показатели, которые модуль узнаёт по ключу.
+ *
+ * Отдаём отдельным справочником, потому что ключ — рабочее поле, а не подпись:
+ * по нему срабатывают пороги критических значений и связки показателей. Если
+ * бы этот список жил на клиенте своей копией, добавленный здесь показатель
+ * молча не появлялся бы в форме ввода панели.
+ */
+export const listAnalytesController = asyncHandler(async (req, res) => {
+  res.json({ analytes: describeAnalytes() });
 });
 
 export const createCaseController = asyncHandler(async (req, res) => {

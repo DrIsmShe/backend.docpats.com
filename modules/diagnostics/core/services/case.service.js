@@ -14,7 +14,7 @@ import DiagnosticFinding from "../models/diagnosticFinding.model.js";
 import { decryptPHI } from "../../../../common/utils/phiCrypto.js";
 import { ADVISORY_NOTICE } from "../../constants.js";
 import { getModality } from "./registry.js";
-import { refreshCaseState } from "./analysis.service.js";
+import { collectAnalysisBlockers, refreshCaseState } from "./analysis.service.js";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../../../common/utils/errors.js";
 
 /* ─── Представление наружу (расшифровка) ──────────────────────────────── */
@@ -105,6 +105,16 @@ export async function getCaseFull(caseId, userId) {
     DiagnosticFinding.find({ caseId }).sort({ severity: 1, createdAt: 1 }).lean(),
   ]);
 
+  // Причины, по которым разбор сейчас не запустится, считает СЕРВЕР и отдаёт
+  // готовым списком. Интерфейс их только показывает.
+  //
+  // Иначе клиенту пришлось бы повторять условия гейтов у себя, а две копии
+  // одного правила расходятся всегда — и расходятся молча. Цена расхождения
+  // здесь высокая: кнопка «Разобрать» выглядела бы активной, врач нажимал бы
+  // её и получал отказ без объяснения, или, что хуже, интерфейс обещал бы
+  // проверку обезличивания, которой на сервере уже нет.
+  const blockers = collectAnalysisBlockers(doc, artifacts);
+
   return {
     case: presentCase(doc),
     artifacts: artifacts.map(presentArtifact),
@@ -113,6 +123,8 @@ export async function getCaseFull(caseId, userId) {
       modalityTitle: getModality(j.modality)?.title ?? j.modality,
     })),
     findings: findings.map(presentFinding),
+    blockers,
+    canAnalyze: blockers.length === 0,
     advisoryNotice: ADVISORY_NOTICE,
   };
 }

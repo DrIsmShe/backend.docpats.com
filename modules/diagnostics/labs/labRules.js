@@ -70,6 +70,64 @@ export const PAIRED_CHECKS = [
   },
 ];
 
+/**
+ * Показатели, которые модуль УЗНАЁТ по ключу.
+ *
+ * Зачем нужен явный справочник: ключ показателя — не подпись, а рабочее поле.
+ * По нему срабатывают пороги критических значений (isCritical) и связки
+ * (PAIRED_CHECKS). Показатель, названный «Гемоглобин» с ключом «hb», для кода
+ * не существует: гемоглобин 55 г/л не будет помечен критическим.
+ *
+ * Поэтому интерфейс обязан предлагать выбор из этого списка, а не свободный
+ * ввод ключа, и список должен приходить с сервера. Свой справочник на клиенте
+ * означал бы, что добавление показателя здесь молча не работает там.
+ *
+ * Ввести показатель не из списка можно — он попадёт в разбор и будет сравнён
+ * с референсом бланка. Не будет только автоматики порогов и связок, и врачу
+ * об этом говорится прямо, а не умалчивается.
+ */
+export const ANALYTES = [
+  { key: "hgb", label: "Гемоглобин", unit: "г/л" },
+  { key: "mcv", label: "MCV — средний объём эритроцита", unit: "фл" },
+  { key: "plt", label: "Тромбоциты", unit: "10⁹/л" },
+  { key: "wbc", label: "Лейкоциты", unit: "10⁹/л" },
+  { key: "neut", label: "Нейтрофилы, абсолютное число", unit: "10⁹/л" },
+  { key: "crp", label: "С-реактивный белок", unit: "мг/л" },
+  { key: "ferritin", label: "Ферритин", unit: "мкг/л" },
+  { key: "k", label: "Калий", unit: "ммоль/л" },
+  { key: "na", label: "Натрий", unit: "ммоль/л" },
+  { key: "ca", label: "Кальций общий", unit: "ммоль/л" },
+  { key: "glucose", label: "Глюкоза", unit: "ммоль/л" },
+  { key: "creatinine", label: "Креатинин", unit: "мкмоль/л" },
+  { key: "alt", label: "АЛТ", unit: "Ед/л" },
+  { key: "ast", label: "АСТ", unit: "Ед/л" },
+  { key: "bilirubin", label: "Билирубин общий", unit: "мкмоль/л" },
+  { key: "inr", label: "МНО", unit: "" },
+  { key: "tsh", label: "ТТГ", unit: "мЕд/л" },
+  { key: "ft4", label: "Свободный Т4", unit: "пмоль/л" },
+];
+
+/**
+ * Справочник для интерфейса: что известно о каждом показателе.
+ *
+ * critical — есть ли порог немедленных действий (и какой). Врач видит это до
+ * ввода, поэтому понимает, почему один показатель подсвечивается сам, а
+ * другой — только относительно референса с бланка.
+ */
+export function describeAnalytes() {
+  return ANALYTES.map((a) => {
+    const rule = CRITICAL_THRESHOLDS[a.key] ?? null;
+    const paired = PAIRED_CHECKS.filter((p) => p.keys.includes(a.key)).flatMap((p) =>
+      p.keys.filter((k) => k !== a.key),
+    );
+    return {
+      ...a,
+      critical: rule ? { low: rule.low ?? null, high: rule.high ?? null, why: rule.why } : null,
+      pairedWith: [...new Set(paired)],
+    };
+  });
+}
+
 function toNumber(value) {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
   const normalized = String(value ?? "")
