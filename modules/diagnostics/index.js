@@ -14,8 +14,10 @@
 // материалы — в тренажёре.
 
 import express from "express";
+import multer from "multer";
 
 import { requireClinician } from "./middlewares/diagnosticsAuth.js";
+import { ALLOWED_MIME, MAX_FILE_BYTES } from "./ai/documentReader.js";
 import * as ctrl from "./core/controllers/diagnostics.controller.js";
 import {
   errorHandler,
@@ -60,6 +62,26 @@ router.get("/cases/:id", ctrl.getCaseController);
 router.patch("/cases/:id", ctrl.updateCaseController);
 router.post("/cases/:id/close", ctrl.closeCaseController);
 router.post("/cases/:id/reopen", ctrl.reopenCaseController);
+
+// Распознавание документа: фото бланка или PDF → текст.
+//
+// memoryStorage, а не диск: файл не должен пережить запрос. Он не пишется ни
+// на диск, ни в R2 — в дело попадает только текст, и только после проверки
+// врачом. Хранилища, которого нет, не существует и для утечки.
+//
+// Предел размера дублирует проверку в documentReader намеренно: multer
+// отказывает до того, как файл целиком окажется в памяти процесса, а
+// documentReader — до того, как он уйдёт в модель. Это разные рубежи.
+const documentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_FILE_BYTES, files: 1 },
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_MIME.includes(file.mimetype)) return cb(null, true);
+    cb(new Error(`Формат ${file.mimetype} не поддерживается`));
+  },
+});
+
+router.post("/cases/:id/extract", documentUpload.single("file"), ctrl.extractDocumentController);
 
 // Материалы дела.
 router.post("/cases/:id/artifacts", ctrl.addArtifactController);

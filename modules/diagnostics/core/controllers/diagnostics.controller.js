@@ -1,7 +1,7 @@
 // server/modules/diagnostics/core/controllers/diagnostics.controller.js
 
 import { asyncHandler } from "../../../../common/middlewares/errorHandler.js";
-import { ValidationError } from "../../../../common/utils/errors.js";
+import { ValidationError, NotFoundError } from "../../../../common/utils/errors.js";
 import logger from "../../../../common/logger.js";
 import { describeModalities } from "../services/registry.js";
 import { describeAnalytes } from "../../labs/labRules.js";
@@ -32,6 +32,8 @@ import {
   listCasesQuerySchema,
 } from "../validators/diagnostics.schemas.js";
 import { ADVISORY_NOTICE } from "../../constants.js";
+import { readDocument } from "../../ai/documentReader.js";
+import DiagnosticCase from "../models/diagnosticCase.model.js";
 
 function throwZod(parsed) {
   throw new ValidationError("Validation failed", {
@@ -151,4 +153,75 @@ export const verdictController = asyncHandler(async (req, res) => {
 
 export const statsController = asyncHandler(async (req, res) => {
   res.json({ byModality: await feedbackStats(req.diagnosticsActor.userId) });
+});
+
+/**
+ * Распознавание документа: фото бланка или PDF → текст.
+ *
+ * Файл НЕ сохраняется: он живёт в памяти на время запроса, наружу уходит
+ * только текст. В дело он попадёт отдельным действием врача — после того как
+ * тот прочитает распознанное и поправит. Автоматически добавлять нельзя:
+ * ошибка в одной цифре анализа меняет вывод, а проверить её может только
+ * человек, у которого перед глазами оригинал.
+ *
+ * Гейты те же, что у разбора, и по той же причине: файл уходит внешней модели.
+ * Отдельного «согласия на распознавание» нет намеренно — это то же самое
+ * согласие, а лишний флажок превращает осознанное решение в рутину.
+ */
+export const extractDocumentController = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new ValidationError("Файл не приложен");
+  }
+
+  const caseDoc = await DiagnosticCase.findOne({
+    _id: req.params.id,
+    ownerId: req.diagnosticsActor.userId,
+  }).lean();
+  if (!caseDoc) throw new NotFoundError("Дело не найдено");
+  if (caseDoc.status === "closed") {
+    throw new ValidationError("Дело закрыто — переоткройте его, чтобы добавить материалы");
+  }
+
+  const blockers = [];
+  if (!caseDoc.deidentified) {
+    blockers.push("подтвердите, что материалы обезличены");
+  }
+  if (!caseDoc.aiConsent?.confirmed) {
+    blockers.push("подтвердите согласие на обработку внешней моделью");
+  }
+  if (blockers.length) {
+    throw new ValidationError(`Распознавание не запущено: ${blockers.join("; ")}`, {
+      blockers,
+    });
+  }
+
+  const result = await readDocument({
+    buffer: req.file.buffer,
+    mimeType: req.file.mimetype,
+    hint: typeof req.body?.hint === "string" ? req.body.hint : "",
+  });
+
+  logger?.info?.(
+    {
+      caseId: req.params.id,
+      // Структурные данные, без содержимого: PHI в логах не место.
+      mime: req.file.mimetype,
+      bytes: req.file.size,
+      pages: result.pages,
+      textLength: result.text.length,
+      unreadable: result.unreadable.length,
+    },
+    "diagnostics document extracted",
+  );
+
+  res.json({
+    text: result.text,
+    docKind: result.docKind,
+    unreadable: result.unreadable,
+    hasPatientIdentity: result.hasPatientIdentity,
+    fileName: req.file.originalname ?? "",
+    pages: result.pages,
+    model: result.model,
+    promptVersion: result.promptVersion,
+  });
 });

@@ -65,7 +65,17 @@ export function isConfigured() {
  * @param {string} [args.what]      что разбираем — для текста ошибки
  * @returns {Promise<{parsed: object, usage: {inputTokens: number, outputTokens: number}}>}
  */
-export async function runJson({ system, instruction, schema, maxTokens = 12000, what = "материал" }) {
+export async function runJson({
+  system,
+  instruction,
+  schema,
+  maxTokens = 12000,
+  what = "материал",
+  // Готовые блоки содержимого — для случаев, когда в запрос уходит не только
+  // текст (изображение бланка, страница PDF). Если заданы, instruction
+  // игнорируется: собрать блоки правильно может только вызывающий код.
+  content = null,
+}) {
   if (!isConfigured()) {
     throw new ServiceUnavailableError(
       "ИИ не настроен: задайте ANTHROPIC_API_KEY в .env сервера",
@@ -87,7 +97,7 @@ export async function runJson({ system, instruction, schema, maxTokens = 12000, 
       output_config: {
         format: { type: "json_schema", schema: prepareSchema(schema, logger, what) },
       },
-      messages: [{ role: "user", content: instruction }],
+      messages: [{ role: "user", content: content ?? instruction }],
       ...(FALLBACKS_ENABLED
         ? { betas: [FALLBACK_BETA], fallbacks: "default" }
         : {}),
