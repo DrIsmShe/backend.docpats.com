@@ -53,6 +53,7 @@ import paymentsWebhookRouter from "./modules/payments/webhook.routes.js";
 import educationRoutes from "./modules/education/index.js";
 import educationGuestRoutes from "./modules/education/education-guest/index.js";
 import radiologyRoutes from "./modules/radiology/index.js";
+import diagnosticsRoutes from "./modules/diagnostics/index.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -330,6 +331,12 @@ app.use("/api/v1/education", educationRoutes);
 // education. Гостевого контура пока нет: тренажёр чтения снимков закрыт
 // авторизацией целиком.
 app.use("/api/v1/radiology", radiologyRoutes);
+
+// Диагностическая помощь — работа с материалами ЖИВЫХ пациентов, в отличие от
+// учебной арены выше. Тоже глобальный модуль (опирается на req.session), но
+// доступ только врачам, и внутри жёсткие гейты: без подтверждения
+// обезличивания и согласия материалы наружу не уходят.
+app.use("/api/v1/diagnostics", diagnosticsRoutes);
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
 await import("./common/models/index.js")
