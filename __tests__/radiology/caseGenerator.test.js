@@ -17,7 +17,8 @@ const finalMessage = vi.fn();
 vi.mock(
   "../../modules/education/education-ingest/extractors/claude.extractor.js",
   () => ({
-    getClient: () => ({ messages: { stream: () => ({ finalMessage }) } }),
+    // Клиент зовётся через beta-путь: там передаются fallbacks.
+    getClient: () => ({ beta: { messages: { stream: () => ({ finalMessage }) } } }),
     describeApiError: (err) => ({
       retryable: false,
       message: String(err?.message ?? err),

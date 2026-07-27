@@ -27,6 +27,18 @@ export const MODEL =
   process.env.EDUCATION_EXTRACTOR_MODEL ||
   "claude-opus-5";
 
+// Запасная модель при отказе классификаторов безопасности. Медицинский
+// материал — как раз та область, где ложное срабатывание вероятно: описание
+// травмы, отравления или инфекции легко выглядит «опасной темой», и без
+// запасного пути автор получал бы отказ на ровном месте.
+//
+// "default" — сервер сам подбирает замену по категории отказа; так не придётся
+// мигрировать, когда конкретная запасная модель уйдёт из поддержки.
+// Выключатель — на случай, если бета станет недоступна: иначе это 400 на
+// каждый вызов модели в проде.
+const FALLBACKS_ENABLED = process.env.ANTHROPIC_FALLBACKS !== "off";
+const FALLBACK_BETA = "server-side-fallback-2026-07-01";
+
 /** Настроен ли ИИ (тот же ключ, что у остальных ИИ-функций модуля). */
 export function isConfigured() {
   return Boolean(
@@ -65,13 +77,17 @@ export async function runJson({
   const client = getClient();
   let message;
   try {
-    const stream = client.messages.stream({
+    // Бета-путь нужен ради fallbacks: на обычный вызов их не передать.
+    const stream = client.beta.messages.stream({
       model: MODEL,
       max_tokens: maxTokens,
       thinking: { type: "adaptive" },
       system,
       output_config: { format: { type: "json_schema", schema } },
       messages: [{ role: "user", content: instruction }],
+      ...(FALLBACKS_ENABLED
+        ? { betas: [FALLBACK_BETA], fallbacks: "default" }
+        : {}),
     });
     message = await stream.finalMessage();
   } catch (err) {
@@ -86,7 +102,10 @@ export async function runJson({
   }
 
   if (message.stop_reason === "refusal") {
-    throw new ValidationError(`ИИ отказался обрабатывать этот ${what}`);
+    // С включёнными fallbacks это значит, что отказалась вся цепочка моделей.
+    throw new ValidationError(
+      `ИИ отказался обрабатывать этот ${what} — переформулируйте тему нейтральнее`,
+    );
   }
   if (message.stop_reason === "max_tokens") {
     throw new ServiceUnavailableError(
@@ -99,6 +118,9 @@ export async function runJson({
   try {
     return {
       parsed: JSON.parse(textBlock.text),
+      // Модель, которая реально ответила: при срабатывании fallbacks это не та,
+      // которую просили, и записывать надо её.
+      model: message.model ?? MODEL,
       usage: {
         inputTokens: message.usage?.input_tokens ?? 0,
         outputTokens: message.usage?.output_tokens ?? 0,

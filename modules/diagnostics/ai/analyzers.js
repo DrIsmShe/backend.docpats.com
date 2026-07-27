@@ -19,7 +19,9 @@
 
 import { analyzePanel } from "../labs/labRules.js";
 import { FINDINGS_SCHEMA, normalizeFindings } from "./findings.schema.js";
-import { MODEL, PROMPT_VERSION, runJson, str } from "./runner.js";
+// MODEL здесь не нужен: модель для происхождения вывода берётся из ответа
+// (при срабатывании fallbacks отвечает не та, которую просили).
+import { PROMPT_VERSION, runJson, str } from "./runner.js";
 
 const SYSTEM_BASE = [
   "Ты помогаешь врачу разбирать клинический материал.",
@@ -106,14 +108,14 @@ export const reportAnalyzer = {
       .filter(Boolean)
       .join("\n");
 
-    const { parsed, usage } = await runJson({
+    const { parsed, usage, model } = await runJson({
       system: SYSTEM_BASE,
       instruction,
       schema: FINDINGS_SCHEMA,
       what: `заключение (${modality.key})`,
     });
 
-    return { ...normalizeFindings(parsed), usage, model: MODEL, promptVersion: PROMPT_VERSION };
+    return { ...normalizeFindings(parsed), usage, model, promptVersion: PROMPT_VERSION };
   },
 };
 
@@ -172,7 +174,7 @@ export const labsAnalyzer = {
       .filter(Boolean)
       .join("\n");
 
-    const { parsed, usage } = await runJson({
+    const { parsed, usage, model } = await runJson({
       system: SYSTEM_BASE,
       instruction,
       schema: FINDINGS_SCHEMA,
@@ -201,7 +203,7 @@ export const labsAnalyzer = {
       findings: [...criticalFindings, ...normalized.findings].slice(0, 14),
       computed: computed?.summary ?? null,
       usage,
-      model: MODEL,
+      model,
       promptVersion: PROMPT_VERSION,
     };
   },
@@ -230,14 +232,14 @@ export const clinicalAnalyzer = {
       .filter(Boolean)
       .join("\n");
 
-    const { parsed, usage } = await runJson({
+    const { parsed, usage, model } = await runJson({
       system: SYSTEM_BASE,
       instruction,
       schema: FINDINGS_SCHEMA,
       what: "клинический случай",
     });
 
-    return { ...normalizeFindings(parsed), usage, model: MODEL, promptVersion: PROMPT_VERSION };
+    return { ...normalizeFindings(parsed), usage, model, promptVersion: PROMPT_VERSION };
   },
 };
 

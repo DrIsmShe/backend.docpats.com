@@ -31,6 +31,22 @@ export const MODEL =
   process.env.RADIOLOGY_AI_MODEL ||
   "claude-opus-5";
 
+// Запасная модель на случай отказа классификаторов безопасности.
+//
+// Классификаторы Opus 5 иногда отклоняют запрос целиком (HTTP 200,
+// stop_reason: "refusal"), и медицинский материал — как раз та область, где
+// ложное срабатывание вероятно: описание травмы или отравления легко
+// выглядит «опасной темой». Без запасного пути врач просто получал бы отказ.
+//
+// "default" — режим, в котором сервер сам выбирает замену по категории
+// отказа. Это лучше жёстко вписанной модели: не придётся мигрировать, когда
+// конкретная модель уйдёт из поддержки.
+//
+// Выключатель на случай, если бета перестанет быть доступной: без него
+// недоступность параметра означала бы 400 на каждый вызов модели в проде.
+const FALLBACKS_ENABLED = process.env.ANTHROPIC_FALLBACKS !== "off";
+const FALLBACK_BETA = "server-side-fallback-2026-07-01";
+
 export function isConfigured() {
   return Boolean(
     (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || "").trim(),
@@ -59,13 +75,17 @@ export async function runJson({ system, instruction, schema, maxTokens = 12000, 
   let message;
   try {
     // Стрим — потому что разбор с рассуждением дольше HTTP-таймаута SDK.
-    const stream = client.messages.stream({
+    // Бета-путь нужен ради fallbacks; на обычный вызов их не передать.
+    const stream = client.beta.messages.stream({
       model: MODEL,
       max_tokens: maxTokens,
       thinking: { type: "adaptive" },
       system,
       output_config: { format: { type: "json_schema", schema } },
       messages: [{ role: "user", content: instruction }],
+      ...(FALLBACKS_ENABLED
+        ? { betas: [FALLBACK_BETA], fallbacks: "default" }
+        : {}),
     });
     message = await stream.finalMessage();
   } catch (err) {
@@ -80,8 +100,13 @@ export async function runJson({ system, instruction, schema, maxTokens = 12000, 
   }
 
   if (message.stop_reason === "refusal") {
-    // Отказ модели — это результат, а не сбой: врачу так и пишем.
-    throw new ValidationError(`Модель отказалась разбирать ${what}`);
+    // Отказ — это результат, а не сбой: врачу так и пишем. С включёнными
+    // fallbacks это означает, что отказалась ВСЯ цепочка моделей, а не одна.
+    throw new ValidationError(
+      `Модель отказалась разбирать ${what}. Если материал клинический, ` +
+        `перескажите его нейтральнее и повторите — это ограничение фильтров, ` +
+        `а не оценка вашего запроса.`,
+    );
   }
   if (message.stop_reason === "max_tokens") {
     throw new ServiceUnavailableError(
@@ -95,6 +120,10 @@ export async function runJson({ system, instruction, schema, maxTokens = 12000, 
   try {
     return {
       parsed: JSON.parse(textBlock.text),
+      // Модель, которая РЕАЛЬНО ответила. При срабатывании fallbacks это не
+      // та, что мы просили, и в происхождении вывода должна стоять она —
+      // иначе через полгода запись будет врать о том, кто это сказал.
+      model: message.model ?? MODEL,
       usage: {
         inputTokens: message.usage?.input_tokens ?? 0,
         outputTokens: message.usage?.output_tokens ?? 0,

@@ -16,7 +16,7 @@
 // что видит учащийся: жалоба, панель, контекст. Эталон не передаём —
 // иначе получим пересказ эталона, а не то, что реально принесут из чата.
 
-import { runJson, str, MODEL, isConfigured } from "./aiRunner.js";
+import { runJson, str, isConfigured } from "./aiRunner.js";
 
 export { isConfigured };
 
@@ -66,7 +66,7 @@ export async function generateBaselineAnswer({ title, context = "", data = [], s
     .filter(Boolean)
     .join("\n");
 
-  const { parsed } = await runJson({
+  const { parsed, model } = await runJson({
     system: SYSTEM,
     instruction,
     schema: SCHEMA,
@@ -74,5 +74,6 @@ export async function generateBaselineAnswer({ title, context = "", data = [], s
     what: "типовой ответ",
   });
 
-  return { text: str(parsed.answer, 6000), model: MODEL };
+  // model — та, что реально ответила (при fallbacks это не запрошенная).
+  return { text: str(parsed.answer, 6000), model };
 }
