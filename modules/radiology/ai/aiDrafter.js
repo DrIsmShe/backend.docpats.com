@@ -69,7 +69,7 @@ function parseModelJson(message, describeApiError) {
 // Форма ответа гарантируется structured outputs. Числовые ограничения
 // (min/max) схема structured outputs не поддерживает — держим их только в
 // описаниях, а координаты клампим уже на нашей стороне.
-const DRAFT_SCHEMA = {
+export const DRAFT_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: ["title", "clinicalContext", "findings", "impression"],
@@ -278,7 +278,7 @@ export async function draftCase({ imageUrl, modality, hint, imageIndex = 0 }) {
 // учащегося. Это учебный разбор поверх детерминированной оценки, а не
 // замена ей: баллы считает scoring.service, а здесь — «врач-преподаватель».
 
-const ANALYSIS_SCHEMA = {
+export const ANALYSIS_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: ["diagnosis", "conclusion", "analysis"],

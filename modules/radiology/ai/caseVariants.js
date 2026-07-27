@@ -18,7 +18,7 @@ import { ValidationError } from "../../../common/utils/errors.js";
 
 export { isConfigured };
 
-const LAB_SCHEMA = {
+export const LAB_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: ["variants"],
@@ -26,7 +26,6 @@ const LAB_SCHEMA = {
     variants: {
       type: "array",
       minItems: 1,
-      maxItems: 4,
       items: {
         type: "object",
         additionalProperties: false,
@@ -59,7 +58,7 @@ const LAB_SCHEMA = {
   },
 };
 
-const VP_SCHEMA = {
+export const VP_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: ["variants"],
@@ -67,7 +66,6 @@ const VP_SCHEMA = {
     variants: {
       type: "array",
       minItems: 1,
-      maxItems: 4,
       items: {
         type: "object",
         additionalProperties: false,

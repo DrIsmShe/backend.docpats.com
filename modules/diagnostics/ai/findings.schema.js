@@ -22,7 +22,10 @@ export const FINDINGS_SCHEMA = {
     },
     findings: {
       type: "array",
-      maxItems: 12,
+      // Лимит НЕ в схеме: API отвергает maxItems (см.
+      // common/utils/structuredOutputSchema.js). Просьба — в description,
+      // фактическая обрезка — в normalizeFindings ниже.
+      description: "Не больше 12 выводов: перечисление всего подряд бесполезно врачу",
       items: {
         type: "object",
         additionalProperties: false,
@@ -47,13 +50,12 @@ export const FINDINGS_SCHEMA = {
           },
           recommendations: {
             type: "array",
-            maxItems: 5,
             items: { type: "string" },
-            description: "Что уточнить, дообследовать, перепроверить",
+            description: "Что уточнить, дообследовать, перепроверить. Не больше 5.",
           },
           citations: {
             type: "array",
-            maxItems: 3,
+            description: "Не больше 3 источников",
             items: {
               type: "object",
               additionalProperties: false,
@@ -69,9 +71,8 @@ export const FINDINGS_SCHEMA = {
     },
     dataGaps: {
       type: "array",
-      maxItems: 8,
       items: { type: "string" },
-      description: "Чего не хватает в материале, чтобы судить увереннее",
+      description: "Чего не хватает в материале, чтобы судить увереннее. Не больше 8.",
     },
   },
 };

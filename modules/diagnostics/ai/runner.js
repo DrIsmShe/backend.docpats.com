@@ -23,6 +23,7 @@ import {
   ServiceUnavailableError,
 } from "../../../common/utils/errors.js";
 import logger from "../../../common/logger.js";
+import { prepareSchema } from "../../../common/utils/structuredOutputSchema.js";
 
 export const PROMPT_VERSION = "diag-2026-07-27";
 
@@ -81,7 +82,11 @@ export async function runJson({ system, instruction, schema, maxTokens = 12000, 
       max_tokens: maxTokens,
       thinking: { type: "adaptive" },
       system,
-      output_config: { format: { type: "json_schema", schema } },
+      // Схема приводится к подмножеству, которое принимает API: лишний ключ
+      // вроде maxItems даёт 400 на КАЖДЫЙ вызов, и узнаёт об этом врач.
+      output_config: {
+        format: { type: "json_schema", schema: prepareSchema(schema, logger, what) },
+      },
       messages: [{ role: "user", content: instruction }],
       ...(FALLBACKS_ENABLED
         ? { betas: [FALLBACK_BETA], fallbacks: "default" }

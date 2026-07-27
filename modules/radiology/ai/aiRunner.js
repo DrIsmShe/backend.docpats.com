@@ -18,6 +18,7 @@ import {
   ServiceUnavailableError,
 } from "../../../common/utils/errors.js";
 import logger from "../../../common/logger.js";
+import { prepareSchema } from "../../../common/utils/structuredOutputSchema.js";
 
 // Модель. Пин через RADIOLOGY_AI_MODEL в .env; по умолчанию — актуальная
 // Opus: кейс придумывает медицинские данные (референсы, значимость находок),
@@ -83,7 +84,11 @@ export async function runJson({
       max_tokens: maxTokens,
       thinking: { type: "adaptive" },
       system,
-      output_config: { format: { type: "json_schema", schema } },
+      // См. common/utils/structuredOutputSchema.js: неподдерживаемый ключ в
+      // схеме — это 400 на каждый вызов, а не изредка.
+      output_config: {
+        format: { type: "json_schema", schema: prepareSchema(schema, logger, what) },
+      },
       messages: [{ role: "user", content: instruction }],
       ...(FALLBACKS_ENABLED
         ? { betas: [FALLBACK_BETA], fallbacks: "default" }
