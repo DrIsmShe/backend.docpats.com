@@ -36,6 +36,25 @@ export const ACTION_ENUM = [
   "consent_request.approve", // пациент одобрил (на будущее)
   "consent_request.reject", // пациент отклонил (на будущее)
   "consent_request.expire", // авто-истечение pending (cron)
+  // ═══════════ DIAGNOSTICS (второе мнение по материалам пациента) ═══════════
+  // Модуль работает с PHI живых пациентов и ОТПРАВЛЯЕТ материалы внешней
+  // модели. Поэтому отдельными действиями выделены ровно те два события, в
+  // которых данные покидают наш контур, — по ним потом отвечают на вопрос
+  // «что именно ушло наружу, когда и на каком основании».
+  "diagnostics.case.create",
+  "diagnostics.case.read",
+  "diagnostics.case.list",
+  "diagnostics.case.update",
+  "diagnostics.case.close",
+  "diagnostics.case.reopen",
+  "diagnostics.artifact.add",
+  "diagnostics.artifact.remove",
+  "diagnostics.consent", // врач подтвердил обезличивание и согласие
+  "diagnostics.analyze", // материалы ушли внешней модели на разбор
+  "diagnostics.extract", // документ ушёл внешней модели на распознавание
+  "diagnostics.finding.verdict", // вердикт врача по выводу
+  "diagnostics.export", // выгрузка заключения по делу
+
   // ═══════════ AUTH (отдельно от старого AuditLog в common/) ═══════════
   "auth.login",
   "auth.logout",
@@ -434,6 +453,13 @@ export const RESOURCE_TYPE_ENUM = [
   "telemed-session",
   "consilium",
   "consilium-message",
+
+  // Diagnostics (второе мнение). diagnostic-case содержит PHI: клинический
+  // контекст, метку пациента, материалы. diagnostic-finding — вывод разбора
+  // и поправка врача к нему.
+  "diagnostic-case",
+  "diagnostic-artifact",
+  "diagnostic-finding",
 
   // Catch-all
   "other",

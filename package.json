@@ -8,7 +8,8 @@
     "dev": "nodemon index.js",
     "worker": "node modules/translation/translation.worker.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "worker:diagnostics": "node modules/diagnostics/jobs/analysis.worker.js"
   },
   "engines": {
     "node": "20.x"

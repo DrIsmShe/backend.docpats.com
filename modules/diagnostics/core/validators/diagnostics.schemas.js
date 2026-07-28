@@ -86,5 +86,6 @@ export const verdictSchema = z.object({
 
 export const listCasesQuerySchema = z.object({
   status: z.enum(CASE_STATUSES).optional(),
-  limit: z.coerce.number().int().min(1).max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  skip: z.coerce.number().int().min(0).max(100000).optional(),
 });

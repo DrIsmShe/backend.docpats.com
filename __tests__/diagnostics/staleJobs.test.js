@@ -106,7 +106,8 @@ describe("дело не зависает в «идёт разбор» навсе
     const c = await caseWithQueuedJobs();
     await ageJobs(c._id, STALE_JOB_MS + 60_000, { asRunning: true });
 
-    const items = await listCases({ userId });
+    // Список теперь постраничный: { items, total, hasMore }.
+    const { items } = await listCases({ userId });
     const mine = items.find((i) => String(i._id) === String(c._id));
     expect(mine.status).not.toBe("analyzing");
   });

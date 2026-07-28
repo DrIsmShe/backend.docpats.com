@@ -12,6 +12,7 @@ import DiagnosticArtifact from "../models/diagnosticArtifact.model.js";
 import DiagnosticJob from "../models/diagnosticJob.model.js";
 import DiagnosticFinding from "../models/diagnosticFinding.model.js";
 import { decryptPHI } from "../../../../common/utils/phiCrypto.js";
+import { paginate } from "../../../../common/utils/pagination.js";
 import { ADVISORY_NOTICE } from "../../constants.js";
 import { getModality } from "./registry.js";
 import {
@@ -84,7 +85,21 @@ export async function createCase(input, { userId, clinicId = null }) {
   return presentCase(doc.toObject());
 }
 
-export async function listCases({ userId, status, limit = 50 }) {
+/**
+ * Дела врача — страницей и с общим числом.
+ *
+ * Раньше отдавались «первые 50» без признака усечения: на 200+ делах врач
+ * переставал видеть часть своих и не узнавал об этом. Тот же дефект уже
+ * находился в каталоге тренажёра — механика теперь общая
+ * (common/utils/pagination.js), чтобы не расходилась третий раз.
+ *
+ * Поиск по названию идёт по ЗАШИФРОВАННОМУ полю, поэтому невозможен: заголовок
+ * лежит в базе шифртекстом. Отсюда фильтр только по статусу — искать по тексту
+ * можно будет, когда для заголовка появится слепой индекс, как у телефона и
+ * почты. Молчать об этом нельзя: отсутствующий поиск лучше поиска, который
+ * ничего не находит по непонятной причине.
+ */
+export async function listCases({ userId, status, skip = 0, limit } = {}) {
   // Брошенные задания (обрыв процесса на середине разбора) оставляют дело
   // навсегда в статусе «Идёт разбор». Чиним при чтении списка — там, где врач
   // на это и смотрит.
@@ -92,11 +107,14 @@ export async function listCases({ userId, status, limit = 50 }) {
 
   const query = { ownerId: userId };
   if (status) query.status = status;
-  const items = await DiagnosticCase.find(query)
-    .sort({ updatedAt: -1 })
-    .limit(Math.min(limit, 200))
-    .lean();
-  return items.map(presentCase);
+
+  const page = await paginate(DiagnosticCase, {
+    query,
+    sort: { updatedAt: -1 },
+    skip,
+    limit,
+  });
+  return { ...page, items: page.items.map(presentCase) };
 }
 
 /** Дело целиком: материалы, задания, выводы. Только владельцу. */

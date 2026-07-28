@@ -61,6 +61,9 @@ router.get("/cases", ctrl.listCasesController);
 router.get("/cases/:id", ctrl.getCaseController);
 router.patch("/cases/:id", ctrl.updateCaseController);
 router.post("/cases/:id/close", ctrl.closeCaseController);
+
+// Выгрузка протокола разбора одним файлом. HTML — печатается в PDF из браузера.
+router.get("/cases/:id/export", ctrl.exportCaseController);
 router.post("/cases/:id/reopen", ctrl.reopenCaseController);
 
 // Распознавание документа: фото бланка или PDF → текст.

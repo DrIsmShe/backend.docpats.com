@@ -34,6 +34,12 @@ import {
 import { ADVISORY_NOTICE } from "../../constants.js";
 import { readDocument } from "../../ai/documentReader.js";
 import DiagnosticCase from "../models/diagnosticCase.model.js";
+import DiagnosticArtifact from "../models/diagnosticArtifact.model.js";
+import { trace, traceEgress, describeArtifacts } from "../../audit.js";
+import { assertAnalyzeAllowed, assertExtractAllowed, analyzeQuotaLeft } from "../services/quota.service.js";
+import HIPAAAuditLog from "../../../audit/models/AuditLog.model.js";
+import { enqueueAnalysis } from "../../jobs/analysis.queue.js";
+import { renderCaseDocument } from "../services/export.service.js";
 
 function throwZod(parsed) {
   throw new ValidationError("Validation failed", {
@@ -65,45 +71,114 @@ export const createCaseController = asyncHandler(async (req, res) => {
     userId: req.diagnosticsActor.userId,
     clinicId: req.diagnosticsActor.clinicId ?? null,
   });
+  trace(req, { action: "diagnostics.case.create", resourceId: doc._id });
   res.status(201).json({ case: doc });
 });
 
 export const listCasesController = asyncHandler(async (req, res) => {
   const parsed = listCasesQuerySchema.safeParse(req.query ?? {});
   if (!parsed.success) throwZod(parsed);
-  const items = await listCases({ userId: req.diagnosticsActor.userId, ...parsed.data });
-  res.json({ items, count: items.length });
+  const page = await listCases({ userId: req.diagnosticsActor.userId, ...parsed.data });
+  trace(req, { action: "diagnostics.case.list", metadata: { returned: page.items.length, total: page.total } });
+  res.json({
+    items: page.items,
+    count: page.items.length,
+    total: page.total,
+    skip: page.skip,
+    limit: page.limit,
+    hasMore: page.hasMore,
+  });
 });
 
 export const getCaseController = asyncHandler(async (req, res) => {
-  res.json(await getCaseFull(req.params.id, req.diagnosticsActor.userId));
+  const full = await getCaseFull(req.params.id, req.diagnosticsActor.userId);
+  // Чтение дела — это доступ к PHI, и он подлежит журналированию так же, как
+  // чтение карты пациента: «кто открывал» — обязательная часть ответа.
+  trace(req, {
+    action: "diagnostics.case.read",
+    resourceId: req.params.id,
+    metadata: {
+      artifacts: full.artifacts.length,
+      findings: full.findings.length,
+      status: full.case?.status,
+    },
+  });
+  res.json(full);
 });
 
 export const updateCaseController = asyncHandler(async (req, res) => {
   const parsed = updateCaseSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
-  res.json({ case: await updateCase(req.params.id, parsed.data, req.diagnosticsActor.userId) });
+  const doc = await updateCase(req.params.id, parsed.data, req.diagnosticsActor.userId);
+
+  // Подтверждение гейтов — отдельное событие, а не «обновление дела»:
+  // это основание, на котором данные потом уходят наружу, и искать его в
+  // общем потоке правок нельзя.
+  if (parsed.data.deidentified === true || parsed.data.aiConsent === true) {
+    trace(req, {
+      action: "diagnostics.consent",
+      resourceId: req.params.id,
+      metadata: {
+        deidentified: Boolean(doc.deidentified),
+        aiConsent: Boolean(doc.aiConsent?.confirmed),
+      },
+    });
+  } else {
+    trace(req, {
+      action: "diagnostics.case.update",
+      resourceId: req.params.id,
+      metadata: { fields: Object.keys(parsed.data) },
+    });
+  }
+  res.json({ case: doc });
 });
 
 export const closeCaseController = asyncHandler(async (req, res) => {
   const parsed = closeCaseSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
-  res.json({ case: await closeCase(req.params.id, parsed.data, req.diagnosticsActor.userId) });
+  const doc = await closeCase(req.params.id, parsed.data, req.diagnosticsActor.userId);
+  trace(req, {
+    action: "diagnostics.case.close",
+    resourceId: req.params.id,
+    metadata: { summaryLength: parsed.data.summary.length },
+  });
+  res.json({ case: doc });
 });
 
 export const reopenCaseController = asyncHandler(async (req, res) => {
-  res.json({ case: await reopenCase(req.params.id, req.diagnosticsActor.userId) });
+  const doc = await reopenCase(req.params.id, req.diagnosticsActor.userId);
+  trace(req, { action: "diagnostics.case.reopen", resourceId: req.params.id });
+  res.json({ case: doc });
 });
 
 export const addArtifactController = asyncHandler(async (req, res) => {
   const parsed = addArtifactSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
   const doc = await addArtifact(req.params.id, parsed.data, req.diagnosticsActor.userId);
+  trace(req, {
+    action: "diagnostics.artifact.add",
+    resourceType: "diagnostic-artifact",
+    resourceId: doc._id,
+    metadata: {
+      caseId: String(req.params.id),
+      kind: doc.kind,
+      modality: doc.modality || null,
+      textLength: String(doc.text ?? "").length,
+      items: parsed.data.structured?.items?.length ?? 0,
+    },
+  });
   res.status(201).json({ artifact: doc });
 });
 
 export const removeArtifactController = asyncHandler(async (req, res) => {
-  res.json(await removeArtifact(req.params.artifactId, req.diagnosticsActor.userId));
+  const out = await removeArtifact(req.params.artifactId, req.diagnosticsActor.userId);
+  trace(req, {
+    action: "diagnostics.artifact.remove",
+    resourceType: "diagnostic-artifact",
+    resourceId: req.params.artifactId,
+    metadata: { caseId: String(req.params.id) },
+  });
+  res.json(out);
 });
 
 /**
@@ -115,21 +190,47 @@ export const analyzeController = asyncHandler(async (req, res) => {
   const parsed = analyzeSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
 
+  // Предел до постановки заданий: отказать дешевле, чем создать записи и
+  // отменять их.
+  await assertAnalyzeAllowed(req.diagnosticsActor.userId);
+
   const jobs = await queueAnalysis({
     caseId: req.params.id,
     userId: req.diagnosticsActor.userId,
     modalities: parsed.data.modalities ?? [],
   });
 
-  // Намеренно без await: ответ уходит сразу. Ошибки внутри runPendingJobs
-  // фиксируются в самих заданиях, поэтому здесь только логируем сбой запуска.
-  runPendingJobs(req.params.id).catch((err) =>
-    logger?.warn?.({ err, caseId: req.params.id }, "diagnostics background run failed"),
-  );
+  // Журнал выхода данных пишется ДО отправки и синхронно. Если журнал
+  // недоступен, материалы наружу не уходят: «отправили, а следа нет» — худший
+  // из возможных исходов для медицинских данных.
+  const artifacts = await DiagnosticArtifact.find({ caseId: req.params.id })
+    .select("kind text")
+    .lean();
+  await traceEgress(req, {
+    action: "diagnostics.analyze",
+    resourceId: req.params.id,
+    metadata: {
+      ...describeArtifacts(artifacts),
+      modalities: jobs.map((j) => j.modality),
+      jobs: jobs.length,
+    },
+  });
+
+  // Выполнение — в отдельном процессе-воркере: перезапуск API больше не рвёт
+  // идущий разбор. Если очередь недоступна (нет Redis), разбираем здесь же,
+  // как раньше: это хуже, но несравнимо лучше отказа в работе врачу.
+  const queued = await enqueueAnalysis(req.params.id);
+  if (!queued) {
+    runPendingJobs(req.params.id).catch((err) =>
+      logger?.warn?.({ err, caseId: req.params.id }, "diagnostics background run failed"),
+    );
+  }
 
   res.status(202).json({
     jobs,
     advisoryNotice: ADVISORY_NOTICE,
+    quota: await analyzeQuotaLeft(req.diagnosticsActor.userId),
+    queued,
     message: "Разбор запущен. Результаты появятся в деле по мере готовности.",
   });
 });
@@ -148,6 +249,15 @@ export const verdictController = asyncHandler(async (req, res) => {
     parsed.data,
     req.diagnosticsActor.userId,
   );
+  trace(req, {
+    action: "diagnostics.finding.verdict",
+    resourceType: "diagnostic-finding",
+    resourceId: req.params.findingId,
+    metadata: {
+      verdict: parsed.data.verdict,
+      hasCorrection: Boolean(parsed.data.correction?.trim()),
+    },
+  });
   res.json({ finding });
 });
 
@@ -195,6 +305,19 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
     });
   }
 
+  await assertExtractAllowed(HIPAAAuditLog, req.diagnosticsActor.userId);
+
+  // Файл уходит наружу — событие в журнал ДО отправки, синхронно.
+  await traceEgress(req, {
+    action: "diagnostics.extract",
+    resourceId: req.params.id,
+    metadata: {
+      mime: req.file.mimetype,
+      bytes: req.file.size,
+      fileNameLength: String(req.file.originalname ?? "").length,
+    },
+  });
+
   const result = await readDocument({
     buffer: req.file.buffer,
     mimeType: req.file.mimetype,
@@ -224,4 +347,31 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
     model: result.model,
     promptVersion: result.promptVersion,
   });
+});
+
+/**
+ * Выгрузка дела одним документом.
+ *
+ * Отдаётся файлом и нигде не сохраняется. Событие пишется в журнал синхронно и
+ * ДО отдачи: выгрузка — это вынос PHI за пределы системы, такой же значимый,
+ * как отправка внешней модели, и след о нём обязателен.
+ */
+export const exportCaseController = asyncHandler(async (req, res) => {
+  const full = await getCaseFull(req.params.id, req.diagnosticsActor.userId);
+
+  await traceEgress(req, {
+    action: "diagnostics.export",
+    resourceId: req.params.id,
+    metadata: {
+      findings: full.findings.length,
+      artifacts: full.artifacts.length,
+      status: full.case?.status,
+      closed: Boolean(full.case?.closedAt),
+    },
+  });
+
+  const { html, fileName } = renderCaseDocument(full);
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+  res.send(html);
 });
