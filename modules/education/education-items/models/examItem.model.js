@@ -147,6 +147,34 @@ const examItemSchema = new Schema(
     // Уверенность экстрактора (0..1). Низкая — сигнал рецензенту.
     aiConfidence: { type: Number, min: 0, max: 1, default: null },
 
+    // ─── Перевод ───
+    // Вопрос-перевод — это ОТДЕЛЬНЫЙ документ с другим lang, а не поле внутри
+    // исходного. Так задуман модуль изначально: сборка сессии фильтрует
+    // вопросы по lang (attempt.service → match.lang), поэтому перевод
+    // становится рабочим сразу, без единой правки на пути выдачи.
+    //
+    // Обратная сторона — перевод может отстать от оригинала. Для этого
+    // translationSourceVersion: при правке исходного вопроса его version
+    // растёт, и несовпадение показывает админке, что перевод устарел.
+    translationOf: {
+      type: Schema.Types.ObjectId,
+      ref: "ExamItem",
+      default: null,
+      index: true,
+    },
+    // Версия исходного вопроса, с которой сделан перевод.
+    translationSourceVersion: { type: Number, default: null },
+    // null у оригинала. "auto" — машинный, "reviewed" — выправлен человеком;
+    // выправленный автоперевод не перезаписывает (см. translateItem.service).
+    translationStatus: {
+      type: String,
+      enum: ["auto", "reviewed", null],
+      default: null,
+      index: true,
+    },
+    translationModel: { type: String, default: null },
+    translationPromptVersion: { type: String, default: null },
+
     // ─── Статистика ───
     stats: {
       served: { type: Number, default: 0 }, // сколько раз показан
@@ -168,6 +196,19 @@ examItemSchema.index({ programId: 1, status: 1, topicCode: 1, lang: 1 });
 examItemSchema.index({ programId: 1, status: 1, difficulty: 1 });
 examItemSchema.index({ status: 1, "source.kind": 1 }); // очередь ревью ИИ-вопросов
 examItemSchema.index({ tags: 1 });
+// Перевод у вопроса на язык может быть только один. Уникальность на уровне
+// базы, а не только в коде: перевод ставится в очередь, а повторная постановка
+// того же задания (ретрай воркера, двойное нажатие в админке) иначе создала бы
+// второй вопрос-двойник, и оба попали бы в выборку — врач получил бы один и
+// тот же вопрос дважды за сессию. partialFilterExpression нужен, чтобы правило
+// не распространялось на оригиналы, у которых translationOf: null.
+examItemSchema.index(
+  { translationOf: 1, lang: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { translationOf: { $type: "objectId" } },
+  },
+);
 
 // ─── Виртуальные метрики ───
 // p-value: доля верных ответов. Классический индекс лёгкости вопроса.

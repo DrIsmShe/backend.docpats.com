@@ -389,7 +389,14 @@ export async function recountPublishedItems(programId) {
   );
 
   const [count, langs] = await Promise.all([
-    ExamItem.countDocuments({ programId, status: "published" }),
+    // Переводы из счёта исключены: вопрос и четыре его перевода — это ОДИН
+    // вопрос, а не пять. Без этого фильтра витрина показывала бы «500
+    // вопросов» там, где их сто, и врач, увидевший цифру, решил бы, что банк
+    // впятеро больше, чем есть. `translationOf: null` ловит и старые
+    // документы, где поля ещё нет.
+    ExamItem.countDocuments({ programId, status: "published", translationOf: null }),
+    // А вот языки считаем по ВСЕМ вопросам, включая переводы: как раз они и
+    // делают тест доступным на пяти языках, и каталог должен это показывать.
     ExamItem.distinct("lang", {
       programId,
       status: { $nin: ["archived", "rejected"] },

@@ -16,6 +16,7 @@ import mongoose from "mongoose";
 import ExamItem from "../models/examItem.model.js";
 import ExamProgram from "../../education-catalog/models/examProgram.model.js";
 import { recountPublishedItems } from "../../education-catalog/services/program.service.js";
+import { enqueueItemTranslation } from "../../education-translation/translation.queue.js";
 import { SOURCE_KINDS_REQUIRING_REVIEW } from "../../constants.js";
 import {
   ValidationError,
@@ -407,6 +408,23 @@ export async function reviewItem(id, { decision, reason = null, reviewerId }) {
     },
     "exam item published",
   );
+
+  // Перевод на остальные языки — после публикации и НЕ в этом запросе.
+  //
+  // Публикация от перевода не зависит: вопрос уже виден русскоязычным врачам,
+  // и если модель недоступна или откажет, это не повод не публиковать. Поэтому
+  // здесь без await и без try/catch вокруг результата — enqueue сам не бросает.
+  //
+  // Переводится только оригинал. У вопроса-перевода translationOf заполнен, и
+  // повторный проход по нему создал бы перевод перевода.
+  if (!existing.translationOf) {
+    enqueueItemTranslation({
+      itemId: existing._id,
+      version: existing.version,
+      actorId: reviewerId,
+    });
+  }
+
   return existing.toObject();
 }
 
@@ -441,6 +459,11 @@ export function toLearnerView(item, { includeAnswer = false } = {}) {
     stemImageUrl: item.stemImageUrl,
     difficulty: item.difficulty,
     version: item.version,
+    // Машинный ли это перевод. Врач должен знать, что читает не оригинал:
+    // если формулировка кажется странной, причина может быть в переводе, а не
+    // в его знаниях. Отдаём только для переводов — у оригинала поле пустое, и
+    // подписывать его незачем.
+    translationStatus: item.translationOf ? (item.translationStatus ?? "auto") : null,
     options: (item.options ?? []).map((o) => ({
       key: o.key,
       text: o.text,

@@ -15,6 +15,7 @@ import educationCategoriesRouter from "./education-categories/index.js";
 import educationItemsRouter from "./education-items/index.js";
 import educationAttemptsRouter from "./education-attempts/index.js";
 import educationIngestRouter from "./education-ingest/index.js";
+import educationTranslationRouter from "./education-translation/index.js";
 import { requireLearner } from "./middlewares/educationAuth.js";
 import { getExamQuota, claimGuestAttempts } from "./services/quota.service.js";
 import {
@@ -67,6 +68,7 @@ router.use("/", educationCategoriesRouter);
 router.use("/", educationItemsRouter);
 router.use("/", educationAttemptsRouter);
 router.use("/", educationIngestRouter);
+router.use("/", educationTranslationRouter);
 
 // ─── 404 + обработчик ошибок ──────────────────────────────────────────
 router.use(notFoundHandler);
