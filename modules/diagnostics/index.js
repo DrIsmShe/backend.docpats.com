@@ -66,6 +66,11 @@ router.post("/cases/:id/close", ctrl.closeCaseController);
 router.get("/cases/:id/export", ctrl.exportCaseController);
 router.post("/cases/:id/reopen", ctrl.reopenCaseController);
 
+// Удаление дела. Настоящее, с каскадом по материалам, заданиям и выводам:
+// хранить ненужные данные пациента «на всякий случай» — не нейтральное
+// решение. След об удалении остаётся в HIPAA-журнале.
+router.delete("/cases/:id", ctrl.deleteCaseController);
+
 // Распознавание документа: фото бланка или PDF → текст.
 //
 // memoryStorage, а не диск: файл не должен пережить запрос. Он не пишется ни

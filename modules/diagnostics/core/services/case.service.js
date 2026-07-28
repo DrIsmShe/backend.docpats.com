@@ -204,6 +204,44 @@ export async function reopenCase(caseId, userId) {
   return presentCase(doc.toObject());
 }
 
+/**
+ * Удалить дело со всем содержимым.
+ *
+ * Удаление НАСТОЯЩЕЕ, а не пометка «скрыто». Врач просит убрать дело, потому
+ * что оно больше не нужно — оставлять его в базе «на всякий случай» значит
+ * копить данные пациентов без основания, а это ровно то, чего в модуле
+ * стараются не делать.
+ *
+ * След при этом не исчезает: запись о самом удалении уходит в HIPAA-журнал
+ * (он на добавление и живёт семь лет). То есть «что было» из базы уходит, а
+ * «кто и когда это убрал» остаётся — так и должно быть.
+ *
+ * Порядок важен: сначала дочерние записи, потом дело. Если удаление
+ * прервётся посередине, останется дело без части материалов — состояние
+ * некрасивое, но безопасное. Обратный порядок оставил бы выводы и материалы
+ * без дела: их никто уже не найдёт и не удалит.
+ */
+export async function deleteCase(caseId, userId) {
+  const doc = await DiagnosticCase.findOne({ _id: caseId, ownerId: userId });
+  if (!doc) throw new NotFoundError("Дело не найдено");
+
+  const [findings, jobs, artifacts] = await Promise.all([
+    DiagnosticFinding.deleteMany({ caseId }),
+    DiagnosticJob.deleteMany({ caseId }),
+    DiagnosticArtifact.deleteMany({ caseId }),
+  ]);
+  await doc.deleteOne();
+
+  return {
+    deleted: true,
+    counts: {
+      findings: findings.deletedCount ?? 0,
+      jobs: jobs.deletedCount ?? 0,
+      artifacts: artifacts.deletedCount ?? 0,
+    },
+  };
+}
+
 /* ─── Материалы ───────────────────────────────────────────────────────── */
 
 export async function addArtifact(caseId, input, userId) {

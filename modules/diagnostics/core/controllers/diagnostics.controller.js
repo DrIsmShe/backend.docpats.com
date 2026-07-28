@@ -12,6 +12,7 @@ import {
   updateCase,
   closeCase,
   reopenCase,
+  deleteCase,
   addArtifact,
   removeArtifact,
   setFindingVerdict,
@@ -374,4 +375,34 @@ export const exportCaseController = asyncHandler(async (req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
   res.send(html);
+});
+
+/**
+ * Удалить дело со всем содержимым.
+ *
+ * Запись в журнал идёт СИНХРОННО и ДО удаления — по той же логике, что и
+ * отправка данных наружу: если журнал недоступен, дело не удаляется. Иначе
+ * возможен худший расклад — данные пациента исчезли, а следа об этом нет.
+ *
+ * Состав удаляемого пишем в metadata структурой (сколько материалов, выводов,
+ * заданий): по этой записи потом видно, что именно потерялось, не храня само
+ * содержимое.
+ */
+export const deleteCaseController = asyncHandler(async (req, res) => {
+  const full = await getCaseFull(req.params.id, req.diagnosticsActor.userId);
+
+  await traceEgress(req, {
+    action: "diagnostics.case.delete",
+    resourceId: req.params.id,
+    metadata: {
+      artifacts: full.artifacts.length,
+      findings: full.findings.length,
+      jobs: full.jobs.length,
+      status: full.case?.status,
+      wasClosed: Boolean(full.case?.closedAt),
+    },
+  });
+
+  const out = await deleteCase(req.params.id, req.diagnosticsActor.userId);
+  res.json(out);
 });

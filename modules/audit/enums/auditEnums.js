@@ -46,6 +46,7 @@ export const ACTION_ENUM = [
   "diagnostics.case.list",
   "diagnostics.case.update",
   "diagnostics.case.close",
+  "diagnostics.case.delete",
   "diagnostics.case.reopen",
   "diagnostics.artifact.add",
   "diagnostics.artifact.remove",
