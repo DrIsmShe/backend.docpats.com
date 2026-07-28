@@ -133,14 +133,73 @@ export async function queueAnalysis({ caseId, userId, modalities: requested = []
 }
 
 /**
+ * Через сколько задание считается брошенным.
+ *
+ * Разбор идёт В ТОМ ЖЕ ПРОЦЕССЕ, что и API (runPendingJobs вызывается из
+ * контроллера без await). Значит, перезапуск процесса — деплой, падение,
+ * pm2 restart — обрывает выполнение на середине, и задание навсегда остаётся в
+ * статусе «выполняется»: воскрешать его некому.
+ *
+ * Дело при этом навсегда остаётся «Идёт разбор», хотя выводы уже получены.
+ * Врач видит вечный индикатор и не понимает, ждать ему или нет; на списке дел
+ * это выглядит как зависшая система.
+ *
+ * 15 минут — с запасом: самый долгий разбор укладывается в несколько минут.
+ */
+export const STALE_JOB_MS = 15 * 60 * 1000;
+
+const ABANDONED_MESSAGE =
+  "Разбор прервался (перезапуск сервера или обрыв связи). Нажмите «Попробовать ещё раз».";
+
+/**
+ * Пометить брошенные задания и пересчитать состояние их дел.
+ *
+ * Вызывается при ЧТЕНИИ дела и списка дел, а не по расписанию: так состояние
+ * чинится ровно тогда, когда на него смотрят, и не нужен ни отдельный
+ * планировщик, ни хук на старте процесса. Стоит это одного индексированного
+ * запроса на открытие страницы.
+ */
+export async function reapStaleJobs({ caseId = null, ownerId = null, now = Date.now() } = {}) {
+  const query = {
+    status: { $in: ["queued", "running"] },
+    createdAt: { $lt: new Date(now - STALE_JOB_MS) },
+  };
+  if (caseId) query.caseId = caseId;
+  if (ownerId) query.ownerId = ownerId;
+
+  const stale = await DiagnosticJob.find(query).select("_id caseId").lean();
+  if (!stale.length) return 0;
+
+  await DiagnosticJob.updateMany(
+    { _id: { $in: stale.map((j) => j._id) } },
+    { $set: { status: "failed", message: ABANDONED_MESSAGE, "provenance.finishedAt": new Date(now) } },
+  );
+
+  // Дело могло остаться «analyzing» только из-за этих заданий — пересчитываем.
+  for (const id of [...new Set(stale.map((j) => String(j.caseId)))]) {
+    await refreshCaseState(id);
+  }
+
+  logger?.warn?.({ count: stale.length }, "diagnostics: брошенные задания помечены сбойными");
+  return stale.length;
+}
+
+/**
  * Выполнить одно задание. Отдельная функция — её вызывают и фоновый прогон, и
  * тесты, и (в будущем) воркер BullMQ.
  */
 export async function runJob(jobId) {
   const job = await DiagnosticJob.findById(jobId);
   if (!job) throw new NotFoundError("Задание не найдено");
-  if (job.status === "running") throw new ConflictError("Задание уже выполняется");
   if (job.status === "done") return job.toObject();
+  if (job.status === "running") {
+    // Брошенное задание перезапускать МОЖНО — иначе «Попробовать ещё раз»
+    // упирается в «уже выполняется» и дело не расклинить вообще ничем.
+    const startedAt = job.provenance?.startedAt?.getTime?.() ?? 0;
+    if (Date.now() - startedAt < STALE_JOB_MS) {
+      throw new ConflictError("Задание уже выполняется");
+    }
+  }
 
   const caseDoc = await DiagnosticCase.findById(job.caseId);
   if (!caseDoc) throw new NotFoundError("Дело не найдено");
@@ -235,7 +294,17 @@ export async function refreshCaseState(caseId) {
 
   caseDoc.counts = { artifacts, findings, critical };
   if (caseDoc.status !== "closed") {
-    caseDoc.status = pending > 0 ? "analyzing" : findings > 0 ? "ready" : caseDoc.status;
+    // Раньше в последней ветке стояло caseDoc.status — то есть «оставить как
+    // есть». Из-за этого дело, у которого разбор завершился БЕЗ выводов (все
+    // задания пропущены или сбойны), навсегда оставалось «analyzing»: заданий
+    // нет, выводов нет, а индикатор крутится. Врач при этом ждёт результата,
+    // которого уже не будет.
+    //
+    // Правильное состояние здесь — «черновик»: разбора нет, дело можно
+    // дополнить и запустить заново.
+    if (pending > 0) caseDoc.status = "analyzing";
+    else if (findings > 0) caseDoc.status = "ready";
+    else caseDoc.status = "draft";
   }
   await caseDoc.save();
   return caseDoc.counts;

@@ -14,7 +14,11 @@ import DiagnosticFinding from "../models/diagnosticFinding.model.js";
 import { decryptPHI } from "../../../../common/utils/phiCrypto.js";
 import { ADVISORY_NOTICE } from "../../constants.js";
 import { getModality } from "./registry.js";
-import { collectAnalysisBlockers, refreshCaseState } from "./analysis.service.js";
+import {
+  collectAnalysisBlockers,
+  refreshCaseState,
+  reapStaleJobs,
+} from "./analysis.service.js";
 import { ForbiddenError, NotFoundError, ValidationError } from "../../../../common/utils/errors.js";
 
 /* ─── Представление наружу (расшифровка) ──────────────────────────────── */
@@ -81,6 +85,11 @@ export async function createCase(input, { userId, clinicId = null }) {
 }
 
 export async function listCases({ userId, status, limit = 50 }) {
+  // Брошенные задания (обрыв процесса на середине разбора) оставляют дело
+  // навсегда в статусе «Идёт разбор». Чиним при чтении списка — там, где врач
+  // на это и смотрит.
+  await reapStaleJobs({ ownerId: userId });
+
   const query = { ownerId: userId };
   if (status) query.status = status;
   const items = await DiagnosticCase.find(query)
@@ -92,6 +101,8 @@ export async function listCases({ userId, status, limit = 50 }) {
 
 /** Дело целиком: материалы, задания, выводы. Только владельцу. */
 export async function getCaseFull(caseId, userId) {
+  await reapStaleJobs({ caseId });
+
   const doc = await DiagnosticCase.findById(caseId).lean();
   if (!doc) throw new NotFoundError("Дело не найдено");
   if (String(doc.ownerId) !== String(userId)) {
