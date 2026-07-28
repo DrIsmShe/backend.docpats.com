@@ -9,7 +9,8 @@
     "worker": "node modules/translation/translation.worker.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "worker:diagnostics": "node modules/diagnostics/jobs/analysis.worker.js"
+    "worker:diagnostics": "node modules/diagnostics/jobs/analysis.worker.js",
+    "worker:education": "node modules/education/education-translation/translation.worker.js"
   },
   "engines": {
     "node": "20.x"

@@ -1,6 +1,11 @@
 // ======================= IMPORTS =======================
 import "./modules/translation/translation.worker.js";
 import "./modules/surgery/simulation.worker.js";
+// Воркер перевода вопросов банка. Импортируется здесь по той же причине, что и
+// соседи: очередь без потребителя молча копит задания — публикация проходит,
+// перевод «принят», и никто никогда его не делает.
+import { startTranslationWorker } from "./modules/education/education-translation/translation.worker.js";
+startTranslationWorker();
 import express from "express";
 import meRoutes from "./modules/me/me.routes.js";
 import dotenv from "dotenv";
