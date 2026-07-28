@@ -19,6 +19,7 @@ const runJson = vi.fn();
 vi.mock("../../modules/diagnostics/ai/runner.js", () => ({
   runJson: (...args) => runJson(...args),
   PROMPT_VERSION: "test-prompt",
+  EFFORT: { analysis: "high", extraction: "medium" },
   str: (v, max) => String(v ?? "").trim().slice(0, max),
   list: (arr, max, itemMax) =>
     (Array.isArray(arr) ? arr : [])
@@ -29,6 +30,7 @@ vi.mock("../../modules/diagnostics/ai/runner.js", () => ({
 
 const { readDocument, assertReadable, ALLOWED_MIME, MAX_FILE_BYTES, MAX_PDF_PAGES } =
   await import("../../modules/diagnostics/ai/documentReader.js");
+const { EFFORT } = await import("../../modules/diagnostics/ai/runner.js");
 const { ValidationError } = await import("../../common/utils/errors.js");
 
 async function makePdf(pages) {
@@ -125,6 +127,22 @@ describe("запрос к модели", () => {
     expect(system).toMatch(/нельзя/i);
     expect(system).toMatch(/диагноз/i);
     expect(system).toMatch(/дополнять|подставлять/i);
+  });
+
+  it("распознавание идёт на пониженном уровне усилий", async () => {
+    // Переписать напечатанное — не рассуждение. Проверено живым запросом на
+    // плотном бланке: на "medium" точность та же, что на "high" (12 из 12
+    // значений), поэтому платить за верхний уровень здесь не за что.
+    await readDocument({ buffer: Buffer.from("x"), mimeType: "image/png" });
+    expect(runJson.mock.calls[0][0].effort).toBe(EFFORT.extraction);
+    expect(EFFORT.extraction).not.toBe(EFFORT.analysis);
+  });
+
+  it("потолок ответа с запасом: мышление делит бюджет с текстом", async () => {
+    // На двадцатистраничном бланке тесный потолок обрывает распознавание на
+    // середине, и врач получает часть анализов без предупреждения.
+    await readDocument({ buffer: Buffer.from("x"), mimeType: "image/png" });
+    expect(runJson.mock.calls[0][0].maxTokens).toBeGreaterThanOrEqual(32000);
   });
 
   it("подсказка врача доезжает до модели", async () => {

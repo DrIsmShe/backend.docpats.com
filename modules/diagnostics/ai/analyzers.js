@@ -21,7 +21,7 @@ import { analyzePanel } from "../labs/labRules.js";
 import { FINDINGS_SCHEMA, normalizeFindings } from "./findings.schema.js";
 // MODEL здесь не нужен: модель для происхождения вывода берётся из ответа
 // (при срабатывании fallbacks отвечает не та, которую просили).
-import { PROMPT_VERSION, runJson, str } from "./runner.js";
+import { EFFORT, PROMPT_VERSION, runJson, str } from "./runner.js";
 
 const SYSTEM_BASE = [
   "Ты помогаешь врачу разбирать клинический материал.",
@@ -113,6 +113,7 @@ export const reportAnalyzer = {
       instruction,
       schema: FINDINGS_SCHEMA,
       what: `заключение (${modality.key})`,
+      effort: EFFORT.analysis,
     });
 
     return { ...normalizeFindings(parsed), usage, model, promptVersion: PROMPT_VERSION };
@@ -179,6 +180,7 @@ export const labsAnalyzer = {
       instruction,
       schema: FINDINGS_SCHEMA,
       what: "лабораторную панель",
+      effort: EFFORT.analysis,
     });
 
     const normalized = normalizeFindings(parsed);
@@ -237,6 +239,7 @@ export const clinicalAnalyzer = {
       instruction,
       schema: FINDINGS_SCHEMA,
       what: "клинический случай",
+      effort: EFFORT.analysis,
     });
 
     return { ...normalizeFindings(parsed), usage, model, promptVersion: PROMPT_VERSION };

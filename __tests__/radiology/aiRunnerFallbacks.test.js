@@ -92,6 +92,35 @@ describe("кто ответил", () => {
   });
 });
 
+describe("уровень усилий и пределы", () => {
+  it("не задан — поле в запрос не уходит", async () => {
+    // Отсутствие поля и явное "high" сегодня совпадают по значению, но не по
+    // смыслу: в запросе должно быть видно, выбирал уровень вызывающий код или
+    // нет. Иначе при смене умолчания API поведение поедет незаметно.
+    reply();
+    await call();
+    expect(streamSpy.mock.calls[0][0].output_config).not.toHaveProperty("effort");
+  });
+
+  it("задан — уходит внутри output_config, а не верхним уровнем", async () => {
+    reply();
+    await runJson({ system: "s", instruction: "i", schema: SCHEMA, what: "кейс", effort: "low" });
+    const params = streamSpy.mock.calls.at(-1)[0];
+    expect(params.output_config.effort).toBe("low");
+    expect(params).not.toHaveProperty("effort");
+  });
+
+  it("переполнение контекста отличается от обрыва ответа", async () => {
+    // Разные причины и разные советы: в одном случае сокращать материал, в
+    // другом — ответ. Один текст на оба случая уводит врача не туда.
+    reply({ stopReason: "model_context_window_exceeded" });
+    await expect(call()).rejects.toThrow(/не помещается|сократите исходный/i);
+
+    reply({ stopReason: "max_tokens" });
+    await expect(call()).rejects.toThrow(/предел[еа] длины/i);
+  });
+});
+
 describe("отказ и выключатель", () => {
   it("отказ всей цепочки — понятная ошибка, а не пустой результат", async () => {
     reply({ stopReason: "refusal" });

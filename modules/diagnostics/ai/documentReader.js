@@ -27,7 +27,7 @@
 
 import { PDFDocument } from "pdf-lib";
 
-import { PROMPT_VERSION, runJson, str, list } from "./runner.js";
+import { EFFORT, PROMPT_VERSION, runJson, str, list } from "./runner.js";
 import { ValidationError } from "../../../common/utils/errors.js";
 
 /** Что принимаем. Список закрытый: неизвестный формат — отказ, а не попытка. */
@@ -163,7 +163,14 @@ export async function readDocument({ buffer, mimeType, hint = "" }) {
     system: SYSTEM,
     schema: SCHEMA,
     what: "документ",
-    maxTokens: 16000,
+    // Уровень ниже, чем у разбора, сознательно: переписать напечатанное — не
+    // рассуждение. Верхний уровень здесь оплачивает размышления там, где
+    // нужна аккуратность, и заметно замедляет ответ на многостраничном PDF.
+    effort: EFFORT.extraction,
+    // Двадцать страниц плотного бланка — это много текста на выходе, а
+    // мышление делит тот же бюджет. Тесный потолок обрывает распознавание на
+    // середине, и врач получает половину анализов без предупреждения.
+    maxTokens: 32000,
     content: [fileBlock, { type: "text", text: instruction }],
   });
 

@@ -68,6 +68,7 @@ export async function runJson({
   schema,
   maxTokens = 16000,
   what = "кейс",
+  effort = null,
 }) {
   if (!isConfigured()) {
     throw new ServiceUnavailableError(
@@ -88,6 +89,10 @@ export async function runJson({
       // схеме — это 400 на каждый вызов, а не изредка.
       output_config: {
         format: { type: "json_schema", schema: prepareSchema(schema, logger, what) },
+        // Уровень усилий передаём, только если вызывающий код его выбрал:
+        // отсутствие поля и явное "high" — не одно и то же по смыслу, хотя
+        // сегодня совпадают по значению. Пусть в запросе будет видно решение.
+        ...(effort ? { effort } : {}),
       },
       messages: [{ role: "user", content: instruction }],
       ...(FALLBACKS_ENABLED
@@ -108,8 +113,22 @@ export async function runJson({
 
   if (message.stop_reason === "refusal") {
     // С включёнными fallbacks это значит, что отказалась вся цепочка моделей.
+    // Категорию пишем в лог: она отличает ложное срабатывание фильтра на
+    // медицинской теме от осмысленного отказа, а без неё все отказы выглядят
+    // одинаково и непонятно, поможет ли переформулировка.
+    logger?.warn?.(
+      { what, category: message.stop_details?.category ?? null, model: message.model },
+      "radiology: модель отклонила запрос",
+    );
     throw new ValidationError(
       `ИИ отказался обрабатывать этот ${what} — переформулируйте тему нейтральнее`,
+    );
+  }
+  if (message.stop_reason === "model_context_window_exceeded") {
+    // Кончилось место под ВХОД, а не под ответ — совет «упростите ответ» тут
+    // бесполезен.
+    throw new ValidationError(
+      `Материал не помещается в окно модели (${what}) — сократите исходный текст`,
     );
   }
   if (message.stop_reason === "max_tokens") {
