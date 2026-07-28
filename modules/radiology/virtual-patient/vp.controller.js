@@ -24,6 +24,7 @@ import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
 import { generateVpVariants } from "../ai/caseVariants.js";
 import { saveAiReview, setAiReviewDismissed } from "../ai/aiReviewStore.js";
 import {
+
   createVpSchema,
   updateVpSchema,
   statusVpSchema,
@@ -43,6 +44,16 @@ function throwZod(parsed) {
   throw new ValidationError("Validation failed", {
     issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
   });
+}
+
+
+// Язык врача из Accept-Language. Клиент шлёт заголовок на каждом запросе, так
+// что отдельного поля в теле не нужно — а значит, о нём не должен помнить тот,
+// кто зовёт старт. Неизвестный язык сводим к русскому: кейсы пишутся на нём.
+const ARENA_LANGS = ["ru", "en", "az", "tr", "ar"];
+function langOf(req) {
+  const raw = String(req.headers["accept-language"] ?? "").slice(0, 2).toLowerCase();
+  return ARENA_LANGS.includes(raw) ? raw : "ru";
 }
 
 export const listVpController = asyncHandler(async (req, res) => {
@@ -178,7 +189,14 @@ export const startVpController = asyncHandler(async (req, res) => {
   if (!parsed.success) throwZod(parsed);
   res
     .status(201)
-    .json(await startVpAttempt(req.params.id, req.radiologyActor.userId, parsed.data.mode ?? "learn"));
+    .json(
+      await startVpAttempt(
+        req.params.id,
+        req.radiologyActor.userId,
+        parsed.data.mode ?? "learn",
+        langOf(req),
+      ),
+    );
 });
 
 // Предварительная фиксация дифдиагноза. Ответ без обратной связи: сказать

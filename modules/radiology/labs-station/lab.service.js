@@ -7,6 +7,7 @@
 
 import LabCase from "./models/labCase.model.js";
 import LabAttempt from "./models/labAttempt.model.js";
+import { translatedCaseFor } from "../translation/translatedCase.js";
 import { combineTotal } from "../radiology-attempts/services/scoring.service.js";
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
 import { gradeDiagnosis } from "../radiology-attempts/services/diagnosisMatcher.js";
@@ -36,6 +37,8 @@ import {
 
 // Веса компонентов оценки станции. Здесь главное — правильно выделить
 // значимые отклонения и поставить диагноз.
+import { scheduleCaseTranslation } from "../translation/onPublish.js";
+
 const WEIGHTS = { detection: 0.5, diagnosis: 0.35, impression: 0.15 };
 const PASS = 0.7;
 
@@ -158,6 +161,8 @@ export async function setLabStatus(caseId, status, actorId, actorRole) {
     }
     doc.status = "published";
     doc.publishedAt = doc.publishedAt ?? new Date();
+    // Перевод на остальные языки — после публикации и не в этом запросе.
+    scheduleCaseTranslation("labs", doc._id, { actorId });
   } else if (status === "draft" || status === "archived") {
     doc.status = status;
   } else {
@@ -243,11 +248,12 @@ export async function getLabPolicy(caseId, userId, mode = "learn") {
   });
 }
 
-export async function startLabAttempt(caseId, userId, mode = "learn") {
-  const caseDoc = await LabCase.findById(caseId).lean();
-  if (!caseDoc || caseDoc.status !== "published") {
+export async function startLabAttempt(caseId, userId, mode = "learn", lang = "ru") {
+  const source = await LabCase.findById(caseId).lean();
+  if (!source || source.status !== "published") {
     throw new NotFoundError("Lab case");
   }
+  const caseDoc = await translatedCaseFor("labs", source, lang);
 
   // Незакрытую попытку продолжаем; просроченную помечаем и заводим новую —
   // запись остаётся, чтобы слот «зачёт раз в 24 часа» не восстанавливался.
@@ -283,6 +289,7 @@ export async function startLabAttempt(caseId, userId, mode = "learn") {
     caseId,
     userId,
     status: "in_progress",
+    lang,
     ...fields,
     variantIndex,
     variantLabel: applyLabVariant(caseDoc, variantIndex).variantLabel,
@@ -341,8 +348,10 @@ export async function submitLabAttempt(attemptId, userId, response) {
   }
   attempt.lateSubmit = late;
 
-  const caseDoc = await LabCase.findById(attempt.caseId).lean();
-  if (!caseDoc) throw new NotFoundError("Lab case");
+  const sourceCase = await LabCase.findById(attempt.caseId).lean();
+  if (!sourceCase) throw new NotFoundError("Lab case");
+  // Оценка — по кейсу на языке попытки, см. translatedCase.js.
+  const caseDoc = await translatedCaseFor("labs", sourceCase, attempt.lang);
 
   const resp = {
     flags: response.flags ?? [],

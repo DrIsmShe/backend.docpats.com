@@ -36,6 +36,16 @@ import {
 } from "./lab.schemas.js";
 import { NotFoundError } from "../../../common/utils/errors.js";
 
+// Язык врача из Accept-Language. Клиент шлёт заголовок на каждом запросе, так
+// что отдельного поля в теле не нужно — а значит, о нём не должен помнить тот,
+// кто зовёт старт. Неизвестный язык сводим к русскому: кейсы пишутся на нём.
+const ARENA_LANGS = ["ru", "en", "az", "tr", "ar"];
+function langOf(req) {
+  const raw = String(req.headers["accept-language"] ?? "").slice(0, 2).toLowerCase();
+  return ARENA_LANGS.includes(raw) ? raw : "ru";
+}
+
+
 function throwZod(parsed) {
   throw new ValidationError("Validation failed", {
     issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
@@ -192,7 +202,12 @@ export const startLabAttemptController = asyncHandler(async (req, res) => {
   res
     .status(201)
     .json(
-      await startLabAttempt(req.params.id, req.radiologyActor.userId, parsed.data.mode ?? "learn"),
+      await startLabAttempt(
+        req.params.id,
+        req.radiologyActor.userId,
+        parsed.data.mode ?? "learn",
+        langOf(req),
+      ),
     );
 });
 

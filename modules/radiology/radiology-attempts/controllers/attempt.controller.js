@@ -11,6 +11,7 @@ import {
   getAttemptPolicy,
 } from "../services/attempt.service.js";
 import {
+
   startAttemptSchema,
   submitAttemptSchema,
   listAttemptsQuerySchema,
@@ -26,6 +27,16 @@ function throwZod(parsed) {
 // Условия попытки ДО старта: зачёт или тренировка, лимит времени, когда
 // откроется следующая зачётная. Правила, о которых узнают после ответа,
 // правилами не являются — поэтому отдельный запрос до старта.
+
+// Язык врача из Accept-Language. Клиент шлёт заголовок на каждом запросе, так
+// что отдельного поля в теле не нужно — а значит, о нём не должен помнить тот,
+// кто зовёт старт. Неизвестный язык сводим к русскому: кейсы пишутся на нём.
+const ARENA_LANGS = ["ru", "en", "az", "tr", "ar"];
+function langOf(req) {
+  const raw = String(req.headers["accept-language"] ?? "").slice(0, 2).toLowerCase();
+  return ARENA_LANGS.includes(raw) ? raw : "ru";
+}
+
 export const attemptPolicyController = asyncHandler(async (req, res) => {
   const parsed = policyQuerySchema.safeParse(req.query ?? {});
   if (!parsed.success) throwZod(parsed);
@@ -45,6 +56,7 @@ export const startAttemptController = asyncHandler(async (req, res) => {
     req.params.id,
     req.radiologyActor.userId,
     parsed.data.mode ?? "learn",
+    langOf(req),
   );
   res.status(201).json(result);
 });

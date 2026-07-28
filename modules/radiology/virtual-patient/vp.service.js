@@ -14,6 +14,7 @@ import { combineTotal } from "../radiology-attempts/services/scoring.service.js"
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
 import { awardForAttempt } from "../game/game.service.js";
 import { gradeDiagnosis } from "../radiology-attempts/services/diagnosisMatcher.js";
+import { translatedCaseFor } from "../translation/translatedCase.js";
 import { paginate, titleFilter } from "../catalog.js";
 import {
   previewPolicy,
@@ -41,6 +42,8 @@ import {
 // модель: путь обследования (заказы по одному, с фиксацией) и предварительный
 // дифдиагноз, названный ДО раскрытия результатов. Свободный текст обоснования
 // — самая пересылаемая часть, поэтому его вес самый маленький.
+import { scheduleCaseTranslation } from "../translation/onPublish.js";
+
 const WEIGHTS = { diagnosis: 0.35, workup: 0.3, prior: 0.2, reasoning: 0.15 };
 const PASS = 0.7;
 
@@ -170,6 +173,8 @@ export async function setVpStatus(caseId, status, actorId, actorRole) {
     }
     doc.status = "published";
     doc.publishedAt = doc.publishedAt ?? new Date();
+    // Перевод на остальные языки — после публикации и не в этом запросе.
+    scheduleCaseTranslation("vp", doc._id, { actorId });
   } else if (status === "draft" || status === "archived") {
     doc.status = status;
   } else {
@@ -250,9 +255,10 @@ export async function getVpPolicy(caseId, userId, mode = "learn") {
   });
 }
 
-export async function startVpAttempt(caseId, userId, mode = "learn") {
-  const caseDoc = await VirtualPatientCase.findById(caseId).lean();
-  if (!caseDoc || caseDoc.status !== "published") throw new NotFoundError("VP case");
+export async function startVpAttempt(caseId, userId, mode = "learn", lang = "ru") {
+  const source = await VirtualPatientCase.findById(caseId).lean();
+  if (!source || source.status !== "published") throw new NotFoundError("VP case");
+  const caseDoc = await translatedCaseFor("vp", source, lang);
 
   // Незакрытую попытку продолжаем — вместе с уже раскрытыми обследованиями и
   // зафиксированным дифрядом. Просроченную помечаем, но не удаляем: по ней
@@ -290,6 +296,7 @@ export async function startVpAttempt(caseId, userId, mode = "learn") {
     caseId,
     userId,
     status: "in_progress",
+    lang,
     ...fields,
     variantIndex,
     variantLabel: applyVpVariant(caseDoc, variantIndex).variantLabel,
@@ -374,8 +381,10 @@ export async function orderInvestigation(attemptId, userId, key) {
     );
   }
 
-  const caseDoc = await VirtualPatientCase.findById(attempt.caseId).lean();
-  if (!caseDoc) throw new NotFoundError("VP case");
+  const sourceCase = await VirtualPatientCase.findById(attempt.caseId).lean();
+  if (!sourceCase) throw new NotFoundError("VP case");
+  // Оценка — по кейсу на языке попытки, см. translatedCase.js.
+  const caseDoc = await translatedCaseFor("vp", sourceCase, attempt.lang);
   // Результат отдаём из ТОГО варианта, который достался попытке, иначе врач
   // увидел бы цифры из базового кейса, а оценивался бы по своим.
   const { investigations } = applyVpVariant(caseDoc, attempt.variantIndex ?? 0);
@@ -455,8 +464,11 @@ export async function submitVpAttempt(attemptId, userId, response) {
   }
   attempt.lateSubmit = late;
 
-  const caseDoc = await VirtualPatientCase.findById(attempt.caseId).lean();
-  if (!caseDoc) throw new NotFoundError("VP case");
+  const sourceCase = await VirtualPatientCase.findById(attempt.caseId).lean();
+  if (!sourceCase) throw new NotFoundError("VP case");
+  // Оценка — по кейсу НА ЯЗЫКЕ ПОПЫТКИ: иначе верный диагноз, написанный
+  // по-турецки, сверялся бы с русским списком и давал ноль.
+  const caseDoc = await translatedCaseFor("vp", sourceCase, attempt.lang);
 
   // ordered берём из уже зафиксированных заказов (не из тела запроса).
   const resp = {

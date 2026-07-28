@@ -9,6 +9,7 @@
 import RadiologyAttempt from "../models/radiologyAttempt.model.js";
 import RadiologyCase from "../../radiology-cases/models/radiologyCase.model.js";
 import { getReadingSystem } from "../../reading-systems/index.js";
+import { translatedCaseFor } from "../../translation/translatedCase.js";
 import {
   sanitizeForLearner,
   recordAttemptStats,
@@ -65,11 +66,14 @@ export async function getAttemptPolicy(caseId, userId, mode = "learn") {
   });
 }
 
-export async function startAttempt(caseId, userId, mode = "learn") {
-  const caseDoc = await RadiologyCase.findById(caseId).lean();
-  if (!caseDoc || caseDoc.status !== "published") {
+export async function startAttempt(caseId, userId, mode = "learn", lang = "ru") {
+  const source = await RadiologyCase.findById(caseId).lean();
+  if (!source || source.status !== "published") {
     throw new NotFoundError("Radiology case");
   }
+  // Кейс на языке врача. Нет перевода — вернётся оригинал: показать русский
+  // текст правильнее, чем отказать в открытии кейса.
+  const caseDoc = await translatedCaseFor("radiology", source, lang);
 
   // Незакрытая попытка по этому кейсу: продолжаем её, а не начинаем новую.
   // Закрыл вкладку и вернулся — тот же таймер, тот же зачёт. Раньше каждое
@@ -117,6 +121,7 @@ export async function startAttempt(caseId, userId, mode = "learn") {
     caseId,
     userId,
     status: "in_progress",
+    lang,
     ...fields,
   });
 
@@ -187,8 +192,12 @@ export async function submitAttempt(attemptId, userId, response) {
   }
   attempt.lateSubmit = late;
 
-  const caseDoc = await RadiologyCase.findById(attempt.caseId).lean();
-  if (!caseDoc) throw new NotFoundError("Radiology case");
+  const sourceCase = await RadiologyCase.findById(attempt.caseId).lean();
+  if (!sourceCase) throw new NotFoundError("Radiology case");
+  // Оценка идёт по кейсу НА ЯЗЫКЕ ПОПЫТКИ: diagnosisMatcher сверяет строку
+  // диагноза со списком принятых формулировок, impressionGrader — слова
+  // заключения с эталоном. На русском эталоне турецкий ответ даёт ноль.
+  const caseDoc = await translatedCaseFor("radiology", sourceCase, attempt.lang);
   const rs = getReadingSystem(caseDoc.modality);
   if (!rs) throw new ConflictError("Нет системы чтения для этой модальности");
 

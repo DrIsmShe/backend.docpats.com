@@ -25,6 +25,8 @@ import {
 } from "../../../../common/utils/errors.js";
 
 // Статусы, из которых кейс можно ОТПРАВИТЬ на ревью.
+import { scheduleCaseTranslation } from "../../translation/onPublish.js";
+
 const EDITABLE = ["draft", "rejected"];
 
 // Статусы, в которых кейс можно РЕДАКТИРОВАТЬ. Включает in_review намеренно:
@@ -209,6 +211,9 @@ export async function reviewCase(caseId, { decision, reason }, actorId, actorRol
   doc.publishedAt = doc.publishedAt ?? new Date();
   doc.rejectionReason = null;
   await doc.save();
+  // Перевод на остальные языки — после публикации и не в этом запросе.
+  scheduleCaseTranslation("radiology", doc._id, { actorId });
+
   recordRadiologyEvent({
     action: "case.publish",
     actorId,

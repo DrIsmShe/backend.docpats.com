@@ -41,6 +41,12 @@ const commitmentSchema = new Schema(
 const vpAttemptSchema = new Schema(
   {
     caseId: { type: Schema.Types.ObjectId, ref: "VirtualPatientCase", required: true, index: true },
+    // Язык, на котором врач читал кейс. Нужен при сдаче: диагноз и заключение
+    // сверяются со списками ЭТОГО языка, иначе верный ответ по-турецки не
+    // засчитывается против русского эталона. Хранится в попытке, а не берётся
+    // из запроса: переключение интерфейса между стартом и сдачей не должно
+    // менять условия уже идущей попытки.
+    lang: { type: String, enum: ["ru", "en", "az", "tr", "ar"], default: "ru" },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     // Список статусов — общий (constants.js): в нём есть expired.
     status: { type: String, enum: ATTEMPT_STATUSES, default: "in_progress" },
