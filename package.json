@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "worker:diagnostics": "node modules/diagnostics/jobs/analysis.worker.js",
     "worker:education": "node modules/education/education-translation/translation.worker.js",
-    "read:image": "node scripts/read-image.mjs"
+    "read:image": "node scripts/read-image.mjs",
+    "make:test-dicom": "node scripts/make-test-dicom.mjs"
   },
   "engines": {
     "node": "20.x"
