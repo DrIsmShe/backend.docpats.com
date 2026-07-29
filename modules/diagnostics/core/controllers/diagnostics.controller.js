@@ -36,6 +36,7 @@ import { ADVISORY_NOTICE } from "../../constants.js";
 import { readDocument } from "../../ai/documentReader.js";
 import { readImageStudy, renderImageStudyText } from "../../ai/imageStudyReader.js";
 import { looksLikeDicom, readDicom, describeDicomStudy } from "../../ai/dicomReader.js";
+import { normalizeLang } from "../../ai/language.js";
 import { getModality, supportsImages } from "../services/registry.js";
 import DiagnosticCase from "../models/diagnosticCase.model.js";
 import DiagnosticArtifact from "../models/diagnosticArtifact.model.js";
@@ -202,6 +203,8 @@ export const analyzeController = asyncHandler(async (req, res) => {
     caseId: req.params.id,
     userId: req.diagnosticsActor.userId,
     modalities: parsed.data.modalities ?? [],
+    // Язык врача. Если клиент его не прислал — русский, как было раньше.
+    lang: parsed.data.lang ?? "ru",
   });
 
   // Журнал выхода данных пишется ДО отправки и синхронно. Если журнал
@@ -241,7 +244,13 @@ export const analyzeController = asyncHandler(async (req, res) => {
 
 /** Перезапуск одного задания — например, после сбоя внешнего сервиса. */
 export const rerunJobController = asyncHandler(async (req, res) => {
-  const job = await runJob(req.params.jobId);
+  // Перезапуск — единственный способ получить старое дело на своём языке:
+  // выводы лежат в базе готовым текстом и задним числом не переводятся.
+  // Без lang в теле задание перезапускается на том языке, на котором его
+  // делали изначально.
+  const job = await runJob(req.params.jobId, {
+    lang: typeof req.body?.lang === "string" ? req.body.lang : null,
+  });
   res.json({ job });
 });
 
@@ -324,6 +333,10 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
 
   const hint = typeof req.body?.hint === "string" ? req.body.hint : "";
   const requestedModality = typeof req.body?.modality === "string" ? req.body.modality : "";
+  // Язык врача для описания снимка. Приходит из formData вместе с файлом:
+  // распознавание идёт синхронно, в запросе врача, — в отличие от разбора,
+  // который выполняет фоновый воркер и которому язык кладут в задание.
+  const lang = normalizeLang(req.body?.lang);
 
   // ── DICOM: отдельный путь, до распознавания документа ──
   //
@@ -361,6 +374,7 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
       // Многокадровый файл уходит сеткой срезов — модель должна знать об этом
       // из инструкции, а не догадываться по картинке.
       sheet: Boolean(dicom.study.layout),
+      lang,
     });
 
     logger?.info?.(
@@ -436,6 +450,7 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
         mimeType: req.file.mimetype,
         modality,
         hint,
+        lang,
       });
       const described = renderImageStudyText(imageStudy);
       // Текст бланка, если он был, остаётся первым: напечатанное врачом

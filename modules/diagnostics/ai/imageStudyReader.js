@@ -26,6 +26,7 @@
 //   4. Не выдумывать то, чего не видно: нет разметки — нет размеров.
 
 import { EFFORT, PROMPT_VERSION, runJson, str, list } from "./runner.js";
+import { imageText, languageRule, normalizeLang } from "./language.js";
 
 /** Модальности, где присланная картинка — это лишь фрагмент исследования. */
 const SERIES_MODALITIES = new Set(["ct", "mri"]);
@@ -47,8 +48,21 @@ const SYSTEM = [
   "   описывай относительно анатомических ориентиров.",
   "4. Отдельно назови, что мешает смотреть: проекция, укладка, артефакты,",
   "   качество, обрезанный край, отсутствие сравнения.",
-  "5. Пиши по-русски, языком врачебной записи, без общих фраз.",
+  // Язык ответа подставляется по языку врача — см. systemFor ниже.
+  "5. __LANGUAGE_RULE__",
 ].join("\n");
+
+/**
+ * Рамка под язык врача.
+ *
+ * Меняется только язык ОТВЕТА: сами инструкции остаются русскими, потому что
+ * выверены по формулировкам — особенно правило 2, запрещающее отрицать
+ * патологию. Пять независимых переводов этого правила разъезжались бы, и
+ * разъехалось бы именно то, что дороже всего стоит.
+ */
+function systemFor(lang) {
+  return SYSTEM.replace("__LANGUAGE_RULE__", languageRule(lang));
+}
 
 const SCHEMA = {
   type: "object",
@@ -104,6 +118,7 @@ const SCHEMA = {
  * @param {object} [p.modality]  модальность из реестра (нужен checklist)
  * @param {string} [p.hint]      что это, по словам врача
  * @param {boolean} [p.sheet]    картинка — сетка срезов одной серии, а не один кадр
+ * @param {string} [p.lang]      язык врача: на нём модель и пишет
  */
 export async function readImageStudy({
   buffer,
@@ -111,6 +126,7 @@ export async function readImageStudy({
   modality = null,
   hint = "",
   sheet = false,
+  lang = "ru",
 }) {
   const isSeries = modality && SERIES_MODALITIES.has(modality.key);
 
@@ -158,7 +174,7 @@ export async function readImageStudy({
     .join("\n");
 
   const { parsed, model } = await runJson({
-    system: SYSTEM,
+    system: systemFor(lang),
     schema: SCHEMA,
     what: "изображение исследования",
     // Смотреть на снимок — это рассуждение, в отличие от переписывания
@@ -182,6 +198,7 @@ export async function readImageStudy({
     })),
     limits: list(parsed.limits, 10, 300),
     sheet,
+    lang: normalizeLang(lang),
     model,
     promptVersion: PROMPT_VERSION,
   };
@@ -198,45 +215,38 @@ export async function readImageStudy({
  * должен видеть, что это прочитала модель по картинке, а не написал коллега.
  */
 export function renderImageStudyText(read) {
+  // Подписи берём по языку разбора, а не по языку текущего запроса: этот
+  // текст сохраняется в дело и живёт там дальше сам по себе.
+  const T = imageText(read.lang);
+
   const lines = [
-    "── ПРОЧИТАНО С ИЗОБРАЖЕНИЯ МОДЕЛЬЮ (не заключение врача) ──",
+    T.header,
     "",
-    read.modalityGuess ? `Что это: ${read.modalityGuess}` : null,
-    read.whatIsVisible ? `В кадре: ${read.whatIsVisible}` : null,
+    read.modalityGuess ? `${T.what}: ${read.modalityGuess}` : null,
+    read.whatIsVisible ? `${T.frame}: ${read.whatIsVisible}` : null,
   ];
 
   if (read.observations.length) {
-    const conf = { high: "уверенно", moderate: "предположительно", low: "неотчётливо" };
-    lines.push("", "Обращает на себя внимание:");
+    lines.push("", T.attention);
     for (const o of read.observations) {
       lines.push(
-        `• ${o.finding}${o.where ? ` — ${o.where}` : ""} (${conf[o.confidence]})` +
-          (o.verify ? `\n  проверить: ${o.verify}` : ""),
+        `• ${o.finding}${o.where ? ` — ${o.where}` : ""} (${T.confidence[o.confidence]})` +
+          (o.verify ? `\n  ${T.verify}: ${o.verify}` : ""),
       );
     }
   } else {
     // Формулировка выбрана намеренно: не «патологии нет», а «на этом
     // изображении не вижу». Разница между ними — цена пропущенного диагноза.
-    lines.push(
-      "",
-      read.sheet
-        ? "Явных изменений на просмотренных срезах не отмечено."
-        : "Явных изменений на этом изображении не отмечено.",
-    );
-    lines.push("Это НЕ означает отсутствия патологии у пациента.");
+    lines.push("", read.sheet ? T.nothingSheet : T.nothingOne);
+    lines.push(T.notAbsence);
   }
 
   if (read.limits.length) {
-    lines.push("", "Что мешает смотреть:");
+    lines.push("", T.limits);
     for (const l of read.limits) lines.push(`• ${l}`);
   }
 
-  lines.push(
-    "",
-    read.sheet
-      ? "Описание получено моделью по ВЫБОРКЕ срезов серии (не по всем) и подлежит проверке врачом."
-      : "Описание получено моделью по одному изображению и подлежит проверке врачом.",
-  );
+  lines.push("", read.sheet ? T.footerSheet : T.footerOne);
 
   return lines.filter((l) => l !== null).join("\n");
 }

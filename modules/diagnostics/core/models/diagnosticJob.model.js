@@ -13,6 +13,7 @@
 
 import mongoose from "mongoose";
 import { JOB_STATUSES, MODALITY_KEYS } from "../../constants.js";
+import { SUPPORTED_LANGS } from "../../ai/language.js";
 
 const { Schema } = mongoose;
 
@@ -53,6 +54,12 @@ const diagnosticJobSchema = new Schema(
     // «что дописать, чтобы разбор стал полнее». Пока своего поля не было,
     // модель дублировала пробелы в выводы, и список раздувался.
     dataGaps: { type: [String], default: [] },
+
+    // Язык, на котором сделан разбор. Хранится в задании, а не берётся из
+    // текущего языка интерфейса: выводы лежат в базе готовым текстом, и
+    // задним числом они на другом языке не заговорят. Поле отвечает на
+    // вопрос «на каком языке это писалось», а не «на каком читают сейчас».
+    lang: { type: String, enum: SUPPORTED_LANGS, default: "ru" },
   },
   { timestamps: true, collection: "diagnostic_jobs" },
 );

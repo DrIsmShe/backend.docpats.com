@@ -29,13 +29,19 @@ const MIME = {
   ".gif": "image/gif",
 };
 
-const [filePath, modalityKey = "xray", ...hintParts] = process.argv.slice(2);
+// Язык отдельным флагом, а не позицией: подсказка врача — свободный текст,
+// и отличить «en» в конце фразы от требования языка было бы нечем.
+const argv = process.argv.slice(2).filter((a) => !a.startsWith("--lang="));
+const langArg = process.argv.slice(2).find((a) => a.startsWith("--lang="));
+const lang = langArg ? langArg.slice("--lang=".length) : "ru";
+
+const [filePath, modalityKey = "xray", ...hintParts] = argv;
 
 if (!filePath) {
   console.error(
     [
       "Укажите файл:",
-      "  npm run read:image -- <файл> [модальность] [подсказка]",
+      "  npm run read:image -- <файл> [модальность] [подсказка] [--lang=en|az|tr|ar]",
       "",
       "Модальности с чтением изображений: ct, mri, xray, us, ecg, endoscopy, histology",
       "Пример: npm run read:image -- ./кт-пазух.jpg ct",
@@ -159,6 +165,7 @@ console.log(
     : `Подпись:     ${modality.binaryNote}`,
 );
 console.log("");
+console.log(`Язык ответа: ${lang}`);
 console.log("Читаю…");
 console.log("");
 
@@ -171,6 +178,7 @@ try {
     modality,
     hint: [dicomHint, hintParts.join(" ")].filter(Boolean).join(" "),
     sheet: isSheet,
+    lang,
   });
 } catch (err) {
   console.error(`Не удалось прочитать: ${err.message}`);

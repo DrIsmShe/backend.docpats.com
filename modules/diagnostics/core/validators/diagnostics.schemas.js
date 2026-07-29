@@ -72,6 +72,10 @@ export const addArtifactSchema = z
 export const analyzeSchema = z.object({
   // Пусто — сервис сам решит по составу материалов.
   modalities: z.array(z.enum(MODALITY_KEYS)).max(10).optional(),
+  // Язык разбора. Не enum: клиент шлёт то, что стоит у него в i18next, и это
+  // бывает «az-AZ». Приводит и отбраковывает normalizeLang — валидатору
+  // достаточно не пропустить сюда мусор произвольной длины.
+  lang: z.string().trim().max(10).optional(),
 });
 
 export const closeCaseSchema = z.object({

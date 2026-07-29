@@ -23,6 +23,7 @@ import DiagnosticArtifact from "../models/diagnosticArtifact.model.js";
 import DiagnosticJob from "../models/diagnosticJob.model.js";
 import DiagnosticFinding from "../models/diagnosticFinding.model.js";
 import { getModality, listModalities, supportsImages } from "./registry.js";
+import { normalizeLang } from "../../ai/language.js";
 import { getAnalyzer } from "../../ai/analyzers.js";
 import { MAX_ARTIFACTS_PER_JOB } from "../../constants.js";
 import { ConflictError, NotFoundError, ValidationError } from "../../../../common/utils/errors.js";
@@ -126,7 +127,7 @@ function artifactsFor(modality, artifacts) {
  * Поставить задания. Ничего не выполняет — только создаёт записи и переводит
  * дело в статус «анализируется».
  */
-export async function queueAnalysis({ caseId, userId, modalities: requested = [] }) {
+export async function queueAnalysis({ caseId, userId, modalities: requested = [], lang = "ru" }) {
   const caseDoc = await DiagnosticCase.findOne({ _id: caseId, ownerId: userId });
   if (!caseDoc) throw new NotFoundError("Дело не найдено");
 
@@ -154,6 +155,10 @@ export async function queueAnalysis({ caseId, userId, modalities: requested = []
         analyzer: modality.analyzer,
         artifactIds: own.map((a) => a._id),
         status: "queued",
+        // Язык фиксируется в момент постановки задания, а не читается при
+        // исполнении: разбор идёт в фоновом воркере, где запроса врача и его
+        // языка уже нет.
+        lang: normalizeLang(lang),
       }),
     );
   }
@@ -220,10 +225,19 @@ export async function reapStaleJobs({ caseId = null, ownerId = null, now = Date.
  * Выполнить одно задание. Отдельная функция — её вызывают и фоновый прогон, и
  * тесты, и (в будущем) воркер BullMQ.
  */
-export async function runJob(jobId) {
+export async function runJob(jobId, { lang = null } = {}) {
   const job = await DiagnosticJob.findById(jobId);
   if (!job) throw new NotFoundError("Задание не найдено");
-  if (job.status === "done") return job.toObject();
+
+  // Смена языка при перезапуске. Это единственный способ получить уже
+  // разобранное дело на другом языке: выводы лежат в базе готовым текстом.
+  // Поэтому же перезапуск на новом языке не считается «уже выполнено» —
+  // иначе кнопка молча возвращала бы старый русский результат.
+  const wantLang = lang ? normalizeLang(lang) : null;
+  const relang = Boolean(wantLang && wantLang !== job.lang);
+  if (relang) job.lang = wantLang;
+
+  if (job.status === "done" && !relang) return job.toObject();
   if (job.status === "running") {
     // Брошенное задание перезапускать МОЖНО — иначе «Попробовать ещё раз»
     // упирается в «уже выполняется» и дело не расклинить вообще ничем.
@@ -255,7 +269,7 @@ export async function runJob(jobId) {
   await job.save();
 
   try {
-    const result = await analyzer.run({ caseDoc, artifacts, modality });
+    const result = await analyzer.run({ caseDoc, artifacts, modality, lang: job.lang });
 
     if (result?.skipped) {
       // Пропуск — нормальный исход, а не ошибка: врачу пишем причину.
@@ -284,10 +298,14 @@ export async function runJob(jobId) {
     // выводами — они относились к прежней формулировке, и переносить их на
     // новую нельзя: это была бы подпись врача под текстом, которого он не
     // читал.
+    // Чистим ВСЕ выводы по этой модальности, включая свои прежние. Раньше
+    // здесь стояло `jobId: { $ne: job._id }`, и повторный прогон ОДНОГО И ТОГО
+    // ЖЕ задания — перезапуск зависшего или смена языка — оставлял его старые
+    // выводы рядом с новыми. В обычном ходе это не проявлялось: свежие выводы
+    // вставляются ниже, после удаления, так что исключать их было не от чего.
     await DiagnosticFinding.deleteMany({
       caseId: job.caseId,
       modality: job.modality,
-      jobId: { $ne: job._id },
     });
 
     const findings = await DiagnosticFinding.insertMany(

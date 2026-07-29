@@ -8,7 +8,7 @@
 //   labs     — лабораторная панель: сначала правила (labRules), потом модель;
 //   clinical — клинический случай целиком: дифференциальный ряд и что дообследовать.
 //
-// Общий контракт: analyzer.run({ caseDoc, artifacts, modality }) →
+// Общий контракт: analyzer.run({ caseDoc, artifacts, modality, lang }) →
 //   { summary, findings[], dataGaps[], usage, promptVersion, model }
 // Никакой записи в базу внутри: этим занимается analysis.service. Анализатор —
 // чистая функция от входа, поэтому его легко проверить и подменить.
@@ -22,6 +22,7 @@ import { FINDINGS_SCHEMA, normalizeFindings } from "./findings.schema.js";
 // MODEL здесь не нужен: модель для происхождения вывода берётся из ответа
 // (при срабатывании fallbacks отвечает не та, которую просили).
 import { EFFORT, PROMPT_VERSION, runJson, str } from "./runner.js";
+import { languageRule } from "./language.js";
 
 const SYSTEM_BASE = [
   "Ты помогаешь врачу разбирать клинический материал.",
@@ -35,7 +36,8 @@ const SYSTEM_BASE = [
   "   требующую действия у постели больного. Неполнота описания критической не бывает.",
   "4. Каждый вывод должен быть проверяемым: в detail укажи, из чего именно он следует.",
   "5. Не пересказывай весь материал — пиши только то, что меняет тактику.",
-  "6. Пиши по-русски, языком врачебной записи, без общих фраз и без воды.",
+  // Язык ответа подставляется по языку врача — см. systemFor ниже.
+  "6. __LANGUAGE_RULE__",
   "",
   // Разделение каналов — главное правило этого промпта.
   //
@@ -80,6 +82,17 @@ const SYSTEM_BASE = [
   "    ту же, что названа в summary. Сразу за ней — опасные версии, которые",
   "    нельзя пропустить, даже если их вероятность ниже. Дальше — остальное.",
 ].join("\n");
+
+/**
+ * Рамка поведения под язык врача.
+ *
+ * Меняется ровно одно правило — язык ОТВЕТА. Сами инструкции остаются
+ * русскими: они выверены по формулировкам, и пять их независимых переводов
+ * разъезжались бы при каждой правке.
+ */
+export function systemFor(lang) {
+  return SYSTEM_BASE.replace("__LANGUAGE_RULE__", languageRule(lang));
+}
 
 /** Клиническая шапка дела — одинаковая для всех анализаторов. */
 function caseHeader(caseDoc) {
@@ -128,7 +141,7 @@ function protocolBlock(modality) {
 /* ─── report: текст заключения по протоколу модальности ───────────────── */
 export const reportAnalyzer = {
   key: "report",
-  async run({ caseDoc, artifacts, modality }) {
+  async run({ caseDoc, artifacts, modality, lang }) {
     const texts = artifactTexts(artifacts);
     if (!texts) {
       return {
@@ -153,7 +166,7 @@ export const reportAnalyzer = {
       .join("\n");
 
     const { parsed, usage, model } = await runJson({
-      system: SYSTEM_BASE,
+      system: systemFor(lang),
       instruction,
       schema: FINDINGS_SCHEMA,
       what: `заключение (${modality.key})`,
@@ -167,7 +180,7 @@ export const reportAnalyzer = {
 /* ─── labs: правила + объяснение моделью ──────────────────────────────── */
 export const labsAnalyzer = {
   key: "labs",
-  async run({ caseDoc, artifacts, modality }) {
+  async run({ caseDoc, artifacts, modality, lang }) {
     // Панель может прийти структурой (предпочтительно) или текстом.
     const panels = artifacts
       .filter((a) => Array.isArray(a.structured?.items))
@@ -220,7 +233,7 @@ export const labsAnalyzer = {
       .join("\n");
 
     const { parsed, usage, model } = await runJson({
-      system: SYSTEM_BASE,
+      system: systemFor(lang),
       instruction,
       schema: FINDINGS_SCHEMA,
       what: "лабораторную панель",
@@ -258,7 +271,7 @@ export const labsAnalyzer = {
 /* ─── clinical: случай целиком ────────────────────────────────────────── */
 export const clinicalAnalyzer = {
   key: "clinical",
-  async run({ caseDoc, artifacts, modality }) {
+  async run({ caseDoc, artifacts, modality, lang }) {
     const texts = artifactTexts(artifacts);
     const header = caseHeader(caseDoc);
     if (!texts && !header) {
@@ -279,7 +292,7 @@ export const clinicalAnalyzer = {
       .join("\n");
 
     const { parsed, usage, model } = await runJson({
-      system: SYSTEM_BASE,
+      system: systemFor(lang),
       instruction,
       schema: FINDINGS_SCHEMA,
       what: "клинический случай",
