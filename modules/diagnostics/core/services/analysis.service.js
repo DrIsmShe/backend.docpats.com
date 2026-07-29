@@ -22,7 +22,7 @@ import DiagnosticCase from "../models/diagnosticCase.model.js";
 import DiagnosticArtifact from "../models/diagnosticArtifact.model.js";
 import DiagnosticJob from "../models/diagnosticJob.model.js";
 import DiagnosticFinding from "../models/diagnosticFinding.model.js";
-import { getModality, listModalities } from "./registry.js";
+import { getModality, listModalities, supportsImages } from "./registry.js";
 import { getAnalyzer } from "../../ai/analyzers.js";
 import { MAX_ARTIFACTS_PER_JOB } from "../../constants.js";
 import { ConflictError, NotFoundError, ValidationError } from "../../../../common/utils/errors.js";
@@ -66,8 +66,15 @@ export function collectAnalysisBlockers(caseDoc, artifacts) {
   //
   // Структурированные данные (панель показателей) текстом не являются, но
   // разбираются, поэтому считаются полноценным материалом.
+  // Изображение, которое модальность умеет читать, материалом СЧИТАЕТСЯ, даже
+  // если текста в нём нет: его описание попадает в дело при загрузке
+  // (imageStudyReader). Без этой оговорки включённое чтение снимков блокировал
+  // бы гейт, написанный тогда, когда снимки не читались вовсе.
   const unusable = artifacts.filter(
-    (a) => !String(a.text ?? "").trim() && !a.structured,
+    (a) =>
+      !String(a.text ?? "").trim() &&
+      !a.structured &&
+      !(a.kind === "image" && a.modality && supportsImages(a.modality)),
   );
   if (unusable.length) {
     blockers.push(

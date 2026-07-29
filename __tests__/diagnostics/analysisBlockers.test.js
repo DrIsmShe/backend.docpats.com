@@ -14,6 +14,9 @@
 import { describe, it, expect } from "vitest";
 import mongoose from "mongoose";
 import DiagnosticFinding from "../../modules/diagnostics/core/models/diagnosticFinding.model.js";
+// Реестр модальностей нужен целиком: гейт спрашивает у него, умеет ли
+// модальность читать изображения.
+await import("../../modules/diagnostics/index.js");
 import { collectAnalysisBlockers } from "../../modules/diagnostics/core/services/analysis.service.js";
 
 // Дело, где все прочие гейты уже пройдены: обезличено, согласие есть, открыто.
@@ -193,5 +196,71 @@ describe("ответ и пробелы — только последнего з�
       ["ответ по анализам", "ответ третий"].sort(),
     );
     expect(full.dataGaps.sort()).toEqual(["пробел по анализам", "пробел третий"].sort());
+  });
+});
+
+// ─── Чтение снимков ────────────────────────────────────────────────────
+//
+// Гейт «файл без текста блокирует разбор» написан тогда, когда снимки не
+// читались вовсе. После включения чтения изображений он бы блокировал ровно
+// то, ради чего чтение и включали.
+
+describe("изображение как полноценный материал", () => {
+  it("снимок КТ без текста не блокирует разбор: модальность умеет смотреть", () => {
+    const blockers = collectAnalysisBlockers(ready, [
+      { kind: "image", modality: "ct", text: "", structured: null },
+    ]);
+    expect(blockers.join(" ")).not.toMatch(/не извлёкся текст/i);
+  });
+
+  it("снимок для модальности БЕЗ чтения изображений по-прежнему блокирует", () => {
+    // Клинический разбор изображений не читает — там блокировка осмысленна.
+    const blockers = collectAnalysisBlockers(ready, [
+      { kind: "image", modality: "clinical", text: "", structured: null },
+    ]);
+    expect(blockers.join(" ")).toMatch(/не извлёкся текст/i);
+  });
+
+  it("файл без указанной модальности блокирует: неизвестно, кто его прочтёт", () => {
+    const blockers = collectAnalysisBlockers(ready, [
+      { kind: "image", modality: null, text: "", structured: null },
+    ]);
+    expect(blockers.join(" ")).toMatch(/не извлёкся текст/i);
+  });
+});
+
+describe("описание снимка для дела", () => {
+  it("никогда не утверждает отсутствие патологии", async () => {
+    const { renderImageStudyText } = await import(
+      "../../modules/diagnostics/ai/imageStudyReader.js"
+    );
+    const text = renderImageStudyText({
+      modalityGuess: "Рентгенограмма ОГК, прямая проекция",
+      whatIsVisible: "Органы грудной клетки целиком.",
+      observations: [],
+      limits: [],
+    });
+    // Формулировка «патологии нет» по одной картинке — самое опасное, что
+    // здесь можно написать: врач прочтёт это как норму.
+    expect(text).not.toMatch(/патологии не выявлено|патологии нет|норма/i);
+    expect(text).toMatch(/НЕ означает отсутствия патологии/i);
+  });
+
+  it("помечает происхождение: это прочитала модель, а не врач", async () => {
+    const { renderImageStudyText } = await import(
+      "../../modules/diagnostics/ai/imageStudyReader.js"
+    );
+    const text = renderImageStudyText({
+      modalityGuess: "КТ, коронарная реконструкция",
+      whatIsVisible: "Околоносовые пазухи.",
+      observations: [
+        { finding: "Пристеночное утолщение слизистой", where: "верхнечелюстная пазуха справа", confidence: "moderate", verify: "сопоставить с жалобами" },
+      ],
+      limits: ["один срез, не исследование целиком"],
+    });
+    expect(text).toMatch(/ПРОЧИТАНО С ИЗОБРАЖЕНИЯ МОДЕЛЬЮ/);
+    expect(text).toMatch(/не заключение врача/i);
+    expect(text).toMatch(/подлежит проверке врачом/i);
+    expect(text).toMatch(/один срез/);
   });
 });

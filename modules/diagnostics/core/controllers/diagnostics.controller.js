@@ -34,6 +34,8 @@ import {
 } from "../validators/diagnostics.schemas.js";
 import { ADVISORY_NOTICE } from "../../constants.js";
 import { readDocument } from "../../ai/documentReader.js";
+import { readImageStudy, renderImageStudyText } from "../../ai/imageStudyReader.js";
+import { getModality, supportsImages } from "../services/registry.js";
 import DiagnosticCase from "../models/diagnosticCase.model.js";
 import DiagnosticArtifact from "../models/diagnosticArtifact.model.js";
 import { trace, traceEgress, describeArtifacts } from "../../audit.js";
@@ -319,11 +321,55 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
     },
   });
 
+  const hint = typeof req.body?.hint === "string" ? req.body.hint : "";
   const result = await readDocument({
     buffer: req.file.buffer,
     mimeType: req.file.mimetype,
-    hint: typeof req.body?.hint === "string" ? req.body.hint : "",
+    hint,
   });
+
+  // Чтение САМОГО снимка, а не текста на нём.
+  //
+  // Делается здесь и только здесь: буфер файла живёт ровно этот запрос, в дело
+  // снимки не сохраняются. Это решение о минимизации PHI, и ради чтения
+  // изображений его ломать нельзя — хранилище снимков живого пациента совсем
+  // другой уровень ответственности, чем хранилище их описаний.
+  //
+  // Результат кладётся в тот же text, что и распознанный документ: так он
+  // проходит по уже работающему пути разбора и отображается существующим
+  // интерфейсом без правок на клиенте.
+  const modalityKey = typeof req.body?.modality === "string" ? req.body.modality : "";
+  const modality = modalityKey ? getModality(modalityKey) : null;
+  let imageStudy = null;
+
+  if (
+    req.file.mimetype !== "application/pdf" &&
+    modalityKey &&
+    supportsImages(modalityKey)
+  ) {
+    try {
+      imageStudy = await readImageStudy({
+        buffer: req.file.buffer,
+        mimeType: req.file.mimetype,
+        modality,
+        hint,
+      });
+      const described = renderImageStudyText(imageStudy);
+      // Текст бланка, если он был, остаётся первым: напечатанное врачом
+      // весомее того, что модель разглядела на картинке.
+      result.text = result.text?.trim()
+        ? `${result.text.trim()}
+
+${described}`
+        : described;
+    } catch (err) {
+      // Снимок не прочитался — это не повод терять распознанный текст.
+      logger?.warn?.(
+        { err, caseId: req.params.id, modality: modalityKey },
+        "image study read failed",
+      );
+    }
+  }
 
   logger?.info?.(
     {
@@ -340,6 +386,11 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
 
   res.json({
     text: result.text,
+    // Отдельно от текста — чтобы интерфейс мог показать чтение снимка иначе,
+    // когда до него дойдут руки. Сейчас достаточно того, что оно внутри text.
+    imageStudy: imageStudy
+      ? { observations: imageStudy.observations, limits: imageStudy.limits }
+      : null,
     docKind: result.docKind,
     unreadable: result.unreadable,
     hasPatientIdentity: result.hasPatientIdentity,
