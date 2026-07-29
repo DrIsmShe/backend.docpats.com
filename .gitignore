@@ -21,3 +21,4 @@ backend-github-check/
 
 # Тестовые DICOM, собранные npm run make:test-dicom
 test-scan*.dcm
+dicom-samples/
