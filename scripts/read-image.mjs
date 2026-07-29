@@ -54,9 +54,13 @@ const raw = fs.readFileSync(filePath);
 
 // DICOM опознаётся по маркеру внутри файла, а не по расширению: выгрузки из
 // разных архивов приходят и как .dcm, и вообще без расширения.
-const { looksLikeDicom, readDicom, describeDicomStudy } = await import(
+const { looksLikeDicom, readDicom, describeDicomStudy, PHI_LABELS_RU } = await import(
   "../modules/diagnostics/ai/dicomReader.js"
 );
+
+// Сервер отдаёт ключи полей, чтобы интерфейс перевёл их на язык врача.
+// В консоли переводим сами — здесь язык всегда русский.
+const phiRu = (keys) => keys.map((k) => PHI_LABELS_RU[k] ?? k).join(", ");
 const isDicom = looksLikeDicom(raw);
 
 const mimeType = isDicom ? "application/dicom" : MIME[ext];
@@ -93,6 +97,7 @@ if (!supportsImages(modalityKey)) {
 let buffer = raw;
 let imageMime = mimeType;
 let dicomHint = "";
+let isSheet = false;
 
 if (isDicom) {
   let dicom;
@@ -102,24 +107,37 @@ if (isDicom) {
     console.error(`DICOM не прочитан: ${err.message}`);
     if (err.phiFields?.length) {
       console.error("");
-      console.error(`⚠ ФАЙЛ НЕ ОБЕЗЛИЧЕН. В тегах: ${err.phiFields.join(", ")}.`);
+      console.error(`⚠ ФАЙЛ НЕ ОБЕЗЛИЧЕН. В тегах: ${phiRu(err.phiFields)}.`);
     }
     process.exit(1);
   }
   buffer = dicom.png;
   imageMime = dicom.mimeType;
   dicomHint = describeDicomStudy(dicom.study);
+  isSheet = Boolean(dicom.study.layout);
 
   console.log("── DICOM ──");
   console.log(`Модальность по тегу: ${dicom.study.modality}`);
   if (dicom.study.bodyPart) console.log(`Область:             ${dicom.study.bodyPart}`);
   console.log(`Матрица:             ${dicom.study.cols}×${dicom.study.rows}`);
+  console.log(`Кадров в файле:      ${dicom.study.frames}`);
+  if (isSheet) {
+    const { gridCols, gridRows, shown } = dicom.study.layout;
+    console.log(`Показано:            сетка ${gridCols}×${gridRows}, срезы № ${shown.join(", ")}`);
+  }
   console.log(`Окно:                ${dicom.study.window}`);
   for (const n of dicom.notes) console.log(`Замечание:           ${n}`);
+
+  // Только в этом инструменте: картинка кладётся на диск, чтобы её можно было
+  // открыть и сравнить с тем, что написала модель. В самом модуле снимок
+  // никуда не сохраняется — там в дело попадает только текст.
+  const previewPath = `${filePath}.preview.png`;
+  fs.writeFileSync(previewPath, dicom.png);
+  console.log(`Картинка для глаз:   ${previewPath}`);
   console.log("");
   if (dicom.phiFields.length) {
     // Врач этих полей не видит: в DICOM они внутри файла, а не на картинке.
-    console.log(`⚠ ФАЙЛ НЕ ОБЕЗЛИЧЕН. В тегах есть: ${dicom.phiFields.join(", ")}.`);
+    console.log(`⚠ ФАЙЛ НЕ ОБЕЗЛИЧЕН. В тегах есть: ${phiRu(dicom.phiFields)}.`);
     console.log("  Значения не печатаются и модели не отправляются — уходит только срез.");
     console.log("");
   } else {
@@ -132,7 +150,14 @@ const kb = Math.round(raw.length / 1024);
 
 console.log(`Файл:        ${path.basename(filePath)} (${kb} КБ, ${mimeType})`);
 console.log(`Модальность: ${modality.title}`);
-console.log(`Подпись:     ${modality.binaryNote}`);
+// binaryNote написан про обычную картинку («читается одно изображение»). Для
+// сетки срезов он уже неверен — печатать его здесь значило бы противоречить
+// самому себе двумя строками выше.
+console.log(
+  isSheet
+    ? `Подпись:     Читается ВЫБОРКА срезов серии одной сеткой. Полной серии, плотностей в HU и других окон у модели нет.`
+    : `Подпись:     ${modality.binaryNote}`,
+);
 console.log("");
 console.log("Читаю…");
 console.log("");
@@ -145,6 +170,7 @@ try {
     mimeType: imageMime,
     modality,
     hint: [dicomHint, hintParts.join(" ")].filter(Boolean).join(" "),
+    sheet: isSheet,
   });
 } catch (err) {
   console.error(`Не удалось прочитать: ${err.message}`);

@@ -358,6 +358,9 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
       mimeType: dicom.mimeType,
       modality,
       hint: [describeDicomStudy(dicom.study), hint].filter(Boolean).join(" "),
+      // Многокадровый файл уходит сеткой срезов — модель должна знать об этом
+      // из инструкции, а не догадываться по картинке.
+      sheet: Boolean(dicom.study.layout),
     });
 
     logger?.info?.(

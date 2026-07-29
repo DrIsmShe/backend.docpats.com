@@ -12,10 +12,12 @@
 // файл заодно показывает, из чего DICOM состоит.
 
 import { describe, it, expect } from "vitest";
+import sharp from "sharp";
 import {
   looksLikeDicom,
   readDicom,
   describeDicomStudy,
+  PHI_LABELS_RU,
 } from "../../modules/diagnostics/ai/dicomReader.js";
 
 /* ─── Сборка DICOM (Explicit VR Little Endian) ─────────────────────────── */
@@ -52,15 +54,27 @@ function elementPixelData(pixels) {
   return Buffer.concat([head, pixels]);
 }
 
-function buildDicom({ withPhi = true, transferSyntax = "1.2.840.10008.1.2.1" } = {}) {
+function buildDicom({
+  withPhi = true,
+  transferSyntax = "1.2.840.10008.1.2.1",
+  frames = 1,
+  declaredFrames = null,
+} = {}) {
   const rows = 8;
   const cols = 8;
 
-  // Градиент слева направо — видно, что окно применилось.
-  const pixels = Buffer.alloc(rows * cols * 2);
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      pixels.writeUInt16LE(x * 128, (y * cols + x) * 2);
+  // Градиент слева направо — видно, что окно применилось. У каждого кадра свой
+  // сдвиг, чтобы отличить кадр 0 от кадра 40: иначе тест выборки кадров не
+  // отличит правильную реализацию от чтения одного и того же места.
+  const pixels = Buffer.alloc(rows * cols * 2 * frames);
+  for (let f = 0; f < frames; f++) {
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        pixels.writeUInt16LE(
+          (x * 128 + f * 7) % 4096,
+          (f * rows * cols + y * cols + x) * 2,
+        );
+      }
     }
   }
 
@@ -91,6 +105,11 @@ function buildDicom({ withPhi = true, transferSyntax = "1.2.840.10008.1.2.1" } =
     elementString(0x0018, 0x0050, "DS", "1.0"),
     elementUint16(0x0028, 0x0002, 1),
     elementString(0x0028, 0x0004, "CS", "MONOCHROME2"),
+    // NumberOfFrames — IS, строкой. declaredFrames позволяет заявить больше
+    // кадров, чем реально лежит в файле: так выглядит обрезанная выгрузка.
+    frames > 1 || declaredFrames
+      ? elementString(0x0028, 0x0008, "IS", String(declaredFrames ?? frames))
+      : Buffer.alloc(0),
     elementUint16(0x0028, 0x0010, rows),
     elementUint16(0x0028, 0x0011, cols),
     elementUint16(0x0028, 0x0100, 16),
@@ -124,13 +143,23 @@ describe("личные данные в тегах", () => {
     const read = await readDicom(buildDicom({ withPhi: true }));
     expect(read.phiFields).toEqual(
       expect.arrayContaining([
-        "имя пациента",
-        "идентификатор пациента",
-        "дата рождения",
-        "номер обращения (accession)",
-        "название учреждения",
+        "patientName",
+        "patientId",
+        "birthDate",
+        "accession",
+        "institution",
       ]),
     );
+  });
+
+  it("отдаёт ключи, а не русские подписи: интерфейс работает на пяти языках", async () => {
+    // Русская строка с сервера означала бы, что врач на азербайджанском
+    // получит предупреждение о личных данных по-русски — то есть не получит.
+    const read = await readDicom(buildDicom({ withPhi: true }));
+    for (const f of read.phiFields) {
+      expect(f).toMatch(/^[a-zA-Z]+$/);
+      expect(PHI_LABELS_RU[f]).toBeTruthy();
+    }
   });
 
   it("не возвращает сами значения — только названия полей", async () => {
@@ -169,6 +198,81 @@ describe("отрисовка среза", () => {
   });
 });
 
+describe("многокадровый файл (сотни срезов в одном DICOM)", () => {
+  it("берёт выборку по ВСЕЙ серии, а не первые кадры подряд", async () => {
+    const read = await readDicom(buildDicom({ frames: 60 }));
+
+    expect(read.study.frames).toBe(60);
+    expect(read.study.layout).toEqual({
+      gridCols: 4,
+      gridRows: 3,
+      shown: expect.any(Array),
+    });
+
+    const shown = read.study.layout.shown;
+    expect(shown).toHaveLength(12);
+    // Края серии обязаны попасть в выборку, иначе верх и низ исследования
+    // не увидит никто.
+    expect(shown[0]).toBe(1);
+    expect(shown[shown.length - 1]).toBe(60);
+    // Номера строго возрастают и разбросаны по серии — это и есть проверка на
+    // «читаем не нулевой кадр двенадцать раз».
+    expect([...shown].sort((a, b) => a - b)).toEqual(shown);
+    expect(new Set(shown).size).toBe(12);
+  });
+
+  it("складывает выбранные срезы в одну картинку-сетку", async () => {
+    const read = await readDicom(buildDicom({ frames: 60 }));
+    const meta = await sharp(read.png).metadata();
+    // 8×8 исходный кадр, сетка 4×3 → 32×24. Одиночным кадром было бы 8×8.
+    expect(meta.width).toBe(32);
+    expect(meta.height).toBe(24);
+  });
+
+  it("при малом числе кадров показывает их все", async () => {
+    const read = await readDicom(buildDicom({ frames: 5 }));
+    expect(read.study.layout.shown).toEqual([1, 2, 3, 4, 5]);
+    expect(read.study.layout.gridRows).toBe(2);
+  });
+
+  it("предупреждает врача, что показана выборка, а не вся серия", async () => {
+    const read = await readDicom(buildDicom({ frames: 60 }));
+    expect(read.notes.join(" ")).toMatch(/из 60 кадров показаны 12/);
+    expect(read.notes.join(" ")).toMatch(/между выбранными.*не попадёт/);
+  });
+
+  it("не верит заголовку на слово: заявлено 300 кадров, в файле 5", async () => {
+    // Обрезанная выгрузка. Читать по заявленному числу — значит уйти за
+    // границу буфера и уронить процесс, а не «получить немного мусора».
+    const read = await readDicom(buildDicom({ frames: 5, declaredFrames: 300 }));
+    expect(read.study.frames).toBe(5);
+    expect(read.notes.join(" ")).toMatch(/заявлено 300 кадров, фактически.*5/);
+  });
+
+  it("одиночный кадр остаётся одиночным кадром", async () => {
+    const read = await readDicom(buildDicom({ frames: 1 }));
+    expect(read.study.layout).toBeNull();
+    const meta = await sharp(read.png).metadata();
+    expect(meta.width).toBe(8);
+    expect(meta.height).toBe(8);
+  });
+
+  it("говорит модели, что это сетка срезов, а не один снимок", async () => {
+    // Самое важное в этом блоке. Если модель примет сетку за один кадр, она
+    // опишет двенадцать плиток как двенадцать образований в одной голове —
+    // это не косметическая ошибка, а выдуманная клиническая картина.
+    const read = await readDicom(buildDicom({ frames: 60 }));
+    const text = describeDicomStudy(read.study);
+
+    expect(text).toMatch(/СЕТКА 4×3/);
+    expect(text).toMatch(/срезов/);
+    expect(text).toMatch(/номер среза в серии/);
+    expect(text).toMatch(/НЕ означает их отсутствия/);
+    // И ни в коем случае не старая формулировка про один срез.
+    expect(text).not.toMatch(/Это ОДИН срез/);
+  });
+});
+
 describe("сжатые файлы", () => {
   it("отказывается вместо того, чтобы отрисовать мусор", async () => {
     // JPEG 2000 — dicom-parser не распаковывает. Отрисовать «как получится»
@@ -185,7 +289,7 @@ describe("сжатые файлы", () => {
     });
     await readDicom(compressed).catch((err) => {
       expect(err.compressed).toBe(true);
-      expect(err.phiFields).toContain("имя пациента");
+      expect(err.phiFields).toContain("patientName");
     });
   });
 });

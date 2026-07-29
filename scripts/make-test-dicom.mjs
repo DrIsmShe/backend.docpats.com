@@ -6,6 +6,8 @@
 //
 //   npm run make:test-dicom              → ./test-scan.dcm (с личными данными)
 //   npm run make:test-dicom -- clean     → без личных данных, для сравнения
+//   npm run make:test-dicom -- 40        → многокадровый файл: 40 срезов
+//   npm run make:test-dicom -- clean 40  → то и другое
 //
 // ЗАЧЕМ. Настоящие снимки скачивать долго, а половина архивов отдаёт сжатый
 // JPEG2000, который мы намеренно отклоняем. Этот файл проверяет ровно то, что
@@ -21,8 +23,20 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const withPhi = process.argv[2] !== "clean";
-const outPath = path.resolve(process.argv[3] ?? (withPhi ? "./test-scan.dcm" : "./test-scan-clean.dcm"));
+const argv = process.argv.slice(2);
+const withPhi = !argv.includes("clean");
+const FRAMES = Math.max(1, parseInt(argv.find((a) => /^\d+$/.test(a)) ?? "1", 10));
+const explicitOut = argv.find((a) => a.endsWith(".dcm"));
+const outPath = path.resolve(
+  explicitOut ??
+    (FRAMES > 1
+      ? withPhi
+        ? "./test-series.dcm"
+        : "./test-series-clean.dcm"
+      : withPhi
+        ? "./test-scan.dcm"
+        : "./test-scan-clean.dcm"),
+);
 
 /* ─── Элементы DICOM (Explicit VR Little Endian) ─────────────────────── */
 
@@ -60,20 +74,42 @@ function elPixels(pixels) {
 /* ─── Фантом: круг «мягкой ткани» с полостью внутри ──────────────────── */
 
 const SIZE = 256;
-const pixels = Buffer.alloc(SIZE * SIZE * 2);
+const pixels = Buffer.alloc(SIZE * SIZE * 2 * FRAMES);
 const c = SIZE / 2;
 
-for (let y = 0; y < SIZE; y++) {
-  for (let x = 0; x < SIZE; x++) {
-    const r = Math.hypot(x - c, y - c);
-    // Значения в HU: воздух −1000, мягкая ткань ~40, кость ~700.
-    // Хранятся как unsigned со сдвигом 1024 (RescaleIntercept = −1024).
-    let hu;
-    if (r > SIZE * 0.45) hu = -1000;            // воздух вокруг
-    else if (r > SIZE * 0.42) hu = 700;         // «костное кольцо»
-    else if (r < SIZE * 0.12) hu = -900;        // «полость» в центре
-    else hu = 40;                                // «мягкая ткань»
-    pixels.writeUInt16LE(Math.max(0, Math.min(4095, hu + 1024)), (y * SIZE + x) * 2);
+// В многокадровом файле «уплотнение» присутствует только в средней трети
+// серии и меняет размер. Это и есть настоящая проверка выборки кадров: по
+// нулевому срезу его не видно вовсе, а по сетке должно быть видно, с какого
+// по какой срез оно прослеживается.
+const lesionFrom = Math.floor(FRAMES * 0.35);
+const lesionTo = Math.floor(FRAMES * 0.65);
+
+for (let f = 0; f < FRAMES; f++) {
+  const inLesion = FRAMES > 1 && f >= lesionFrom && f <= lesionTo;
+  // Размер по параболе: в середине диапазона максимум, к краям сходит на нет.
+  const t = inLesion ? 1 - Math.abs((f - (lesionFrom + lesionTo) / 2) / ((lesionTo - lesionFrom) / 2 || 1)) : 0;
+  const lesionR = SIZE * 0.09 * t;
+  const lx = c + SIZE * 0.2;
+  const ly = c - SIZE * 0.1;
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const r = Math.hypot(x - c, y - c);
+      // Значения в HU: воздух −1000, мягкая ткань ~40, кость ~700.
+      // Хранятся как unsigned со сдвигом 1024 (RescaleIntercept = −1024).
+      let hu;
+      if (r > SIZE * 0.45) hu = -1000;            // воздух вокруг
+      else if (r > SIZE * 0.42) hu = 700;         // «костное кольцо»
+      else if (r < SIZE * 0.12) hu = -900;        // «полость» в центре
+      else hu = 40;                                // «мягкая ткань»
+
+      if (lesionR > 1 && Math.hypot(x - lx, y - ly) < lesionR) hu = 120; // «уплотнение»
+
+      pixels.writeUInt16LE(
+        Math.max(0, Math.min(4095, hu + 1024)),
+        (f * SIZE * SIZE + y * SIZE + x) * 2,
+      );
+    }
   }
 }
 
@@ -107,6 +143,7 @@ const body = Buffer.concat([
   elString(0x0018, 0x0060, "DS", "120"),
   elUint16(0x0028, 0x0002, 1),
   elString(0x0028, 0x0004, "CS", "MONOCHROME2"),
+  FRAMES > 1 ? elString(0x0028, 0x0008, "IS", String(FRAMES)) : Buffer.alloc(0),
   elUint16(0x0028, 0x0010, SIZE),
   elUint16(0x0028, 0x0011, SIZE),
   elUint16(0x0028, 0x0100, 16),
@@ -129,7 +166,17 @@ const file = Buffer.concat([
 fs.writeFileSync(outPath, file);
 
 console.log(`Готово: ${outPath}`);
-console.log(`  ${Math.round(file.length / 1024)} КБ, ${SIZE}×${SIZE}, КТ-фантом, несжатый`);
+console.log(
+  `  ${Math.round(file.length / 1024)} КБ, ${SIZE}×${SIZE}, ` +
+    `${FRAMES > 1 ? `${FRAMES} срезов` : "один срез"}, КТ-фантом, несжатый`,
+);
+if (FRAMES > 1) {
+  console.log(
+    `  «Уплотнение» есть только на срезах ${lesionFrom + 1}–${lesionTo + 1}: ` +
+      `на первом срезе его НЕТ.`,
+  );
+  console.log("  Если система читала бы только нулевой кадр — она его не увидела бы.");
+}
 console.log(
   withPhi
     ? "  В тегах ВЫДУМАННЫЕ личные данные — чтобы увидеть предупреждение системы."

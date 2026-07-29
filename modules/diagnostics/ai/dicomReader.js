@@ -24,18 +24,41 @@
 import dicomParser from "dicom-parser";
 import sharp from "sharp";
 
-/** Теги, наличие которых означает, что файл не обезличен. */
+// Теги, наличие которых означает, что файл не обезличен.
+//
+// Наружу отдаётся КЛЮЧ, а не русская подпись. Интерфейс работает на пяти
+// языках, и врач на азербайджанском не должен получать «имя пациента» русской
+// строкой с сервера. Русские подписи ниже — только для консольного
+// инструмента и для подсказки модели, которая и так по-русски.
 const PHI_TAGS = [
-  ["x00100010", "имя пациента"],
-  ["x00100020", "идентификатор пациента"],
-  ["x00100030", "дата рождения"],
-  ["x00101040", "адрес пациента"],
-  ["x00102154", "телефон пациента"],
-  ["x00080050", "номер обращения (accession)"],
-  ["x00080080", "название учреждения"],
-  ["x00080090", "врач, направивший на исследование"],
-  ["x00081050", "врач, выполнивший исследование"],
+  ["x00100010", "patientName"],
+  ["x00100020", "patientId"],
+  ["x00100030", "birthDate"],
+  ["x00101040", "patientAddress"],
+  ["x00102154", "patientPhone"],
+  ["x00080050", "accession"],
+  ["x00080080", "institution"],
+  ["x00080090", "referringPhysician"],
+  ["x00081050", "performingPhysician"],
 ];
+
+/** Русские подписи ключей PHI — для консоли и журнала, не для интерфейса. */
+export const PHI_LABELS_RU = {
+  patientName: "имя пациента",
+  patientId: "идентификатор пациента",
+  birthDate: "дата рождения",
+  patientAddress: "адрес пациента",
+  patientPhone: "телефон пациента",
+  accession: "номер обращения (accession)",
+  institution: "название учреждения",
+  referringPhysician: "врач, направивший на исследование",
+  performingPhysician: "врач, выполнивший исследование",
+};
+
+// Сколько кадров показывать из многокадрового файла. Двенадцать — компромисс:
+// сетка 4×3 читаема, каждый кадр остаётся крупным, объём запроса разумный.
+// Больше кадров означало бы мельче картинку — то есть видно меньше, а не больше.
+const MAX_TILES = 12;
 
 /** Несжатые синтаксисы: только их мы умеем отрисовать сами. */
 const UNCOMPRESSED = new Set([
@@ -123,7 +146,7 @@ export async function readDicom(buffer) {
 
   // ── что в файле есть из личных данных ──
   // Значения НЕ возвращаются и никуда не пишутся — только названия полей.
-  const phiFields = PHI_TAGS.filter(([tag]) => str(dataSet, tag)).map(([, label]) => label);
+  const phiFields = PHI_TAGS.filter(([tag]) => str(dataSet, tag)).map(([, key]) => key);
 
   const transferSyntax = str(dataSet, "x00020010") || "1.2.840.10008.1.2";
   if (!UNCOMPRESSED.has(transferSyntax)) {
@@ -152,28 +175,64 @@ export async function readDicom(buffer) {
     throw new Error("Цветной DICOM (RGB) пока не поддерживается — выгрузите срез в PNG");
   }
 
-  const notes = [];
-  if (frames > 1) {
-    notes.push(`в файле ${frames} кадров — прочитан первый`);
-  }
-
-  // ── пиксели → значения в единицах модальности (HU для КТ) ──
-  const slope = num(dataSet, "x00281053", 1) ?? 1;
-  const intercept = num(dataSet, "x00281052", 0) ?? 0;
-  const count = rows * cols;
-  const values = new Float32Array(count);
-
-  if (bitsAllocated === 16) {
-    const raw = pixelRepresentation === 1
-      ? new Int16Array(buffer.buffer, buffer.byteOffset + pixelElement.dataOffset, count)
-      : new Uint16Array(buffer.buffer, buffer.byteOffset + pixelElement.dataOffset, count);
-    for (let i = 0; i < count; i++) values[i] = raw[i] * slope + intercept;
-  } else if (bitsAllocated === 8) {
-    const raw = new Uint8Array(buffer.buffer, buffer.byteOffset + pixelElement.dataOffset, count);
-    for (let i = 0; i < count; i++) values[i] = raw[i] * slope + intercept;
-  } else {
+  if (bitsAllocated !== 8 && bitsAllocated !== 16) {
     throw new Error(`Не поддерживается разрядность ${bitsAllocated} бит`);
   }
+
+  const notes = [];
+  const count = rows * cols;
+  const bytesPerFrame = count * (bitsAllocated / 8);
+  const slope = num(dataSet, "x00281053", 1) ?? 1;
+  const intercept = num(dataSet, "x00281052", 0) ?? 0;
+
+  /** Значения одного кадра в единицах модальности (HU для КТ). */
+  const frameValues = (frameIndex) => {
+    const offset = buffer.byteOffset + pixelElement.dataOffset + frameIndex * bytesPerFrame;
+    const out = new Float32Array(count);
+    const raw =
+      bitsAllocated === 16
+        ? pixelRepresentation === 1
+          ? new Int16Array(buffer.buffer, offset, count)
+          : new Uint16Array(buffer.buffer, offset, count)
+        : new Uint8Array(buffer.buffer, offset, count);
+    for (let i = 0; i < count; i++) out[i] = raw[i] * slope + intercept;
+    return out;
+  };
+
+  // Сколько кадров реально лежит в файле. Заголовок иногда врёт (обрезанная
+  // выгрузка), поэтому верим меньшему из заявленного и фактического: чтение за
+  // границей буфера — это не «немного мусора», а падение процесса.
+  const availableFrames = Math.max(
+    1,
+    Math.min(frames, Math.floor(pixelElement.length / bytesPerFrame)),
+  );
+  if (availableFrames < frames) {
+    notes.push(`заявлено ${frames} кадров, фактически в файле ${availableFrames}`);
+  }
+
+  // ── какие кадры показать ──
+  //
+  // Отправить модели все триста срезов нельзя и незачем: это дорого, не
+  // помещается и не помогает — связать триста отдельных картинок в одно
+  // исследование она всё равно не может. Берём равномерную выборку по всей
+  // серии: так видна динамика картины сверху вниз, а не одна произвольная
+  // плоскость.
+  //
+  // Выборка — НЕ замена пролистыванию. Находка между выбранными срезами в неё
+  // не попадёт, и об этом сказано и врачу (notes), и модели (описание).
+  const picked = [];
+  if (availableFrames <= MAX_TILES) {
+    for (let i = 0; i < availableFrames; i++) picked.push(i);
+  } else {
+    for (let t = 0; t < MAX_TILES; t++) {
+      picked.push(Math.round((t * (availableFrames - 1)) / (MAX_TILES - 1)));
+    }
+  }
+
+  // Окно считаем по СРЕДНЕМУ кадру серии: на краях часто пусто (воздух над
+  // головой, стол под пациентом), и подобранная по ним яркость сделала бы
+  // середину нечитаемой.
+  const values = frameValues(picked[Math.floor(picked.length / 2)]);
 
   // ── окно ──
   // Берём окно из самого файла: его выставил тот, кто снимок готовил, и это
@@ -197,20 +256,93 @@ export async function readDicom(buffer) {
   }
 
   const lo = center - width / 2;
-  const gray = Buffer.allocUnsafe(count);
-  for (let i = 0; i < count; i++) {
-    const v = ((values[i] - lo) / width) * 255;
-    gray[i] = v <= 0 ? 0 : v >= 255 ? 255 : v;
-  }
+  const invert = str(dataSet, "x00280004") === "MONOCHROME1";
 
-  // MONOCHROME1 — инвертированная шкала (белое = плотное наоборот).
-  if (str(dataSet, "x00280004") === "MONOCHROME1") {
-    for (let i = 0; i < count; i++) gray[i] = 255 - gray[i];
-  }
+  /** Кадр → 8-битная серая картинка по общему для всей серии окну. */
+  const toGray = (vals) => {
+    const gray = Buffer.allocUnsafe(count);
+    for (let i = 0; i < count; i++) {
+      const v = ((vals[i] - lo) / width) * 255;
+      const b = v <= 0 ? 0 : v >= 255 ? 255 : v;
+      // MONOCHROME1 — инвертированная шкала: без этого плотное и воздушное
+      // меняются местами и снимок читается наизнанку.
+      gray[i] = invert ? 255 - b : b;
+    }
+    return gray;
+  };
 
-  const png = await sharp(gray, { raw: { width: cols, height: rows, channels: 1 } })
-    .png()
-    .toBuffer();
+  let png;
+  let layout = null;
+
+  if (picked.length === 1) {
+    png = await sharp(toGray(values), { raw: { width: cols, height: rows, channels: 1 } })
+      .png()
+      .toBuffer();
+  } else {
+    // Сетка кадров одной картинкой. Так модель видит серию целиком и может
+    // сказать «изменение прослеживается с 40-го по 70-й срез», а не описывать
+    // одну плоскость. Отправлять двенадцать отдельных изображений было бы и
+    // дороже, и хуже: между собой она их не свяжет.
+    const gridCols = Math.min(4, picked.length);
+    const gridRows = Math.ceil(picked.length / gridCols);
+    const tileW = Math.min(cols, Math.max(160, Math.floor(1600 / gridCols)));
+    const tileH = Math.max(1, Math.round((rows * tileW) / cols));
+
+    const tiles = await Promise.all(
+      picked.map((f) =>
+        sharp(toGray(frameValues(f)), { raw: { width: cols, height: rows, channels: 1 } })
+          .resize(tileW, tileH, { fit: "fill" })
+          .png()
+          .toBuffer(),
+      ),
+    );
+
+    // Номера кадров подписаны прямо на сетке: без них модель не сможет
+    // сослаться на конкретный срез, и её «выше по серии» будет непроверяемым.
+    const labels = picked
+      .map((f, i) => {
+        const x = (i % gridCols) * tileW + 6;
+        const y = Math.floor(i / gridCols) * tileH + 22;
+        return (
+          `<text x="${x}" y="${y}" font-family="sans-serif" font-size="18" ` +
+          `fill="#ffe680" stroke="#000" stroke-width="3" paint-order="stroke">${f + 1}</text>`
+        );
+      })
+      .join("");
+
+    png = await sharp({
+      create: {
+        width: tileW * gridCols,
+        height: tileH * gridRows,
+        channels: 3,
+        background: { r: 0, g: 0, b: 0 },
+      },
+    })
+      .composite([
+        ...tiles.map((input, i) => ({
+          input,
+          left: (i % gridCols) * tileW,
+          top: Math.floor(i / gridCols) * tileH,
+        })),
+        {
+          input: Buffer.from(
+            `<svg xmlns="http://www.w3.org/2000/svg" width="${tileW * gridCols}" ` +
+              `height="${tileH * gridRows}">${labels}</svg>`,
+          ),
+          left: 0,
+          top: 0,
+        },
+      ])
+      .png()
+      .toBuffer();
+
+    layout = { gridCols, gridRows, shown: picked.map((f) => f + 1) };
+    notes.push(
+      `из ${availableFrames} кадров показаны ${picked.length} равномерно по серии ` +
+        `(№ ${picked.map((f) => f + 1).join(", ")}) — находка между выбранными ` +
+        `срезами в выборку не попадёт`,
+    );
+  }
 
   const dicomModality = str(dataSet, "x00080060");
 
@@ -228,7 +360,8 @@ export async function readDicom(buffer) {
       kvp: str(dataSet, "x00180060"),
       rows,
       cols,
-      frames,
+      frames: availableFrames,
+      layout,
       window: `${Math.round(center)} / ${Math.round(width)} (${windowSource})`,
     },
     phiFields,
@@ -242,6 +375,25 @@ export async function readDicom(buffer) {
  * Личных полей здесь нет и быть не может: в study они не попадают вовсе.
  */
 export function describeDicomStudy(study) {
+  const grid = study.layout;
+
+  // Сетку срезов обязательно назвать сеткой. Иначе модель примет двенадцать
+  // плиток за одну картинку и опишет несуществующую анатомию — «двенадцать
+  // округлых образований» вместо двенадцати срезов одной головы.
+  const framing = grid
+    ? [
+        `Это НЕ одна картинка, а СЕТКА ${grid.gridCols}×${grid.gridRows} из ${grid.shown.length} срезов`,
+        `одной серии (всего в файле ${study.frames}), выбранных равномерно сверху вниз.`,
+        `Читать по плиткам слева направо, сверху вниз; жёлтая цифра в углу плитки —`,
+        `номер среза в серии (показаны № ${grid.shown.join(", ")}).`,
+        `Ссылайтесь на находки по этим номерам.`,
+        `Между показанными срезами есть непросмотренные: отсутствие изменений в выборке`,
+        `НЕ означает их отсутствия в исследовании.`,
+      ].join(" ")
+    : study.frames > 1
+      ? `В файле ${study.frames} кадров, показан первый. Это ОДИН срез из серии, а не исследование целиком.`
+      : "Это ОДИН срез из серии, а не исследование целиком.";
+
   return [
     `Модальность по тегу DICOM: ${study.modality}.`,
     study.bodyPart ? `Область: ${study.bodyPart}.` : null,
@@ -249,8 +401,7 @@ export function describeDicomStudy(study) {
     study.seriesDescription ? `Серия: ${study.seriesDescription}.` : null,
     study.sliceThickness ? `Толщина среза: ${study.sliceThickness} мм.` : null,
     `Матрица: ${study.cols}×${study.rows}. Окно: ${study.window}.`,
-    study.frames > 1 ? `В файле ${study.frames} кадров, показан первый.` : null,
-    "Это ОДИН срез из серии, а не исследование целиком.",
+    framing,
   ]
     .filter(Boolean)
     .join(" ");
