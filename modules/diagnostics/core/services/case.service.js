@@ -152,6 +152,17 @@ export async function getCaseFull(caseId, userId) {
       modalityTitle: getModality(j.modality)?.title ?? j.modality,
     })),
     findings: findings.map(presentFinding),
+    // Ответ на вопрос врача — словами, перед списком. Раньше summary уходил в
+    // служебное сообщение задания и на экран не попадал вовсе: врач спрашивал
+    // «какой диагноз», а получал дифференциальный ряд, из которого ведущую
+    // версию надо было вычислять по порядку пунктов.
+    summaries: jobs
+      .filter((j) => j.status === "done" && String(j.message ?? "").trim())
+      .map((j) => ({
+        modality: j.modality,
+        modalityTitle: getModality(j.modality)?.title ?? j.modality,
+        text: j.message.trim(),
+      })),
     // Пробелы со всех успешных заданий, без повторов: разные модальности
     // часто просят одно и то же (витальные показатели, лекарства), и врачу
     // незачем читать это трижды.
