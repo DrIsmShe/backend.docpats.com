@@ -342,11 +342,24 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
   const modality = modalityKey ? getModality(modalityKey) : null;
   let imageStudy = null;
 
-  if (
-    req.file.mimetype !== "application/pdf" &&
-    modalityKey &&
-    supportsImages(modalityKey)
-  ) {
+  // Когда читать снимок.
+  //
+  // Требовать от врача явно указать модальность было ошибкой: он выбирает её в
+  // форме уже ПОСЛЕ распознавания, а на шаге загрузки поля просто нет. Условие
+  // «указана и умеет смотреть» означало бы, что чтение снимков не включается
+  // через интерфейс никогда.
+  //
+  // Поэтому второе условие — по факту: из картинки не извлеклось осмысленного
+  // текста. Значит это снимок, а не фотография бланка, и смотреть на него —
+  // единственный способ хоть что-то из него получить. Ровно тот случай, с
+  // которого всё началось: КТ пазух без единой подписи.
+  //
+  // Фото заполненного бланка при этом идёт прежним путём: текст извлёкся,
+  // читать пиксели незачем.
+  const isImage = req.file.mimetype !== "application/pdf";
+  const noUsableText = String(result.text ?? "").trim().length < 40;
+
+  if (isImage && (supportsImages(modalityKey) || noUsableText)) {
     try {
       imageStudy = await readImageStudy({
         buffer: req.file.buffer,
