@@ -25,7 +25,7 @@ import {
 import logger from "../../../common/logger.js";
 import { prepareSchema } from "../../../common/utils/structuredOutputSchema.js";
 
-export const PROMPT_VERSION = "diag-2026-07-29b";
+export const PROMPT_VERSION = "diag-2026-07-29c";
 
 export const MODEL =
   process.env.DIAGNOSTICS_AI_MODEL ||

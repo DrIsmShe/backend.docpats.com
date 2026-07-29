@@ -153,8 +153,10 @@ export async function getCaseFull(caseId, userId) {
   const [artifacts, jobs, findings] = await Promise.all([
     DiagnosticArtifact.find({ caseId }).sort({ createdAt: 1 }).lean(),
     DiagnosticJob.find({ caseId }).sort({ createdAt: 1 }).lean(),
-    // Критические выводы — первыми: врач читает сверху.
-    DiagnosticFinding.find({ caseId }).sort({ severity: 1, createdAt: 1 }).lean(),
+    // Порядок задаёт модель (правила 8 и 11), а createdAt его сохраняет:
+    // выводы вставляются одним insertMany подряд. Пересортировки по важности
+    // здесь больше нет — см. findings.schema.js.
+    DiagnosticFinding.find({ caseId }).sort({ createdAt: 1 }).lean(),
   ]);
 
   // Причины, по которым разбор сейчас не запустится, считает СЕРВЕР и отдаёт
