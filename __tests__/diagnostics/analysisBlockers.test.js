@@ -134,3 +134,64 @@ describe("повторный разбор не накапливает вывод
     expect(left[0].modality).toBe("labs");
   });
 });
+
+// ─── Ответ и пробелы берутся с АКТУАЛЬНЫХ заданий ─────────────────────
+//
+// Задания копятся: каждое «Разобрать заново» добавляет новое, прежние остаются
+// в истории ради происхождения. Их выводы удаляются, а summary и dataGaps —
+// нет. Без отбора врач увидел бы четыре ответа подряд, три из них от разборов,
+// которых на экране уже нет. Та же ошибка, что была с выводами, но в другом
+// месте.
+
+describe("ответ и пробелы — только последнего задания модальности", () => {
+  it("из четырёх заданий одной модальности берётся последнее", async () => {
+    const { getCaseFull } = await import(
+      "../../modules/diagnostics/core/services/case.service.js"
+    );
+    const DiagnosticCase = (
+      await import("../../modules/diagnostics/core/models/diagnosticCase.model.js")
+    ).default;
+    const DiagnosticJob = (
+      await import("../../modules/diagnostics/core/models/diagnosticJob.model.js")
+    ).default;
+
+    const ownerId = new mongoose.Types.ObjectId();
+    const c = await DiagnosticCase.create({
+      ownerId,
+      clinicalContext: "случай",
+      deidentified: true,
+      aiConsent: { confirmed: true },
+    });
+
+    for (const [i, text] of ["первый", "второй", "третий"].entries()) {
+      await DiagnosticJob.create({
+        caseId: c._id,
+        ownerId,
+        modality: "clinical",
+        analyzer: "clinical",
+        status: "done",
+        message: `ответ ${text}`,
+        dataGaps: [`пробел ${text}`],
+        createdAt: new Date(2026, 0, 1, 10, i),
+      });
+    }
+    // Другая модальность — её актуальное задание должно остаться.
+    await DiagnosticJob.create({
+      caseId: c._id,
+      ownerId,
+      modality: "labs",
+      analyzer: "labs",
+      status: "done",
+      message: "ответ по анализам",
+      dataGaps: ["пробел по анализам"],
+    });
+
+    const full = await getCaseFull(c._id, ownerId);
+
+    expect(full.summaries).toHaveLength(2);
+    expect(full.summaries.map((s) => s.text).sort()).toEqual(
+      ["ответ по анализам", "ответ третий"].sort(),
+    );
+    expect(full.dataGaps.sort()).toEqual(["пробел по анализам", "пробел третий"].sort());
+  });
+});

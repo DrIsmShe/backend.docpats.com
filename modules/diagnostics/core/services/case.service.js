@@ -117,6 +117,29 @@ export async function listCases({ userId, status, skip = 0, limit } = {}) {
   return { ...page, items: page.items.map(presentCase) };
 }
 
+/**
+ * Последнее успешное задание КАЖДОЙ модальности.
+ *
+ * Задания копятся: каждое «Разобрать заново» добавляет новое, прежние
+ * остаются в истории. Их выводы при этом удаляются (см. runJob), поэтому
+ * брать summary и dataGaps со всех подряд нельзя — врач увидел бы четыре
+ * ответа подряд, из них три от разборов, которых на экране уже нет.
+ *
+ * Ровно та же ошибка, что была с выводами, только в другом месте: история
+ * нужна для происхождения, показывать надо актуальное.
+ */
+function latestDoneJobs(jobs) {
+  const byModality = new Map();
+  for (const j of jobs) {
+    if (j.status !== "done") continue;
+    const prev = byModality.get(j.modality);
+    if (!prev || new Date(j.createdAt) >= new Date(prev.createdAt)) {
+      byModality.set(j.modality, j);
+    }
+  }
+  return [...byModality.values()];
+}
+
 /** Дело целиком: материалы, задания, выводы. Только владельцу. */
 export async function getCaseFull(caseId, userId) {
   await reapStaleJobs({ caseId });
@@ -156,20 +179,19 @@ export async function getCaseFull(caseId, userId) {
     // служебное сообщение задания и на экран не попадал вовсе: врач спрашивал
     // «какой диагноз», а получал дифференциальный ряд, из которого ведущую
     // версию надо было вычислять по порядку пунктов.
-    summaries: jobs
-      .filter((j) => j.status === "done" && String(j.message ?? "").trim())
+    summaries: latestDoneJobs(jobs)
+      .filter((j) => String(j.message ?? "").trim())
       .map((j) => ({
         modality: j.modality,
         modalityTitle: getModality(j.modality)?.title ?? j.modality,
         text: j.message.trim(),
       })),
-    // Пробелы со всех успешных заданий, без повторов: разные модальности
-    // часто просят одно и то же (витальные показатели, лекарства), и врачу
-    // незачем читать это трижды.
+    // Пробелы актуальных заданий, без повторов: разные модальности часто
+    // просят одно и то же (витальные показатели, лекарства), и врачу незачем
+    // читать это трижды.
     dataGaps: [
       ...new Set(
-        jobs
-          .filter((j) => j.status === "done")
+        latestDoneJobs(jobs)
           .flatMap((j) => j.dataGaps ?? [])
           .map((g) => String(g).trim())
           .filter(Boolean),
