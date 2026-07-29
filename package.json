@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "worker:diagnostics": "node modules/diagnostics/jobs/analysis.worker.js",
-    "worker:education": "node modules/education/education-translation/translation.worker.js"
+    "worker:education": "node modules/education/education-translation/translation.worker.js",
+    "read:image": "node scripts/read-image.mjs"
   },
   "engines": {
     "node": "20.x"
