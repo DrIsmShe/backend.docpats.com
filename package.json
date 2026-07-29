@@ -37,6 +37,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "decimal.js": "^10.6.0",
+    "dicom-parser": "^1.8.21",
     "dompurify": "^3.2.4",
     "dotenv": "^16.4.7",
     "express": "^4.21.1",

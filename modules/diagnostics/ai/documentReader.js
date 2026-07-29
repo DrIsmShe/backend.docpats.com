@@ -37,6 +37,12 @@ export const ALLOWED_MIME = [
   "image/webp",
   "image/gif",
   "application/pdf",
+  // DICOM. Тип у него разный в зависимости от того, кто выгружал: браузер
+  // часто не распознаёт .dcm и ставит octet-stream. Полагаться на mime тут
+  // нельзя — настоящая проверка идёт по маркеру DICM внутри файла
+  // (dicomReader.looksLikeDicom), а этот список только пропускает его до неё.
+  "application/dicom",
+  "application/octet-stream",
 ];
 
 // 12 МБ — фотография бланка с телефона укладывается с запасом, а случайно
@@ -110,6 +116,7 @@ async function countPdfPages(buffer) {
  */
 export async function assertReadable({ buffer, mimeType }) {
   if (!buffer?.length) throw new ValidationError("Файл пуст");
+  // Сюда попадает уже не-DICOM: DICOM перехватывается раньше, в контроллере.
   if (!ALLOWED_MIME.includes(mimeType)) {
     throw new ValidationError(
       `Формат ${mimeType || "не определён"} не поддерживается. Принимаются JPEG, PNG, WebP и PDF`,

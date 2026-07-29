@@ -35,6 +35,7 @@ import {
 import { ADVISORY_NOTICE } from "../../constants.js";
 import { readDocument } from "../../ai/documentReader.js";
 import { readImageStudy, renderImageStudyText } from "../../ai/imageStudyReader.js";
+import { looksLikeDicom, readDicom, describeDicomStudy } from "../../ai/dicomReader.js";
 import { getModality, supportsImages } from "../services/registry.js";
 import DiagnosticCase from "../models/diagnosticCase.model.js";
 import DiagnosticArtifact from "../models/diagnosticArtifact.model.js";
@@ -322,6 +323,72 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
   });
 
   const hint = typeof req.body?.hint === "string" ? req.body.hint : "";
+  const requestedModality = typeof req.body?.modality === "string" ? req.body.modality : "";
+
+  // ── DICOM: отдельный путь, до распознавания документа ──
+  //
+  // Текста в срезе нет, зато есть теги, а в тегах — имя пациента, дата
+  // рождения и номер карты. Врач их НЕ ВИДИТ и подтверждает обезличивание
+  // вслепую, поэтому файл разбирается здесь, до отправки куда-либо, и система
+  // сама называет, что в нём лежит. Наружу уходит только отрисованный срез.
+  if (looksLikeDicom(req.file.buffer)) {
+    let dicom;
+    try {
+      dicom = await readDicom(req.file.buffer);
+    } catch (err) {
+      // Сжатый или нестандартный DICOM — отказ с объяснением, а не молчание.
+      // Отрисовать «как получится» нельзя: по искажённой картинке сделают вывод.
+      return res.status(422).json({
+        error: err.message,
+        code: err.compressed ? "DICOM_COMPRESSED" : "DICOM_UNREADABLE",
+        // Даже при отказе врач должен узнать, что файл не обезличен.
+        phiFields: err.phiFields ?? [],
+        fileName: req.file.originalname ?? "",
+      });
+    }
+
+    const modalityKey =
+      requestedModality && supportsImages(requestedModality)
+        ? requestedModality
+        : dicom.modalityKey;
+    const modality = modalityKey ? getModality(modalityKey) : null;
+
+    const study = await readImageStudy({
+      buffer: dicom.png,
+      mimeType: dicom.mimeType,
+      modality,
+      hint: [describeDicomStudy(dicom.study), hint].filter(Boolean).join(" "),
+    });
+
+    logger?.info?.(
+      {
+        caseId: req.params.id,
+        // Структурные данные: ни одного значения из тегов.
+        dicomModality: dicom.study.modality,
+        rows: dicom.study.rows,
+        cols: dicom.study.cols,
+        phiFieldCount: dicom.phiFields.length,
+        observations: study.observations.length,
+      },
+      "diagnostics dicom read",
+    );
+
+    return res.json({
+      text: renderImageStudyText(study),
+      docKind: "image",
+      unreadable: [],
+      // Не догадка модели, а точный факт из тегов файла.
+      hasPatientIdentity: dicom.phiFields.length > 0,
+      phiFields: dicom.phiFields,
+      dicom: { ...dicom.study, notes: dicom.notes },
+      modality: modalityKey ?? "",
+      fileName: req.file.originalname ?? "",
+      pages: 1,
+      model: study.model,
+      promptVersion: study.promptVersion,
+    });
+  }
+
   const result = await readDocument({
     buffer: req.file.buffer,
     mimeType: req.file.mimetype,
@@ -338,7 +405,7 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
   // Результат кладётся в тот же text, что и распознанный документ: так он
   // проходит по уже работающему пути разбора и отображается существующим
   // интерфейсом без правок на клиенте.
-  const modalityKey = typeof req.body?.modality === "string" ? req.body.modality : "";
+  const modalityKey = requestedModality;
   const modality = modalityKey ? getModality(modalityKey) : null;
   let imageStudy = null;
 

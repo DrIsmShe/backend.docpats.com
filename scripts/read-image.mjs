@@ -50,9 +50,21 @@ if (!fs.existsSync(filePath)) {
 }
 
 const ext = path.extname(filePath).toLowerCase();
-const mimeType = MIME[ext];
+const raw = fs.readFileSync(filePath);
+
+// DICOM опознаётся по маркеру внутри файла, а не по расширению: выгрузки из
+// разных архивов приходят и как .dcm, и вообще без расширения.
+const { looksLikeDicom, readDicom, describeDicomStudy } = await import(
+  "../modules/diagnostics/ai/dicomReader.js"
+);
+const isDicom = looksLikeDicom(raw);
+
+const mimeType = isDicom ? "application/dicom" : MIME[ext];
 if (!mimeType) {
-  console.error(`Не поддерживаемый формат: ${ext}. Нужен ${Object.keys(MIME).join(", ")}`);
+  console.error(
+    `Не поддерживаемый формат: ${ext || "без расширения"}. ` +
+      `Нужен ${Object.keys(MIME).join(", ")} или DICOM.`,
+  );
   process.exit(1);
 }
 
@@ -77,8 +89,46 @@ if (!supportsImages(modalityKey)) {
   process.exit(1);
 }
 
-const buffer = fs.readFileSync(filePath);
-const kb = Math.round(buffer.length / 1024);
+// Для DICOM работаем с отрисованным срезом; для картинки — с самим файлом.
+let buffer = raw;
+let imageMime = mimeType;
+let dicomHint = "";
+
+if (isDicom) {
+  let dicom;
+  try {
+    dicom = await readDicom(raw);
+  } catch (err) {
+    console.error(`DICOM не прочитан: ${err.message}`);
+    if (err.phiFields?.length) {
+      console.error("");
+      console.error(`⚠ ФАЙЛ НЕ ОБЕЗЛИЧЕН. В тегах: ${err.phiFields.join(", ")}.`);
+    }
+    process.exit(1);
+  }
+  buffer = dicom.png;
+  imageMime = dicom.mimeType;
+  dicomHint = describeDicomStudy(dicom.study);
+
+  console.log("── DICOM ──");
+  console.log(`Модальность по тегу: ${dicom.study.modality}`);
+  if (dicom.study.bodyPart) console.log(`Область:             ${dicom.study.bodyPart}`);
+  console.log(`Матрица:             ${dicom.study.cols}×${dicom.study.rows}`);
+  console.log(`Окно:                ${dicom.study.window}`);
+  for (const n of dicom.notes) console.log(`Замечание:           ${n}`);
+  console.log("");
+  if (dicom.phiFields.length) {
+    // Врач этих полей не видит: в DICOM они внутри файла, а не на картинке.
+    console.log(`⚠ ФАЙЛ НЕ ОБЕЗЛИЧЕН. В тегах есть: ${dicom.phiFields.join(", ")}.`);
+    console.log("  Значения не печатаются и модели не отправляются — уходит только срез.");
+    console.log("");
+  } else {
+    console.log("Личных данных в тегах не найдено.");
+    console.log("");
+  }
+}
+
+const kb = Math.round(raw.length / 1024);
 
 console.log(`Файл:        ${path.basename(filePath)} (${kb} КБ, ${mimeType})`);
 console.log(`Модальность: ${modality.title}`);
@@ -92,9 +142,9 @@ let read;
 try {
   read = await readImageStudy({
     buffer,
-    mimeType,
+    mimeType: imageMime,
     modality,
-    hint: hintParts.join(" "),
+    hint: [dicomHint, hintParts.join(" ")].filter(Boolean).join(" "),
   });
 } catch (err) {
   console.error(`Не удалось прочитать: ${err.message}`);
