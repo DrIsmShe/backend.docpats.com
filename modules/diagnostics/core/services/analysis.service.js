@@ -281,9 +281,10 @@ export async function runJob(jobId) {
     job.status = "done";
     job.findingsCount = findings.length;
     // «Чего не хватает» — тоже результат, и он должен доехать до врача.
-    job.message = (result.dataGaps ?? []).length
-      ? `Не хватает данных: ${result.dataGaps.join("; ")}`
-      : result.summary ?? "";
+    // Списком, а не склеенной строкой: на экране это отдельный блок, и
+    // разбирать её обратно по «; » было бы возвратом к тексту вместо данных.
+    job.dataGaps = result.dataGaps ?? [];
+    job.message = result.summary ?? "";
     job.provenance.model = result.model ?? "";
     job.provenance.promptVersion = result.promptVersion ?? "";
     job.provenance.inputTokens = result.usage?.inputTokens ?? 0;

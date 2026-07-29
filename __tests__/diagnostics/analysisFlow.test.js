@@ -188,8 +188,14 @@ describe("прогон разбора", () => {
     expect(job.provenance.inputHash).toHaveLength(32);
     expect(job.provenance.durationMs).toBeGreaterThanOrEqual(0);
     expect(job.provenance.inputTokens).toBe(100);
-    // «Чего не хватает» доезжает до врача, а не теряется.
-    expect(job.message).toMatch(/предыдущих исследований/);
+    // «Чего не хватает» доезжает до врача, а не теряется. Теперь отдельным
+    // списком, а не строкой внутри message: на экране это свой блок, и
+    // склеивать пробелы в текст, чтобы потом разбирать обратно, незачем.
+    expect(job.dataGaps).toEqual(
+      expect.arrayContaining([expect.stringMatching(/предыдущих исследований/)]),
+    );
+    // message остаётся кратким итогом разбора, а не свалкой.
+    expect(job.message).not.toMatch(/Не хватает данных:/);
   });
 
   it("вывод всегда рекомендательный и с оговоркой", async () => {

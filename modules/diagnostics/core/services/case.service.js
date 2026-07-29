@@ -152,6 +152,18 @@ export async function getCaseFull(caseId, userId) {
       modalityTitle: getModality(j.modality)?.title ?? j.modality,
     })),
     findings: findings.map(presentFinding),
+    // Пробелы со всех успешных заданий, без повторов: разные модальности
+    // часто просят одно и то же (витальные показатели, лекарства), и врачу
+    // незачем читать это трижды.
+    dataGaps: [
+      ...new Set(
+        jobs
+          .filter((j) => j.status === "done")
+          .flatMap((j) => j.dataGaps ?? [])
+          .map((g) => String(g).trim())
+          .filter(Boolean),
+      ),
+    ],
     blockers,
     canAnalyze: blockers.length === 0,
     advisoryNotice: ADVISORY_NOTICE,
