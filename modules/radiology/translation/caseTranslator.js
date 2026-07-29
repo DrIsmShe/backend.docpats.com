@@ -39,6 +39,21 @@ export const MODEL =
 
 const MAX_TOKENS = 24000;
 
+// Запасной путь при отказе классификаторов. Отказ — это штатный ответ с
+// HTTP 200 и stop_reason "refusal", а не ошибка: медицинский материал
+// (травма, отравление, токсикология) иногда попадает под ложное
+// срабатывание. Без запасного пути кейс просто остаётся без перевода на
+// этот язык, и врач видит русский текст среди переведённого.
+const FALLBACK_BETA = "server-side-fallback-2026-07-01";
+const FALLBACKS_ENABLED = process.env.ARENA_TRANSLATION_FALLBACKS !== "0";
+
+// Перевод — узкая задача преобразования с готовым исходником, а не
+// рассуждение с нуля. По умолчанию API работает на "high", и для перевода
+// это переплата: качество держится на точности терминов, а не на глубине
+// размышления. Поднять можно переменной окружения, не трогая код.
+const EFFORT = process.env.ARENA_TRANSLATION_EFFORT || "medium";
+
+
 const LANGUAGE_NAMES = {
   ru: "Russian",
   en: "English",
@@ -126,11 +141,14 @@ export async function translateCaseContent({
     throw new ValidationError("Nothing to translate");
   }
 
-  const instruction = `Translate this clinical case from ${
+  // Исходник — ОДИН И ТОТ ЖЕ для всех четырёх языков, поэтому он идёт первым
+  // и помечается точкой кэширования, а целевой язык — последним. У кейса это
+  // особенно заметно: клинический контекст, разборы находок и эталонное
+  // заключение составляют почти весь запрос, и раньше они оплачивались по
+  // полной цене четырежды подряд.
+  const sourceBlock = `Source clinical case (${
     LANGUAGE_NAMES[sourceLang] ?? "Russian"
-  } to ${toName}.
-
-Return one entry in "fields" for every path below, with the path copied exactly.
+  }):
 
 ${JSON.stringify(
   {
@@ -142,17 +160,33 @@ ${JSON.stringify(
   2,
 )}`;
 
+  const askBlock = `Translate the case above into ${toName}.
+
+Return one entry in "fields" for every path listed, with the path copied exactly.`;
+
   let message;
   try {
-    const stream = getClient().messages.stream({
+    const stream = getClient().beta.messages.stream({
       model: MODEL,
       max_tokens: MAX_TOKENS,
       thinking: { type: "adaptive" },
       system: SYSTEM_PROMPT,
       output_config: {
         format: { type: "json_schema", ...prepareSchema(SCHEMA, logger, "кейс") },
+        effort: EFFORT,
       },
-      messages: [{ role: "user", content: instruction }],
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: sourceBlock, cache_control: { type: "ephemeral" } },
+            { type: "text", text: askBlock },
+          ],
+        },
+      ],
+      ...(FALLBACKS_ENABLED
+        ? { betas: [FALLBACK_BETA], fallbacks: "default" }
+        : {}),
     });
     message = await stream.finalMessage();
   } catch (err) {
@@ -166,6 +200,8 @@ ${JSON.stringify(
       : new ValidationError(described.message);
   }
 
+  // С включёнными fallbacks отказ здесь означает, что отклонила вся цепочка
+  // моделей, а не только первая.
   if (message.stop_reason === "refusal") {
     throw new ValidationError("Model declined to translate this case", {
       category: message.stop_details?.category ?? null,

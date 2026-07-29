@@ -42,6 +42,21 @@ export const MODEL =
 
 const MAX_TOKENS = 16000;
 
+// Запасной путь при отказе классификаторов. Отказ — это штатный ответ с
+// HTTP 200 и stop_reason "refusal", а не ошибка: медицинский материал
+// (травма, отравление, токсикология) иногда попадает под ложное
+// срабатывание. Без запасного пути кейс просто остаётся без перевода на
+// этот язык, и врач видит русский текст среди переведённого.
+const FALLBACK_BETA = "server-side-fallback-2026-07-01";
+const FALLBACKS_ENABLED = process.env.EDUCATION_TRANSLATION_FALLBACKS !== "0";
+
+// Перевод — узкая задача преобразования с готовым исходником, а не
+// рассуждение с нуля. По умолчанию API работает на "high", и для перевода
+// это переплата: качество держится на точности терминов, а не на глубине
+// размышления. Поднять можно переменной окружения, не трогая код.
+const EFFORT = process.env.EDUCATION_TRANSLATION_EFFORT || "medium";
+
+
 // Названия языков для промпта. Коды («az») модель понимает хуже, чем имена:
 // «az» она иногда принимает за сокращение, а не за азербайджанский.
 const LANGUAGE_NAMES = {
@@ -125,18 +140,24 @@ export async function translateItemContent({ item, targetLang }) {
     explanation: item.explanation ?? "",
   };
 
-  const instruction = `Translate this exam question from ${fromName} to ${toName}.
-
-Return the same structure: the stem, every option with its key unchanged, and
-the explanation. If the explanation is empty, return an empty string.
+  // Исходник — ОДИН И ТОТ ЖЕ для всех четырёх языков, поэтому он идёт первым
+  // и помечается точкой кэширования, а целевой язык — последним. Раньше язык
+  // стоял в начале, префиксы расходились с первого слова, и один и тот же
+  // вопрос оплачивался по полной цене четыре раза подряд.
+  const sourceBlock = `Source exam question (${fromName}):
 
 ${JSON.stringify(payload, null, 2)}`;
+
+  const askBlock = `Translate the question above into ${toName}.
+
+Return the same structure: the stem, every option with its key unchanged, and
+the explanation. If the explanation is empty, return an empty string.`;
 
   const client = getClient();
 
   let message;
   try {
-    const stream = client.messages.stream({
+    const stream = client.beta.messages.stream({
       model: MODEL,
       max_tokens: MAX_TOKENS,
       // Адаптивное мышление: клинический текст с дозировками и отрицаниями —
@@ -145,8 +166,20 @@ ${JSON.stringify(payload, null, 2)}`;
       system: SYSTEM_PROMPT,
       output_config: {
         format: { type: "json_schema", ...prepareSchema(SCHEMA, logger, "вопрос") },
+        effort: EFFORT,
       },
-      messages: [{ role: "user", content: instruction }],
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: sourceBlock, cache_control: { type: "ephemeral" } },
+            { type: "text", text: askBlock },
+          ],
+        },
+      ],
+      ...(FALLBACKS_ENABLED
+        ? { betas: [FALLBACK_BETA], fallbacks: "default" }
+        : {}),
     });
     message = await stream.finalMessage();
   } catch (err) {
@@ -168,6 +201,8 @@ ${JSON.stringify(payload, null, 2)}`;
 
   // Отказ модели — штатный ответ с HTTP 200, а не исключение. Проверяем до
   // чтения content.
+  // С включёнными fallbacks отказ здесь означает, что отклонила вся цепочка
+  // моделей, а не только первая.
   if (message.stop_reason === "refusal") {
     throw new ValidationError("Model declined to translate this question", {
       category: message.stop_details?.category ?? null,
