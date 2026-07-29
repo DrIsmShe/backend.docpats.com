@@ -27,17 +27,17 @@ async function getQueue() {
   if (queuePromise) return queuePromise;
 
   queuePromise = (async () => {
-    if (!process.env.REDIS_URL && !process.env.REDIS_HOST) return null;
-    const { Queue } = await import("bullmq");
-    const IORedis = (await import("ioredis")).default;
-    const connection = new IORedis(
-      process.env.REDIS_URL ?? {
-        host: process.env.REDIS_HOST,
-        port: Number(process.env.REDIS_PORT ?? 6379),
-      },
-      { maxRetriesPerRequest: null },
-    );
-    return new Queue(QUEUE_NAME, { connection });
+    // Общий клиент проекта, а не своё соединение. Он умеет умолчание
+    // 127.0.0.1:6379 — и это не мелочь: на боевом сервере Redis поднят, но
+    // REDIS_HOST в .env не задан. Своя проверка «нет переменной — нет
+    // очереди» тихо уводила бы перевод во внутрипроцессный режим на машине,
+    // где очередь прекрасно работает. Плюс одно соединение на процесс
+    // вместо ещё одного.
+    const [{ Queue }, { redis }] = await Promise.all([
+      import("bullmq"),
+      import("../../../common/config/redis.js"),
+    ]);
+    return new Queue(QUEUE_NAME, { connection: redis });
   })().catch((err) => {
     logger?.warn?.({ err }, "education translation queue unavailable");
     return null;

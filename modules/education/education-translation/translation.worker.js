@@ -18,22 +18,14 @@ let worker = null;
 
 export async function startTranslationWorker() {
   if (worker) return worker;
-  if (!process.env.REDIS_URL && !process.env.REDIS_HOST) {
-    logger?.info?.("education translation worker: Redis не настроен, пропуск");
-    return null;
-  }
-
-  const { Worker } = await import("bullmq");
-  const IORedis = (await import("ioredis")).default;
-  const { translateItem } = await import("./translateItem.service.js");
-
-  const connection = new IORedis(
-    process.env.REDIS_URL ?? {
-      host: process.env.REDIS_HOST,
-      port: Number(process.env.REDIS_PORT ?? 6379),
-    },
-    { maxRetriesPerRequest: null },
-  );
+  // Общий клиент проекта — тот же, что у остальных воркеров. Он подставляет
+  // 127.0.0.1:6379, когда REDIS_HOST не задан, а именно так и настроен
+  // боевой сервер.
+  const [{ Worker }, { redis }, { translateItem }] = await Promise.all([
+    import("bullmq"),
+    import("../../../common/config/redis.js"),
+    import("./translateItem.service.js"),
+  ]);
 
   worker = new Worker(
     QUEUE_NAME,
@@ -41,7 +33,7 @@ export async function startTranslationWorker() {
       const { itemId, actorId, force } = job.data;
       return translateItem(itemId, { actorId, force });
     },
-    { connection, concurrency: 2 },
+    { connection: redis, concurrency: 2 },
   );
 
   worker.on("failed", (job, err) => {
