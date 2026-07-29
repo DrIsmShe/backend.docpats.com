@@ -12,6 +12,8 @@
 // уверенный ответ не на тот вопрос.
 
 import { describe, it, expect } from "vitest";
+import mongoose from "mongoose";
+import DiagnosticFinding from "../../modules/diagnostics/core/models/diagnosticFinding.model.js";
 import { collectAnalysisBlockers } from "../../modules/diagnostics/core/services/analysis.service.js";
 
 // Дело, где все прочие гейты уже пройдены: обезличено, согласие есть, открыто.
@@ -79,5 +81,56 @@ describe("прежние гейты не сломаны", () => {
       [{ kind: "report", text: "текст" }],
     );
     expect(blockers.join(" ")).toMatch(/закрыт/i);
+  });
+});
+
+// ─── Повторный разбор ──────────────────────────────────────────────────
+//
+// Врач нажал «Разобрать заново», и выводов стало 17 вместо 8: новый набор
+// дописался поверх старого. В списке оказались пары почти одинаковых пунктов
+// с РАЗНОЙ важностью и уверенностью — «лимфаденопатия, критично, средняя»
+// рядом с «лимфаденопатия, важно, низкая». Какой из двух актуален, по экрану
+// понять было нельзя.
+
+describe("повторный разбор не накапливает выводы", () => {
+  it("выводы прежнего задания той же модальности удаляются", async () => {
+    const caseId = new mongoose.Types.ObjectId();
+    const ownerId = new mongoose.Types.ObjectId();
+    const oldJob = new mongoose.Types.ObjectId();
+    const newJob = new mongoose.Types.ObjectId();
+
+    const base = { caseId, ownerId, modality: "clinical", severity: "important", confidence: "moderate" };
+    await DiagnosticFinding.insertMany([
+      { ...base, jobId: oldJob, title: "старый вывод", detail: "из прошлого разбора" },
+      { ...base, jobId: oldJob, title: "второй старый", detail: "тоже прошлый" },
+    ]);
+
+    // Ровно та операция, которую делает runJob перед вставкой новых.
+    await DiagnosticFinding.deleteMany({ caseId, modality: "clinical", jobId: { $ne: newJob } });
+    await DiagnosticFinding.create({ ...base, jobId: newJob, title: "новый вывод", detail: "свежий" });
+
+    // Сверяем по jobId, а не по title: заголовок шифруется как PHI, и .lean()
+    // отдаёт его в виде iv:ciphertext, минуя расшифровку.
+    const left = await DiagnosticFinding.find({ caseId }).lean();
+    expect(left).toHaveLength(1);
+    expect(String(left[0].jobId)).toBe(String(newJob));
+  });
+
+  it("выводы ДРУГОЙ модальности не трогаются", async () => {
+    const caseId = new mongoose.Types.ObjectId();
+    const ownerId = new mongoose.Types.ObjectId();
+    const newJob = new mongoose.Types.ObjectId();
+    const base = { caseId, ownerId, severity: "note", confidence: "low" };
+
+    await DiagnosticFinding.insertMany([
+      { ...base, modality: "labs", jobId: new mongoose.Types.ObjectId(), title: "по анализам", detail: "d" },
+      { ...base, modality: "clinical", jobId: new mongoose.Types.ObjectId(), title: "старый клинический", detail: "d" },
+    ]);
+
+    await DiagnosticFinding.deleteMany({ caseId, modality: "clinical", jobId: { $ne: newJob } });
+
+    const left = await DiagnosticFinding.find({ caseId }).lean();
+    expect(left).toHaveLength(1);
+    expect(left[0].modality).toBe("labs");
   });
 });
