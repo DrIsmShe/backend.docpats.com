@@ -41,7 +41,8 @@ dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DOCS_ROOT = path.resolve(__dirname, "../..", "client", "public", "docs");
 
-const SOURCE = "ru.md";
+const SOURCE_LANG = "ru";
+const SOURCE = `${SOURCE_LANG}.md`;
 const NOTES = "notes.md";
 const STAMP = "<!-- translated-from-ru:";
 
@@ -223,6 +224,54 @@ async function translateWithRetry(client, params, attempts = 3) {
   throw last;
 }
 
+/* ── манифест корпуса ─────────────────────────────────────────────── */
+
+/**
+ * Пишет docs/index.json — опись разделов и состояния переводов.
+ *
+ * Нужен админке: каталог документации лежит статикой в public/, сервер о нём
+ * ничего не знает и перечислить разделы не может, а зашитый в интерфейс список
+ * разошёлся бы с диском на первом же новом разделе. Манифест пересобирается
+ * при каждом прогоне скрипта, то есть ровно тогда, когда состав меняется.
+ */
+async function writeManifest() {
+  const entries = await fs.readdir(DOCS_ROOT, { withFileTypes: true });
+  const sections = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const dir = path.join(DOCS_ROOT, entry.name);
+    const source = await readIfExists(path.join(dir, SOURCE));
+    if (!source) continue;
+
+    const hash = sha1(source);
+    const heading = source.split("\n").find((l) => l.startsWith("# "));
+    const languages = { [SOURCE_LANG]: { status: "source", bytes: source.length } };
+
+    for (const lang of ALL_LANGS) {
+      const text = await readIfExists(path.join(dir, `${lang}.md`));
+      languages[lang] = text
+        ? { status: stampOf(text) === hash ? "fresh" : "stale", bytes: text.length }
+        : { status: "missing", bytes: 0 };
+    }
+
+    sections.push({
+      name: entry.name,
+      title: heading ? heading.slice(2).trim() : entry.name,
+      sourceHash: hash,
+      languages,
+    });
+  }
+
+  sections.sort((a, b) => a.name.localeCompare(b.name));
+  await fs.writeFile(
+    path.join(DOCS_ROOT, "index.json"),
+    `${JSON.stringify({ generatedAt: new Date().toISOString(), sections }, null, 2)}\n`,
+    "utf8",
+  );
+  console.log(`Манифест обновлён: ${sections.length} раздел(ов) → docs/index.json`);
+}
+
 /* ── основной проход ──────────────────────────────────────────────── */
 
 async function main() {
@@ -288,6 +337,9 @@ async function main() {
   }
 
   if (!DRY) {
+    // Манифест собирается по всему каталогу, а не по обработанным разделам:
+    // иначе прогон одного раздела стирал бы из описи остальные.
+    await writeManifest();
     console.log(
       `\nГотово. Записано: ${totals.written}; актуальных: ${totals.skipped}; с ошибкой: ${totals.failed}`,
     );
