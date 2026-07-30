@@ -17,6 +17,7 @@ import {
   listAttemptsQuerySchema,
   policyQuerySchema,
 } from "../validators/attempt.schemas.js";
+import { langOf } from "../../translation/requestLang.js";
 
 function throwZod(parsed) {
   throw new ValidationError("Validation failed", {
@@ -28,14 +29,8 @@ function throwZod(parsed) {
 // откроется следующая зачётная. Правила, о которых узнают после ответа,
 // правилами не являются — поэтому отдельный запрос до старта.
 
-// Язык врача из Accept-Language. Клиент шлёт заголовок на каждом запросе, так
-// что отдельного поля в теле не нужно — а значит, о нём не должен помнить тот,
-// кто зовёт старт. Неизвестный язык сводим к русскому: кейсы пишутся на нём.
-const ARENA_LANGS = ["ru", "en", "az", "tr", "ar"];
-function langOf(req) {
-  const raw = String(req.headers["accept-language"] ?? "").slice(0, 2).toLowerCase();
-  return ARENA_LANGS.includes(raw) ? raw : "ru";
-}
+// Язык врача — общий разбор заголовков на все три станции: три копии одного
+// разбора расходились бы молча (см. translation/requestLang.js).
 
 export const attemptPolicyController = asyncHandler(async (req, res) => {
   const parsed = policyQuerySchema.safeParse(req.query ?? {});

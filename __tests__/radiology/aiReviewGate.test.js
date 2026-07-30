@@ -10,8 +10,29 @@
 // Отдельно проверяется, что «разобрано» нельзя проставить чужими номерами:
 // иначе гейт обходился бы одним запросом с индексами, которых нет.
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import LabCase from "../../modules/radiology/labs-station/models/labCase.model.js";
+
+// Публикация кейса запускает перевод на остальные языки — намеренно
+// «в фоне», без ожидания (translation/onPublish.js). В тесте этот фон
+// оборачивался РЕАЛЬНЫМ вызовом модели: тест ставит статус published, отдаёт
+// управление, и уже после него setImmediate уходил в сеть. В полном прогоне
+// это давало то падение по таймауту, то шум в логах — перевод не находил кейс,
+// потому что коллекции уже вычищены между тестами.
+//
+// Гейт публикации к переводу отношения не имеет, поэтому переводчик здесь
+// замокан: тест не должен ни платить за модель, ни зависеть от сети.
+vi.mock("../../modules/radiology/translation/caseTranslator.js", () => ({
+  PROMPT_VERSION: "test",
+  MODEL: "test-model",
+  translateCaseContent: vi.fn(async ({ fields }) => ({
+    fields: Object.fromEntries(Object.entries(fields).map(([p, t]) => [p, t])),
+    diagnosisKeys: ["test-dx"],
+    diagnosisSynonyms: [],
+    model: "test-model",
+    promptVersion: "test",
+  })),
+}));
 import {
   setLabStatus,
   collectLabBlockers,

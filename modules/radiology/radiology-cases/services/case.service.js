@@ -26,6 +26,10 @@ import {
 
 // Статусы, из которых кейс можно ОТПРАВИТЬ на ревью.
 import { scheduleCaseTranslation } from "../../translation/onPublish.js";
+import {
+  translateCaseList,
+  translatedCaseFor,
+} from "../../translation/translatedCase.js";
 
 const EDITABLE = ["draft", "rejected"];
 
@@ -238,7 +242,9 @@ export async function archiveCase(caseId, actorId, actorRole) {
   return doc.toObject();
 }
 
-export async function listCases({ filters, isEditor }) {
+// lang задаётся для учащегося и НЕ задаётся для редактора: в админке нужны
+// исходные названия, иначе редактор правит один текст, а видит другой.
+export async function listCases({ filters, isEditor, lang = null }) {
   const query = {};
   if (filters.modality) query.modality = filters.modality;
   if (filters.difficulty) query.difficulty = filters.difficulty;
@@ -257,12 +263,15 @@ export async function listCases({ filters, isEditor }) {
   const byTitle = titleFilter(filters.q);
   if (byTitle) Object.assign(query, byTitle);
 
-  return paginate(RadiologyCase, {
+  const page = await paginate(RadiologyCase, {
     query,
     select: "-findings -impression", // список без эталона в любом случае
     skip: filters.skip,
     limit: filters.limit,
   });
+
+  page.items = await translateCaseList("radiology", page.items, lang);
+  return page;
 }
 
 // Полный кейс — только редактору (для авторинга/ревью).
@@ -274,13 +283,21 @@ export async function getCaseFull(caseId) {
 
 // Санитизованный кейс для учащегося: без эталона находок и заключения,
 // но с конфигурацией системы чтения и палитрой находок для разметки.
-export async function getCaseForLearner(caseId, { allowUnpublished = false } = {}) {
+export async function getCaseForLearner(
+  caseId,
+  { allowUnpublished = false, lang = null } = {},
+) {
   const doc = await RadiologyCase.findById(caseId).lean();
   if (!doc) throw new NotFoundError("Radiology case");
   if (doc.status !== "published" && !allowUnpublished) {
     throw new NotFoundError("Radiology case");
   }
-  return sanitizeForLearner(doc);
+  // Открытие кейса — то место, где перевод догоняется по требованию: здесь
+  // ждать несколько секунд допустимо, а к моменту старта попытки перевод уже
+  // лежит в базе и достаётся мгновенно.
+  return sanitizeForLearner(
+    await translatedCaseFor("radiology", doc, lang, { lazy: true }),
+  );
 }
 
 export function sanitizeForLearner(doc) {

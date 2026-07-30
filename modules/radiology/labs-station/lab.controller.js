@@ -36,14 +36,10 @@ import {
 } from "./lab.schemas.js";
 import { NotFoundError } from "../../../common/utils/errors.js";
 
-// Язык врача из Accept-Language. Клиент шлёт заголовок на каждом запросе, так
-// что отдельного поля в теле не нужно — а значит, о нём не должен помнить тот,
-// кто зовёт старт. Неизвестный язык сводим к русскому: кейсы пишутся на нём.
-const ARENA_LANGS = ["ru", "en", "az", "tr", "ar"];
-function langOf(req) {
-  const raw = String(req.headers["accept-language"] ?? "").slice(0, 2).toLowerCase();
-  return ARENA_LANGS.includes(raw) ? raw : "ru";
-}
+// Язык врача — общий разбор заголовков на все три станции
+// (translation/requestLang.js).
+import { langOf } from "../translation/requestLang.js";
+import { translatedCaseFor } from "../translation/translatedCase.js";
 
 
 function throwZod(parsed) {
@@ -55,8 +51,11 @@ function throwZod(parsed) {
 export const listLabCasesController = asyncHandler(async (req, res) => {
   const parsed = listLabQuerySchema.safeParse(req.query);
   if (!parsed.success) throwZod(parsed);
+  const isEditor = isAuthorRole(req.radiologyActor.role);
   const page = await listLabCases({
-    isEditor: isAuthorRole(req.radiologyActor.role),
+    isEditor,
+    // Редактору — исходные названия: он их правит. Врачу — на его языке.
+    lang: isEditor ? null : langOf(req),
     ...parsed.data,
   });
   res.json({
@@ -109,7 +108,9 @@ export const getLabCaseController = asyncHandler(async (req, res) => {
   }
   const doc = await LabCase.findById(req.params.id).lean();
   if (!doc || doc.status !== "published") throw new NotFoundError("Lab case");
-  res.json({ case: sanitizeLabForLearner(doc), full: false });
+  // Кейс на языке врача; недостающий перевод догоняется здесь по требованию.
+  const localized = await translatedCaseFor("labs", doc, langOf(req), { lazy: true });
+  res.json({ case: sanitizeLabForLearner(localized), full: false });
 });
 
 export const updateLabCaseController = asyncHandler(async (req, res) => {

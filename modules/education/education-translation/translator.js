@@ -165,7 +165,11 @@ the explanation. If the explanation is empty, return an empty string.`;
       thinking: { type: "adaptive" },
       system: SYSTEM_PROMPT,
       output_config: {
-        format: { type: "json_schema", ...prepareSchema(SCHEMA, logger, "вопрос") },
+        // Схема идёт ЗНАЧЕНИЕМ ключа schema, а не спредом: спред подмешивал
+        // type самой схемы ("object") поверх "json_schema", и API отвечал 400.
+        // Тот же дефект был в переводе кейсов арены — см. комментарий в
+        // radiology/translation/caseTranslator.js.
+        format: { type: "json_schema", schema: prepareSchema(SCHEMA, logger, "вопрос") },
         effort: EFFORT,
       },
       messages: [

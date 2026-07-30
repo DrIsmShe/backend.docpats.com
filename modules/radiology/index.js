@@ -21,6 +21,7 @@ import vpRouter from "./virtual-patient/vp.routes.js";
 import analyticsRouter from "./analytics/analytics.routes.js";
 import duelRouter from "./duels/duel.routes.js";
 import reviewRouter from "./review/review.routes.js";
+import translationRouter from "./translation/translation.routes.js";
 import { requireLearner } from "./middlewares/radiologyAuth.js";
 import {
   errorHandler,
@@ -48,6 +49,7 @@ router.use("/", vpRouter);
 router.use("/", analyticsRouter);
 router.use("/", duelRouter);
 router.use("/", reviewRouter);
+router.use("/", translationRouter);
 
 router.use(notFoundHandler);
 router.use(errorHandler);

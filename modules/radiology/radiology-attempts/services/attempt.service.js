@@ -73,7 +73,7 @@ export async function startAttempt(caseId, userId, mode = "learn", lang = "ru") 
   }
   // Кейс на языке врача. Нет перевода — вернётся оригинал: показать русский
   // текст правильнее, чем отказать в открытии кейса.
-  const caseDoc = await translatedCaseFor("radiology", source, lang);
+  const caseDoc = await translatedCaseFor("radiology", source, lang, { lazy: true });
 
   // Незакрытая попытка по этому кейсу: продолжаем её, а не начинаем новую.
   // Закрыл вкладку и вернулся — тот же таймер, тот же зачёт. Раньше каждое

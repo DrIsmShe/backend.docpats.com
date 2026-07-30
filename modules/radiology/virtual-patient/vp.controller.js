@@ -47,20 +47,19 @@ function throwZod(parsed) {
 }
 
 
-// Язык врача из Accept-Language. Клиент шлёт заголовок на каждом запросе, так
-// что отдельного поля в теле не нужно — а значит, о нём не должен помнить тот,
-// кто зовёт старт. Неизвестный язык сводим к русскому: кейсы пишутся на нём.
-const ARENA_LANGS = ["ru", "en", "az", "tr", "ar"];
-function langOf(req) {
-  const raw = String(req.headers["accept-language"] ?? "").slice(0, 2).toLowerCase();
-  return ARENA_LANGS.includes(raw) ? raw : "ru";
-}
+// Язык врача — общий разбор заголовков на все три станции
+// (translation/requestLang.js).
+import { langOf } from "../translation/requestLang.js";
+import { translatedCaseFor } from "../translation/translatedCase.js";
 
 export const listVpController = asyncHandler(async (req, res) => {
   const parsed = listVpQuerySchema.safeParse(req.query);
   if (!parsed.success) throwZod(parsed);
+  const isEditor = isAuthorRole(req.radiologyActor.role);
   const page = await listVpCases({
-    isEditor: isAuthorRole(req.radiologyActor.role),
+    isEditor,
+    // Редактору — исходные названия: он их правит. Врачу — на его языке.
+    lang: isEditor ? null : langOf(req),
     ...parsed.data,
   });
   res.json({
@@ -123,7 +122,9 @@ export const getVpController = asyncHandler(async (req, res) => {
   }
   const doc = await VirtualPatientCase.findById(req.params.id).lean();
   if (!doc || doc.status !== "published") throw new NotFoundError("VP case");
-  res.json({ case: sanitizeVpForLearner(doc), full: false });
+  // Сценарий на языке врача; недостающий перевод догоняется по требованию.
+  const localized = await translatedCaseFor("vp", doc, langOf(req), { lazy: true });
+  res.json({ case: sanitizeVpForLearner(localized), full: false });
 });
 
 export const updateVpController = asyncHandler(async (req, res) => {

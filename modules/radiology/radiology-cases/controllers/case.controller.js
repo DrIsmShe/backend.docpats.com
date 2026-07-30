@@ -6,6 +6,7 @@ import { ValidationError, NotFoundError } from "../../../../common/utils/errors.
 import RadiologyCase from "../models/radiologyCase.model.js";
 import { uploadFile } from "../../../../common/middlewares/uploadMiddleware.js";
 import { isAuthorRole } from "../../middlewares/radiologyAuth.js";
+import { langOf } from "../../translation/requestLang.js";
 import { listReadingSystems } from "../../reading-systems/index.js";
 import { draftCase, isConfigured as aiConfigured } from "../../ai/aiDrafter.js";
 import { generateRadiologyCase } from "../../ai/caseGenerator.js";
@@ -148,9 +149,12 @@ export const listCasesController = asyncHandler(async (req, res) => {
   // total — сколько всего подходит под фильтр, а не сколько уехало в ответе.
   // Без него интерфейс не отличает «это весь каталог» от «это первая
   // страница», а именно на этом раньше строилась ложная надпись «всего N».
+  const isEditor = isAuthorRole(req.radiologyActor.role);
   const page = await listCases({
     filters: parsed.data,
-    isEditor: isAuthorRole(req.radiologyActor.role),
+    isEditor,
+    // Редактору — исходные названия: он их правит. Врачу — на его языке.
+    lang: isEditor ? null : langOf(req),
   });
   res.json({
     items: page.items,
@@ -180,7 +184,7 @@ export const getCaseController = asyncHandler(async (req, res) => {
     const doc = await getCaseFull(req.params.id);
     return res.json({ case: doc, full: true });
   }
-  const doc = await getCaseForLearner(req.params.id);
+  const doc = await getCaseForLearner(req.params.id, { lang: langOf(req) });
   res.json({ case: doc, full: false });
 });
 

@@ -14,7 +14,7 @@ import { combineTotal } from "../radiology-attempts/services/scoring.service.js"
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
 import { awardForAttempt } from "../game/game.service.js";
 import { gradeDiagnosis } from "../radiology-attempts/services/diagnosisMatcher.js";
-import { translatedCaseFor } from "../translation/translatedCase.js";
+import { translatedCaseFor, translateCaseList } from "../translation/translatedCase.js";
 import { paginate, titleFilter } from "../catalog.js";
 import {
   previewPolicy,
@@ -185,7 +185,18 @@ export async function setVpStatus(caseId, status, actorId, actorRole) {
   return doc.toObject();
 }
 
-export async function listVpCases({ isEditor, scope, status, difficulty, q, skip, limit }) {
+// lang задаётся для учащегося и НЕ задаётся для редактора: в админке нужны
+// исходные названия, иначе редактор правит один текст, а видит другой.
+export async function listVpCases({
+  isEditor,
+  scope,
+  status,
+  difficulty,
+  q,
+  skip,
+  limit,
+  lang = null,
+}) {
   const query = {};
   if (isEditor && scope === "all") {
     if (status) query.status = status;
@@ -197,16 +208,23 @@ export async function listVpCases({ isEditor, scope, status, difficulty, q, skip
   const byTitle = titleFilter(q);
   if (byTitle) Object.assign(query, byTitle);
 
-  return paginate(VirtualPatientCase, {
+  const page = await paginate(VirtualPatientCase, {
     query,
     // Белый список полей, а не исключение: variants и diagnosis наружу
     // отдавать нельзя (внутри варианта лежат тексты результатов обследований,
     // то есть половина ответа), и при добавлении нового поля в модель
     // безопаснее забыть включить его, чем забыть исключить.
-    select: "_id title difficulty status createdAt",
+    //
+    // lang в списке полей — на будущее: сейчас у кейсов такого поля нет (все
+    // пишутся по-русски), и наложение перевода считает языком оригинала "ru".
+    // Когда поле появится, список не начнёт молча переводить кейс сам в себя.
+    select: "_id title difficulty status createdAt lang",
     skip,
     limit,
   });
+
+  page.items = await translateCaseList("vp", page.items, lang);
+  return page;
 }
 
 export async function getVpCaseFull(caseId) {
@@ -258,7 +276,7 @@ export async function getVpPolicy(caseId, userId, mode = "learn") {
 export async function startVpAttempt(caseId, userId, mode = "learn", lang = "ru") {
   const source = await VirtualPatientCase.findById(caseId).lean();
   if (!source || source.status !== "published") throw new NotFoundError("VP case");
-  const caseDoc = await translatedCaseFor("vp", source, lang);
+  const caseDoc = await translatedCaseFor("vp", source, lang, { lazy: true });
 
   // Незакрытую попытку продолжаем — вместе с уже раскрытыми обследованиями и
   // зафиксированным дифрядом. Просроченную помечаем, но не удаляем: по ней

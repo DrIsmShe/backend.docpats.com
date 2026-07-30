@@ -172,7 +172,12 @@ Return one entry in "fields" for every path listed, with the path copied exactly
       thinking: { type: "adaptive" },
       system: SYSTEM_PROMPT,
       output_config: {
-        format: { type: "json_schema", ...prepareSchema(SCHEMA, logger, "кейс") },
+        // Схема идёт ЗНАЧЕНИЕМ ключа schema, а не спредом. Спред подмешивал
+        // сюда собственный type схемы ("object") поверх "json_schema", и API
+        // отвечал 400 «output_config.format.type: Input should be
+        // 'json_schema'» — то есть перевод кейсов не работал вообще, а ошибка
+        // гасилась в отчёте как failed по каждому языку.
+        format: { type: "json_schema", schema: prepareSchema(SCHEMA, logger, "кейс") },
         effort: EFFORT,
       },
       messages: [

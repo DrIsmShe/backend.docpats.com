@@ -7,7 +7,7 @@
 
 import LabCase from "./models/labCase.model.js";
 import LabAttempt from "./models/labAttempt.model.js";
-import { translatedCaseFor } from "../translation/translatedCase.js";
+import { translatedCaseFor, translateCaseList } from "../translation/translatedCase.js";
 import { combineTotal } from "../radiology-attempts/services/scoring.service.js";
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
 import { gradeDiagnosis } from "../radiology-attempts/services/diagnosisMatcher.js";
@@ -178,7 +178,18 @@ export async function setLabStatus(caseId, status, actorId, actorRole) {
   return doc.toObject();
 }
 
-export async function listLabCases({ isEditor, scope, status, difficulty, q, skip, limit }) {
+// lang задаётся для учащегося и НЕ задаётся для редактора: в админке нужны
+// исходные названия, иначе редактор правит один текст, а видит другой.
+export async function listLabCases({
+  isEditor,
+  scope,
+  status,
+  difficulty,
+  q,
+  skip,
+  limit,
+  lang = null,
+}) {
   const query = {};
   if (isEditor && scope === "all") {
     if (status) query.status = status;
@@ -190,7 +201,7 @@ export async function listLabCases({ isEditor, scope, status, difficulty, q, ski
   const byTitle = titleFilter(q);
   if (byTitle) Object.assign(query, byTitle);
 
-  return paginate(LabCase, {
+  const page = await paginate(LabCase, {
     query,
     // variants исключаем не для экономии: внутри варианта лежат его значимые
     // отклонения, то есть ключ ответа.
@@ -198,6 +209,9 @@ export async function listLabCases({ isEditor, scope, status, difficulty, q, ski
     skip,
     limit,
   });
+
+  page.items = await translateCaseList("labs", page.items, lang);
+  return page;
 }
 
 export async function getLabCaseFull(caseId) {
@@ -253,7 +267,7 @@ export async function startLabAttempt(caseId, userId, mode = "learn", lang = "ru
   if (!source || source.status !== "published") {
     throw new NotFoundError("Lab case");
   }
-  const caseDoc = await translatedCaseFor("labs", source, lang);
+  const caseDoc = await translatedCaseFor("labs", source, lang, { lazy: true });
 
   // Незакрытую попытку продолжаем; просроченную помечаем и заводим новую —
   // запись остаётся, чтобы слот «зачёт раз в 24 часа» не восстанавливался.
