@@ -53,6 +53,7 @@ import clinicRoutes from "./modules/clinic/index.js";
 import blockUnfinishedRegistration from "./common/middlewares/blockUnfinishedRegistration.middleware.js";
 import clinicPublicRouter from "./modules/clinic/clinic-public/clinic-public.routes.js";
 import publicDoctorsRouter from "./modules/doctorsProfiles/routes/publicDoctorsRoute.js";
+import { guestGuideRouter, guideRouter } from "./modules/guide/guide.routes.js";
 import paymentsRouter from "./modules/payments/payments.routes.js";
 import paymentsWebhookRouter from "./modules/payments/webhook.routes.js";
 import educationRoutes from "./modules/education/index.js";
@@ -111,6 +112,10 @@ app.use(cookieParser());
 app.use("/api/v1/public", clinicPublicRouter);
 // Публичные списки врачей для SEO-страниц (без session).
 app.use("/api/v1/public", publicDoctorsRouter);
+// Агент-гид по продукту для гостя: вопрос задают ДО регистрации, ради этого
+// он и делается. У агента нет инструментов и доступа к данным — см.
+// modules/guide/guide.service.js.
+app.use("/api/v1/public", guestGuideRouter);
 // Платёжные webhook'и — server-to-server (вызов от шлюза), до session/CSRF.
 app.use("/api/payments/webhook", paymentsWebhookRouter);
 // ======================= SESSION =======================
@@ -335,6 +340,9 @@ app.use("/api/v1/education", educationRoutes);
 // на req.session, поэтому монтируется после session-middleware, рядом с
 // education. Гостевого контура пока нет: тренажёр чтения снимков закрыт
 // авторизацией целиком.
+// Гид для авторизованного: тот же сервис, но роль берётся из сессии, поэтому
+// монтируется ПОСЛЕ session-middleware, в отличие от гостевого входа.
+app.use("/api/v1/guide", guideRouter);
 app.use("/api/v1/radiology", radiologyRoutes);
 
 // Диагностическая помощь — работа с материалами ЖИВЫХ пациентов, в отличие от
