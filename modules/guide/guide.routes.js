@@ -16,7 +16,34 @@ import rateLimit from "express-rate-limit";
 import { asyncHandler } from "../../common/middlewares/errorHandler.js";
 import { langOf } from "../../common/utils/requestLang.js";
 import { askGuide } from "./guide.service.js";
+import User from "../../common/models/Auth/users.js";
 import logger from "../../common/logger.js";
+
+const KNOWN_ROLES = ["doctor", "patient", "admin", "clinic_admin", "clinic_staff"];
+
+/**
+ * Кто спрашивает — по СЕССИИ, а не по тому, что прислал браузер и не по зоне
+ * адреса.
+ *
+ * Сначала роль угадывалась на клиенте по префиксу пути, и это было неверно по
+ * сути: врач, открывший помощника на лендинге, считался гостем, а пациент в
+ * разделе документации — тоже. Роль — свойство человека, а не страницы, на
+ * которой он стоит.
+ *
+ * Запрос к базе на каждый вопрос дешёвый (одно поле по _id) и стоит того:
+ * иначе роль приходится принимать на веру от браузера.
+ */
+async function roleOf(req) {
+  const userId = req.session?.userId;
+  if (!userId) return "guest";
+  try {
+    const user = await User.findById(userId).select("role").lean();
+    return KNOWN_ROLES.includes(user?.role) ? user.role : "guest";
+  } catch (err) {
+    logger?.warn?.({ err }, "guide: роль не определилась, отвечаем как гостю");
+    return "guest";
+  }
+}
 
 const skipInTests = () => process.env.NODE_ENV === "test";
 
@@ -85,18 +112,24 @@ guestGuideRouter.post(
 
 /** Авторизованный: роль из сессии. Монтируется после session-middleware. */
 export const guideRouter = express.Router();
+
+/**
+ * Кто спрашивает — для интерфейса. Виджету это нужно, чтобы показать
+ * подсказки под аудиторию: врачу незачем предлагать «кто видит мою историю
+ * болезни», это вопрос пациента.
+ *
+ * Отдельный лёгкий запрос, а не поле в ответе на вопрос: подсказки нужны ДО
+ * первого вопроса, когда спрашивать ещё нечего.
+ */
+guideRouter.get(
+  "/context",
+  asyncHandler(async (req, res) => {
+    res.json({ role: await roleOf(req) });
+  }),
+);
+
 guideRouter.post(
   "/ask",
   authedLimiter,
-  asyncHandler(async (req, res) => {
-    // Сессия есть — но роль в ней не лежит, а тянуть пользователя из базы
-    // ради одного слова дорого. Роль присылает клиент, и это безопасно
-    // ровно потому, что она ни к чему не даёт доступа: у агента нет
-    // инструментов, она влияет только на тон и на выбор раздела.
-    const claimed = String(req.body?.role ?? "").toLowerCase();
-    const role = ["doctor", "patient", "clinic_admin", "clinic_staff", "admin"].includes(claimed)
-      ? claimed
-      : "guest";
-    return handle(req, res, req.session?.userId ? role : "guest");
-  }),
+  asyncHandler(async (req, res) => handle(req, res, await roleOf(req))),
 );
