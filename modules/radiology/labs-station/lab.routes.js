@@ -19,6 +19,8 @@ router.post("/labs/cases", requireAuthor, ctrl.createLabCaseController);
 router.get("/labs/cases/:id", ctrl.getLabCaseController);
 router.patch("/labs/cases/:id", requireAuthor, ctrl.updateLabCaseController);
 router.post("/labs/cases/:id/status", requireAuthor, ctrl.statusLabCaseController);
+// Удаление без следа (черновики, в т. ч. ночные автокейсы).
+router.delete("/labs/cases/:id/permanent", requireAuthor, ctrl.deleteLabCaseController);
 
 // Образец «типового ответа чат-бота» для сигналов добросовестности — автору.
 router.post("/labs/cases/:id/ai/baseline", requireAuthor, ctrl.aiBaselineLabController);

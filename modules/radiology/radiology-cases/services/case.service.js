@@ -9,6 +9,8 @@
 // это HIPAA-платформа.
 
 import RadiologyCase from "../models/radiologyCase.model.js";
+import RadiologyAttempt from "../../radiology-attempts/models/radiologyAttempt.model.js";
+import ArenaCaseTranslation from "../../translation/arenaCaseTranslation.model.js";
 import {
   getReadingSystem,
   hasReadingSystem,
@@ -66,12 +68,16 @@ export async function createCase(input, actorId, actorRole) {
     difficulty: input.difficulty ?? "medium",
     categoryId: input.categoryId ?? null,
     tags: input.tags ?? [],
-    images: input.images,
+    images: input.images ?? [],
     findings: input.findings ?? [],
+    plannedFindings: input.plannedFindings ?? [],
     impression: input.impression ?? {},
     source: input.source,
     deidentified: input.deidentified ?? false,
     status: "draft",
+    // Метку автогенерации ставит только ночная задача — из HTTP-контроллера
+    // она не приходит (в createCaseSchema поля нет).
+    ...(input.autoGen ? { autoGen: input.autoGen } : {}),
     createdBy: actorId,
   });
 
@@ -111,6 +117,9 @@ export async function updateCase(caseId, patch, actorId) {
     "tags",
     "images",
     "findings",
+    // План находок правится вместе с кейсом: перенося находку на снимок,
+    // редактор убирает её из плана — иначе чек-лист никогда бы не пустел.
+    "plannedFindings",
     "impression",
     "source",
     "deidentified",
@@ -242,6 +251,55 @@ export async function archiveCase(caseId, actorId, actorRole) {
   return doc.toObject();
 }
 
+// Удаление НАСОВСЕМ — в отличие от archiveCase, который лишь меняет статус.
+// Нужно владельцу проекта: ночной автогенератор приносит кейсы пачками, и
+// неудачные должны исчезать бесследно, а не копиться в архиве.
+//
+// Два предохранителя, и оба не косметические:
+//   1. Опубликованный кейс не удаляется. Сначала архив — это осознанное
+//      второе действие, а не случайный клик по строке каталога.
+//   2. Кейс с попытками не удаляется НИКОГДА. На caseId ссылаются попытки,
+//      дуэли, очередь работы над ошибками и статистика; удалив его, мы
+//      оставили бы врачам разборы, ведущие в никуда. Для таких — архив.
+export async function deleteCasePermanently(caseId, actorId, actorRole) {
+  const doc = await RadiologyCase.findById(caseId);
+  if (!doc) throw new NotFoundError("Radiology case");
+  if (doc.status === "published") {
+    throw new ConflictError(
+      "Опубликованный кейс сначала уберите в архив — удалять то, что видят врачи, нельзя",
+    );
+  }
+
+  const attempts = await RadiologyAttempt.countDocuments({ caseId: doc._id });
+  if (attempts > 0) {
+    throw new ConflictError(
+      `По кейсу есть попытки врачей (${attempts}) — на него ссылаются разборы и статистика. Уберите его в архив вместо удаления.`,
+    );
+  }
+
+  // Переводы живут отдельной коллекцией и на удаление кейса сами не реагируют:
+  // без этой уборки они остались бы сиротами с уникальным индексом на caseId.
+  await ArenaCaseTranslation.deleteMany({ caseType: "radiology", caseId: doc._id });
+  await RadiologyCase.deleteOne({ _id: doc._id });
+
+  // Запись в доменный аудит переживает сам кейс — это и есть след того, что
+  // материал был и кто его убрал. Только структурные данные, как везде.
+  recordRadiologyEvent({
+    action: "case.delete",
+    actorId,
+    actorRole,
+    caseId: doc._id,
+    metadata: {
+      modality: doc.modality,
+      status: doc.status,
+      auto: Boolean(doc.autoGen?.isAuto),
+      topicKey: doc.autoGen?.topicKey || null,
+    },
+  });
+
+  return { deleted: true, id: String(doc._id) };
+}
+
 // lang задаётся для учащегося и НЕ задаётся для редактора: в админке нужны
 // исходные названия, иначе редактор правит один текст, а видит другой.
 export async function listCases({ filters, isEditor, lang = null }) {
@@ -265,7 +323,9 @@ export async function listCases({ filters, isEditor, lang = null }) {
 
   const page = await paginate(RadiologyCase, {
     query,
-    select: "-findings -impression", // список без эталона в любом случае
+    // Список без эталона в любом случае. План находок — тоже «ключ ответа»
+    // (он прямо называет патологию), и в каталоге он не нужен.
+    select: "-findings -impression -plannedFindings",
     skip: filters.skip,
     limit: filters.limit,
   });

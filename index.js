@@ -29,6 +29,7 @@ import emailLimiter from "./common/middlewares/rateLimiter.js";
 import { scheduleTrialReminders } from "./jobs/checkTrialReminders.js";
 import { scheduleNotificationDigest } from "./jobs/notificationDigest.job.js";
 import { scheduleWeeklyCaseNotification } from "./jobs/radiologyWeeklyCase.job.js";
+import { scheduleDailyCaseGeneration } from "./jobs/radiologyDailyCases.job.js";
 import User, { decrypt as decryptUser } from "./common/models/Auth/users.js";
 import NewPatientPolyclinic from "./common/models/PatientProfile/patientProfile.js";
 import "./common/models/Comments/CommentDocpats.js";
@@ -428,6 +429,9 @@ async function bootstrap(startPort = PORT) {
     scheduleTrialReminders();
     scheduleNotificationDigest();
     scheduleWeeklyCaseNotification();
+    // Ночная автогенерация учебных кейсов лучевой станции (по одному на
+    // модальность). Выключается через RADIOLOGY_AUTOGEN=off.
+    scheduleDailyCaseGeneration();
     app.set("io", io);
     setSimulationIo(io);
     server.listen(startPort, () =>

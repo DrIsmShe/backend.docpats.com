@@ -379,7 +379,7 @@ export async function generateRadiologyCase({ modality, topic, difficulty, hint 
     .filter(Boolean)
     .join("\n\n");
 
-  const { parsed, usage } = await runJson({
+  const { parsed, usage, model } = await runJson({
     system: RADIOLOGY_SYSTEM,
     instruction,
     schema: RADIOLOGY_SCHEMA,
@@ -405,6 +405,10 @@ export async function generateRadiologyCase({ modality, topic, difficulty, hint 
       diagnosisKeys: list(parsed.impression?.diagnosisKeys, 20, 120),
       diagnosisSynonyms: list(parsed.impression?.diagnosisSynonyms, 50, 120),
     },
+    // Модель, которая реально ответила (при срабатывании fallbacks — не та,
+    // которую просили). Ночной автогенератор пишет её в кейс: разбирая
+    // неудачную партию, полезно знать, чем она была сгенерирована.
+    model,
     usage,
   };
 }

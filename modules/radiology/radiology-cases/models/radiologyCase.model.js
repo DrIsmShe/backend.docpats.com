@@ -75,6 +75,27 @@ const findingSchema = new Schema(
   { _id: false },
 );
 
+// План находок от ИИ: «что должно быть на снимке и где искать». Это НЕ
+// эталон — координат здесь нет и быть не может, снимка в момент генерации
+// ещё не существует. Автор загружает кадр и переносит находки из плана на
+// холст, после чего они уходят в findings, а из плана исчезают.
+//
+// Раньше план жил только в состоянии формы и умирал при сохранении. Для
+// кейсов, которые создаёт ночной автогенератор (jobs/radiologyDailyCases),
+// это неприемлемо: между генерацией и приходом автора проходят часы, и без
+// хранения плана автокейс приезжал бы к человеку пустым — с заключением, но
+// без списка того, что на снимке должно быть.
+const plannedFindingSchema = new Schema(
+  {
+    label: { type: String, required: true, trim: true, maxlength: 60 },
+    significance: { type: String, enum: SIGNIFICANCES, default: "major" },
+    // Где искать — словами: «правый верхний отдел», «базально слева».
+    location: { type: String, trim: true, maxlength: 300, default: "" },
+    explanation: { type: String, trim: true, maxlength: 2000, default: "" },
+  },
+  { _id: false },
+);
+
 // Эталонное заключение.
 const impressionSchema = new Schema(
   {
@@ -129,11 +150,28 @@ const radiologyCaseSchema = new Schema(
     findings: { type: [findingSchema], default: [] },
     impression: { type: impressionSchema, default: () => ({}) },
 
+    // Чек-лист «что разметить», пока снимка нет. Учащемуся не отдаётся
+    // никогда: sanitizeForLearner собирает ответ по белому списку полей.
+    plannedFindings: { type: [plannedFindingSchema], default: [] },
+
     // ─── Происхождение и приватность ───
     source: { type: sourceSchema, required: true },
     // Подтверждение, что снимок деидентифицирован. Без true публикация
     // запрещена (assertPublishable в сервисе).
     deidentified: { type: Boolean, default: false },
+
+    // ─── Ночная автогенерация (jobs/radiologyDailyCases.job.js) ───
+    // Отдельное поле, а не только tags: по нему считается «сколько автокейсов
+    // уже ждёт автора» (лимит очереди) и «какие темы уже разобраны» (чтобы
+    // генератор не выдавал один и тот же пневмоторакс каждую ночь). Тег для
+    // такого — слишком слабая гарантия: его правит человек в форме.
+    autoGen: {
+      isAuto: { type: Boolean, default: false, index: true },
+      // Ключ темы из ai/dailyTopics.js — им же и дедуплицируются темы.
+      topicKey: { type: String, trim: true, maxlength: 80, default: "" },
+      generatedAt: { type: Date, default: null },
+      model: { type: String, trim: true, maxlength: 120, default: "" },
+    },
 
     // ─── Редакторский цикл ───
     status: { type: String, enum: CASE_STATUSES, default: "draft", index: true },

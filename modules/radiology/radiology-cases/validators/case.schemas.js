@@ -69,6 +69,18 @@ const findingSchema = z.object({
   explanation: z.string().trim().max(2000).optional(),
 });
 
+// План находок: чек-лист «что должно быть на снимке», пока разметки нет.
+// Ярлык здесь НЕ проверяется по словарю так же строго, как в findingSchema:
+// план — это черновик ИИ, а не эталон, и упавшая валидация означала бы
+// потерю всего плана целиком. Неизвестный ярлык просто нельзя будет
+// перенести на холст.
+const plannedFindingSchema = z.object({
+  label: z.string().trim().min(1).max(60),
+  significance: z.enum(SIGNIFICANCES).optional(),
+  location: z.string().trim().max(300).optional(),
+  explanation: z.string().trim().max(2000).optional(),
+});
+
 const impressionSchema = z.object({
   correctText: z.string().trim().max(4000).optional(),
   diagnosisKeys: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
@@ -96,8 +108,14 @@ export const createCaseSchema = z.object({
   timeLimitSec: z.number().int().min(30).max(7200).nullish(),
   categoryId: objectIdField.nullish(),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
-  images: z.array(imageSchema).min(1).max(60),
+  // Снимок для ЧЕРНОВИКА не обязателен. Раньше здесь стояло min(1), и кейс,
+  // придуманный ИИ по теме, нельзя было сохранить, пока автор не найдёт
+  // подходящее изображение, — вся текстовая работа жила в форме и терялась
+  // при перезагрузке. Публикацию без кадра по-прежнему не пропускает гейт
+  // collectPublishBlockers: «нет ни одного кадра».
+  images: z.array(imageSchema).max(60).optional(),
   findings: z.array(findingSchema).max(50).optional(),
+  plannedFindings: z.array(plannedFindingSchema).max(30).optional(),
   impression: impressionSchema.optional(),
   source: sourceSchema,
   deidentified: z.boolean().optional(),
@@ -114,8 +132,9 @@ export const updateCaseSchema = z
     timeLimitSec: z.number().int().min(30).max(7200).nullish(),
     categoryId: objectIdField.nullish(),
     tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
-    images: z.array(imageSchema).min(1).max(60).optional(),
+    images: z.array(imageSchema).max(60).optional(),
     findings: z.array(findingSchema).max(50).optional(),
+    plannedFindings: z.array(plannedFindingSchema).max(30).optional(),
     impression: impressionSchema.optional(),
     source: sourceSchema.optional(),
     deidentified: z.boolean().optional(),

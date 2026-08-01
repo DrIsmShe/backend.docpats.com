@@ -108,6 +108,19 @@ const labCaseSchema = new Schema(
     impression: { type: impressionSchema, default: () => ({}) },
 
     source: { type: sourceSchema, required: true },
+
+    // Ночная автогенерация (jobs/radiologyDailyCases.job.js). Отдельное поле,
+    // а не тег: по нему считается очередь неразобранных автокейсов и
+    // определяются уже пройденные темы программы.
+    autoGen: {
+      isAuto: { type: Boolean, default: false, index: true },
+      topicKey: { type: String, trim: true, maxlength: 80, default: "" },
+      generatedAt: { type: Date, default: null },
+      model: { type: String, trim: true, maxlength: 120, default: "" },
+      // Опубликован ли кейс автоматически (рецензент-ИИ не нашёл замечаний).
+      autoPublished: { type: Boolean, default: false },
+    },
+
     status: { type: String, enum: CASE_STATUSES, default: "draft", index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     publishedAt: { type: Date, default: null },

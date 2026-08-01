@@ -18,6 +18,8 @@ router.post("/vp/cases", requireAuthor, ctrl.createVpController);
 router.get("/vp/cases/:id", ctrl.getVpController);
 router.patch("/vp/cases/:id", requireAuthor, ctrl.updateVpController);
 router.post("/vp/cases/:id/status", requireAuthor, ctrl.statusVpController);
+// Удаление без следа (черновики, в т. ч. ночные автокейсы).
+router.delete("/vp/cases/:id/permanent", requireAuthor, ctrl.deleteVpCaseController);
 
 // Образец «типового ответа чат-бота» для сигналов добросовестности — автору.
 router.post("/vp/cases/:id/ai/baseline", requireAuthor, ctrl.aiBaselineVpController);

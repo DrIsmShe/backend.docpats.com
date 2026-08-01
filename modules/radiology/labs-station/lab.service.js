@@ -7,6 +7,7 @@
 
 import LabCase from "./models/labCase.model.js";
 import LabAttempt from "./models/labAttempt.model.js";
+import ArenaCaseTranslation from "../translation/arenaCaseTranslation.model.js";
 import { translatedCaseFor, translateCaseList } from "../translation/translatedCase.js";
 import { combineTotal } from "../radiology-attempts/services/scoring.service.js";
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
@@ -113,6 +114,9 @@ export async function createLabCase(input, actorId, actorRole) {
     impression: input.impression ?? {},
     source: input.source,
     status: "draft",
+    // Метку автогенерации ставит только ночная задача — из HTTP-контроллера
+    // она не приходит (в схеме создания поля нет).
+    ...(input.autoGen ? { autoGen: input.autoGen } : {}),
     createdBy: actorId,
   });
   recordRadiologyEvent({
@@ -176,6 +180,41 @@ export async function setLabStatus(caseId, status, actorId, actorRole) {
     metadata: {},
   });
   return doc.toObject();
+}
+
+// Удаление НАСОВСЕМ — в отличие от статуса archived, который лишь прячет
+// кейс. Ограничения те же, что у лучевой станции: опубликованный сначала в
+// архив, кейс с попытками врачей не удаляется вообще (на него ссылаются
+// разборы, очередь работы над ошибками и статистика).
+export async function deleteLabCasePermanently(caseId, actorId, actorRole) {
+  const doc = await LabCase.findById(caseId);
+  if (!doc) throw new NotFoundError("Lab case");
+  if (doc.status === "published") {
+    throw new ConflictError(
+      "Опубликованный кейс сначала уберите в архив — удалять то, что видят врачи, нельзя",
+    );
+  }
+  const attempts = await LabAttempt.countDocuments({ caseId: doc._id });
+  if (attempts > 0) {
+    throw new ConflictError(
+      `По кейсу есть попытки врачей (${attempts}) — на него ссылаются разборы и статистика. Уберите его в архив вместо удаления.`,
+    );
+  }
+
+  await ArenaCaseTranslation.deleteMany({ caseType: "labs", caseId: doc._id });
+  await LabCase.deleteOne({ _id: doc._id });
+
+  recordRadiologyEvent({
+    action: "lab.delete",
+    actorId,
+    actorRole,
+    metadata: {
+      status: doc.status,
+      auto: Boolean(doc.autoGen?.isAuto),
+      topicKey: doc.autoGen?.topicKey || null,
+    },
+  });
+  return { deleted: true, id: String(doc._id) };
 }
 
 // lang задаётся для учащегося и НЕ задаётся для редактора: в админке нужны

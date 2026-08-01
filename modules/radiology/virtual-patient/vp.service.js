@@ -10,6 +10,7 @@
 
 import VirtualPatientCase from "./models/vpCase.model.js";
 import VirtualPatientAttempt from "./models/vpAttempt.model.js";
+import ArenaCaseTranslation from "../translation/arenaCaseTranslation.model.js";
 import { combineTotal } from "../radiology-attempts/services/scoring.service.js";
 import { gradeImpression } from "../radiology-attempts/services/impressionGrader.js";
 import { awardForAttempt } from "../game/game.service.js";
@@ -147,6 +148,8 @@ export async function createVpCase(input, actorId, actorRole) {
     diagnosis: input.diagnosis ?? {},
     source: input.source,
     status: "draft",
+    // Метку автогенерации ставит только ночная задача (см. LabCase).
+    ...(input.autoGen ? { autoGen: input.autoGen } : {}),
     createdBy: actorId,
   });
   recordRadiologyEvent({ action: "vp.create", actorId, actorRole, metadata: { inv: doc.investigations.length } });
@@ -183,6 +186,39 @@ export async function setVpStatus(caseId, status, actorId, actorRole) {
   await doc.save();
   recordRadiologyEvent({ action: `vp.${status}`, actorId, actorRole, metadata: {} });
   return doc.toObject();
+}
+
+// Удаление НАСОВСЕМ — см. одноимённую функцию у лучевой станции и «Анализов».
+// Опубликованный сценарий сначала в архив; сценарий с попытками не удаляется.
+export async function deleteVpCasePermanently(caseId, actorId, actorRole) {
+  const doc = await VirtualPatientCase.findById(caseId);
+  if (!doc) throw new NotFoundError("VP case");
+  if (doc.status === "published") {
+    throw new ConflictError(
+      "Опубликованный сценарий сначала уберите в архив — удалять то, что видят врачи, нельзя",
+    );
+  }
+  const attempts = await VirtualPatientAttempt.countDocuments({ caseId: doc._id });
+  if (attempts > 0) {
+    throw new ConflictError(
+      `По сценарию есть попытки врачей (${attempts}) — на него ссылаются разборы и статистика. Уберите его в архив вместо удаления.`,
+    );
+  }
+
+  await ArenaCaseTranslation.deleteMany({ caseType: "vp", caseId: doc._id });
+  await VirtualPatientCase.deleteOne({ _id: doc._id });
+
+  recordRadiologyEvent({
+    action: "vp.delete",
+    actorId,
+    actorRole,
+    metadata: {
+      status: doc.status,
+      auto: Boolean(doc.autoGen?.isAuto),
+      topicKey: doc.autoGen?.topicKey || null,
+    },
+  });
+  return { deleted: true, id: String(doc._id) };
 }
 
 // lang задаётся для учащегося и НЕ задаётся для редактора: в админке нужны

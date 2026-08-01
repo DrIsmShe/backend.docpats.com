@@ -35,5 +35,13 @@ router.patch("/cases/:id", requireAuthor, ctrl.updateCaseController);
 router.post("/cases/:id/submit", requireAuthor, ctrl.submitCaseController);
 router.post("/cases/:id/review", requireReviewer, ctrl.reviewCaseController);
 router.delete("/cases/:id", requireReviewer, ctrl.archiveCaseController);
+// Удаление без следа (черновики, в т. ч. ночные автокейсы). Отдельный
+// маршрут — чтобы случайный DELETE не стирал кейс вместо архивации.
+router.delete("/cases/:id/permanent", requireReviewer, ctrl.deleteCaseController);
+
+// Ночная автогенерация вручную: «сгенерировать сейчас» из админки. Запуск
+// отвечает сразу (202), за итогом клиент возвращается на /autogen/state.
+router.post("/autogen/run", requireAuthor, ctrl.runAutogenController);
+router.get("/autogen/state", requireAuthor, ctrl.autogenStateController);
 
 export default router;

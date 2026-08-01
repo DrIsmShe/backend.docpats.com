@@ -8,6 +8,7 @@ import {
   createVpCase,
   updateVpCase,
   setVpStatus,
+  deleteVpCasePermanently,
   listVpCases,
   getVpCaseFull,
   sanitizeVpForLearner,
@@ -138,6 +139,17 @@ export const statusVpController = asyncHandler(async (req, res) => {
   if (!parsed.success) throwZod(parsed);
   const doc = await setVpStatus(req.params.id, parsed.data.status, req.radiologyActor.userId, req.radiologyActor.role);
   res.json({ case: doc });
+});
+
+// Удаление НАСОВСЕМ — отдельный маршрут, а не статус: архив прячет сценарий,
+// это стирает его вместе с переводами. Ограничения — в сервисе.
+export const deleteVpCaseController = asyncHandler(async (req, res) => {
+  const out = await deleteVpCasePermanently(
+    req.params.id,
+    req.radiologyActor.userId,
+    req.radiologyActor.role,
+  );
+  res.json(out);
 });
 
 // ИИ-варианты сценария: тот же диагноз, другой пациент и другие числовые

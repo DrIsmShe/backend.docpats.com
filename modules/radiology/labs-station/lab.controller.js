@@ -7,6 +7,7 @@ import {
   createLabCase,
   updateLabCase,
   setLabStatus,
+  deleteLabCasePermanently,
   listLabCases,
   getLabCaseFull,
   sanitizeLabForLearner,
@@ -129,6 +130,17 @@ export const statusLabCaseController = asyncHandler(async (req, res) => {
     req.radiologyActor.role,
   );
   res.json({ case: doc });
+});
+
+// Удаление НАСОВСЕМ — отдельный маршрут, а не статус: архив прячет кейс, это
+// стирает его вместе с переводами. Ограничения — в сервисе.
+export const deleteLabCaseController = asyncHandler(async (req, res) => {
+  const out = await deleteLabCasePermanently(
+    req.params.id,
+    req.radiologyActor.userId,
+    req.radiologyActor.role,
+  );
+  res.json(out);
 });
 
 // Отметки «разобрано» на замечаниях сохранённой рецензии. Пока замечание не

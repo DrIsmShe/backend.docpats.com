@@ -95,6 +95,17 @@ const vpCaseSchema = new Schema(
     },
 
     source: { type: sourceSchema, required: true },
+
+    // Ночная автогенерация (jobs/radiologyDailyCases.job.js) — см. одноимённое
+    // поле у LabCase и RadiologyCase.
+    autoGen: {
+      isAuto: { type: Boolean, default: false, index: true },
+      topicKey: { type: String, trim: true, maxlength: 80, default: "" },
+      generatedAt: { type: Date, default: null },
+      model: { type: String, trim: true, maxlength: 120, default: "" },
+      autoPublished: { type: Boolean, default: false },
+    },
+
     status: { type: String, enum: CASE_STATUSES, default: "draft", index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     publishedAt: { type: Date, default: null },

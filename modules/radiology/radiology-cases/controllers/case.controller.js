@@ -19,10 +19,15 @@ import {
   submitForReview,
   reviewCase,
   archiveCase,
+  deleteCasePermanently,
   listCases,
   getCaseFull,
   getCaseForLearner,
 } from "../services/case.service.js";
+import {
+  startDailyCaseGeneration,
+  getAutogenState,
+} from "../../../../jobs/radiologyDailyCases.job.js";
 import {
   createCaseSchema,
   updateCaseSchema,
@@ -223,4 +228,30 @@ export const archiveCaseController = asyncHandler(async (req, res) => {
     req.radiologyActor.role,
   );
   res.json({ case: doc });
+});
+
+// Удаление НАСОВСЕМ — отдельный маршрут, а не флаг у архивации: разные
+// последствия должны требовать разного запроса, иначе однажды один лишний
+// параметр сотрёт то, что собирались спрятать. Ограничения — в сервисе.
+export const deleteCaseController = asyncHandler(async (req, res) => {
+  const out = await deleteCasePermanently(
+    req.params.id,
+    req.radiologyActor.userId,
+    req.radiologyActor.role,
+  );
+  res.json(out);
+});
+
+// Ручной запуск ночной автогенерации — та же работа, что делает cron, но
+// сейчас и по кнопке владельца. Отвечаем СРАЗУ (202), не дожидаясь конца:
+// пять запросов к модели идут минуты, а соединение до админки столько не
+// живёт. За результатом клиент возвращается на /autogen/state.
+export const runAutogenController = asyncHandler(async (req, res) => {
+  const state = startDailyCaseGeneration();
+  res.status(202).json({ ...state, aiEnabled: aiConfigured() });
+});
+
+// Состояние прогона: идёт ли сейчас и чем кончился прошлый.
+export const autogenStateController = asyncHandler(async (req, res) => {
+  res.json({ ...getAutogenState(), aiEnabled: aiConfigured() });
 });
