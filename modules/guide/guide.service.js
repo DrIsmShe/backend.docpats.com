@@ -39,6 +39,17 @@ export const MODEL = process.env.GUIDE_MODEL || "claude-opus-5";
 const EFFORT = process.env.GUIDE_EFFORT || "low";
 const MAX_TOKENS = Number(process.env.GUIDE_MAX_TOKENS ?? 1200);
 
+// Запасная модель при отказе классификаторов безопасности. Гид отвечает на
+// вопросы о медицинской платформе, и вопрос про «дозировки», «травму» или
+// «доступ к данным пациента» вполне может выглядеть для фильтра опасным.
+// Без запасного пути такой вопрос упирался бы в глухое «Не могу ответить».
+//
+// "default" — сервер сам подбирает замену по категории отказа; так не придётся
+// мигрировать, когда конкретная запасная модель уйдёт из поддержки. Тот же
+// подход, что в radiology/ai/aiRunner.js и diagnostics/ai/runner.js.
+const FALLBACKS_ENABLED = process.env.ANTHROPIC_FALLBACKS !== "off";
+const FALLBACK_BETA = "server-side-fallback-2026-07-01";
+
 // Границы разговора. Публичный эндпоинт без них превращается в бесплатный
 // прокси к модели.
 export const MAX_QUESTION_CHARS = 1000;
@@ -123,11 +134,15 @@ export async function askGuide({ messages, lang = DEFAULT_LANG, role = "guest", 
 
   let message;
   try {
-    message = await getClient().messages.create({
+    // Бета-путь нужен ради fallbacks: на обычный вызов их не передать.
+    message = await getClient().beta.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
       thinking: { type: "adaptive" },
       output_config: { effort: EFFORT },
+      ...(FALLBACKS_ENABLED
+        ? { betas: [FALLBACK_BETA], fallbacks: "default" }
+        : {}),
       // Порядок важен: неизменная инструкция, затем корпус с точкой
       // кэширования, и только потом то, что меняется от пользователя к
       // пользователю. Читать кэш примерно вдесятеро дешевле, чем считать
@@ -151,6 +166,8 @@ export async function askGuide({ messages, lang = DEFAULT_LANG, role = "guest", 
       : new ValidationError(described.message);
   }
 
+  // С включёнными fallbacks отказ здесь означает, что отклонила вся цепочка
+  // моделей, а не одна.
   if (message.stop_reason === "refusal") {
     return {
       answer: "Не могу ответить на этот вопрос.",

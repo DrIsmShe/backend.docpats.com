@@ -21,15 +21,18 @@ const captured = { params: null };
 vi.mock("../../modules/education/education-ingest/extractors/claude.extractor.js", () => ({
   isConfigured: () => true,
   describeApiError: (err) => ({ message: String(err?.message ?? err), retryable: false }),
+  // Гид ходит бета-путём: обычный вызов не принимает fallbacks.
   getClient: () => ({
-    messages: {
-      create: async (params) => {
-        captured.params = params;
-        return {
-          stop_reason: "end_turn",
-          content: [{ type: "text", text: "Ответ по разделу /docs/for-doctors." }],
-          usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 0 },
-        };
+    beta: {
+      messages: {
+        create: async (params) => {
+          captured.params = params;
+          return {
+            stop_reason: "end_turn",
+            content: [{ type: "text", text: "Ответ по разделу /docs/for-doctors." }],
+            usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 0 },
+          };
+        },
       },
     },
   }),
@@ -76,6 +79,15 @@ describe("устройство запроса к модели", () => {
 
     expect(captured.params.tools).toBeUndefined();
     expect(captured.params.mcp_servers).toBeUndefined();
+  });
+
+  it("просит запасную модель на случай отказа классификаторов", async () => {
+    await askGuide({ messages: [{ role: "user", content: "Что такое DocPats?" }] });
+
+    // Режим "default": сервер подбирает замену по категории отказа — не
+    // придётся мигрировать, когда конкретная запасная модель уйдёт.
+    expect(captured.params.fallbacks).toBe("default");
+    expect(captured.params.betas).toContain("server-side-fallback-2026-07-01");
   });
 
   it("корпус лежит в кэшируемой части промпта, а изменчивое — после неё", async () => {
