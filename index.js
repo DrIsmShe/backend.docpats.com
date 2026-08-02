@@ -6,6 +6,13 @@ import "./modules/surgery/simulation.worker.js";
 // перевод «принят», и никто никогда его не делает.
 import { startTranslationWorker } from "./modules/education/education-translation/translation.worker.js";
 startTranslationWorker();
+// Обработка голосовых надиктовок — по той же причине в этом же процессе.
+// Вынести в отдельный PM2-процесс: DICTATION_INLINE_WORKER=false плюс
+// `npm run worker:dictation` (см. modules/dictation/worker/dictation.worker.js).
+import { startDictationWorker } from "./modules/dictation/worker/runner.js";
+if (process.env.DICTATION_INLINE_WORKER !== "false" && !process.env.VITEST) {
+  startDictationWorker();
+}
 import express from "express";
 import meRoutes from "./modules/me/me.routes.js";
 import dotenv from "dotenv";
@@ -61,6 +68,7 @@ import educationRoutes from "./modules/education/index.js";
 import educationGuestRoutes from "./modules/education/education-guest/index.js";
 import radiologyRoutes from "./modules/radiology/index.js";
 import diagnosticsRoutes from "./modules/diagnostics/index.js";
+import dictationRoutes from "./modules/dictation/index.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -351,6 +359,11 @@ app.use("/api/v1/radiology", radiologyRoutes);
 // доступ только врачам, и внутри жёсткие гейты: без подтверждения
 // обезличивания и согласия материалы наружу не уходят.
 app.use("/api/v1/diagnostics", diagnosticsRoutes);
+
+// Голосовая надиктовка истории болезни. Тоже после session-middleware:
+// врач опознаётся по req.session.userId, а пациент — по resolvePatient.
+// Результат — ЧЕРНОВИК записи; подписывает врач обычным путём модуля.
+app.use("/api/v1/dictation", dictationRoutes);
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
 await import("./common/models/index.js")
