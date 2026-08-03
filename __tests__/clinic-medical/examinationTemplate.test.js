@@ -245,6 +245,100 @@ describe("правка и удаление своей заготовки", () =>
   });
 });
 
+// ─── ЗАГОТОВКИ ЗАПИСИ ПРИЁМА ───────────────────────────────────────────
+//
+// Тот же справочник обслуживает вторую область: блоки истории болезни —
+// жалобы, анамнезы, статусы, рекомендации. Область (scope) обязана разделять
+// их наглухо, иначе форма исследования начнёт предлагать жалобы, а форма
+// приёма — протоколы КТ.
+
+describe("заготовки записи приёма", () => {
+  let clinicA;
+  beforeEach(() => {
+    clinicA = oid();
+  });
+
+  it("создаётся без вида исследования", async () => {
+    const created = await runWithTenantContext(ctx({ clinicId: clinicA }), () =>
+      svc.createTemplate({
+        scope: "encounter",
+        kind: "complaints",
+        title: "Боли в эпигастрии",
+        body: "Жалобы на боли в эпигастральной области натощак.",
+      }),
+    );
+
+    expect(created.scope).toBe("encounter");
+    expect(created.kind).toBe("complaints");
+    expect(created.modality).toBeNull();
+  });
+
+  it("принимает все одиннадцать блоков приёма", async () => {
+    const kinds = [
+      "complaints", "anamnesisMorbi", "anamnesisVitae", "statusPreasens",
+      "statusLocalis", "additionalDiagnosis", "recommendations",
+      "ctScanResults", "mriResults", "ultrasoundResults", "laboratoryTestResults",
+    ];
+
+    for (const kind of kinds) {
+      const created = await runWithTenantContext(ctx({ clinicId: clinicA }), () =>
+        svc.createTemplate({ scope: "encounter", kind, title: `Заготовка ${kind}` }),
+      );
+      expect(created.kind).toBe(kind);
+    }
+
+    const { items } = await runWithTenantContext(ctx({ clinicId: clinicA }), () =>
+      svc.listTemplates({ scope: "encounter" }),
+    );
+    expect(items).toHaveLength(kinds.length);
+  });
+
+  it("блок протокола исследования в области приёма отклоняется", async () => {
+    await expect(
+      runWithTenantContext(ctx({ clinicId: clinicA }), () =>
+        svc.createTemplate({ scope: "encounter", kind: "nameOfExam", title: "x" }),
+      ),
+    ).rejects.toThrow(/kind/);
+  });
+
+  it("блок приёма в области исследования отклоняется", async () => {
+    await expect(
+      runWithTenantContext(ctx({ clinicId: clinicA }), () =>
+        svc.createTemplate({ modality: "CT", kind: "complaints", title: "x" }),
+      ),
+    ).rejects.toThrow(/kind/);
+  });
+
+  it("области не видят заготовок друг друга", async () => {
+    await seed(clinicA, { title: "Протокол КТ" });
+    await runWithTenantContext(ctx({ clinicId: clinicA }), () =>
+      svc.createTemplate({ scope: "encounter", kind: "complaints", title: "Жалобы" }),
+    );
+
+    const exams = await runWithTenantContext(ctx({ clinicId: clinicA }), () =>
+      svc.listTemplates({ scope: "examination" }),
+    );
+    const visits = await runWithTenantContext(ctx({ clinicId: clinicA }), () =>
+      svc.listTemplates({ scope: "encounter" }),
+    );
+
+    expect(exams.items.map((t) => t.title)).toEqual(["Протокол КТ"]);
+    expect(visits.items.map((t) => t.title)).toEqual(["Жалобы"]);
+  });
+
+  it("заготовки приёма тоже не видны чужой клинике", async () => {
+    const clinicB = oid();
+    await runWithTenantContext(ctx({ clinicId: clinicA }), () =>
+      svc.createTemplate({ scope: "encounter", kind: "anamnesisVitae", title: "Анамнез" }),
+    );
+
+    const { items } = await runWithTenantContext(ctx({ clinicId: clinicB }), () =>
+      svc.listTemplates({ scope: "encounter" }),
+    );
+    expect(items).toHaveLength(0);
+  });
+});
+
 describe("права ролей", () => {
   let clinicA, template;
 

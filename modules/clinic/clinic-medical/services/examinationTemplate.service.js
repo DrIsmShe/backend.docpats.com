@@ -14,7 +14,8 @@
 // формулировки может не всякий, кому позволено читать карту пациента.
 
 import ExaminationTemplate, {
-  TEMPLATE_KINDS,
+  TEMPLATE_SCOPES,
+  kindsForScope,
 } from "../models/examinationTemplate.model.js";
 import {
   NotFoundError,
@@ -42,7 +43,10 @@ function toShape(doc) {
   if (!doc) return null;
   return {
     _id: String(doc._id),
-    modality: doc.modality,
+    // Записи, заведённые до появления заготовок приёма, поля scope не имеют —
+    // отдаём им область по умолчанию, чтобы интерфейс не встретил undefined.
+    scope: doc.scope || "examination",
+    modality: doc.modality || null,
     kind: doc.kind,
     title: doc.title,
     body: doc.body || "",
@@ -53,16 +57,33 @@ function toShape(doc) {
   };
 }
 
-/** Проверить вид исследования и вид заготовки до обращения к базе. */
-function validate({ modality, kind }) {
-  if (!modality || !VALID_STUDY_TYPES.includes(modality)) {
+/**
+ * Проверить область, вид исследования и блок до обращения к базе.
+ *
+ * Блок проверяется ПРОТИВ ОБЛАСТИ, а не против общего перечня: иначе
+ * заготовку «жалобы» можно было бы завести для протокола КТ, и она вылезла
+ * бы в форме исследования, где ей не место.
+ */
+function validate({ scope = "examination", modality, kind }) {
+  if (!TEMPLATE_SCOPES.includes(scope)) {
     throw new UnprocessableError(
-      `modality обязателен и должен быть одним из: ${VALID_STUDY_TYPES.join(", ")}`,
+      `scope должен быть одним из: ${TEMPLATE_SCOPES.join(", ")}`,
     );
   }
-  if (!kind || !TEMPLATE_KINDS.includes(kind)) {
+
+  // Вид исследования нужен только протоколам: у жалоб и анамнеза его нет.
+  if (scope !== "encounter") {
+    if (!modality || !VALID_STUDY_TYPES.includes(modality)) {
+      throw new UnprocessableError(
+        `modality обязателен и должен быть одним из: ${VALID_STUDY_TYPES.join(", ")}`,
+      );
+    }
+  }
+
+  const allowed = kindsForScope(scope);
+  if (!kind || !allowed.includes(kind)) {
     throw new UnprocessableError(
-      `kind обязателен и должен быть одним из: ${TEMPLATE_KINDS.join(", ")}`,
+      `kind для области «${scope}» должен быть одним из: ${allowed.join(", ")}`,
     );
   }
 }
@@ -71,11 +92,23 @@ function validate({ modality, kind }) {
 //
 // Основной сценарий: форма исследования открывает список заготовок нужного
 // вида, чтобы врач выбрал готовую формулировку.
-export async function listTemplates({ modality, kind, limit = 200 } = {}) {
+export async function listTemplates({
+  scope = "examination",
+  modality,
+  kind,
+  limit = 200,
+} = {}) {
   requirePerm("examination_template", "read");
   requireClinicId();
 
   const filter = {};
+
+  // Область отбирается всегда, даже если её не передали: без этого форма
+  // исследования увидела бы заготовки жалоб, а форма приёма — протоколы КТ.
+  // Записи, заведённые до появления поля, считаются протоколами.
+  filter.scope =
+    scope === "encounter" ? "encounter" : { $in: ["examination", null] };
+
   if (modality) filter.modality = modality;
   if (kind) filter.kind = kind;
 
@@ -117,9 +150,14 @@ export async function createTemplate(body = {}) {
   const actorType = getCurrentActorType();
   const userId = getCurrentUserId();
 
+  const scope = body.scope === "encounter" ? "encounter" : "examination";
+
   const doc = new ExaminationTemplate({
     clinicId,
-    modality: body.modality,
+    scope,
+    // У заготовки приёма вида исследования нет — пишем null, а не пустую
+    // строку: по null поле не попадает в отбор по модальности.
+    modality: scope === "encounter" ? null : body.modality,
     kind: body.kind,
     title,
     body: String(body.body || ""),
@@ -130,8 +168,10 @@ export async function createTemplate(body = {}) {
   });
 
   await doc.save();
-  log.info({ clinicId: String(clinicId), modality: body.modality, kind: body.kind },
-    "создана заготовка протокола");
+  log.info(
+    { clinicId: String(clinicId), scope, modality: doc.modality, kind: body.kind },
+    "создана заготовка",
+  );
 
   return toShape(doc);
 }

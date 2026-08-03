@@ -24,14 +24,52 @@
 import mongoose from "mongoose";
 import { tenantScopedPlugin } from "../../../../common/plugins/tenantScoped.plugin.js";
 
-// Четыре блока, из которых собирается протокол. Совпадают с полями
-// ImagingStudy: nameOfExam → report → diagnosis → recommendation.
-export const TEMPLATE_KINDS = [
+// Где применяется заготовка. Область решает, к какому набору полей она
+// относится: протокол исследования или запись приёма.
+export const TEMPLATE_SCOPES = ["examination", "encounter"];
+
+// Четыре блока, из которых собирается протокол исследования. Совпадают с
+// полями ImagingStudy: nameOfExam → report → diagnosis → recommendation.
+export const EXAMINATION_KINDS = [
   "nameOfExam",
   "report",
   "diagnosis",
   "recommendation",
 ];
+
+// Одиннадцать блоков записи приёма. Ключи в точности повторяют имена полей
+// модели приёма (newPatientMedicalHistory) — так заготовка попадает в поле
+// без всякого сопоставления, а расхождение имён обнаружится сразу.
+//
+// В единоличной практике (модуль myClinic) под каждый из этих блоков заведена
+// отдельная коллекция-справочник: tempComplaints, tempAnamnesisMorbi,
+// tempStatusLocalis и так далее. Здесь это значения одного поля.
+export const ENCOUNTER_KINDS = [
+  "complaints",
+  "anamnesisMorbi",
+  "anamnesisVitae",
+  "statusPreasens",
+  "statusLocalis",
+  "additionalDiagnosis",
+  "recommendations",
+  "ctScanResults",
+  "mriResults",
+  "ultrasoundResults",
+  "laboratoryTestResults",
+];
+
+// Полный перечень для enum схемы.
+//
+// ОСТОРОЖНО: "recommendation" (рекомендации в протоколе исследования) и
+// "recommendations" (рекомендации по итогам приёма) различаются одной буквой.
+// Это не опечатка: каждый ключ повторяет имя поля в своей модели, а модели
+// назвали поля по-разному. Различает их область (scope), а не сам ключ.
+export const TEMPLATE_KINDS = [...EXAMINATION_KINDS, ...ENCOUNTER_KINDS];
+
+/** Допустимые блоки для области. */
+export function kindsForScope(scope) {
+  return scope === "encounter" ? ENCOUNTER_KINDS : EXAMINATION_KINDS;
+}
 
 const examinationTemplateSchema = new mongoose.Schema(
   {
@@ -43,11 +81,33 @@ const examinationTemplateSchema = new mongoose.Schema(
       index: true,
     },
 
+    // Область применения. По умолчанию "examination": так записи, заведённые
+    // до появления заготовок приёма, остаются протоколами исследований и
+    // ничего не теряют.
+    scope: {
+      type: String,
+      required: true,
+      enum: TEMPLATE_SCOPES,
+      default: "examination",
+      index: true,
+    },
+
     // Вид исследования: CT, MRI, EchoECG… Значения те же, что в studyType
     // модели ImagingStudy — единый список живёт в imaging.service.js.
-    modality: { type: String, required: true, index: true },
+    //
+    // Обязателен ТОЛЬКО для протоколов исследований: у записи приёма вида
+    // исследования нет, там жалобы и анамнез не делятся на КТ и МРТ.
+    modality: {
+      type: String,
+      default: null,
+      index: true,
+      required: function () {
+        return this.scope !== "encounter";
+      },
+    },
 
-    // Какой из четырёх блоков протокола заполняет эта заготовка.
+    // Какой блок заполняет эта заготовка: один из четырёх блоков протокола
+    // или один из одиннадцати блоков приёма — смотря какая область.
     kind: { type: String, required: true, enum: TEMPLATE_KINDS, index: true },
 
     // Короткая подпись в списке выбора.
@@ -68,10 +128,17 @@ const examinationTemplateSchema = new mongoose.Schema(
   { timestamps: true, collection: "clinic_examination_templates" },
 );
 
-// Выборка всегда идёт «заготовки такого-то вида для такого-то исследования»,
+// Выборка всегда идёт «заготовки такого-то блока в такой-то области»,
 // свежие сверху. clinicId в индексе первым: плагин подставляет его в каждый
-// запрос, и без него индекс не использовался бы.
-examinationTemplateSchema.index({ clinicId: 1, modality: 1, kind: 1, createdAt: -1 });
+// запрос, и без него индекс не использовался бы. modality стоит после scope
+// и kind — у записей приёма он пустой и в отборе не участвует.
+examinationTemplateSchema.index({
+  clinicId: 1,
+  scope: 1,
+  kind: 1,
+  modality: 1,
+  createdAt: -1,
+});
 
 // Изоляция между клиниками. Плагин сам добавляет clinicId в каждый поиск,
 // обновление и удаление, проставляет его при сохранении и роняет запрос,

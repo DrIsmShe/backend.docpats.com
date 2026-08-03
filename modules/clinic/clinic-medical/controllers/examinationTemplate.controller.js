@@ -12,17 +12,45 @@ import * as svc from "../services/examinationTemplate.service.js";
 import { recordActionAsync } from "../../../audit/services/audit.service.js";
 import { ACTIONS } from "../rbac/clinicMedicalRBAC.js";
 import { toErrorResponse } from "../../../../common/utils/errors.js";
-import { TEMPLATE_KINDS } from "../models/examinationTemplate.model.js";
+import {
+  TEMPLATE_KINDS,
+  TEMPLATE_SCOPES,
+  kindsForScope,
+} from "../models/examinationTemplate.model.js";
 import { VALID_STUDY_TYPES } from "../services/imaging.service.js";
 
 const ET = ACTIONS.EXAM_TEMPLATE;
 
-const createSchema = z.object({
-  modality: z.enum(VALID_STUDY_TYPES),
-  kind: z.enum(TEMPLATE_KINDS),
-  title: z.string().trim().min(1).max(300),
-  body: z.string().max(20000).optional(),
-});
+// Схема пропускает любой известный блок, а соответствие блока области
+// проверяет отдельным правилом: zod не умеет условный enum, а разводить две
+// схемы ради этого значит дублировать все поля.
+const createSchema = z
+  .object({
+    scope: z.enum(TEMPLATE_SCOPES).optional(),
+    modality: z.enum(VALID_STUDY_TYPES).optional(),
+    kind: z.enum(TEMPLATE_KINDS),
+    title: z.string().trim().min(1).max(300),
+    body: z.string().max(20000).optional(),
+  })
+  .superRefine((v, ctx) => {
+    const scope = v.scope || "examination";
+
+    if (scope !== "encounter" && !v.modality) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["modality"],
+        message: "Для протокола исследования нужен вид исследования",
+      });
+    }
+
+    if (!kindsForScope(scope).includes(v.kind)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["kind"],
+        message: `Блок «${v.kind}» не относится к области «${scope}»`,
+      });
+    }
+  });
 
 // Вид исследования и вид заготовки не меняются: заготовка «заключение для КТ»,
 // ставшая «названием для МРТ», — это другая запись.
@@ -36,14 +64,15 @@ const updateSchema = z
   });
 
 const listSchema = z.object({
+  scope: z.enum(TEMPLATE_SCOPES).optional(),
   modality: z.enum(VALID_STUDY_TYPES).optional(),
   kind: z.enum(TEMPLATE_KINDS).optional(),
   limit: z.coerce.number().int().min(1).max(500).optional(),
 });
 
-// В metadata аудита — только структурное: вид исследования и вид заготовки.
+// В metadata аудита — только структурное: область, вид исследования и блок.
 // Ни заголовка, ни текста: правило модуля audit — форма события, не содержание.
-const meta = (t) => ({ modality: t?.modality, kind: t?.kind });
+const meta = (t) => ({ scope: t?.scope, modality: t?.modality, kind: t?.kind });
 
 export async function list(req, res) {
   try {
