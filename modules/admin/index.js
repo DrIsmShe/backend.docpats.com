@@ -29,6 +29,9 @@ import adminOverviewRoute from "./routes/adminOverviewRoute.js";
 import adminEntitiesRoute from "./routes/adminEntitiesRoute.js";
 import adminOpsRoute from "./routes/adminOpsRoute.js";
 import adminDatabaseRoute from "./routes/adminDatabaseRoute.js";
+// Посещаемость сайта (PostHog). Лежит отдельным модулем: у него своя
+// внешняя зависимость и свой кеш, админка только даёт ему адрес.
+import analyticsRoutes from "../analytics/index.js";
 
 // system ADMIN end
 // system ADMIN start
@@ -73,6 +76,8 @@ router.use("/", adminEntitiesRoute);
 router.use("/", adminOpsRoute);
 // База данных — сводная аналитика (пациенты/статьи/врачи/пользователи)
 router.use("/database", adminDatabaseRoute);
+// Посещаемость сайта: экраны, аудитория, источники, скорость (PostHog)
+router.use("/analytics", analyticsRoutes);
 //router.use("/admin-panel", isAdminRoute);
 // system ADMIN end
 export default router;
