@@ -31,6 +31,11 @@ export const RESOURCES = Object.freeze({
   PATIENT: "patient",
   MEDICAL_RECORD: "medical_record",
   PRESCRIPTION: "prescription",
+  // Справочник заготовок для протоколов исследований. Отдельный ресурс, а не
+  // часть medical_record: сами исследования и справочник формулировок к ним —
+  // разные вещи. Медсестра вправе заполнить протокол готовой заготовкой, но
+  // менять сам справочник клиники — работа врача или заведующего.
+  EXAMINATION_TEMPLATE: "examination_template",
 
   // scheduling
   SCHEDULE: "schedule",
@@ -145,6 +150,7 @@ const _basePermissions = {
     [RESOURCES.ANNOUNCEMENT]: FULL,
     [RESOURCES.PATIENT]: FULL,
     [RESOURCES.MEDICAL_RECORD]: RW,
+    [RESOURCES.EXAMINATION_TEMPLATE]: FULL,
     [RESOURCES.PRESCRIPTION]: RO,
     [RESOURCES.SCHEDULE]: FULL,
     [RESOURCES.APPOINTMENT]: FULL,
@@ -209,6 +215,7 @@ const _basePermissions = {
     [RESOURCES.TELEMED]: RW,
     [RESOURCES.PATIENT]: RO,
     [RESOURCES.MEDICAL_RECORD]: RW,
+    [RESOURCES.EXAMINATION_TEMPLATE]: RW,
     [RESOURCES.PRESCRIPTION]: RW,
     [RESOURCES.APPOINTMENT]: RW,
     [RESOURCES.SCHEDULE]: { read: true, write: true, delete: false },
@@ -226,6 +233,7 @@ const _basePermissions = {
     [RESOURCES.TELEMED]: RO,
     [RESOURCES.PATIENT]: RO,
     [RESOURCES.MEDICAL_RECORD]: { read: true, write: true, delete: false },
+    [RESOURCES.EXAMINATION_TEMPLATE]: RO,
     [RESOURCES.APPOINTMENT]: RO,
     [RESOURCES.QUEUE]: RW,
     [RESOURCES.CHECKIN]: RW,

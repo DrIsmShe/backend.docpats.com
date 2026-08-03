@@ -89,6 +89,20 @@ const LAB_RESULT = {
   EXPORT: "clinic.medical.lab_result.export", // PDF
 };
 
+// ── Справочник заготовок для протоколов исследований ─────────────
+//
+// В отличие от остальных разделов, здесь нет данных пациента: это набор
+// готовых формулировок клиники («Признаков очаговой патологии не выявлено»).
+// В журнал они всё равно попадают — по ним видно, кто правит справочник,
+// которым потом пользуется вся клиника.
+const EXAM_TEMPLATE = {
+  CREATE: "clinic.medical.exam_template.create",
+  READ: "clinic.medical.exam_template.read",
+  LIST: "clinic.medical.exam_template.list",
+  UPDATE: "clinic.medical.exam_template.update",
+  DELETE: "clinic.medical.exam_template.delete",
+};
+
 export const ALL_CLINIC_MEDICAL_ACTIONS = [
   ...Object.values(ENCOUNTER),
   ...Object.values(ALLERGY),
@@ -99,6 +113,7 @@ export const ALL_CLINIC_MEDICAL_ACTIONS = [
   ...Object.values(IMAGING),
   ...Object.values(PRESCRIPTION),
   ...Object.values(LAB_RESULT),
+  ...Object.values(EXAM_TEMPLATE),
 ];
 
 const DOCTOR_FULL = [
@@ -251,6 +266,7 @@ export const ACTIONS = Object.freeze({
   IMAGING,
   PRESCRIPTION,
   LAB_RESULT,
+  EXAM_TEMPLATE,
 });
 
 export default {

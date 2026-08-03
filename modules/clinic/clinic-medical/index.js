@@ -31,6 +31,9 @@ import familyRoutes from "./routes/family.routes.js";
 import immunizationRoutes from "./routes/immunization.routes.js";
 import imagingRoutes from "./routes/imaging.routes.js";
 import prescriptionRoutes from "./routes/prescription.routes.js";
+// Справочник заготовок для протоколов исследований — единственный роутер
+// модуля, не привязанный к пациенту.
+import examinationTemplateRoutes from "./routes/examinationTemplate.routes.js";
 const router = express.Router();
 import labResultRoutes from "./routes/labResult.routes.js";
 router.use("/", labResultRoutes);
@@ -45,4 +48,5 @@ router.use("/", familyRoutes);
 router.use("/", immunizationRoutes);
 router.use("/", imagingRoutes);
 router.use("/", prescriptionRoutes);
+router.use("/", examinationTemplateRoutes);
 export default router;

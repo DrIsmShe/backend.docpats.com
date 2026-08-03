@@ -26,7 +26,10 @@ const log = logger.child({ module: "clinic-medical/imaging" });
 
 const SCOPE = "imaging";
 
-const VALID_STUDY_TYPES = [
+// Экспортируется, потому что справочник заготовок протоколов обязан
+// принимать ровно те же виды исследований. Два независимых списка однажды
+// разойдутся, и заготовки окажутся привязаны к несуществующему виду.
+export const VALID_STUDY_TYPES = [
   "CT",
   "MRI",
   "USG",
@@ -41,6 +44,23 @@ const VALID_STUDY_TYPES = [
   "Gastroscopy",
   "Colonoscopy",
   "CapsuleEndoscopy",
+  // Должен совпадать с enum studyType в модели ImagingStudy.
+  "Coronography",
+  "Angiography",
+  "EchoECG",
+  "Gynecology",
+];
+
+// Лучевые методы: только у них осмысленна доза облучения. Список нужен
+// интерфейсу, чтобы не спрашивать дозу у ЭКГ и спирометрии — в myClinic поле
+// показывалось у всех подряд, и это была ошибка копипасты, а не замысел.
+export const RADIATION_STUDY_TYPES = [
+  "CT",
+  "X-Ray",
+  "PET",
+  "SPECT",
+  "Coronography",
+  "Angiography",
 ];
 
 function requireClinicId() {
@@ -70,6 +90,13 @@ function toShape(doc) {
     // точке чтения (её вывод использует и PDF).
     report: decryptPHI(doc.report) || null,
     diagnosis: decryptPHI(doc.diagnosis) || null,
+    // Название исследования и рекомендации — такой же текст врача о пациенте,
+    // как протокол и заключение, поэтому шифруются наравне с ними.
+    nameOfExam: decryptPHI(doc.nameOfExam) || null,
+    recommendation: decryptPHI(doc.recommendation) || null,
+    // Доза облучения — техническая величина прибора, не сведения о пациенте:
+    // хранится открыто, как и contrastUsed.
+    radiationDose: doc.radiationDose || null,
     contrastUsed: Boolean(doc.contrastUsed),
     validatedByDoctor: Boolean(doc.validatedByDoctor),
     doctorNotes: decryptPHI(doc.doctorNotes) || null,
@@ -153,6 +180,13 @@ export async function createImaging({ patient, body, images = [], files }) {
     images: Array.isArray(images) ? images : [],
     report: encryptPHI(body.report || null),
     diagnosis: encryptPHI(body.diagnosis || null),
+    nameOfExam: encryptPHI(body.nameOfExam || null),
+    recommendation: encryptPHI(body.recommendation || null),
+    // Дозу принимаем только у лучевых методов: у ЭКГ или спирометрии она
+    // означала бы, что интерфейс прислал мусор из скрытого поля.
+    radiationDose: RADIATION_STUDY_TYPES.includes(body.studyType)
+      ? body.radiationDose || null
+      : null,
     contrastUsed: Boolean(body.contrastUsed),
     ...authorship,
     sharedWith: Array.isArray(body.sharedWith) ? body.sharedWith : [],
@@ -282,7 +316,13 @@ export async function updateImaging({ recordId, body }) {
     );
   }
 
-  const editable = ["report", "diagnosis", "doctorNotes"];
+  const editable = [
+    "report",
+    "diagnosis",
+    "doctorNotes",
+    "nameOfExam",
+    "recommendation",
+  ];
   for (const field of editable) {
     if (Object.prototype.hasOwnProperty.call(body, field)) {
       doc[field] = encryptPHI(body[field] || null); // PHI — шифруем
@@ -290,6 +330,13 @@ export async function updateImaging({ recordId, body }) {
   }
   if (Object.prototype.hasOwnProperty.call(body, "contrastUsed")) {
     doc.contrastUsed = Boolean(body.contrastUsed);
+  }
+  // Дозу правим по той же логике, что и при создании: у нелучевого метода
+  // её быть не должно, даже если интерфейс прислал значение.
+  if (Object.prototype.hasOwnProperty.call(body, "radiationDose")) {
+    doc.radiationDose = RADIATION_STUDY_TYPES.includes(doc.studyType)
+      ? body.radiationDose || null
+      : null;
   }
   if (Object.prototype.hasOwnProperty.call(body, "validatedByDoctor")) {
     doc.validatedByDoctor = Boolean(body.validatedByDoctor);

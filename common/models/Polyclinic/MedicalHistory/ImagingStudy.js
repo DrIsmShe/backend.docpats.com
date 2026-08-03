@@ -111,6 +111,14 @@ const imagingStudySchema = new mongoose.Schema(
         "Gastroscopy",
         "Colonoscopy",
         "CapsuleEndoscopy",
+        // Добавлены для клиники: этих исследований не было в перечне, хотя в
+        // единоличной практике (модуль myClinic) они ведутся давно. Значения
+        // дописаны В КОНЕЦ и только дописаны — существующие записи и код,
+        // который их читает, ничего не замечают.
+        "Coronography",
+        "Angiography",
+        "EchoECG",
+        "Gynecology",
       ],
       required: true,
     },
@@ -153,6 +161,21 @@ const imagingStudySchema = new mongoose.Schema(
     report: { type: String },
     diagnosis: { type: String },
     contrastUsed: { type: Boolean, default: false },
+
+    // ─── Поля протокола исследования (клиника) ─────────────────────
+    //
+    // Врач заполняет исследование четырьмя блоками: НАЗВАНИЕ исследования,
+    // ПРОТОКОЛ (report), ЗАКЛЮЧЕНИЕ (diagnosis) и РЕКОМЕНДАЦИИ. Первые два
+    // из четырёх уже были, недостающие два добавлены здесь.
+    //
+    // Все поля необязательные: старые записи остаются валидными, а код,
+    // который о них не знает, продолжает работать как прежде.
+    nameOfExam: { type: String },
+    recommendation: { type: String },
+
+    // Доза облучения. Осмысленна только для лучевых методов (КТ, рентген,
+    // ПЭТ, ОФЭКТ, ангиография); для ЭКГ или спирометрии остаётся пустой.
+    radiationDose: { type: String },
 
     previousStudy: {
       type: mongoose.Schema.Types.ObjectId,
