@@ -114,6 +114,27 @@ function handleError(res, err, action) {
   res.status(status).json(body);
 }
 
+/**
+ * Кто совершил действие — для журнала аудита.
+ *
+ * ВАЖНО: audit.recordAction НЕ читает актора из контекста запроса, его
+ * нужно передать явно (иначе он отказывается писать запись с ошибкой
+ * «actor.userId is required» — и делает это намеренно: незаписанный
+ * аудит-лог в медицинской системе хуже громкой ошибки).
+ *
+ * Тот же buildActor есть в соседних контроллерах модуля — imaging,
+ * labResult, prescription. Дублируется по их образцу, чтобы не заводить
+ * общий модуль ради четырёх строк.
+ */
+function buildActor(req) {
+  const ctx = req.tenantContext || {};
+  return {
+    userId: ctx.userId || null,
+    role: ctx.role || null,
+    email: req.user?.email || req.session?.email || null,
+  };
+}
+
 // В metadata аудита — только структурное: область, вид исследования и блок.
 // Ни заголовка, ни текста: правило модуля audit — форма события, не содержание.
 const meta = (t) => ({ scope: t?.scope, modality: t?.modality, kind: t?.kind });
@@ -132,6 +153,7 @@ export async function getOne(req, res) {
   try {
     const template = await svc.getTemplate(req.params.templateId);
     recordActionAsync({
+      actor: buildActor(req),
       action: ET.READ,
       resourceType: "clinic-medical-exam-template",
       resourceId: template._id,
@@ -148,6 +170,7 @@ export async function create(req, res) {
     const body = parse(createSchema, req.body ?? {}, "тело запроса");
     const template = await svc.createTemplate(body);
     recordActionAsync({
+      actor: buildActor(req),
       action: ET.CREATE,
       resourceType: "clinic-medical-exam-template",
       resourceId: template._id,
@@ -164,6 +187,7 @@ export async function update(req, res) {
     const body = parse(updateSchema, req.body ?? {}, "тело запроса");
     const template = await svc.updateTemplate(req.params.templateId, body);
     recordActionAsync({
+      actor: buildActor(req),
       action: ET.UPDATE,
       resourceType: "clinic-medical-exam-template",
       resourceId: template._id,
@@ -179,6 +203,7 @@ export async function remove(req, res) {
   try {
     const result = await svc.deleteTemplate(req.params.templateId);
     recordActionAsync({
+      actor: buildActor(req),
       action: ET.DELETE,
       resourceType: "clinic-medical-exam-template",
       resourceId: result._id,

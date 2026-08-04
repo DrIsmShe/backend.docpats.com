@@ -24,15 +24,18 @@ function makeApp({ clinicId, role = "doctor" }) {
   const app = express();
   app.use(express.json());
   app.use((req, res, next) => {
-    runWithTenantContext(
-      {
-        userId: String(oid()),
-        clinicId: String(clinicId),
-        role,
-        actorType: "user",
-      },
-      () => next(),
-    );
+    const ctx = {
+      userId: String(oid()),
+      clinicId: String(clinicId),
+      role,
+      actorType: "user",
+    };
+    // Настоящий tenantMiddleware кладёт контекст В ДВА МЕСТА: в хранилище
+    // (его читают сервисы) и на сам запрос (его читает buildActor для
+    // журнала аудита). Тест, повторяющий только первое, не заметил бы
+    // отсутствия актора — аудит падал бы молча, как и случилось на бою.
+    req.tenantContext = ctx;
+    runWithTenantContext(ctx, () => next());
   });
   app.use("/medical", examinationTemplateRoutes);
   return app;
