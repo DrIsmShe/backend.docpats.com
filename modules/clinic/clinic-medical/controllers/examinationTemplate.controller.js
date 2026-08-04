@@ -21,6 +21,9 @@ import {
   kindsForScope,
 } from "../models/examinationTemplate.model.js";
 import { VALID_STUDY_TYPES } from "../services/imaging.service.js";
+import logger from "../../../../common/logger.js";
+
+const log = logger.child({ module: "clinic-medical/examinationTemplate.controller" });
 
 const ET = ACTIONS.EXAM_TEMPLATE;
 
@@ -90,6 +93,27 @@ function parse(schema, source, label) {
   return result.data;
 }
 
+/**
+ * Единый ответ на ошибку.
+ *
+ * ЗАЧЕМ ЛОГ. Ошибка, которую toErrorResponse не узнаёт, превращается в 500
+ * «Internal server error» — сообщение без единой подробности. Раньше такая
+ * ошибка нигде не записывалась, и причину было неоткуда взять: ни в ответе,
+ * ни в журнале PM2. Теперь 5xx уходит в лог со стеком; ожидаемые 4xx —
+ * короткой строкой, чтобы не засорять журнал.
+ */
+function handleError(res, err, action) {
+  const { status, body } = toErrorResponse(err);
+
+  if (status >= 500) {
+    log.error({ err, action, stack: err?.stack }, "справочник заготовок: необработанная ошибка");
+  } else {
+    log.warn({ action, status, message: err?.message }, "справочник заготовок: отказ");
+  }
+
+  res.status(status).json(body);
+}
+
 // В metadata аудита — только структурное: область, вид исследования и блок.
 // Ни заголовка, ни текста: правило модуля audit — форма события, не содержание.
 const meta = (t) => ({ scope: t?.scope, modality: t?.modality, kind: t?.kind });
@@ -100,8 +124,7 @@ export async function list(req, res) {
     const result = await svc.listTemplates(query);
     res.json(result);
   } catch (err) {
-    const { status, body } = toErrorResponse(err);
-    res.status(status).json(body);
+    handleError(res, err, "list");
   }
 }
 
@@ -116,8 +139,7 @@ export async function getOne(req, res) {
     });
     res.json({ template });
   } catch (err) {
-    const { status, body } = toErrorResponse(err);
-    res.status(status).json(body);
+    handleError(res, err, "get");
   }
 }
 
@@ -133,8 +155,7 @@ export async function create(req, res) {
     });
     res.status(201).json({ template });
   } catch (err) {
-    const { status, body } = toErrorResponse(err);
-    res.status(status).json(body);
+    handleError(res, err, "create");
   }
 }
 
@@ -150,8 +171,7 @@ export async function update(req, res) {
     });
     res.json({ template });
   } catch (err) {
-    const { status, body } = toErrorResponse(err);
-    res.status(status).json(body);
+    handleError(res, err, "update");
   }
 }
 
@@ -165,7 +185,6 @@ export async function remove(req, res) {
     });
     res.json(result);
   } catch (err) {
-    const { status, body } = toErrorResponse(err);
-    res.status(status).json(body);
+    handleError(res, err, "delete");
   }
 }
