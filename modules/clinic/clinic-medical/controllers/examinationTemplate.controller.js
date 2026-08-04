@@ -11,7 +11,10 @@ import { z } from "zod";
 import * as svc from "../services/examinationTemplate.service.js";
 import { recordActionAsync } from "../../../audit/services/audit.service.js";
 import { ACTIONS } from "../rbac/clinicMedicalRBAC.js";
-import { toErrorResponse } from "../../../../common/utils/errors.js";
+import {
+  UnprocessableError,
+  toErrorResponse,
+} from "../../../../common/utils/errors.js";
 import {
   TEMPLATE_KINDS,
   TEMPLATE_SCOPES,
@@ -70,13 +73,30 @@ const listSchema = z.object({
   limit: z.coerce.number().int().min(1).max(500).optional(),
 });
 
+/**
+ * Разбор входных данных.
+ *
+ * ВАЖНО: только safeParse. Метод parse бросает ZodError, а обработчик
+ * ошибок проекта (toErrorResponse) про такой класс не знает и отдаёт 500 —
+ * то есть любая опечатка в параметре превращалась бы во «внутреннюю ошибку
+ * сервера». Здесь ошибка становится типизированной 422, как в соседних
+ * контроллерах модуля.
+ */
+function parse(schema, source, label) {
+  const result = schema.safeParse(source);
+  if (!result.success) {
+    throw new UnprocessableError(`Неверные данные: ${label}`, result.error.flatten());
+  }
+  return result.data;
+}
+
 // В metadata аудита — только структурное: область, вид исследования и блок.
 // Ни заголовка, ни текста: правило модуля audit — форма события, не содержание.
 const meta = (t) => ({ scope: t?.scope, modality: t?.modality, kind: t?.kind });
 
 export async function list(req, res) {
   try {
-    const query = listSchema.parse(req.query ?? {});
+    const query = parse(listSchema, req.query ?? {}, "параметры списка");
     const result = await svc.listTemplates(query);
     res.json(result);
   } catch (err) {
@@ -103,7 +123,7 @@ export async function getOne(req, res) {
 
 export async function create(req, res) {
   try {
-    const body = createSchema.parse(req.body ?? {});
+    const body = parse(createSchema, req.body ?? {}, "тело запроса");
     const template = await svc.createTemplate(body);
     recordActionAsync({
       action: ET.CREATE,
@@ -120,7 +140,7 @@ export async function create(req, res) {
 
 export async function update(req, res) {
   try {
-    const body = updateSchema.parse(req.body ?? {});
+    const body = parse(updateSchema, req.body ?? {}, "тело запроса");
     const template = await svc.updateTemplate(req.params.templateId, body);
     recordActionAsync({
       action: ET.UPDATE,
