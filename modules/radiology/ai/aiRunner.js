@@ -12,6 +12,7 @@
 import {
   getClient,
   describeApiError,
+  withApiRetry,
 } from "../../education/education-ingest/extractors/claude.extractor.js";
 import {
   ValidationError,
@@ -39,6 +40,19 @@ export const MODEL =
 // каждый вызов модели в проде.
 const FALLBACKS_ENABLED = process.env.ANTHROPIC_FALLBACKS !== "off";
 const FALLBACK_BETA = "server-side-fallback-2026-07-01";
+
+// Запасная модель при ПЕРЕГРУЗКЕ — не путать с подменой при отказе выше.
+// Отказ и очередь лечатся по-разному: серверный fallback срабатывает, когда
+// модель ответила отказом, а перегруженная модель не отвечает вовсе.
+//
+// Кейс сочиняется целиком, поэтому модель здесь влияет на качество сильнее,
+// чем в разборе готового текста. Но выбор стоит не между Opus и Sonnet, а
+// между кейсом от Sonnet и пропущенной ночью: черновик всё равно проходит
+// проверку вторым проходом и правится человеком до публикации.
+const OVERLOAD_FALLBACK_MODEL =
+  process.env.RADIOLOGY_AI_FALLBACK_MODEL === "off"
+    ? null
+    : process.env.RADIOLOGY_AI_FALLBACK_MODEL || "claude-sonnet-5";
 
 /** Настроен ли ИИ (тот же ключ, что у остальных ИИ-функций модуля). */
 export function isConfigured() {
@@ -79,27 +93,47 @@ export async function runJson({
   const client = getClient();
   let message;
   try {
-    // Бета-путь нужен ради fallbacks: на обычный вызов их не передать.
-    const stream = client.beta.messages.stream({
-      model: MODEL,
-      max_tokens: maxTokens,
-      thinking: { type: "adaptive" },
-      system,
-      // См. common/utils/structuredOutputSchema.js: неподдерживаемый ключ в
-      // схеме — это 400 на каждый вызов, а не изредка.
-      output_config: {
-        format: { type: "json_schema", schema: prepareSchema(schema, logger, what) },
-        // Уровень усилий передаём, только если вызывающий код его выбрал:
-        // отсутствие поля и явное "high" — не одно и то же по смыслу, хотя
-        // сегодня совпадают по значению. Пусть в запросе будет видно решение.
-        ...(effort ? { effort } : {}),
+    // Повтор при перегрузке здесь важнее, чем где-либо: ночной генератор
+    // работает без свидетелей, и необработанный сбой означает пропущенную
+    // ночь — кейса за день просто не появится, и заметит это уже врач.
+    message = await withApiRetry(
+      async (attemptModel) => {
+        // Бета-путь нужен ради fallbacks: на обычный вызов их не передать.
+        const stream = client.beta.messages.stream({
+          model: attemptModel,
+          max_tokens: maxTokens,
+          thinking: { type: "adaptive" },
+          system,
+          // См. common/utils/structuredOutputSchema.js: неподдерживаемый ключ
+          // в схеме — это 400 на каждый вызов, а не изредка.
+          output_config: {
+            format: {
+              type: "json_schema",
+              schema: prepareSchema(schema, logger, what),
+            },
+            // Уровень усилий передаём, только если вызывающий код его выбрал:
+            // отсутствие поля и явное "high" — не одно и то же по смыслу,
+            // хотя сегодня совпадают по значению. Пусть в запросе будет
+            // видно решение.
+            ...(effort ? { effort } : {}),
+          },
+          messages: [{ role: "user", content: instruction }],
+          ...(FALLBACKS_ENABLED
+            ? { betas: [FALLBACK_BETA], fallbacks: "default" }
+            : {}),
+        });
+        return await stream.finalMessage();
       },
-      messages: [{ role: "user", content: instruction }],
-      ...(FALLBACKS_ENABLED
-        ? { betas: [FALLBACK_BETA], fallbacks: "default" }
-        : {}),
-    });
-    message = await stream.finalMessage();
+      {
+        logger,
+        what,
+        model: MODEL,
+        fallbackModel: OVERLOAD_FALLBACK_MODEL,
+        // Ночью спешить некуда, а перегрузка в часы пик держится дольше
+        // секунд: три попытки с паузами до 8 с дешевле пропущенной ночи.
+        retries: 3,
+      },
+    );
   } catch (err) {
     const described = describeApiError(err);
     logger?.error?.(

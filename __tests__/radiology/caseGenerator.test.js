@@ -23,6 +23,9 @@ vi.mock(
       retryable: false,
       message: String(err?.message ?? err),
     }),
+    // Повтор при перегрузке проверяется отдельно (education/apiErrors):
+    // здесь он только пропускает вызов дальше, не выжидая пауз.
+    withApiRetry: (run, opts) => run(opts?.model),
   }),
 );
 

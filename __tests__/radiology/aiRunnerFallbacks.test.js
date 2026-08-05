@@ -17,6 +17,9 @@ const streamSpy = vi.fn(() => ({ finalMessage }));
 vi.mock("../../modules/education/education-ingest/extractors/claude.extractor.js", () => ({
   getClient: () => ({ beta: { messages: { stream: streamSpy } } }),
   describeApiError: (err) => ({ retryable: false, message: String(err?.message ?? err) }),
+  // Повтор при перегрузке здесь не проверяется — важно лишь то, что модель
+  // доходит до запроса. Настоящая обёртка ждала бы секунды между попытками.
+  withApiRetry: (run, opts) => run(opts?.model),
 }));
 
 const { runJson, MODEL } = await import("../../modules/radiology/ai/aiRunner.js");

@@ -180,3 +180,59 @@ describe("автоматический повтор при временном с
     expect(calls).toBe(1);
   });
 });
+
+describe("подмена модели при перегрузке", () => {
+  const models = {
+    ...{ retries: 2, baseDelayMs: 1 },
+    model: "claude-opus-5",
+    fallbackModel: "claude-sonnet-5",
+  };
+
+  it("первая попытка идёт на основной модели", async () => {
+    const used = [];
+    await withApiRetry(async (m) => {
+      used.push(m);
+      return "ок";
+    }, models);
+
+    expect(used).toEqual(["claude-opus-5"]);
+  });
+
+  it("после перегрузки повтор уходит на запасную модель", async () => {
+    const used = [];
+    const result = await withApiRetry(async (m) => {
+      used.push(m);
+      if (used.length === 1) throw streamError("overloaded_error");
+      return "разбор готов";
+    }, models);
+
+    expect(used).toEqual(["claude-opus-5", "claude-sonnet-5"]);
+    expect(result).toBe("разбор готов");
+  });
+
+  it("если запасная не задана — повторяет на той же", async () => {
+    const used = [];
+    await withApiRetry(
+      async (m) => {
+        used.push(m);
+        if (used.length === 1) throw streamError("overloaded_error");
+        return "ок";
+      },
+      { retries: 2, baseDelayMs: 1, model: "claude-opus-5" },
+    );
+
+    expect(used).toEqual(["claude-opus-5", "claude-opus-5"]);
+  });
+
+  it("на неповторяемой ошибке запасную модель не трогает", async () => {
+    const used = [];
+    await expect(
+      withApiRetry(async (m) => {
+        used.push(m);
+        throw streamError("authentication_error");
+      }, models),
+    ).rejects.toBeTruthy();
+
+    expect(used).toEqual(["claude-opus-5"]);
+  });
+});

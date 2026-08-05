@@ -229,22 +229,54 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  */
 export async function withApiRetry(
   run,
-  // baseDelayMs вынесен в параметры ради тестов: настоящая пауза сделала бы
-  // проверку повторов шестисекундной.
-  { logger, what, retries = 2, baseDelayMs = 2000 } = {},
+  {
+    logger,
+    what,
+    retries = 2,
+    // baseDelayMs вынесен в параметры ради тестов: настоящая пауза сделала
+    // бы проверку повторов шестисекундной.
+    baseDelayMs = 2000,
+    // Модель первой попытки и запасная — см. пояснение ниже. Без второй
+    // повторы идут на той же модели, как и раньше.
+    model = null,
+    fallbackModel = null,
+  } = {},
 ) {
   for (let attempt = 0; ; attempt += 1) {
+    // ПОЧЕМУ ПОВТОР УХОДИТ НА ДРУГУЮ МОДЕЛЬ.
+    //
+    // Перегружена всегда конкретная модель, а не API целиком: спрос
+    // распределён неравномерно, и самая востребованная стоит в очереди, пока
+    // соседняя свободна. Повтор в ту же дверь ждёт, пока рассосётся именно
+    // она; повтор в соседнюю обычно проходит сразу.
+    //
+    // Подмена честная: раннер записывает в происхождение вывода модель,
+    // которая РЕАЛЬНО ответила (message.model), так что в карте не окажется
+    // разбора, приписанного не тому автору.
+    const attemptModel = attempt === 0 || !fallbackModel ? model : fallbackModel;
+
     try {
-      return await run();
+      return await run(attemptModel);
     } catch (err) {
       if (attempt >= retries || !isTransientApiError(err)) throw err;
 
       // 2 с, затем 4 с. Перегрузка обычно расходится за секунды, а врач в
       // это время ждёт ответа — растягивать паузы нельзя.
       const pause = baseDelayMs * 2 ** attempt;
+      const nextModel = fallbackModel || attemptModel;
       logger?.warn?.(
-        { what, attempt: attempt + 1, retries, pause, status: err?.status ?? null },
-        "временный сбой Anthropic API — повторяем",
+        {
+          what,
+          attempt: attempt + 1,
+          retries,
+          pause,
+          status: err?.status ?? null,
+          failedModel: attemptModel,
+          nextModel,
+        },
+        fallbackModel && attemptModel !== fallbackModel
+          ? "временный сбой Anthropic API — повторяем на запасной модели"
+          : "временный сбой Anthropic API — повторяем",
       );
       await sleep(pause);
     }

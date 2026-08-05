@@ -49,6 +49,26 @@ export const MODEL =
 const FALLBACKS_ENABLED = process.env.ANTHROPIC_FALLBACKS !== "off";
 const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 
+// Запасная модель на случай ПЕРЕГРУЗКИ — это другая беда, чем отказ
+// классификатора выше, и лечится она иначе.
+//
+// Серверный fallback подменяет модель, когда та отказалась отвечать. Он не
+// помогает, когда модель занята: очередь — не отказ, запрос до неё просто не
+// доходит. А занята всегда конкретная модель, не API целиком, поэтому вторая
+// попытка на менее востребованной обычно проходит сразу.
+//
+// Sonnet 5 как запасной: тот же класс задач и то же окно, что у Opus 5, но
+// спрос ниже. Для медицинского разбора это осознанный размен — лучше разбор
+// от другой модели, чем ошибка вместо разбора; в происхождении вывода
+// сохраняется та модель, которая реально ответила.
+//
+// "off" полностью отключает подмену — на случай, если качество запасной
+// модели окажется неприемлемым для конкретной установки.
+const OVERLOAD_FALLBACK_MODEL =
+  process.env.DIAGNOSTICS_AI_FALLBACK_MODEL === "off"
+    ? null
+    : process.env.DIAGNOSTICS_AI_FALLBACK_MODEL || "claude-sonnet-5";
+
 /**
  * Уровни усилий по типам работы модуля.
  *
@@ -119,11 +139,11 @@ export async function runJson({
     // показать врачу ошибку: он всё равно нажмёт «Разобрать» снова, только
     // потеряв минуту. Повтор — только на временных сбоях, см. withApiRetry.
     message = await withApiRetry(
-      async () => {
+      async (attemptModel) => {
         // Стрим — потому что разбор с рассуждением дольше HTTP-таймаута SDK.
         // Бета-путь нужен ради fallbacks; на обычный вызов их не передать.
         const stream = client.beta.messages.stream({
-          model: MODEL,
+          model: attemptModel,
           max_tokens: maxTokens,
           thinking: { type: "adaptive" },
           system,
@@ -148,7 +168,12 @@ export async function runJson({
         });
         return await stream.finalMessage();
       },
-      { logger, what },
+      {
+        logger,
+        what,
+        model: MODEL,
+        fallbackModel: OVERLOAD_FALLBACK_MODEL,
+      },
     );
   } catch (err) {
     const described = describeApiError(err);
