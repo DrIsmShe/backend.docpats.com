@@ -17,6 +17,7 @@
 import {
   getClient,
   describeApiError,
+  withApiRetry,
 } from "../../education/education-ingest/extractors/claude.extractor.js";
 import {
   ValidationError,
@@ -114,28 +115,41 @@ export async function runJson({
   const client = getClient();
   let message;
   try {
-    // Стрим — потому что разбор с рассуждением дольше HTTP-таймаута SDK.
-    // Бета-путь нужен ради fallbacks; на обычный вызов их не передать.
-    const stream = client.beta.messages.stream({
-      model: MODEL,
-      max_tokens: maxTokens,
-      thinking: { type: "adaptive" },
-      system,
-      // Схема приводится к подмножеству, которое принимает API: лишний ключ
-      // вроде maxItems даёт 400 на КАЖДЫЙ вызов, и узнаёт об этом врач.
-      output_config: {
-        format: { type: "json_schema", schema: prepareSchema(schema, logger, what) },
-        // Уровень усилий передаём, только если вызывающий код его выбрал:
-        // отсутствие поля и явное "high" — не одно и то же по смыслу, хотя
-        // сегодня совпадают по значению. Пусть в запросе будет видно решение.
-        ...(effort ? { effort } : {}),
+    // Перегрузка API проходит за секунды, и повторить запрос дешевле, чем
+    // показать врачу ошибку: он всё равно нажмёт «Разобрать» снова, только
+    // потеряв минуту. Повтор — только на временных сбоях, см. withApiRetry.
+    message = await withApiRetry(
+      async () => {
+        // Стрим — потому что разбор с рассуждением дольше HTTP-таймаута SDK.
+        // Бета-путь нужен ради fallbacks; на обычный вызов их не передать.
+        const stream = client.beta.messages.stream({
+          model: MODEL,
+          max_tokens: maxTokens,
+          thinking: { type: "adaptive" },
+          system,
+          // Схема приводится к подмножеству, которое принимает API: лишний
+          // ключ вроде maxItems даёт 400 на КАЖДЫЙ вызов, и узнаёт об этом
+          // врач.
+          output_config: {
+            format: {
+              type: "json_schema",
+              schema: prepareSchema(schema, logger, what),
+            },
+            // Уровень усилий передаём, только если вызывающий код его выбрал:
+            // отсутствие поля и явное "high" — не одно и то же по смыслу,
+            // хотя сегодня совпадают по значению. Пусть в запросе будет
+            // видно решение.
+            ...(effort ? { effort } : {}),
+          },
+          messages: [{ role: "user", content: content ?? instruction }],
+          ...(FALLBACKS_ENABLED
+            ? { betas: [FALLBACK_BETA], fallbacks: "default" }
+            : {}),
+        });
+        return await stream.finalMessage();
       },
-      messages: [{ role: "user", content: content ?? instruction }],
-      ...(FALLBACKS_ENABLED
-        ? { betas: [FALLBACK_BETA], fallbacks: "default" }
-        : {}),
-    });
-    message = await stream.finalMessage();
+      { logger, what },
+    );
   } catch (err) {
     const described = describeApiError(err);
     logger?.error?.(

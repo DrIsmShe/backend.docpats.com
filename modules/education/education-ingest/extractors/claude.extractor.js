@@ -95,7 +95,25 @@ export function isConfigured() {
 export function describeApiError(err) {
   const status = err?.status ?? err?.response?.status ?? null;
 
-  if (err instanceof Anthropic.AuthenticationError || status === 401) {
+  // ТИП ОШИБКИ ИЗ ТЕЛА — обязателен, статуса может не быть.
+  //
+  // Сбой ПОСРЕДИ потока приходит SSE-событием: заголовки ответа уже ушли со
+  // статусом 200, менять его поздно. SDK в таком случае бросает APIError с
+  // status === undefined (core/streaming.js: `new APIError(undefined, body,
+  // …)`) и не подставляет подкласс — то есть ни проверка по статусу, ни
+  // instanceof RateLimitError не срабатывают.
+  //
+  // Из-за этого перегрузка API (529 overloaded_error) — самая частая и самая
+  // безобидная из ошибок, проходящая сама за минуту, — доходила до последней
+  // ветки: врач получал в лицо сырой JSON, а retryable: false запрещал
+  // повтор. Тип из тела — единственный признак, доживающий до сюда.
+  const bodyType = err?.error?.error?.type ?? err?.error?.type ?? null;
+
+  if (
+    err instanceof Anthropic.AuthenticationError ||
+    status === 401 ||
+    bodyType === "authentication_error"
+  ) {
     return {
       retryable: false,
       message:
@@ -104,27 +122,39 @@ export function describeApiError(err) {
         "и не быть отозванным. После правки .env нужен pm2 restart all --update-env.",
     };
   }
-  if (err instanceof Anthropic.PermissionDeniedError || status === 403) {
+  if (
+    err instanceof Anthropic.PermissionDeniedError ||
+    status === 403 ||
+    bodyType === "permission_error"
+  ) {
     return {
       retryable: false,
       message:
         "У ключа нет доступа к модели (403). Проверьте права ключа в консоли Anthropic.",
     };
   }
-  if (err instanceof Anthropic.NotFoundError || status === 404) {
+  if (
+    err instanceof Anthropic.NotFoundError ||
+    status === 404 ||
+    bodyType === "not_found_error"
+  ) {
     return {
       retryable: false,
       message: `Модель «${MODEL}» недоступна (404). Проверьте EDUCATION_EXTRACTOR_MODEL в .env.`,
     };
   }
-  if (err instanceof Anthropic.RateLimitError || status === 429) {
+  if (
+    err instanceof Anthropic.RateLimitError ||
+    status === 429 ||
+    bodyType === "rate_limit_error"
+  ) {
     return {
       retryable: true,
       message:
         "Превышен лимит запросов к Anthropic API (429). Подождите минуту и повторите загрузку.",
     };
   }
-  if (status === 413) {
+  if (status === 413 || bodyType === "request_too_large") {
     return {
       retryable: false,
       message:
@@ -138,7 +168,18 @@ export function describeApiError(err) {
         "Не удалось связаться с Anthropic API — проверьте сеть и исходящие соединения с сервера.",
     };
   }
-  if (status && status >= 500) {
+  // Перегрузка — отдельно от прочих 5xx: причина не в нашем запросе и не в
+  // сервере Anthropic как таковом, проходит сама за минуту. Формулировка
+  // должна звать повторить сразу, а не «через несколько минут».
+  if (status === 529 || bodyType === "overloaded_error") {
+    return {
+      retryable: true,
+      message:
+        "Anthropic API сейчас перегружен запросами. Это временно и не связано с вашими данными — " +
+        "повторите через минуту.",
+    };
+  }
+  if ((status && status >= 500) || bodyType === "api_error") {
     return {
       retryable: true,
       message:
@@ -150,6 +191,64 @@ export function describeApiError(err) {
     retryable: false,
     message: `Ошибка обращения к Anthropic API: ${err?.message ?? "неизвестная ошибка"}`,
   };
+}
+
+/**
+ * Пройдёт ли ошибка сама, если просто попробовать ещё раз.
+ *
+ * Уже, чем retryable из describeApiError: там «повторить» — совет человеку,
+ * здесь — основание для АВТОМАТИЧЕСКОГО повтора, и цена ошибки другая.
+ *
+ * 429 сюда намеренно НЕ входит: превышенный лимит повтором через секунду не
+ * лечится, а усугубляется. Его по-прежнему показываем врачу с советом
+ * подождать.
+ */
+export function isTransientApiError(err) {
+  const status = err?.status ?? err?.response?.status ?? null;
+  const bodyType = err?.error?.error?.type ?? err?.error?.type ?? null;
+
+  if (err instanceof Anthropic.APIConnectionError) return true;
+  if (status === 529 || bodyType === "overloaded_error") return true;
+  if ((status && status >= 500) || bodyType === "api_error") return true;
+  return false;
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Повтор при временном сбое API.
+ *
+ * ЗАЧЕМ. SDK сам повторяет запрос при перегрузке — но только пока ответ не
+ * начался. Стоит первому токену уйти, и HTTP-обмен для SDK успешен: сбой
+ * приходит событием внутри потока, встроенный повтор до него не достаёт.
+ * Все наши обращения потоковые, так что штатный механизм не работал ровно
+ * там, где перегрузка наиболее вероятна — на длинном ответе.
+ *
+ * Повтор безопасен: ответа мы не получили, а частично сгенерированный текст
+ * отбрасывается целиком — половины разбора в карте пациента не окажется.
+ */
+export async function withApiRetry(
+  run,
+  // baseDelayMs вынесен в параметры ради тестов: настоящая пауза сделала бы
+  // проверку повторов шестисекундной.
+  { logger, what, retries = 2, baseDelayMs = 2000 } = {},
+) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await run();
+    } catch (err) {
+      if (attempt >= retries || !isTransientApiError(err)) throw err;
+
+      // 2 с, затем 4 с. Перегрузка обычно расходится за секунды, а врач в
+      // это время ждёт ответа — растягивать паузы нельзя.
+      const pause = baseDelayMs * 2 ** attempt;
+      logger?.warn?.(
+        { what, attempt: attempt + 1, retries, pause, status: err?.status ?? null },
+        "временный сбой Anthropic API — повторяем",
+      );
+      await sleep(pause);
+    }
+  }
 }
 
 // Собирает контент-блок под тип файла.
