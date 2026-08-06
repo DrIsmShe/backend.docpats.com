@@ -34,7 +34,11 @@ import {
 } from "../validators/diagnostics.schemas.js";
 import { ADVISORY_NOTICE } from "../../constants.js";
 import { readDocument } from "../../ai/documentReader.js";
-import { readImageStudy, renderImageStudyText } from "../../ai/imageStudyReader.js";
+import {
+  readImageStudy,
+  renderImageStudyText,
+  shouldReadImage,
+} from "../../ai/imageStudyReader.js";
 import { looksLikeDicom, readDicom, describeDicomStudy } from "../../ai/dicomReader.js";
 import { normalizeLang } from "../../ai/language.js";
 import { getModality, supportsImages } from "../services/registry.js";
@@ -333,6 +337,20 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
 
   const hint = typeof req.body?.hint === "string" ? req.body.hint : "";
   const requestedModality = typeof req.body?.modality === "string" ? req.body.modality : "";
+  // Врач нажал «Прочитать снимок», а не «Прикрепить документ».
+  //
+  // Раньше чтение пикселей включалось только по догадке: либо направление
+  // умеет смотреть, либо текста в файле почти нет. На КТ это подводило —
+  // маркеры проекции и дата прямо на плёнке дают полсотни символов, файл
+  // выглядит как бланк, и снимок остаётся непросмотренным.
+  //
+  // Догадку оставляем как была: фото бланка по-прежнему не надо разглядывать.
+  // Но у врача теперь есть прямой способ сказать, что перед ним снимок, — и
+  // он сильнее любой эвристики.
+  const forceImageRead =
+    req.body?.readImage === "1" ||
+    req.body?.readImage === "true" ||
+    req.body?.readImage === true;
   // Язык врача для описания снимка. Приходит из formData вместе с файлом:
   // распознавание идёт синхронно, в запросе врача, — в отличие от разбора,
   // который выполняет фоновый воркер и которому язык кладут в задание.
@@ -426,24 +444,17 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
   const modality = modalityKey ? getModality(modalityKey) : null;
   let imageStudy = null;
 
-  // Когда читать снимок.
-  //
-  // Требовать от врача явно указать модальность было ошибкой: он выбирает её в
-  // форме уже ПОСЛЕ распознавания, а на шаге загрузки поля просто нет. Условие
-  // «указана и умеет смотреть» означало бы, что чтение снимков не включается
-  // через интерфейс никогда.
-  //
-  // Поэтому второе условие — по факту: из картинки не извлеклось осмысленного
-  // текста. Значит это снимок, а не фотография бланка, и смотреть на него —
-  // единственный способ хоть что-то из него получить. Ровно тот случай, с
-  // которого всё началось: КТ пазух без единой подписи.
-  //
-  // Фото заполненного бланка при этом идёт прежним путём: текст извлёкся,
-  // читать пиксели незачем.
-  const isImage = req.file.mimetype !== "application/pdf";
-  const noUsableText = String(result.text ?? "").trim().length < 40;
-
-  if (isImage && (supportsImages(modalityKey) || noUsableText)) {
+  // Когда читать снимок — решает shouldReadImage (ai/imageStudyReader.js).
+  // Оснований три: прямое указание врача, направление, умеющее смотреть, и
+  // отсутствие вычитанного текста. Порядок и обоснование — там же.
+  if (
+    shouldReadImage({
+      mimeType: req.file.mimetype,
+      forced: forceImageRead,
+      modalitySupportsImages: supportsImages(modalityKey),
+      extractedText: result.text,
+    })
+  ) {
     try {
       imageStudy = await readImageStudy({
         buffer: req.file.buffer,
