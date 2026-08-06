@@ -26,7 +26,13 @@ import {
 import logger from "../../../common/logger.js";
 import { prepareSchema } from "../../../common/utils/structuredOutputSchema.js";
 
-export const PROMPT_VERSION = "diag-2026-07-29d";
+// Версия промптов модуля. Сохраняется в происхождении каждого вывода: через
+// полгода по ней видно, каким прочтением получено описание в деле.
+//
+// 2026-08-06a — осмотр снимка обязан называть версию о природе находки
+// («похоже на кисту»), а не только описывать тени; перечень ограничений
+// сокращён до существенных.
+export const PROMPT_VERSION = "diag-2026-08-06a";
 
 export const MODEL =
   process.env.DIAGNOSTICS_AI_MODEL ||
