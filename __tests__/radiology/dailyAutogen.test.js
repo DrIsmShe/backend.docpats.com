@@ -82,6 +82,8 @@ import {
   startDailyCaseGeneration,
   stopDailyCaseGeneration,
   getAutogenState,
+  getAutogenFullState,
+  setNightlyAutogen,
 } from "../../jobs/radiologyDailyCases.job.js";
 import { deleteCasePermanently } from "../../modules/radiology/radiology-cases/services/case.service.js";
 import { deleteLabCasePermanently } from "../../modules/radiology/labs-station/lab.service.js";
@@ -545,5 +547,61 @@ describe("снимки-кандидаты в автокейсе", () => {
     expect(foundImages).toHaveBeenCalledWith(
       expect.objectContaining({ modality: "cxr", topic: expect.any(String) }),
     );
+  });
+});
+
+// ─── Выключатель ночной генерации ────────────────────────────────────
+//
+// Отдельная сущность от остановки прогона: та прерывает то, что идёт сейчас,
+// и действует один раз. Этот выключатель решает, будет ли генерация ночью,
+// и держится, пока его не отменят.
+//
+// Хранится в базе намеренно. Флаг в памяти процесса умирает вместе с
+// перезапуском, и генерация, выключенная вечером, сама ожила бы ночью после
+// любого рестарта — счёт пришёл бы за то, что считалось отключённым.
+
+describe("выключатель ночной генерации", () => {
+  it("по умолчанию включена", async () => {
+    const state = await getAutogenFullState();
+    expect(state.nightlyEnabled).toBe(true);
+  });
+
+  it("выключение останавливает прогон целиком", async () => {
+    await setNightlyAutogen(false);
+
+    const res = await runDailyCaseGeneration(radiologyOnly(["cxr"]));
+
+    expect(res.disabled).toBe(true);
+    expect(res.created).toHaveLength(0);
+    expect(await RadiologyCase.countDocuments()).toBe(0);
+  });
+
+  it("включение возвращает генерацию", async () => {
+    await setNightlyAutogen(false);
+    await setNightlyAutogen(true);
+
+    const res = await runDailyCaseGeneration(radiologyOnly(["cxr"]));
+
+    expect(res.created).toHaveLength(1);
+  });
+
+  it("состояние переживает перечитывание из базы", async () => {
+    await setNightlyAutogen(false);
+
+    // Именно этого не умел флаг в памяти: значение читается заново, как
+    // после перезапуска сервера.
+    const state = await getAutogenFullState();
+    expect(state.nightlyEnabled).toBe(false);
+  });
+
+  it("ручной запуск тоже подчиняется выключателю", async () => {
+    // Кнопки «сгенерировать» и ночной cron идут через один вход, поэтому
+    // выключенная генерация не должна запускаться и руками — иначе
+    // «выключено» означало бы разное в разных местах.
+    await setNightlyAutogen(false);
+    const res = await runDailyCaseGeneration({ stations: ["labs"], modalities: [] });
+
+    expect(res.disabled).toBe(true);
+    expect(await LabCase.countDocuments()).toBe(0);
   });
 });

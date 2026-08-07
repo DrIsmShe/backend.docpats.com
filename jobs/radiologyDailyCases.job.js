@@ -64,6 +64,10 @@ import {
 } from "../modules/radiology/ai/caseGenerator.js";
 import { findCaseImageSources } from "../modules/radiology/ai/imageSourceFinder.js";
 import {
+  isAutogenAllowedByStore,
+  setAutogenAllowed,
+} from "../modules/radiology/radiology-cases/models/autogenSetting.model.js";
+import {
   verifyRadiologyCase,
   verifyLabCase,
   verifyVpCase,
@@ -422,6 +426,14 @@ export async function runDailyCaseGeneration({
     console.log("🤖 Автокейсы арены: выключены (RADIOLOGY_AUTOGEN=off)");
     return result;
   }
+  // Выключатель из админки. Проверяется ЗДЕСЬ, при каждом прогоне, а не при
+  // регистрации cron: иначе выключение требовало бы перезапуска сервера — то
+  // самое, от чего кнопка и избавляет.
+  if (!(await isAutogenAllowedByStore())) {
+    console.log("🤖 Автокейсы арены: выключены владельцем в админке");
+    result.disabled = true;
+    return result;
+  }
   if (!isConfigured()) {
     console.log("🤖 Автокейсы арены: ИИ не настроен (нет ANTHROPIC_API_KEY) — пропуск");
     return result;
@@ -546,6 +558,39 @@ export function getAutogenState() {
 export function stopDailyCaseGeneration() {
   if (running) stopRequested = true;
   return getAutogenState();
+}
+
+/**
+ * Полное состояние для админки: к состоянию прогона добавляется хранимый
+ * выключатель ночной генерации.
+ *
+ * Разделены намеренно: «остановить идущий прогон» и «не запускать ночью» —
+ * разные действия, и путать их нельзя. Первое разовое, второе действует, пока
+ * его не отменят.
+ */
+export async function getAutogenFullState() {
+  const state = getAutogenState();
+  return {
+    ...state,
+    // Жёсткий выключатель из .env: если он выключен, кнопка в админке ничего
+    // не решает, и владелец должен это видеть, а не гадать.
+    envEnabled: isAutogenEnabled(),
+    nightlyEnabled: await isAutogenAllowedByStore(),
+  };
+}
+
+/**
+ * Включить или выключить НОЧНУЮ генерацию.
+ *
+ * Идущий прогон это не трогает: чтобы прервать его, есть отдельная кнопка.
+ * Выключение действует до тех пор, пока владелец не включит обратно, и
+ * переживает перезапуск сервера — иначе выключенная вечером генерация сама
+ * ожила бы ночью после любого рестарта.
+ */
+export async function setNightlyAutogen(enabled, actorId = null) {
+  const value = await setAutogenAllowed(enabled, actorId);
+  console.log(`🤖 Автокейсы арены: ночная генерация ${value ? "ВКЛЮЧЕНА" : "ВЫКЛЮЧЕНА"} владельцем`);
+  return getAutogenFullState();
 }
 
 /**

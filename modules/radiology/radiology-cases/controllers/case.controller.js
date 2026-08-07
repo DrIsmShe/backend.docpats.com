@@ -28,7 +28,8 @@ import {
 import {
   startDailyCaseGeneration,
   stopDailyCaseGeneration,
-  getAutogenState,
+  getAutogenFullState,
+  setNightlyAutogen,
 } from "../../../../jobs/radiologyDailyCases.job.js";
 import {
   createCaseSchema,
@@ -292,7 +293,17 @@ export const stopAutogenController = asyncHandler(async (req, res) => {
   res.json({ ...state, aiEnabled: aiConfigured() });
 });
 
-// Состояние прогона: идёт ли сейчас и чем кончился прошлый.
+// Состояние: идёт ли прогон, чем кончился прошлый и включена ли ночная
+// генерация.
 export const autogenStateController = asyncHandler(async (req, res) => {
-  res.json({ ...getAutogenState(), aiEnabled: aiConfigured() });
+  const state = await getAutogenFullState();
+  res.json({ ...state, aiEnabled: aiConfigured() });
+});
+
+// Включить/выключить НОЧНУЮ генерацию. Идущий прогон это не трогает — для
+// него есть отдельная кнопка остановки.
+export const autogenToggleController = asyncHandler(async (req, res) => {
+  const enabled = req.body?.enabled !== false && req.body?.enabled !== "false";
+  const state = await setNightlyAutogen(enabled, req.radiologyActor?.userId ?? null);
+  res.json({ ...state, aiEnabled: aiConfigured() });
 });
