@@ -62,6 +62,7 @@ import {
   generateVpCase,
   isConfigured,
 } from "../modules/radiology/ai/caseGenerator.js";
+import { findCaseImageSources } from "../modules/radiology/ai/imageSourceFinder.js";
 import {
   verifyRadiologyCase,
   verifyLabCase,
@@ -77,6 +78,19 @@ const DEFAULT_GAP_MS = 2000;
 
 export function isAutogenEnabled() {
   return String(process.env.RADIOLOGY_AUTOGEN ?? "").trim().toLowerCase() !== "off";
+}
+
+// Искать ли снимки-кандидаты сразу при генерации лучевого кейса.
+//
+// Включено по умолчанию: без ссылок автор получает текст, к которому нечем
+// приложить кадр, — ровно та причина, по которой черновики копились
+// неразобранными. Выключатель нужен, потому что это лишний вызов модели с
+// веб-поиском на каждый кейс: если счёт окажется заметным, поиск можно
+// оставить только ручной кнопкой в админке.
+function findImagesEnabled() {
+  return (
+    String(process.env.RADIOLOGY_AUTOGEN_FIND_IMAGES ?? "").trim().toLowerCase() !== "off"
+  );
 }
 
 // Автопубликация станций без снимков. Включена по умолчанию: там кейс
@@ -146,6 +160,30 @@ const STATIONS = {
       });
     },
     async create(draft, topic, { modality, authorId, now }) {
+      // ПОИСК СНИМКА СРАЗУ ПОСЛЕ ГЕНЕРАЦИИ.
+      //
+      // Кейс придуман по теме, изображения не существует — и автор оставался
+      // с готовым текстом, не зная, где взять кадр. Ссылки ищутся здесь же и
+      // ложатся в черновик: открыл кейс — увидел кандидатов.
+      //
+      // Отказ поиска НЕ роняет создание кейса: кейс без ссылок хуже кейса со
+      // ссылками, но несравнимо лучше, чем ничего.
+      let imageSources = [];
+      let imageSearchAdvice = "";
+      if (findImagesEnabled()) {
+        try {
+          const found = await findCaseImageSources({
+            topic: draft.title || topic.topic,
+            modality,
+          });
+          imageSources = found.sources;
+          imageSearchAdvice = found.advice;
+          console.log(`   🔎 снимков-кандидатов найдено: ${imageSources.length}`);
+        } catch (err) {
+          console.warn(`   ⚠️ поиск снимков не удался: ${err?.message ?? err}`);
+        }
+      }
+
       return createCase(
         {
           modality,
@@ -162,6 +200,9 @@ const STATIONS = {
           deidentified: false,
           tags: ["auto", `auto:${topic.key}`],
           autoGen: autoGenField(topic, draft, now),
+          imageSources,
+          imageSearchAdvice,
+          imageSearchAt: imageSources.length ? now : null,
         },
         authorId,
         "system",

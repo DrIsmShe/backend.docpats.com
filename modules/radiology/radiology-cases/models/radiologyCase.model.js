@@ -173,6 +173,45 @@ const radiologyCaseSchema = new Schema(
       model: { type: String, trim: true, maxlength: 120, default: "" },
     },
 
+    // ГДЕ ИСКАТЬ СНИМОК ПОД ЭТОТ КЕЙС.
+    //
+    // Кейс придуман по ТЕМЕ, а не по снимку: изображения в момент генерации
+    // не существует, и «ссылки на снимок, по которому сделан кейс», взяться
+    // неоткуда. Именно на этом работа и вставала — текст готов, а кадра нет.
+    //
+    // Поэтому сразу после генерации ищем в сети учебные случаи по той же теме
+    // и складываем ссылки СЮДА, в сам кейс. Автор открывает черновик и видит
+    // кандидатов, а не пустое поле для URL.
+    //
+    // Ссылки, не файлы: скачать, проверить лицензию, убедиться, что находка
+    // на кадре та самая, и деидентифицировать — работа человека.
+    imageSources: {
+      type: [
+        {
+          _id: false,
+          url: { type: String, trim: true, maxlength: 500, default: "" },
+          site: { type: String, trim: true, maxlength: 80, default: "" },
+          title: { type: String, trim: true, maxlength: 300, default: "" },
+          whatIsShown: { type: String, trim: true, maxlength: 500, default: "" },
+          // Лицензия хранится строкой «как на странице»: приводить её к
+          // справочнику значило бы решать за человека там, где ошибка стоит
+          // претензии от правообладателя.
+          license: { type: String, trim: true, maxlength: 200, default: "" },
+          commercialUse: {
+            type: String,
+            enum: ["yes", "no", "unclear"],
+            default: "unclear",
+          },
+          match: { type: String, enum: ["exact", "close", "partial"], default: "partial" },
+          matchNote: { type: String, trim: true, maxlength: 300, default: "" },
+        },
+      ],
+      default: [],
+    },
+    // Совет модели, что искать вручную, если находок мало.
+    imageSearchAdvice: { type: String, trim: true, maxlength: 1000, default: "" },
+    imageSearchAt: { type: Date, default: null },
+
     // ─── Редакторский цикл ───
     status: { type: String, enum: CASE_STATUSES, default: "draft", index: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", default: null },

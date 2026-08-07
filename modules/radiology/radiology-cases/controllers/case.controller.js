@@ -90,7 +90,21 @@ export const aiFindImagesController = asyncHandler(async (req, res) => {
   const topic = typeof req.body?.topic === "string" ? req.body.topic : "";
   const modality = typeof req.body?.modality === "string" ? req.body.modality : "";
   const hint = typeof req.body?.hint === "string" ? req.body.hint : "";
+  const caseId = typeof req.body?.caseId === "string" ? req.body.caseId : null;
+
   const found = await findCaseImageSources({ topic, modality, hint });
+
+  // Если кейс уже сохранён — кладём находки в него. Поиск стоит денег и
+  // времени, а повторять его после каждой перезагрузки страницы владелец не
+  // должен: ссылки нужны ровно тогда, когда он вернётся к черновику.
+  if (caseId && found.sources.length) {
+    await RadiologyCase.findByIdAndUpdate(caseId, {
+      imageSources: found.sources,
+      imageSearchAdvice: found.advice,
+      imageSearchAt: new Date(),
+    });
+  }
+
   res.json(found);
 });
 

@@ -21,6 +21,30 @@ vi.mock("../../modules/radiology/ai/caseGenerator.js", () => ({
   isConfigured: () => true,
 }));
 
+// Поиск снимков-кандидатов идёт в интернет через веб-поиск модели. В тесте
+// это не только медленно, но и недетерминированно: выдача меняется день ото
+// дня. Мок отдаёт одну заведомую находку — проверяем, что ссылки доходят до
+// кейса, а не то, что именно нашлось в сети.
+const foundImages = vi.fn(async () => ({
+  sources: [
+    {
+      url: "https://radiopaedia.org/cases/test-1",
+      site: "Radiopaedia",
+      title: "Тестовый случай",
+      whatIsShown: "КТ, коронарная проекция",
+      license: "CC BY-NC-SA 3.0",
+      commercialUse: "no",
+      match: "close",
+      matchNote: "",
+    },
+  ],
+  advice: "проверьте лицензию",
+  model: "test-model",
+}));
+vi.mock("../../modules/radiology/ai/imageSourceFinder.js", () => ({
+  findCaseImageSources: (...args) => foundImages(...args),
+}));
+
 // Второй проход (рецензент). По умолчанию — «чисто»: так проверяется, что
 // станции без снимков доходят до публикации сами.
 const verifyResult = vi.fn(async () => ({
@@ -470,5 +494,56 @@ describe("управление автогенерацией", () => {
     await new Promise((r) => setTimeout(r, 50));
     const state = stopDailyCaseGeneration();
     expect(state.stopping).toBe(false);
+  });
+});
+
+// ─── Где взять снимок под сгенерированный кейс ───────────────────────
+//
+// Кейс придумывается по ТЕМЕ: изображения в момент генерации не существует, и
+// ссылки «на снимок, по которому сделан кейс», взяться неоткуда. Именно на
+// этом работа и вставала — текст готов, а кадра нет и найти его вручную
+// дольше, чем написать кейс заново. Поэтому кандидаты ищутся сразу и ложатся
+// в сам черновик.
+
+describe("снимки-кандидаты в автокейсе", () => {
+  it("ссылки сохраняются в кейс при генерации", async () => {
+    await runDailyCaseGeneration(radiologyOnly(["cxr"]));
+
+    const doc = await RadiologyCase.findOne({ "autoGen.isAuto": true }).lean();
+    expect(doc.imageSources).toHaveLength(1);
+    expect(doc.imageSources[0].url).toMatch(/^https:\/\//);
+    expect(doc.imageSearchAdvice).toBeTruthy();
+    expect(doc.imageSearchAt).toBeTruthy();
+  });
+
+  it("пригодность лицензии сохраняется вместе со ссылкой", async () => {
+    await runDailyCaseGeneration(radiologyOnly(["cxr"]));
+
+    const doc = await RadiologyCase.findOne({ "autoGen.isAuto": true }).lean();
+    // Продукт коммерческий: CC BY-NC помечается как непригодная, и это
+    // должно доехать до автора, а не потеряться по дороге.
+    expect(doc.imageSources[0].commercialUse).toBe("no");
+    expect(doc.imageSources[0].license).toMatch(/CC BY-NC/);
+  });
+
+  it("отказ поиска не отменяет создание кейса", async () => {
+    foundImages.mockRejectedValueOnce(new Error("сеть недоступна"));
+
+    const res = await runDailyCaseGeneration(radiologyOnly(["cxr"]));
+
+    // Кейс без ссылок хуже кейса со ссылками, но несравнимо лучше, чем
+    // отсутствие кейса из-за сбоя поиска.
+    expect(res.created).toHaveLength(1);
+    const doc = await RadiologyCase.findOne({ "autoGen.isAuto": true }).lean();
+    expect(doc.imageSources).toHaveLength(0);
+  });
+
+  it("поиск идёт по теме кейса и его модальности", async () => {
+    foundImages.mockClear();
+    await runDailyCaseGeneration(radiologyOnly(["cxr"]));
+
+    expect(foundImages).toHaveBeenCalledWith(
+      expect.objectContaining({ modality: "cxr", topic: expect.any(String) }),
+    );
   });
 });

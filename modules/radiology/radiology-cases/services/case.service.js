@@ -78,6 +78,12 @@ export async function createCase(input, actorId, actorRole) {
     // Метку автогенерации ставит только ночная задача — из HTTP-контроллера
     // она не приходит (в createCaseSchema поля нет).
     ...(input.autoGen ? { autoGen: input.autoGen } : {}),
+    // Ссылки на снимки-кандидаты кладёт та же ночная задача сразу после
+    // генерации: кейс придуман по теме, кадра к нему нет, и без подсказки,
+    // где его взять, черновик так и лежит неразобранным.
+    ...(input.imageSources?.length ? { imageSources: input.imageSources } : {}),
+    ...(input.imageSearchAdvice ? { imageSearchAdvice: input.imageSearchAdvice } : {}),
+    ...(input.imageSearchAt ? { imageSearchAt: input.imageSearchAt } : {}),
     createdBy: actorId,
   });
 
