@@ -404,6 +404,18 @@ export async function runDailyCaseGeneration({
   ];
 
   for (const item of plan) {
+    // ОСТАНОВКА ПО ПРОСЬБЕ ВЛАДЕЛЬЦА — между пунктами плана, а не внутри.
+    //
+    // Прервать на середине запроса к модели нельзя без потерь: ответ уже
+    // оплачен, а кейс из него ещё не собран. Между пунктами прогон рвётся
+    // чисто — сделанное сохранено, несделанное просто не начато.
+    if (stopRequested) {
+      result.stopped = true;
+      const left = plan.length - plan.indexOf(item);
+      console.log(`🛑 Автокейсы арены: остановлено владельцем, не начато пунктов: ${left}`);
+      break;
+    }
+
     try {
       const out = await generateOne({ ...item, authorId, now, limit });
       if (out.skipped) {
@@ -447,10 +459,52 @@ export async function runDailyCaseGeneration({
 // перезапуск сервера по определению, а cron заведёт новый следующей ночью.
 let running = false;
 let lastRun = null;
+let stopRequested = false;
+let runningScope = null;
+
+/**
+ * РАЗДЕЛЫ ГЕНЕРАЦИИ.
+ *
+ * Кнопка «сгенерировать всё» есть, но нужна не всегда: снимки требуют от
+ * автора работы с холстом, а анализы и виртуальный пациент доходят до
+ * публикации сами. Держать про запас двадцать неразобранных лучевых
+ * черновиков ради двух готовых лабораторных — плохой размен, поэтому
+ * разделы запускаются и останавливаются по отдельности.
+ */
+export const AUTOGEN_SCOPES = {
+  all: { stations: ["labs", "vp"], modalities: undefined, title: "все разделы" },
+  // modalities: [] — ни одной лучевой модальности в плане.
+  labs: { stations: ["labs"], modalities: [], title: "анализы" },
+  vp: { stations: ["vp"], modalities: [], title: "виртуальный пациент" },
+  // stations: [] — только лучевые модальности, без станций без снимков.
+  radiology: { stations: [], modalities: undefined, title: "снимки" },
+};
 
 /** Состояние автогенерации для админки. */
 export function getAutogenState() {
-  return { running, enabled: isAutogenEnabled(), lastRun };
+  return {
+    running,
+    enabled: isAutogenEnabled(),
+    lastRun,
+    // Что именно идёт сейчас: админка подсвечивает кнопку своего раздела, а
+    // не все сразу.
+    scope: runningScope,
+    // Остановка запрошена, но текущий пункт ещё доделывается. Без этого
+    // признака кнопка выглядит нажатой впустую: прогон продолжает идти.
+    stopping: running && stopRequested,
+  };
+}
+
+/**
+ * Попросить прогон остановиться.
+ *
+ * Именно попросить: прогон прервётся на границе пунктов плана, доделав
+ * начатый. Мгновенно оборвать нельзя — ответ модели уже оплачен, и бросать
+ * его на полпути значит платить и не получать ничего.
+ */
+export function stopDailyCaseGeneration() {
+  if (running) stopRequested = true;
+  return getAutogenState();
 }
 
 /**
@@ -460,24 +514,35 @@ export function getAutogenState() {
  * клик (или совпадение ручного запуска с ночным) удвоил бы и счёт за токены,
  * и число черновиков.
  */
-export function startDailyCaseGeneration() {
+export function startDailyCaseGeneration({ scope = "all" } = {}) {
   if (running) return getAutogenState();
 
+  const plan = AUTOGEN_SCOPES[scope] ?? AUTOGEN_SCOPES.all;
+
   running = true;
+  stopRequested = false;
+  runningScope = AUTOGEN_SCOPES[scope] ? scope : "all";
   const startedAt = new Date();
   lastRun = {
     startedAt,
     finishedAt: null,
+    scope: runningScope,
     created: [],
     skipped: [],
     failed: [],
+    stopped: false,
     error: null,
   };
 
   // Намеренно без await: вызывающий код не ждёт окончания. lastRun передан
   // накопителем — он наполняется по мере готовности модальностей, и опрос из
   // админки показывает движение, а не пустоту до самого конца.
-  runDailyCaseGeneration({ now: startedAt, sink: lastRun })
+  runDailyCaseGeneration({
+    now: startedAt,
+    sink: lastRun,
+    stations: plan.stations,
+    modalities: plan.modalities,
+  })
     .then(() => {
       lastRun.finishedAt = new Date();
     })
@@ -488,6 +553,8 @@ export function startDailyCaseGeneration() {
     })
     .finally(() => {
       running = false;
+      stopRequested = false;
+      runningScope = null;
     });
 
   return getAutogenState();

@@ -56,6 +56,7 @@ import VirtualPatientCase from "../../modules/radiology/virtual-patient/models/v
 import {
   runDailyCaseGeneration,
   startDailyCaseGeneration,
+  stopDailyCaseGeneration,
   getAutogenState,
 } from "../../jobs/radiologyDailyCases.job.js";
 import { deleteCasePermanently } from "../../modules/radiology/radiology-cases/services/case.service.js";
@@ -405,5 +406,69 @@ describe("удаление кейса насовсем", () => {
       /попытки/i,
     );
     expect(await RadiologyCase.findById(doc._id)).not.toBeNull();
+  });
+});
+
+// ─── Управление прогоном из админки ──────────────────────────────────
+//
+// Владелец должен уметь запустить генерацию по одному разделу и остановить
+// её, не дожидаясь конца. Раньше кнопка была одна и на всё сразу: чтобы
+// получить два лабораторных кейса, приходилось заводить и пять лучевых
+// черновиков, каждый из которых потом ждёт человека с холстом.
+
+describe("управление автогенерацией", () => {
+  it("раздел «анализы» не создаёт лучевых черновиков", async () => {
+    const res = await runDailyCaseGeneration({ stations: ["labs"], modalities: [] });
+
+    expect(res.created.every((c) => c.station !== "radiology")).toBe(true);
+    expect(await RadiologyCase.countDocuments()).toBe(0);
+    expect(await LabCase.countDocuments()).toBeGreaterThan(0);
+  });
+
+  it("раздел «снимки» не трогает станции без изображений", async () => {
+    const res = await runDailyCaseGeneration({
+      modalities: ["cxr"],
+      stations: [],
+    });
+
+    expect(res.created).toHaveLength(1);
+    expect(await LabCase.countDocuments()).toBe(0);
+    expect(await VirtualPatientCase.countDocuments()).toBe(0);
+  });
+
+  it("состояние прогона называет запущенный раздел", async () => {
+    const state = startDailyCaseGeneration({ scope: "labs" });
+
+    // Прогон уходит в фон — здесь важно лишь то, что раздел зафиксирован и
+    // виден админке, которая по нему подсвечивает свою кнопку.
+    expect(state.running).toBe(true);
+    expect(state.scope).toBe("labs");
+    expect(state.stopping).toBe(false);
+  });
+
+  it("повторный запуск во время работы не начинает второй прогон", async () => {
+    const first = startDailyCaseGeneration({ scope: "labs" });
+    const second = startDailyCaseGeneration({ scope: "vp" });
+
+    // Второй запрос обязан вернуть состояние ПЕРВОГО прогона: иначе двойной
+    // клик удвоил бы и счёт за токены, и число черновиков.
+    expect(first.running).toBe(true);
+    expect(second.scope).toBe("labs");
+  });
+
+  it("остановка помечается сразу, до фактического обрыва", async () => {
+    startDailyCaseGeneration({ scope: "all" });
+    const state = stopDailyCaseGeneration();
+
+    // Признак нужен именно немедленный: начатый кейс ещё доделывается, и без
+    // отметки кнопка выглядела бы нажатой впустую.
+    expect(state.stopping).toBe(true);
+  });
+
+  it("остановка без работающего прогона ничего не ломает", async () => {
+    // Ждём, пока фоновые прогоны предыдущих проверок завершатся.
+    await new Promise((r) => setTimeout(r, 50));
+    const state = stopDailyCaseGeneration();
+    expect(state.stopping).toBe(false);
   });
 });

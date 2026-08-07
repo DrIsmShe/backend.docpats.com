@@ -22,6 +22,9 @@ router.post("/ai/generate", requireAuthor, ctrl.aiGenerateController);
 
 // ИИ-проверка кейса вторым проходом — только автору.
 router.post("/ai/verify", requireAuthor, ctrl.aiVerifyController);
+// Поиск учебных снимков по теме кейса. Отдаёт ссылки с лицензиями —
+// скачивание и проверку делает человек.
+router.post("/ai/find-images", requireAuthor, ctrl.aiFindImagesController);
 
 // Образец «типового ответа чат-бота» для сигналов добросовестности — автору.
 router.post("/cases/:id/ai/baseline", requireAuthor, ctrl.aiBaselineController);
@@ -42,6 +45,9 @@ router.delete("/cases/:id/permanent", requireReviewer, ctrl.deleteCaseController
 // Ночная автогенерация вручную: «сгенерировать сейчас» из админки. Запуск
 // отвечает сразу (202), за итогом клиент возвращается на /autogen/state.
 router.post("/autogen/run", requireAuthor, ctrl.runAutogenController);
+// Остановка идущего прогона. Отвечает сразу: прогон прервётся на границе
+// пунктов плана, доделав начатый кейс.
+router.post("/autogen/stop", requireAuthor, ctrl.stopAutogenController);
 router.get("/autogen/state", requireAuthor, ctrl.autogenStateController);
 
 export default router;

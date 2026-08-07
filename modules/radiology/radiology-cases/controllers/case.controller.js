@@ -10,6 +10,7 @@ import { langOf } from "../../translation/requestLang.js";
 import { listReadingSystems } from "../../reading-systems/index.js";
 import { draftCase, isConfigured as aiConfigured } from "../../ai/aiDrafter.js";
 import { generateRadiologyCase } from "../../ai/caseGenerator.js";
+import { findCaseImageSources } from "../../ai/imageSourceFinder.js";
 import { verifyRadiologyCase } from "../../ai/caseVerifier.js";
 import { generateBaselineAnswer } from "../../ai/baselineAnswer.js";
 import { saveAiReview, setAiReviewDismissed } from "../../ai/aiReviewStore.js";
@@ -26,6 +27,7 @@ import {
 } from "../services/case.service.js";
 import {
   startDailyCaseGeneration,
+  stopDailyCaseGeneration,
   getAutogenState,
 } from "../../../../jobs/radiologyDailyCases.job.js";
 import {
@@ -76,6 +78,20 @@ export const aiGenerateController = asyncHandler(async (req, res) => {
   if (!parsed.success) throwZod(parsed);
   const draft = await generateRadiologyCase(parsed.data);
   res.json({ draft });
+});
+
+// Поиск снимков под тему кейса.
+//
+// Закрывает разрыв, на котором работа вставала: ИИ придумывает кейс целиком,
+// но нарисовать снимок не может, и автор оставался с готовым текстом без
+// единого кадра. Возвращаются ССЫЛКИ на учебные случаи, а не файлы — скачать,
+// проверить лицензию и деидентифицировать должен человек.
+export const aiFindImagesController = asyncHandler(async (req, res) => {
+  const topic = typeof req.body?.topic === "string" ? req.body.topic : "";
+  const modality = typeof req.body?.modality === "string" ? req.body.modality : "";
+  const hint = typeof req.body?.hint === "string" ? req.body.hint : "";
+  const found = await findCaseImageSources({ topic, modality, hint });
+  res.json(found);
 });
 
 // ИИ-проверка кейса вторым проходом: только замечания, без правок.
@@ -247,8 +263,19 @@ export const deleteCaseController = asyncHandler(async (req, res) => {
 // пять запросов к модели идут минуты, а соединение до админки столько не
 // живёт. За результатом клиент возвращается на /autogen/state.
 export const runAutogenController = asyncHandler(async (req, res) => {
-  const state = startDailyCaseGeneration();
+  // Раздел выбирает владелец: снимки, анализы, виртуальный пациент или всё
+  // сразу. Неизвестное значение молча превращается в «всё» — прежнее
+  // поведение, чтобы старый клиент продолжал работать.
+  const scope = typeof req.body?.scope === "string" ? req.body.scope : "all";
+  const state = startDailyCaseGeneration({ scope });
   res.status(202).json({ ...state, aiEnabled: aiConfigured() });
+});
+
+// Остановка прогона. Прервётся на границе пунктов плана — начатый кейс
+// доделается, см. stopDailyCaseGeneration.
+export const stopAutogenController = asyncHandler(async (req, res) => {
+  const state = stopDailyCaseGeneration();
+  res.json({ ...state, aiEnabled: aiConfigured() });
 });
 
 // Состояние прогона: идёт ли сейчас и чем кончился прошлый.
