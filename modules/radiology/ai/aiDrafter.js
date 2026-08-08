@@ -72,8 +72,18 @@ function parseModelJson(message, describeApiError) {
 export const DRAFT_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["title", "clinicalContext", "findings", "impression"],
+  required: ["title", "clinicalContext", "difficulty", "findings", "impression"],
   properties: {
+    // Сложность оценивает тот же проход, что и смотрит на снимок: отдельного
+    // сигнала для неё нет, а оставлять автору ещё одно поле для ручной
+    // правки — ровно то, от чего кнопка «собрать целиком» избавляет.
+    difficulty: {
+      type: "string",
+      enum: ["easy", "medium", "hard"],
+      description:
+        "Насколько трудно найти и назвать патологию на ЭТОМ снимке: easy — видно сразу, " +
+        "medium — нужно знать, где смотреть, hard — тонкий признак или нетипичная картина.",
+    },
     title: {
       type: "string",
       description: "Краткое учебное название кейса по картине снимка.",
@@ -253,6 +263,11 @@ export async function draftCase({ imageUrl, modality, hint, imageIndex = 0 }) {
   return {
     title: String(parsed.title ?? "").slice(0, 300),
     clinicalContext: String(parsed.clinicalContext ?? "").slice(0, 4000),
+    // Неизвестное значение приводим к medium, а не роняем черновик: сложность
+    // автор в любом случае видит и может поправить одним щелчком.
+    difficulty: ["easy", "medium", "hard"].includes(parsed.difficulty)
+      ? parsed.difficulty
+      : "medium",
     findings,
     impression: {
       correctText: String(parsed.impression?.correctText ?? "").slice(0, 4000),
