@@ -158,6 +158,9 @@ export const aiVerifyCaseSchema = z.object({
   // Если кейс уже сохранён, его id можно передать — тогда сервер сохранит
   // рецензию в кейсе, и гейт публикации переживёт перезагрузку страницы.
   caseId: z.string().regex(/^[a-fA-F0-9]{24}$/, "Invalid id").optional(),
+  // Если кадр уже загружен — рецензент посмотрит на него и проверит, что кейс
+  // написан именно про этот снимок. Без него проверяется только текст.
+  imageUrl: z.string().trim().url().max(1000).optional(),
   draft: z.object({
     title: z.string().trim().max(300).optional(),
     clinicalContext: z.string().trim().max(4000).optional(),

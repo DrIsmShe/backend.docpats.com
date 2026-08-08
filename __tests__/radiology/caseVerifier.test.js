@@ -12,11 +12,23 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 const finalMessage = vi.fn();
+// Запрос к модели перехватываем целиком: проверка соответствия кейса снимку
+// живёт именно в payload — попал ли кадр в сообщение и появились ли правила.
+const streamArgs = vi.fn();
 vi.mock(
   "../../modules/education/education-ingest/extractors/claude.extractor.js",
   () => ({
     // Клиент зовётся через beta-путь: там передаются fallbacks.
-    getClient: () => ({ beta: { messages: { stream: () => ({ finalMessage }) } } }),
+    getClient: () => ({
+      beta: {
+        messages: {
+          stream: (args) => {
+            streamArgs(args);
+            return { finalMessage };
+          },
+        },
+      },
+    }),
     describeApiError: (err) => ({
       retryable: false,
       message: String(err?.message ?? err),
@@ -164,5 +176,79 @@ describe("второй проход: чего проверять нельзя", 
       modality: "cxr",
     });
     expect(r.verdict).toBe("clean");
+  });
+});
+
+// Кейс могли собрать по теме, а кадр приложить любой — и текстовый рецензент
+// этого не увидит: текст сам по себе безупречен. Проверка «кейс про этот
+// снимок?» возможна, только если кадр реально доехал до модели.
+describe("второй проход: соответствие кейса снимку", () => {
+  const radDraft = {
+    title: "Ателектаз правой верхней доли",
+    clinicalContext: "Мужчина 64 лет, курильщик.",
+    plannedFindings: [{ label: "Ателектаз", significance: "critical" }],
+    impression: { correctText: "Ателектаз правой верхней доли", diagnosisKeys: ["ателектаз"] },
+  };
+
+  beforeEach(() => {
+    streamArgs.mockReset();
+    reply({ verdict: "clean", issues: [], summary: "" });
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: { get: () => "image/png" },
+      arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+    });
+  });
+
+  it("со снимком: кадр уходит в модель ПЕРЕД текстом", async () => {
+    await verifyRadiologyCase({
+      draft: radDraft,
+      modality: "cxr",
+      imageUrl: "https://media.docpats.com/uploads/images/x.png",
+    });
+
+    const content = streamArgs.mock.calls[0][0].messages[0].content;
+    expect(Array.isArray(content)).toBe(true);
+    // Порядок важен: текст первым задаёт ожидание и подталкивает «увидеть»
+    // описанное — ровно та ошибка, которую рецензент должен ловить.
+    expect(content[0].type).toBe("image");
+    expect(content[0].source.media_type).toBe("image/png");
+    expect(content[1].type).toBe("text");
+  });
+
+  it("со снимком: в системный промпт добавлены правила сверки с кадром", async () => {
+    await verifyRadiologyCase({
+      draft: radDraft,
+      modality: "cxr",
+      imageUrl: "https://media.docpats.com/uploads/images/x.png",
+    });
+
+    const system = streamArgs.mock.calls[0][0].system;
+    expect(system).toContain("Снимок приложен");
+    expect(system).toMatch(/НЕ видно находки из плана/);
+  });
+
+  it("без снимка: запрос остаётся текстовым и правил сверки нет", async () => {
+    await verifyRadiologyCase({ draft: radDraft, modality: "cxr" });
+
+    const call = streamArgs.mock.calls[0][0];
+    expect(typeof call.messages[0].content).toBe("string");
+    expect(call.system).not.toContain("Снимок приложен");
+    // Ночной генератор снимка не имеет — лишний сетевой вызов ему не нужен.
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("недоступный кадр — понятная ошибка, а не молчаливая проверка по тексту", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+    await expect(
+      verifyRadiologyCase({
+        draft: radDraft,
+        modality: "cxr",
+        imageUrl: "https://media.docpats.com/uploads/images/gone.png",
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    // Молча отрецензировать «по тексту» здесь нельзя: автор решит, что кадр
+    // проверен, и опубликует кейс с чужим снимком.
+    expect(finalMessage).not.toHaveBeenCalled();
   });
 });

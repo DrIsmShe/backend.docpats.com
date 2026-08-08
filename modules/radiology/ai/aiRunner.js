@@ -54,6 +54,24 @@ const OVERLOAD_FALLBACK_MODEL =
     ? null
     : process.env.RADIOLOGY_AI_FALLBACK_MODEL || "claude-sonnet-5";
 
+/**
+ * Скачать снимок и подготовить его для модели. Живёт здесь, а не в
+ * aiDrafter.js, потому что кадр смотрит и составитель кейса, и рецензент.
+ */
+export async function fetchImage(imageUrl) {
+  try {
+    const resp = await fetch(imageUrl);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const mediaType = (resp.headers.get("content-type") || "image/webp").split(";")[0];
+    const bytes = Buffer.from(await resp.arrayBuffer());
+    return { bytes, mediaType };
+  } catch (err) {
+    throw new ValidationError(
+      `Не удалось загрузить снимок для ИИ (${String(err?.message ?? err)}). Проверьте, что он доступен по URL.`,
+    );
+  }
+}
+
 /** Настроен ли ИИ (тот же ключ, что у остальных ИИ-функций модуля). */
 export function isConfigured() {
   return Boolean(
@@ -74,6 +92,8 @@ export function isConfigured() {
  * @param {object} args.schema       JSON-схема ответа (structured outputs)
  * @param {number} [args.maxTokens]
  * @param {string} [args.what]       что генерируем — для текста ошибок
+ * @param {{bytes: Buffer, mediaType: string}} [args.image] снимок, если модель
+ *        должна на него посмотреть (fetchImage выше)
  * @returns {Promise<{parsed: object, usage: {inputTokens: number, outputTokens: number}}>}
  */
 export async function runJson({
@@ -83,6 +103,7 @@ export async function runJson({
   maxTokens = 16000,
   what = "кейс",
   effort = null,
+  image = null,
 }) {
   if (!isConfigured()) {
     throw new ServiceUnavailableError(
@@ -117,7 +138,28 @@ export async function runJson({
             // видно решение.
             ...(effort ? { effort } : {}),
           },
-          messages: [{ role: "user", content: instruction }],
+          // Кадр идёт ПЕРЕД инструкцией: модель сначала смотрит, потом читает,
+          // что от неё хотят — иначе текст задаёт ожидание и подталкивает
+          // «увидеть» описанное. Для рецензента это принципиально: он как раз
+          // и должен поймать, что на снимке описанного нет.
+          messages: [
+            {
+              role: "user",
+              content: image
+                ? [
+                    {
+                      type: "image",
+                      source: {
+                        type: "base64",
+                        media_type: image.mediaType,
+                        data: image.bytes.toString("base64"),
+                      },
+                    },
+                    { type: "text", text: instruction },
+                  ]
+                : instruction,
+            },
+          ],
           ...(FALLBACKS_ENABLED
             ? { betas: [FALLBACK_BETA], fallbacks: "default" }
             : {}),

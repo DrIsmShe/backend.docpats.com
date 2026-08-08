@@ -21,6 +21,8 @@ import {
   ServiceUnavailableError,
 } from "../../../common/utils/errors.js";
 import logger from "../../../common/logger.js";
+// Загрузка кадра общая с рецензентом: снимок смотрят оба.
+import { fetchImage } from "./aiRunner.js";
 
 const MODEL =
   process.env.RADIOLOGY_AI_MODEL ||
@@ -37,20 +39,6 @@ export function isConfigured() {
   );
 }
 
-// Тянет снимок и готовит image-блок в base64. fetch есть в Node 20+.
-async function fetchImage(imageUrl) {
-  try {
-    const resp = await fetch(imageUrl);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const mediaType = (resp.headers.get("content-type") || "image/webp").split(";")[0];
-    const bytes = Buffer.from(await resp.arrayBuffer());
-    return { bytes, mediaType };
-  } catch (err) {
-    throw new ValidationError(
-      `Не удалось загрузить снимок для ИИ (${String(err?.message ?? err)}). Проверьте, что он доступен по URL.`,
-    );
-  }
-}
 
 // Общая обработка ответа модели: отказ / обрезка / парсинг JSON.
 function parseModelJson(message, describeApiError) {
