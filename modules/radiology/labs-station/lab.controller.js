@@ -8,6 +8,7 @@ import {
   updateLabCase,
   setLabStatus,
   deleteLabCasePermanently,
+  applyLabAiRevision,
   listLabCases,
   getLabCaseFull,
   sanitizeLabForLearner,
@@ -19,6 +20,9 @@ import {
 import LabCase from "./models/labCase.model.js";
 import { generateLabCase } from "../ai/caseGenerator.js";
 import { verifyLabCase } from "../ai/caseVerifier.js";
+import { reviseLabCase } from "../ai/caseReviser.js";
+import { runAutoFix } from "../ai/autoFix.js";
+import { MODEL } from "../ai/aiRunner.js";
 import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
 import { generateLabVariants } from "../ai/caseVariants.js";
 import { saveAiReview, setAiReviewDismissed } from "../ai/aiReviewStore.js";
@@ -30,6 +34,7 @@ import {
   listLabQuerySchema,
   aiGenerateLabSchema,
   aiVerifyLabSchema,
+  aiAutofixLabSchema,
   dismissAiIssuesSchema,
   aiVariantsSchema,
   startLabSchema,
@@ -94,6 +99,59 @@ export const aiVerifyLabCaseController = asyncHandler(async (req, res) => {
     review,
   });
   res.json({ review, aiReview: stored });
+});
+
+// ТРЕТИЙ ПРОХОД: машина сама правит кейс по замечаниям и перепроверяет себя,
+// пока рецензия не станет чистой (ai/autoFix.js). Гейт публикации при этом не
+// обходится — он считает неразобранные замечания, а после чистой рецензии
+// считать нечего.
+//
+// Стартовую рецензию считаем ЗАНОВО, а не берём сохранённую: сохранённая
+// относится к сохранённому кейсу, а править надо то, что сейчас в форме.
+// Лишний вызов модели дешевле, чем правки по замечаниям к другой версии.
+export const aiAutofixLabCaseController = asyncHandler(async (req, res) => {
+  const parsed = aiAutofixLabSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const { caseId, draft, maxRounds } = parsed.data;
+
+  const out = await runAutoFix({
+    draft,
+    revise: (current, issues) => reviseLabCase({ draft: current, issues }),
+    verify: (current) => verifyLabCase({ draft: current }),
+    // По умолчанию два круга, а не три, как у ночного прогона: здесь ответа
+    // ждёт открытый браузер через nginx, и каждый круг — два вызова Opus с
+    // рассуждением. Третий круг доступен явным maxRounds, если автор готов
+    // ждать.
+    maxRounds: maxRounds ?? 2,
+  });
+
+  // Несохранённый кейс (автор ещё не нажимал «Сохранить») просто возвращаем в
+  // форму: записывать нечего, и рецензию прятать некуда.
+  if (!caseId) {
+    return res.json({ ...out, case: null, variantsStale: false, saved: false });
+  }
+
+  // Порядок важен: сначала кейс, потом рецензия. Обратный порядок оставил бы
+  // чистую рецензию на неисправленном кейсе — то есть открыл бы гейт тому,
+  // чего рецензент не видел.
+  const applied = await applyLabAiRevision(caseId, out.draft, {
+    rounds: out.rounds.length,
+    stoppedBy: out.stoppedBy,
+    converged: out.converged,
+    changes: out.changes,
+    disputed: out.disputed,
+    model: MODEL,
+    actorId: req.radiologyActor.userId,
+  });
+  const stored = await saveAiReview({ CaseModel: LabCase, caseId, review: out.review });
+
+  res.json({
+    ...out,
+    case: applied.case,
+    variantsStale: applied.variantsStale,
+    aiReview: stored,
+    saved: true,
+  });
 });
 
 export const createLabCaseController = asyncHandler(async (req, res) => {

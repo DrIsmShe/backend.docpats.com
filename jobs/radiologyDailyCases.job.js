@@ -19,6 +19,14 @@
 //   намеренно строгий, потому что модель систематически занижает серьёзность
 //   (см. комментарий в collectPublishBlockers).
 //
+//   ТРЕТИЙ ПРОХОД доводит кейс до этого порога, а не обходит его. Замечания
+//   рецензента отдаются редактору (ai/caseReviser.js), исправленная версия
+//   рецензируется заново, и так до чистой рецензии либо до потолка кругов
+//   (ai/autoFix.js). В кейс ложится исправленная версия ВМЕСТЕ с рецензией на
+//   неё же и следом правок (aiRevision) — чтобы человек, открывший кейс,
+//   видел, что цифры менял не он и что именно менялось. Не сошлось за три
+//   круга — обычный черновик с оставшимися замечаниями.
+//
 //   Лучевой кейс ложится ЧЕРНОВИКОМ и без снимка — всегда. Снимка у
 //   автогенератора нет и быть не может: ИИ его не рисует, а публикация
 //   требует настоящего кадра с подтверждённой деидентификацией. Ночь
@@ -39,6 +47,7 @@
 //   Настройки (.env; после правки — pm2 restart all --update-env):
 //     RADIOLOGY_AUTOGEN=off            полностью выключить автогенерацию
 //     RADIOLOGY_AUTOGEN_PUBLISH=off    не публиковать автоматически (всё в черновики)
+//     RADIOLOGY_AUTOGEN_AUTOFIX=off    не править кейс по замечаниям третьим проходом
 //     RADIOLOGY_AUTOGEN_CRON="20 2 * * *"   расписание (по умолчанию 02:20 UTC)
 //     RADIOLOGY_AUTOGEN_MAX_PENDING=6  потолок неразобранных автокейсов на станцию
 //     RADIOLOGY_AUTOGEN_GAP_MS=2000    пауза между станциями
@@ -72,6 +81,11 @@ import {
   verifyLabCase,
   verifyVpCase,
 } from "../modules/radiology/ai/caseVerifier.js";
+import { reviseLabCase, reviseVpCase } from "../modules/radiology/ai/caseReviser.js";
+import { runAutoFix } from "../modules/radiology/ai/autoFix.js";
+import { MODEL } from "../modules/radiology/ai/aiRunner.js";
+import { applyLabAiRevision } from "../modules/radiology/labs-station/lab.service.js";
+import { applyVpAiRevision } from "../modules/radiology/virtual-patient/vp.service.js";
 import { saveAiReview } from "../modules/radiology/ai/aiReviewStore.js";
 import { listReadingSystems } from "../modules/radiology/reading-systems/index.js";
 import { pickTopic } from "../modules/radiology/ai/dailyTopics.js";
@@ -102,6 +116,18 @@ function findImagesEnabled() {
 // Выключатель нужен на случай, если качество разъедется.
 function isAutoPublishEnabled() {
   return String(process.env.RADIOLOGY_AUTOGEN_PUBLISH ?? "").trim().toLowerCase() !== "off";
+}
+
+// Третий проход: машина правит кейс по замечаниям рецензента и перепроверяет
+// себя (modules/radiology/ai/autoFix.js). Включён по умолчанию — без него
+// почти любое замечание означало черновик, ждущий человека, и порог «ни одного
+// замечания» делал автопубликацию редкой.
+//
+// Цена: каждый круг — два вызова Opus с рассуждением поверх генерации. Отсюда
+// выключатель: если счёт окажется заметнее пользы, ночь вернётся к прежнему
+// поведению «есть замечания — черновик».
+function isAutoFixEnabled() {
+  return String(process.env.RADIOLOGY_AUTOGEN_AUTOFIX ?? "").trim().toLowerCase() !== "off";
 }
 
 // Ключ показателя/обследования для кейсов, которые собирает машина. Модель
@@ -258,6 +284,11 @@ const STATIONS = {
       );
     },
     verify: (draft) => verifyLabCase({ draft }),
+    // Третий проход: правка по замечаниям и запись исправленной версии в уже
+    // созданный черновик. applyLabAiRevision сам восстанавливает ключи
+    // показателей по названиям — эталон и варианты не должны разъехаться.
+    revise: (draft, issues) => reviseLabCase({ draft, issues }),
+    applyRevision: (caseId, draft, meta) => applyLabAiRevision(caseId, draft, meta),
     publish: (caseId, authorId) => setLabStatus(caseId, "published", authorId, "system"),
     detail: (draft) => ({
       panel: draft.panel?.length ?? 0,
@@ -299,6 +330,8 @@ const STATIONS = {
       );
     },
     verify: (draft) => verifyVpCase({ draft }),
+    revise: (draft, issues) => reviseVpCase({ draft, issues }),
+    applyRevision: (caseId, draft, meta) => applyVpAiRevision(caseId, draft, meta),
     publish: (caseId, authorId) => setVpStatus(caseId, "published", authorId, "system"),
     detail: (draft) => ({
       investigations: draft.investigations?.length ?? 0,
@@ -363,6 +396,45 @@ async function generateOne({ station, topicKey: poolKey, modality, authorId, now
     console.error(`⚠️  Автокейс [${station}]: рецензия не выполнена:`, err?.message ?? err);
   }
 
+  // ТРЕТИЙ ПРОХОД: машина правит себя по замечаниям.
+  //
+  // Порог публикации остаётся прежним — «ни одного замечания», — но теперь
+  // кейс до него доводится, а не отбраковывается на первом же придирчивом
+  // пункте. Правки ложатся в уже созданный черновик, и рецензия в кейсе
+  // заменяется на ту, что относится к исправленной версии: иначе человек
+  // открыл бы кейс с одними цифрами и замечаниями к другим.
+  //
+  // Отказ третьего прохода ничего не ломает: остаётся черновик с исходными
+  // замечаниями — ровно то, что было до появления автоправки.
+  let revision = null;
+  if (review?.issues?.length && cfg.revise && isAutoFixEnabled()) {
+    try {
+      revision = await runAutoFix({
+        draft,
+        review,
+        revise: (current, issues) => cfg.revise(current, issues, ctx),
+        verify: (current) => cfg.verify(current, ctx),
+      });
+      await cfg.applyRevision(doc._id, revision.draft, {
+        rounds: revision.rounds.length,
+        stoppedBy: revision.stoppedBy,
+        converged: revision.converged,
+        changes: revision.changes,
+        disputed: revision.disputed,
+        model: MODEL,
+      });
+      await saveAiReview({ CaseModel: cfg.Model, caseId: doc._id, review: revision.review });
+      review = revision.review;
+      console.log(
+        `   🛠 автоправка [${station}]: кругов ${revision.rounds.length}, замечаний осталось ${
+          review.issues.length
+        } (${revision.stoppedBy})`,
+      );
+    } catch (err) {
+      console.error(`⚠️  Автокейс [${station}]: автоправка не выполнена:`, err?.message ?? err);
+    }
+  }
+
   // Публикуем только станции без снимков и только при чистой рецензии.
   // «Есть хоть одно замечание» — намеренно строгий порог: калибровка
   // показала, что модель систематически ЗАНИЖАЕТ серьёзность, поэтому
@@ -391,7 +463,14 @@ async function generateOne({ station, topicKey: poolKey, modality, authorId, now
       title: doc.title,
       published,
       issues: review?.issues?.length ?? null,
-      ...cfg.detail(draft),
+      // Кругов автоправки: 0 означает «вышло чисто с первого раза» и это не то
+      // же самое, что «правки не потребовались, потому что их отключили» —
+      // отсюда отдельное null при выключенном третьем проходе.
+      fixRounds: revision ? revision.rounds.length : null,
+      // Детали считаем по ТОЙ версии, которая легла в базу: после правки
+      // панель может стать другой, и цифра из исходного черновика вводила бы
+      // в заблуждение при разборе ночного прогона.
+      ...cfg.detail(revision?.draft ?? draft),
     },
   };
 }

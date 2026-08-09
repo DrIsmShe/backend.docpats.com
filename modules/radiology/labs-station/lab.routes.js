@@ -13,6 +13,10 @@ const router = express.Router();
 // с ним по форме пути (у обоих 3 сегмента).
 router.post("/labs/ai/generate", requireAuthor, ctrl.aiGenerateLabCaseController);
 router.post("/labs/ai/verify", requireAuthor, ctrl.aiVerifyLabCaseController);
+// Цикл «правка → перепроверка»: машина сама исправляет кейс по замечаниям
+// рецензента, пока рецензия не станет чистой. Минуты работы и несколько
+// вызовов модели — поэтому только автору и только по кнопке.
+router.post("/labs/ai/autofix", requireAuthor, ctrl.aiAutofixLabCaseController);
 
 router.get("/labs/cases", ctrl.listLabCasesController);
 router.post("/labs/cases", requireAuthor, ctrl.createLabCaseController);

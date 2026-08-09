@@ -150,6 +150,142 @@ export async function updateLabCase(caseId, patch) {
   return doc.toObject();
 }
 
+// ─── Применение машинных правок (ai/autoFix.js) ───────────────────────
+//
+// Цикл «правка → перепроверка» возвращает панель БЕЗ ключей: модель их не
+// видит и видеть не должна. Ключи здесь и восстанавливаются — сопоставлением
+// по названию показателя.
+//
+// Почему это делается так осторожно: на ключ завязаны эталон
+// (significantAbnormal), числовые варианты и разборы уже сданных попыток.
+// Присвоить панели новые ключи «по порядку» значило бы тихо переименовать
+// показатели, и эталон стал бы указывать не на те строки — кейс с виду
+// целый, а оценка неверная.
+//
+// Правило: имя совпало — ключ сохраняется; имя новое — новый ключ. Строку,
+// которую редактор удалил, теряем вместе с её ключом, и это правильно: она
+// удалена по замечанию.
+
+const normName = (s) => String(s ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+
+/**
+ * Записать в кейс результат машинной правки.
+ *
+ * @param {string} caseId
+ * @param {object} draft   исправленный черновик (panel без ключей)
+ * @param {object} [meta]  отчёт цикла: rounds, changes, disputed, stoppedBy…
+ * @returns {Promise<{case: object, variantsStale: boolean}>}
+ */
+export async function applyLabAiRevision(caseId, draft, meta = {}) {
+  const doc = await LabCase.findById(caseId);
+  if (!doc) throw new NotFoundError("Lab case");
+  if (doc.status === "archived") {
+    throw new ConflictError("Архивный кейс редактировать нельзя");
+  }
+  // Опубликованный кейс машина не правит. Ручная правка published разрешена
+  // (автор отвечает за неё сам), но здесь меняются ЦИФРЫ, а по ним уже сданы
+  // попытки, построены разборы и сделаны переводы: врач увидит кейс, который
+  // не совпадает с его же результатом.
+  if (doc.status === "published") {
+    throw new ConflictError(
+      "Опубликованный кейс машинной правке не подлежит: снимите его с публикации — по этой версии уже есть попытки врачей, разборы и переводы",
+    );
+  }
+
+  const panelIn = Array.isArray(draft?.panel) ? draft.panel : [];
+  if (panelIn.length < 2) {
+    throw new ValidationError("В исправленной панели меньше двух показателей — правки не применены");
+  }
+
+  // Ключи существующих строк по имени. Первое вхождение выигрывает: дубли
+  // имён в панели — редкость, а взять для них один ключ нельзя.
+  const keyByName = new Map();
+  for (const p of doc.panel ?? []) {
+    const n = normName(p.name);
+    if (n && !keyByName.has(n)) keyByName.set(n, p.key);
+  }
+  const existingKeys = new Set((doc.panel ?? []).map((p) => p.key));
+  const usedKeys = new Set();
+  let seq = 0;
+  const freshKey = () => {
+    let k;
+    do {
+      seq += 1;
+      k = `ai${seq}`;
+    } while (existingKeys.has(k) || usedKeys.has(k));
+    return k;
+  };
+
+  const panel = [];
+  const significantAbnormal = [];
+  for (const row of panelIn) {
+    const name = String(row?.name ?? "").trim();
+    const value = String(row?.value ?? "").trim();
+    if (!name || !value) continue;
+    const kept = keyByName.get(normName(name));
+    const key = kept && !usedKeys.has(kept) ? kept : freshKey();
+    usedKeys.add(key);
+    panel.push({
+      key,
+      name: name.slice(0, 120),
+      value: value.slice(0, 60),
+      unit: String(row?.unit ?? "").trim().slice(0, 40),
+      refRange: String(row?.refRange ?? "").trim().slice(0, 60),
+    });
+    if (row?.significant) significantAbnormal.push(key);
+  }
+
+  if (panel.length < 2) {
+    throw new ValidationError("В исправленной панели меньше двух показателей — правки не применены");
+  }
+
+  // Числовые варианты пересобираем под новый набор ключей. Вариант, чьи
+  // показатели исчезли, удаляем целиком: вариант с половиной значений — это
+  // не «частично годный», а кейс с чужим эталоном.
+  const hadVariants = (doc.variants?.length ?? 0) > 0;
+  if (hadVariants) {
+    const alive = new Set(panel.map((p) => p.key));
+    doc.variants = (doc.variants ?? [])
+      .map((v) => ({
+        label: v.label,
+        note: v.note,
+        panel: (v.panel ?? []).filter((p) => alive.has(p.key)),
+        significantAbnormal: (v.significantAbnormal ?? []).filter((k) => alive.has(k)),
+      }))
+      .filter((v) => v.panel.length > 0);
+  }
+
+  doc.title = String(draft.title ?? doc.title).trim().slice(0, 300) || doc.title;
+  doc.clinicalContext = String(draft.clinicalContext ?? "").trim().slice(0, 4000);
+  if (draft.difficulty) doc.difficulty = draft.difficulty;
+  doc.panel = panel;
+  doc.significantAbnormal = significantAbnormal;
+  doc.impression = {
+    correctText: String(draft.impression?.correctText ?? "").trim().slice(0, 4000),
+    diagnosisKeys: (draft.impression?.diagnosisKeys ?? []).slice(0, 20),
+    diagnosisSynonyms: (draft.impression?.diagnosisSynonyms ?? []).slice(0, 50),
+  };
+  doc.aiRevision = {
+    rounds: meta.rounds ?? 0,
+    stoppedBy: meta.stoppedBy ?? "",
+    converged: Boolean(meta.converged),
+    changes: meta.changes ?? [],
+    disputed: meta.disputed ?? [],
+    model: meta.model ?? "",
+    revisedAt: new Date(),
+    actorId: meta.actorId ?? null,
+  };
+  await doc.save();
+
+  return {
+    case: doc.toObject(),
+    // Варианты считались по прежним цифрам: даже уцелевшие теперь могут
+    // противоречить исправленной панели. Удалять их молча нельзя, поэтому
+    // говорим автору, что их нужно перегенерировать.
+    variantsStale: hadVariants,
+  };
+}
+
 // Статус: publish (с гейтом) / draft / archived. Полного review-цикла у
 // станции анализов нет — здесь автор и рецензент один админ.
 export async function setLabStatus(caseId, status, actorId, actorRole) {

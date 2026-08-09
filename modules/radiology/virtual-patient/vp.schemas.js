@@ -136,6 +136,13 @@ export const aiVerifyVpSchema = z.object({
   }),
 });
 
+// Запрос на цикл «правка → перепроверка» (ai/autoFix.js): та же форма, что у
+// проверки. Правится текущая версия автора; сохранённый кейс сервер запишет
+// сам, иначе чистая рецензия относилась бы к неисправленным данным.
+export const aiAutofixVpSchema = aiVerifyVpSchema.extend({
+  maxRounds: z.number().int().min(1).max(5).optional(),
+});
+
 // Запрос на ИИ-генерацию сценария целиком: тема обязательна, остальное — подсказки.
 export const aiGenerateVpSchema = z.object({
   topic: z.string().trim().min(3).max(500),

@@ -59,6 +59,20 @@ vi.mock("../../modules/radiology/ai/caseVerifier.js", () => ({
   verifyVpCase: (...args) => verifyResult(...args),
 }));
 
+// Третий проход (редактор). Замечания рецензента больше не означают «кейс
+// ждёт человека»: сначала машина пробует их исправить и перепроверить себя.
+// По умолчанию правка тут ничего не меняет — так проверяется, что кейс,
+// который не удалось довести, остаётся честным черновиком.
+const reviseResult = vi.fn(async ({ draft }) => ({
+  draft,
+  changes: [{ target: "Ферритин", change: "уточнён референс", why: "по замечанию" }],
+  disputed: [],
+}));
+vi.mock("../../modules/radiology/ai/caseReviser.js", () => ({
+  reviseLabCase: (...args) => reviseResult(...args),
+  reviseVpCase: (...args) => reviseResult(...args),
+}));
+
 // Публикация кейса ставит в очередь перевод на остальные языки — в тесте
 // это ушло бы РЕАЛЬНЫМ вызовом модели уже после завершения теста.
 vi.mock("../../modules/radiology/translation/caseTranslator.js", () => ({
@@ -167,9 +181,16 @@ beforeEach(() => {
     errorCount: 0,
     summary: "Кейс согласован",
   }));
+  reviseResult.mockReset();
+  reviseResult.mockImplementation(async ({ draft }) => ({
+    draft,
+    changes: [{ target: "Ферритин", change: "уточнён референс", why: "по замечанию" }],
+    disputed: [],
+  }));
 
   delete process.env.RADIOLOGY_AUTOGEN;
   delete process.env.RADIOLOGY_AUTOGEN_PUBLISH;
+  delete process.env.RADIOLOGY_AUTOGEN_AUTOFIX;
   delete process.env.RADIOLOGY_AUTOGEN_MAX_PENDING;
 });
 
@@ -315,20 +336,25 @@ describe("станции без снимков: полный цикл до пу�
     expect(vp.investigations.filter((i) => i.necessary)).toHaveLength(2);
   });
 
-  it("оставляет черновиком, если рецензент нашёл хоть одно замечание", async () => {
-    verifyResult.mockImplementation(async () => ({
-      verdict: "issues",
-      errorCount: 0,
-      summary: "Есть вопрос к референсу",
-      issues: [
-        {
-          target: "Ферритин",
-          severity: "warning",
-          issue: "Референсный интервал спорный",
-          suggestion: "Уточнить по лаборатории",
-        },
-      ],
-    }));
+  // Замечание, которое возвращает рецензент во всех проверках ниже.
+  const ISSUE_REVIEW = {
+    verdict: "issues",
+    errorCount: 0,
+    summary: "Есть вопрос к референсу",
+    issues: [
+      {
+        target: "Ферритин",
+        severity: "warning",
+        issue: "Референсный интервал спорный",
+        suggestion: "Уточнить по лаборатории",
+      },
+    ],
+  };
+
+  it("оставляет черновиком, если замечание пережило автоправку", async () => {
+    // Рецензент возражает и после правки: цикл упирается в «нет прогресса»,
+    // и кейс честно ждёт человека — ровно как до появления третьего прохода.
+    verifyResult.mockImplementation(async () => ISSUE_REVIEW);
 
     const res = await runDailyCaseGeneration({ modalities: [], stations: ["labs"] });
 
@@ -338,6 +364,75 @@ describe("станции без снимков: полный цикл до пу�
     expect(lab.autoGen.autoPublished).toBe(false);
     // Замечание сохранено в кейсе — гейт публикации держит его сам, и человек
     // увидит его, открыв черновик.
+    expect(lab.aiReview.issues).toHaveLength(1);
+    expect(lab.aiRevision.converged).toBe(false);
+    expect(lab.aiRevision.stoppedBy).toBe("no_progress");
+  });
+
+  it("исправляет замечание третьим проходом и доводит кейс до публикации", async () => {
+    // Первая рецензия — с замечанием, вторая (уже исправленной версии) —
+    // чистая. Гейт публикации при этом не обходится: считать нечего.
+    let call = 0;
+    verifyResult.mockImplementation(async () => {
+      call += 1;
+      return call === 1
+        ? ISSUE_REVIEW
+        : { verdict: "clean", issues: [], errorCount: 0, summary: "Согласовано" };
+    });
+    reviseResult.mockImplementation(async ({ draft }) => ({
+      draft: {
+        ...draft,
+        panel: draft.panel.map((p) =>
+          p.name === "Ферритин" ? { ...p, refRange: "10–120" } : p,
+        ),
+      },
+      changes: [{ target: "Ферритин", change: "15–150 → 10–120", why: "по замечанию" }],
+      disputed: [],
+    }));
+
+    const res = await runDailyCaseGeneration({ modalities: [], stations: ["labs"] });
+
+    expect(res.created[0].published).toBe(true);
+    expect(res.created[0].fixRounds).toBe(1);
+
+    const lab = await LabCase.findOne().lean();
+    expect(lab.status).toBe("published");
+    expect(lab.autoGen.autoPublished).toBe(true);
+    // В базе лежит ИСПРАВЛЕННАЯ версия, и рецензия относится к ней же.
+    expect(lab.panel.find((p) => p.name === "Ферритин").refRange).toBe("10–120");
+    expect(lab.aiReview.issues).toHaveLength(0);
+    // Ключи панели правка не сдвинула — на них завязан эталон.
+    expect(lab.panel.map((p) => p.key)).toEqual(["p1", "p2", "p3"]);
+    expect(lab.significantAbnormal).toEqual(["p1", "p2"]);
+    // След правки виден человеку, который откроет кейс.
+    expect(lab.aiRevision.converged).toBe(true);
+    expect(lab.aiRevision.rounds).toBe(1);
+    expect(lab.aiRevision.changes[0].change).toBe("15–150 → 10–120");
+  });
+
+  it("при RADIOLOGY_AUTOGEN_AUTOFIX=off правка не запускается", async () => {
+    process.env.RADIOLOGY_AUTOGEN_AUTOFIX = "off";
+    verifyResult.mockImplementation(async () => ISSUE_REVIEW);
+
+    await runDailyCaseGeneration({ modalities: [], stations: ["labs"] });
+
+    expect(reviseResult).not.toHaveBeenCalled();
+    const lab = await LabCase.findOne().lean();
+    expect(lab.status).toBe("draft");
+    expect(lab.aiRevision.revisedAt).toBeFalsy();
+  });
+
+  it("сбой редактора не отменяет кейс — остаётся черновик с исходными замечаниями", async () => {
+    verifyResult.mockImplementation(async () => ISSUE_REVIEW);
+    reviseResult.mockImplementation(async () => {
+      throw new Error("ИИ временно недоступен");
+    });
+
+    const res = await runDailyCaseGeneration({ modalities: [], stations: ["labs"] });
+
+    expect(res.failed).toHaveLength(0);
+    const lab = await LabCase.findOne().lean();
+    expect(lab.status).toBe("draft");
     expect(lab.aiReview.issues).toHaveLength(1);
   });
 

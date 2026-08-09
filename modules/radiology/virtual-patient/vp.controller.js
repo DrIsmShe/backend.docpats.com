@@ -18,9 +18,13 @@ import {
   getVpAttempt,
   getVpPolicy,
   commitDifferential,
+  applyVpAiRevision,
 } from "./vp.service.js";
 import { generateVpCase } from "../ai/caseGenerator.js";
 import { verifyVpCase } from "../ai/caseVerifier.js";
+import { reviseVpCase } from "../ai/caseReviser.js";
+import { runAutoFix } from "../ai/autoFix.js";
+import { MODEL } from "../ai/aiRunner.js";
 import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
 import { generateVpVariants } from "../ai/caseVariants.js";
 import { saveAiReview, setAiReviewDismissed } from "../ai/aiReviewStore.js";
@@ -34,6 +38,7 @@ import {
   listVpQuerySchema,
   aiGenerateVpSchema,
   aiVerifyVpSchema,
+  aiAutofixVpSchema,
   dismissAiIssuesSchema,
   aiVariantsSchema,
   startVpSchema,
@@ -95,6 +100,54 @@ export const aiVerifyVpController = asyncHandler(async (req, res) => {
     review,
   });
   res.json({ review, aiReview: stored });
+});
+
+// ТРЕТИЙ ПРОХОД: машина правит сценарий по замечаниям и перепроверяет себя,
+// пока рецензия не станет чистой (ai/autoFix.js). Гейт публикации не
+// обходится: он считает неразобранные замечания, а после чистой рецензии
+// считать нечего. Подробности — в одноимённом контроллере станции «Анализы».
+export const aiAutofixVpController = asyncHandler(async (req, res) => {
+  const parsed = aiAutofixVpSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const { caseId, draft, maxRounds } = parsed.data;
+
+  const out = await runAutoFix({
+    draft,
+    revise: (current, issues) => reviseVpCase({ draft: current, issues }),
+    verify: (current) => verifyVpCase({ draft: current }),
+    // Два круга, а не три: ответа ждёт браузер через nginx, а круг — это два
+    // вызова Opus с рассуждением.
+    maxRounds: maxRounds ?? 2,
+  });
+
+  if (!caseId) {
+    return res.json({ ...out, case: null, variantsStale: false, saved: false });
+  }
+
+  // Сначала сценарий, потом рецензия: обратный порядок оставил бы чистую
+  // рецензию на неисправленных данных.
+  const applied = await applyVpAiRevision(caseId, out.draft, {
+    rounds: out.rounds.length,
+    stoppedBy: out.stoppedBy,
+    converged: out.converged,
+    changes: out.changes,
+    disputed: out.disputed,
+    model: MODEL,
+    actorId: req.radiologyActor.userId,
+  });
+  const stored = await saveAiReview({
+    CaseModel: VirtualPatientCase,
+    caseId,
+    review: out.review,
+  });
+
+  res.json({
+    ...out,
+    case: applied.case,
+    variantsStale: applied.variantsStale,
+    aiReview: stored,
+    saved: true,
+  });
 });
 
 // Отметки «разобрано» на замечаниях сохранённой рецензии.

@@ -12,6 +12,9 @@ const router = express.Router();
 // ИИ-генерация сценария по теме — только автору.
 router.post("/vp/ai/generate", requireAuthor, ctrl.aiGenerateVpController);
 router.post("/vp/ai/verify", requireAuthor, ctrl.aiVerifyVpController);
+// Цикл «правка → перепроверка»: машина исправляет сценарий по замечаниям
+// рецензента, пока рецензия не станет чистой. Минуты работы модели.
+router.post("/vp/ai/autofix", requireAuthor, ctrl.aiAutofixVpController);
 
 router.get("/vp/cases", ctrl.listVpController);
 router.post("/vp/cases", requireAuthor, ctrl.createVpController);

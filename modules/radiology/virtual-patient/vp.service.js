@@ -166,6 +166,116 @@ export async function updateVpCase(caseId, patch) {
   return doc.toObject();
 }
 
+// ─── Применение машинных правок (ai/autoFix.js) ───────────────────────
+//
+// То же, что applyLabAiRevision у «Анализов», и по той же причине: редактор
+// возвращает обследования без ключей, а на ключ завязаны эталон (necessary),
+// варианты и уже сданные попытки. Ключ восстанавливается сопоставлением по
+// названию обследования; новое название — новый ключ.
+
+const normName = (s) => String(s ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+
+/**
+ * Записать в сценарий результат машинной правки.
+ * @returns {Promise<{case: object, variantsStale: boolean}>}
+ */
+export async function applyVpAiRevision(caseId, draft, meta = {}) {
+  const doc = await VirtualPatientCase.findById(caseId);
+  if (!doc) throw new NotFoundError("VP case");
+  if (doc.status === "archived") {
+    throw new ConflictError("Архивный кейс редактировать нельзя");
+  }
+  if (doc.status === "published") {
+    throw new ConflictError(
+      "Опубликованный сценарий машинной правке не подлежит: снимите его с публикации — по этой версии уже есть попытки врачей, разборы и переводы",
+    );
+  }
+
+  const listIn = Array.isArray(draft?.investigations) ? draft.investigations : [];
+  if (listIn.length < 2) {
+    throw new ValidationError("В исправленном сценарии меньше двух обследований — правки не применены");
+  }
+
+  const keyByName = new Map();
+  // Снимок, приложенный к обследованию, редактор не видит и вернуть не может:
+  // в его схеме этого поля нет. Переносим по ключу, иначе машинная правка
+  // текста молча отвязала бы загруженный человеком кадр.
+  const imageByKey = new Map();
+  for (const i of doc.investigations ?? []) {
+    const n = normName(i.name);
+    if (n && !keyByName.has(n)) keyByName.set(n, i.key);
+    if (i.imageUrl) imageByKey.set(i.key, i.imageUrl);
+  }
+  const existingKeys = new Set((doc.investigations ?? []).map((i) => i.key));
+  const usedKeys = new Set();
+  let seq = 0;
+  const freshKey = () => {
+    let k;
+    do {
+      seq += 1;
+      k = `ai${seq}`;
+    } while (existingKeys.has(k) || usedKeys.has(k));
+    return k;
+  };
+
+  const investigations = [];
+  for (const row of listIn) {
+    const name = String(row?.name ?? "").trim();
+    if (!name) continue;
+    const kept = keyByName.get(normName(name));
+    const key = kept && !usedKeys.has(kept) ? kept : freshKey();
+    usedKeys.add(key);
+    investigations.push({
+      key,
+      name: name.slice(0, 160),
+      category: String(row?.category ?? "").trim().slice(0, 60),
+      resultText: String(row?.resultText ?? "").trim().slice(0, 4000),
+      imageUrl: imageByKey.get(key) ?? null,
+      necessary: Boolean(row?.necessary),
+    });
+  }
+
+  if (investigations.length < 2) {
+    throw new ValidationError("В исправленном сценарии меньше двух обследований — правки не применены");
+  }
+
+  const hadVariants = (doc.variants?.length ?? 0) > 0;
+  if (hadVariants) {
+    const alive = new Set(investigations.map((i) => i.key));
+    doc.variants = (doc.variants ?? [])
+      .map((v) => ({
+        label: v.label,
+        note: v.note,
+        presentation: v.presentation,
+        results: (v.results ?? []).filter((r) => alive.has(r.key)),
+      }))
+      .filter((v) => v.results.length > 0);
+  }
+
+  doc.title = String(draft.title ?? doc.title).trim().slice(0, 300) || doc.title;
+  doc.presentation = String(draft.presentation ?? "").trim().slice(0, 4000);
+  if (draft.difficulty) doc.difficulty = draft.difficulty;
+  doc.investigations = investigations;
+  doc.diagnosis = {
+    correctText: String(draft.diagnosis?.correctText ?? "").trim().slice(0, 4000),
+    diagnosisKeys: (draft.diagnosis?.diagnosisKeys ?? []).slice(0, 20),
+    diagnosisSynonyms: (draft.diagnosis?.diagnosisSynonyms ?? []).slice(0, 50),
+  };
+  doc.aiRevision = {
+    rounds: meta.rounds ?? 0,
+    stoppedBy: meta.stoppedBy ?? "",
+    converged: Boolean(meta.converged),
+    changes: meta.changes ?? [],
+    disputed: meta.disputed ?? [],
+    model: meta.model ?? "",
+    revisedAt: new Date(),
+    actorId: meta.actorId ?? null,
+  };
+  await doc.save();
+
+  return { case: doc.toObject(), variantsStale: hadVariants };
+}
+
 export async function setVpStatus(caseId, status, actorId, actorRole) {
   const doc = await VirtualPatientCase.findById(caseId);
   if (!doc) throw new NotFoundError("VP case");

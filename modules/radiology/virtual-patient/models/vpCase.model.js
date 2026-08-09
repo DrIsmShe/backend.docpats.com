@@ -10,7 +10,7 @@
 // уходит со страницы.
 
 import mongoose from "mongoose";
-import { aiReviewField } from "../../ai/aiReviewFields.js";
+import { aiReviewField, aiRevisionField } from "../../ai/aiReviewFields.js";
 import { DIFFICULTIES, CASE_STATUSES, SOURCE_KINDS } from "../../constants.js";
 
 const { Schema } = mongoose;
@@ -125,6 +125,10 @@ const vpCaseSchema = new Schema(
     // Лежит в кейсе, а не в состоянии формы: гейт публикации опирается на
     // разбор замечаний, а состояние React живёт до перезагрузки страницы.
     ...aiReviewField(),
+
+    // След цикла «правка → перепроверка» (ai/autoFix.js): что машина
+    // исправила по замечаниям рецензента и с чем не согласилась.
+    ...aiRevisionField(),
 
     stats: {
       attempts: { type: Number, default: 0 }, // все сдачи, включая тренировки
