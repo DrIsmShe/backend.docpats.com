@@ -12,6 +12,9 @@ import { draftCase, isConfigured as aiConfigured } from "../../ai/aiDrafter.js";
 import { generateRadiologyCase } from "../../ai/caseGenerator.js";
 import { findCaseImageSources } from "../../ai/imageSourceFinder.js";
 import { verifyRadiologyCase } from "../../ai/caseVerifier.js";
+import { reviseRadiologyCase } from "../../ai/caseReviser.js";
+import { runAutoFix, runTargetedFix } from "../../ai/autoFix.js";
+import { MODEL } from "../../ai/aiRunner.js";
 import { generateBaselineAnswer } from "../../ai/baselineAnswer.js";
 import { saveAiReview, setAiReviewDismissed } from "../../ai/aiReviewStore.js";
 import {
@@ -24,6 +27,7 @@ import {
   listCases,
   getCaseFull,
   getCaseForLearner,
+  applyRadiologyAiRevision,
 } from "../services/case.service.js";
 import {
   startDailyCaseGeneration,
@@ -38,6 +42,7 @@ import {
   listCasesQuerySchema,
   aiGenerateCaseSchema,
   aiVerifyCaseSchema,
+  aiAutofixCaseSchema,
   dismissAiIssuesSchema,
 } from "../validators/case.schemas.js";
 
@@ -122,6 +127,60 @@ export const aiVerifyController = asyncHandler(async (req, res) => {
     review,
   });
   res.json({ review, aiReview: stored });
+});
+
+// ТРЕТИЙ ПРОХОД: машина правит кейс по замечаниям и перепроверяет себя.
+//
+// Правится только ТЕКСТОВАЯ часть — план находок, контекст, заключение.
+// Разметку на кадре и галочку деидентификации машина не трогает: точки ставит
+// тот, кто снимок видел, и подписывает анонимность тоже он.
+//
+// Из-за этого у лучевой станции чаще, чем у других, встречается исход «цикл
+// остановился, замечание осталось»: если рецензент смотрел на кадр и сказал
+// «находки на снимке не видно», текстом это не чинится — редактор отправит
+// такое замечание в disputed, и решать будет автор.
+export const aiAutofixController = asyncHandler(async (req, res) => {
+  const parsed = aiAutofixCaseSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const { caseId, draft, modality, imageUrl, maxRounds, issues, hint } = parsed.data;
+
+  const revise = (current, list) =>
+    reviseRadiologyCase({ draft: current, issues: list, modality, hint });
+  // Перепроверка идёт СО СНИМКОМ, если он есть: рецензент должен смотреть на
+  // тот же кадр, что и раньше, иначе исправленный текст будет проверен слабее
+  // исходного, и цикл «улучшит» кейс, потеряв главную проверку станции.
+  const verify = (current) => verifyRadiologyCase({ draft: current, modality, imageUrl });
+
+  const out = issues?.length
+    ? await runTargetedFix({ draft, issues, revise, verify })
+    : await runAutoFix({ draft, revise, verify, maxRounds: maxRounds ?? 2 });
+
+  if (!caseId) {
+    return res.json({ ...out, case: null, markupPresent: false, saved: false });
+  }
+
+  // Сначала кейс, потом рецензия: обратный порядок оставил бы чистую рецензию
+  // на неисправленной версии.
+  const applied = await applyRadiologyAiRevision(caseId, out.draft, {
+    rounds: out.rounds.length,
+    stoppedBy: out.stoppedBy,
+    converged: out.converged,
+    changes: out.changes,
+    disputed: out.disputed,
+    model: MODEL,
+    actorId: req.radiologyActor.userId,
+  });
+  const stored = await saveAiReview({ CaseModel: RadiologyCase, caseId, review: out.review });
+
+  res.json({
+    ...out,
+    case: applied.case,
+    // Находки уже размечены на кадре, а план правился — их мог развести в
+    // стороны. Свести обратно может только человек у холста.
+    markupPresent: applied.markupPresent,
+    aiReview: stored,
+    saved: true,
+  });
 });
 
 // Отметки «разобрано» на замечаниях сохранённой рецензии.

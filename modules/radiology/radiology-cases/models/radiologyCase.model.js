@@ -17,7 +17,7 @@
 //      наружу только через ревью человеком.
 
 import mongoose from "mongoose";
-import { aiReviewField } from "../../ai/aiReviewFields.js";
+import { aiReviewField, aiRevisionField } from "../../ai/aiReviewFields.js";
 import {
   MODALITIES,
   FINDING_SHAPES,
@@ -240,6 +240,10 @@ const radiologyCaseSchema = new Schema(
     // Лежит в кейсе, а не в состоянии формы: гейт публикации опирается на
     // разбор замечаний, а состояние React живёт до перезагрузки страницы.
     ...aiReviewField(),
+
+    // След цикла «правка → перепроверка» (ai/autoFix.js). Для лучевого кейса
+    // он касается только текстовой части: разметку на кадре машина не трогает.
+    ...aiRevisionField(),
 
     stats: {
       attempts: { type: Number, default: 0 }, // все сдачи, включая тренировки

@@ -16,7 +16,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { runAutoFix, runTargetedFix } from "../../modules/radiology/ai/autoFix.js";
 import { applyLabAiRevision } from "../../modules/radiology/labs-station/lab.service.js";
+import { applyRadiologyAiRevision } from "../../modules/radiology/radiology-cases/services/case.service.js";
 import LabCase from "../../modules/radiology/labs-station/models/labCase.model.js";
+import RadiologyCase from "../../modules/radiology/radiology-cases/models/radiologyCase.model.js";
 
 // ─── Помощники: рецензия с заданным числом замечаний ──────────────────
 const issue = (n) => ({
@@ -365,5 +367,125 @@ describe("запись машинных правок в кейс", () => {
     ).rejects.toThrow(/меньше двух показателей/);
     const fresh = await LabCase.findById(doc._id).lean();
     expect(fresh.panel).toHaveLength(2);
+  });
+});
+
+// ─── Лучевой кейс: правится текст, разметка неприкосновенна ───────────
+
+async function makeRadiologyCase(extra = {}) {
+  return RadiologyCase.create({
+    modality: "cxr",
+    title: "Пневмоторакс справа",
+    clinicalContext: "Мужчина 24 лет, внезапная боль в груди",
+    images: [{ url: "https://example.test/frame.webp", width: 1024, height: 1024 }],
+    findings: [
+      {
+        key: "f1",
+        imageIndex: 0,
+        label: "pneumothorax",
+        significance: "major",
+        geometry: { shape: "point", coords: { x: 0.31, y: 0.22 } },
+        explanation: "Край коллабированного лёгкого",
+      },
+    ],
+    plannedFindings: [
+      { label: "consolidation", significance: "major", location: "базально слева", explanation: "" },
+    ],
+    impression: { correctText: "Пневмоторакс", diagnosisKeys: ["пневмоторакс"] },
+    source: { kind: "ai_generated" },
+    deidentified: true,
+    status: "draft",
+    ...extra,
+  });
+}
+
+// Клиент отдаёт рецензенту ОБЪЕДИНЁННЫЙ список: и план, и уже размеченное.
+// Ровно он же возвращается из правки.
+const RADIOLOGY_REVISED = {
+  title: "Пневмоторакс справа",
+  clinicalContext: "Мужчина 24 лет, внезапная боль в груди и одышка",
+  plannedFindings: [
+    {
+      label: "pneumothorax",
+      significance: "critical",
+      location: "правое лёгочное поле",
+      explanation: "Пропуск напряжённого пневмоторакса смертелен",
+    },
+    { label: "consolidation", significance: "incidental", location: "базально слева", explanation: "Уточнено" },
+  ],
+  impression: {
+    correctText: "Правосторонний пневмоторакс",
+    diagnosisKeys: ["пневмоторакс"],
+    diagnosisSynonyms: ["pneumothorax"],
+  },
+};
+
+describe("запись машинных правок в лучевой кейс", () => {
+  let doc;
+  beforeEach(async () => {
+    doc = await makeRadiologyCase();
+  });
+
+  it("координаты размеченной находки не двигаются", async () => {
+    const { case: saved } = await applyRadiologyAiRevision(doc._id, RADIOLOGY_REVISED);
+
+    expect(saved.findings).toHaveLength(1);
+    // Точку ставил человек, смотревший на снимок: машина её не трогает.
+    expect(saved.findings[0].geometry.coords.x).toBeCloseTo(0.31);
+    expect(saved.findings[0].geometry.coords.y).toBeCloseTo(0.22);
+    expect(saved.findings[0].imageIndex).toBe(0);
+  });
+
+  it("но текстовую часть размеченной находки правит", async () => {
+    const { case: saved } = await applyRadiologyAiRevision(doc._id, RADIOLOGY_REVISED);
+
+    expect(saved.findings[0].significance).toBe("critical");
+    expect(saved.findings[0].explanation).toContain("смертелен");
+  });
+
+  it("размеченное убирает из плана — план это «что ещё разметить»", async () => {
+    const { case: saved } = await applyRadiologyAiRevision(doc._id, RADIOLOGY_REVISED);
+
+    expect(saved.plannedFindings.map((p) => p.label)).toEqual(["consolidation"]);
+    expect(saved.plannedFindings[0].significance).toBe("incidental");
+  });
+
+  it("сообщает, что разметка осталась нетронутой", async () => {
+    const res = await applyRadiologyAiRevision(doc._id, RADIOLOGY_REVISED);
+    expect(res.markupPresent).toBe(true);
+
+    const clean = await makeRadiologyCase({ findings: [], images: [] });
+    const res2 = await applyRadiologyAiRevision(clean._id, RADIOLOGY_REVISED);
+    expect(res2.markupPresent).toBe(false);
+  });
+
+  it("кадры и подтверждение деидентификации не трогает", async () => {
+    const { case: saved } = await applyRadiologyAiRevision(doc._id, RADIOLOGY_REVISED);
+    expect(saved.images).toHaveLength(1);
+    // Утверждение о реальном снимке машина не переписывает ни в ту, ни в
+    // другую сторону — его подписывает человек.
+    expect(saved.deidentified).toBe(true);
+  });
+
+  it("опубликованный кейс машине править нельзя", async () => {
+    const published = await makeRadiologyCase({ status: "published", publishedAt: new Date() });
+    await expect(applyRadiologyAiRevision(published._id, RADIOLOGY_REVISED)).rejects.toThrow(
+      /снимите его с публикации/,
+    );
+  });
+
+  it("пишет след правки", async () => {
+    await applyRadiologyAiRevision(doc._id, RADIOLOGY_REVISED, {
+      rounds: 1,
+      stoppedBy: "clean",
+      converged: true,
+      changes: [{ target: "pneumothorax", change: "major → critical", why: "пропуск смертелен" }],
+      disputed: [{ issue: "находки не видно на кадре", why: "решает автор у холста" }],
+    });
+
+    const fresh = await RadiologyCase.findById(doc._id).lean();
+    expect(fresh.aiRevision.converged).toBe(true);
+    expect(fresh.aiRevision.changes[0].change).toBe("major → critical");
+    expect(fresh.aiRevision.disputed[0].why).toContain("автор");
   });
 });

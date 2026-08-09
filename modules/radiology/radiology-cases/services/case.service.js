@@ -136,6 +136,98 @@ export async function updateCase(caseId, patch, actorId) {
   return doc.toObject();
 }
 
+// ─── Применение машинных правок (ai/autoFix.js) ───────────────────────
+//
+// Третий проход правит у лучевого кейса ТОЛЬКО ТЕКСТ: название, клинический
+// контекст, план находок и эталонное заключение. Разметка на кадре
+// (findings с координатами), сами кадры и галочка деидентификации остаются
+// нетронутыми, и это не упрощение, а единственно возможное поведение:
+//
+//   — точки на снимке ставит человек, который снимок ВИДЕЛ. Модель координат
+//     не знает и, подвинув их «по описанию», сделала бы ложный эталон, по
+//     которому потом оценивают врачей;
+//   — «снимок деидентифицирован» — утверждение о реальном изображении.
+//     Подписать его может только тот, кто на изображение смотрел.
+//
+// Отсюда же следствие, о котором сервер сообщает клиенту флагом
+// markupPresent: если находки УЖЕ размечены, а редактор поменял их план,
+// разметка и план могли разойтись — это должен свести человек.
+
+/**
+ * Записать в лучевой кейс результат машинной правки текстовой части.
+ *
+ * @returns {Promise<{case: object, markupPresent: boolean}>}
+ */
+export async function applyRadiologyAiRevision(caseId, draft, meta = {}) {
+  const doc = await RadiologyCase.findById(caseId);
+  if (!doc) throw new NotFoundError("Radiology case");
+  if (!EDITABLE_FOR_UPDATE.includes(doc.status)) {
+    throw new ConflictError(
+      `Кейс в статусе "${doc.status}" машинной правке не подлежит — снимите его с публикации`,
+    );
+  }
+
+  // Рецензенту (а значит и редактору) уходит ОБЪЕДИНЁННЫЙ список: и находки
+  // из плана, и уже размеченные на кадре — ему важна медицинская суть, а не
+  // координаты. Обратно этот список надо развести по двум полям, иначе
+  // размеченная находка продублируется в плане «что ещё разметить».
+  const incoming = (Array.isArray(draft.plannedFindings) ? draft.plannedFindings : []).slice(0, 40);
+  const markedLabels = new Set((doc.findings ?? []).map((f) => f.label));
+
+  // Уже размеченным находкам обновляем ТОЛЬКО значимость и пояснение —
+  // текстовую часть, которую редактор вправе править. Координаты, кадр и
+  // форма остаются как их поставил человек: это и есть эталон, по которому
+  // оценивают врачей.
+  const byLabel = new Map(incoming.map((f) => [f.label, f]));
+  doc.findings = (doc.findings ?? []).map((f) => {
+    const fixed = byLabel.get(f.label);
+    if (!fixed) return f;
+    return {
+      ...(f.toObject?.() ?? f),
+      significance: fixed.significance ?? f.significance,
+      explanation:
+        fixed.explanation !== undefined
+          ? String(fixed.explanation).trim().slice(0, 2000)
+          : f.explanation,
+    };
+  });
+
+  doc.title = String(draft.title ?? doc.title).trim().slice(0, 300) || doc.title;
+  doc.clinicalContext = String(draft.clinicalContext ?? "").trim().slice(0, 4000);
+  if (draft.difficulty) doc.difficulty = draft.difficulty;
+  doc.plannedFindings = incoming
+    // Размеченное из плана убираем: план — это «что ещё предстоит поставить на
+    // кадр», и находка, уже стоящая на нём, там не нужна (ровно так же ведёт
+    // себя ручная правка — см. updateCase).
+    .filter((f) => !markedLabels.has(f.label))
+    .slice(0, 20)
+    .map((f) => ({
+      label: f.label,
+      significance: f.significance ?? "major",
+      location: String(f.location ?? "").trim().slice(0, 300),
+      explanation: String(f.explanation ?? "").trim().slice(0, 2000),
+    }));
+  doc.impression = {
+    correctText: String(draft.impression?.correctText ?? "").trim().slice(0, 4000),
+    diagnosisKeys: (draft.impression?.diagnosisKeys ?? []).slice(0, 20),
+    diagnosisSynonyms: (draft.impression?.diagnosisSynonyms ?? []).slice(0, 50),
+  };
+  doc.aiRevision = {
+    rounds: meta.rounds ?? 0,
+    stoppedBy: meta.stoppedBy ?? "",
+    converged: Boolean(meta.converged),
+    changes: meta.changes ?? [],
+    disputed: meta.disputed ?? [],
+    model: meta.model ?? "",
+    revisedAt: new Date(),
+    actorId: meta.actorId ?? null,
+  };
+  doc.updatedBy = meta.actorId ?? doc.updatedBy;
+  await doc.save();
+
+  return { case: doc.toObject(), markupPresent: (doc.findings?.length ?? 0) > 0 };
+}
+
 // Блокеры публикации — корректность, права и приватность.
 export function collectPublishBlockers(doc) {
   const blockers = [];

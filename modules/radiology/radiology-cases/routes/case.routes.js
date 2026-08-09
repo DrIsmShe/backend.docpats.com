@@ -22,6 +22,9 @@ router.post("/ai/generate", requireAuthor, ctrl.aiGenerateController);
 
 // ИИ-проверка кейса вторым проходом — только автору.
 router.post("/ai/verify", requireAuthor, ctrl.aiVerifyController);
+// Цикл «правка → перепроверка» текстовой части кейса: разметку на кадре и
+// подтверждение деидентификации машина не трогает.
+router.post("/ai/autofix", requireAuthor, ctrl.aiAutofixController);
 // Поиск учебных снимков по теме кейса. Отдаёт ссылки с лицензиями —
 // скачивание и проверку делает человек.
 router.post("/ai/find-images", requireAuthor, ctrl.aiFindImagesController);
