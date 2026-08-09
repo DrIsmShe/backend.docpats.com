@@ -122,6 +122,22 @@ function asJson(value) {
   return JSON.stringify(value, null, 2).slice(0, 60000);
 }
 
+// УКАЗАНИЕ АВТОРА. Рецензент часто предлагает два пути («убрать упоминание
+// ГГТП либо добавить показатель в панель»), и выбор между ними — врачебный, а
+// не редакторский: один сохраняет учебную ценность кейса, другой её убивает.
+// Без этого поля автор мог только принять то, что выбрала модель, и переделать
+// руками.
+//
+// Указание идёт ПОСЛЕ замечаний и объявлено главнее: если автор говорит
+// «добавь ГГТП», спорить с ним редактор не должен — это не рецензия, это
+// решение владельца кейса.
+function hintBlock(hint) {
+  const clean = str(hint, 1000);
+  return clean
+    ? `\n\nУКАЗАНИЕ АВТОРА (важнее предложений рецензента — если они расходятся, делай так, как сказал автор):\n${clean}`
+    : "";
+}
+
 // Отчёт нормализуем так же, как остальной вывод модели: длины ограничены,
 // пустые записи отброшены.
 function normalizeReport(parsed) {
@@ -202,7 +218,7 @@ const LAB_SCHEMA = {
  * @param {object} args.draft   черновик (title, clinicalContext, panel, impression)
  * @param {object[]} args.issues замечания из caseVerifier
  */
-export async function reviseLabCase({ draft, issues }) {
+export async function reviseLabCase({ draft, issues, hint = "" }) {
   if (!draft || !Array.isArray(draft.panel) || draft.panel.length < 2) {
     throw new ValidationError("Нет кейса для исправления");
   }
@@ -223,7 +239,7 @@ export async function reviseLabCase({ draft, issues }) {
       difficulty: draft.difficulty,
       panel: draft.panel,
       impression: draft.impression,
-    })}\n\nВыпусти исправленную версию кейса целиком.`,
+    })}${hintBlock(hint)}\n\nВыпусти исправленную версию кейса целиком.`,
     schema: LAB_SCHEMA,
     what: "кейс",
   });
@@ -316,7 +332,7 @@ const VP_SCHEMA = {
 /**
  * Исправить сценарий «Виртуальный пациент» по замечаниям рецензента.
  */
-export async function reviseVpCase({ draft, issues }) {
+export async function reviseVpCase({ draft, issues, hint = "" }) {
   if (!draft || !Array.isArray(draft.investigations) || draft.investigations.length < 2) {
     throw new ValidationError("Нет сценария для исправления");
   }
@@ -336,7 +352,7 @@ export async function reviseVpCase({ draft, issues }) {
       difficulty: draft.difficulty,
       investigations: draft.investigations,
       diagnosis: draft.diagnosis,
-    })}\n\nВыпусти исправленную версию сценария целиком.`,
+    })}${hintBlock(hint)}\n\nВыпусти исправленную версию сценария целиком.`,
     schema: VP_SCHEMA,
     what: "сценарий",
   });
@@ -432,7 +448,7 @@ const RADIOLOGY_SCHEMA = {
  * («на снимке этой находки не видно») правкой текста не лечатся — их решает
  * человек, меняя снимок или разметку. Редактор чинит текстовую часть.
  */
-export async function reviseRadiologyCase({ draft, issues, modality }) {
+export async function reviseRadiologyCase({ draft, issues, modality, hint = "" }) {
   if (!draft || !Array.isArray(draft.plannedFindings)) {
     throw new ValidationError("Нет кейса для исправления");
   }
@@ -463,7 +479,7 @@ export async function reviseRadiologyCase({ draft, issues, modality }) {
       difficulty: draft.difficulty,
       plannedFindings: draft.plannedFindings,
       impression: draft.impression,
-    })}\n\nВыпусти исправленную версию кейса целиком.`,
+    })}${hintBlock(hint)}\n\nВыпусти исправленную версию кейса целиком.`,
     schema: RADIOLOGY_SCHEMA,
     what: "кейс",
   });

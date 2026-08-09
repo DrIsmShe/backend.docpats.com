@@ -141,6 +141,22 @@ export const aiVerifyVpSchema = z.object({
 // сам, иначе чистая рецензия относилась бы к неисправленным данным.
 export const aiAutofixVpSchema = aiVerifyVpSchema.extend({
   maxRounds: z.number().int().min(1).max(5).optional(),
+  // Что именно править (пусто — сервер рецензирует сам и правит всё) и
+  // указание автора редактору. Подробности — в одноимённой схеме станции
+  // «Анализы»: принимать список от клиента безопасно, потому что результат
+  // сервер всё равно рецензирует сам.
+  issues: z
+    .array(
+      z.object({
+        target: z.string().trim().max(160).optional(),
+        severity: z.enum(["error", "warning"]).optional(),
+        issue: z.string().trim().min(1).max(1500),
+        suggestion: z.string().trim().max(1500).optional(),
+      }),
+    )
+    .max(30)
+    .optional(),
+  hint: z.string().trim().max(1000).optional(),
 });
 
 // Запрос на ИИ-генерацию сценария целиком: тема обязательна, остальное — подсказки.

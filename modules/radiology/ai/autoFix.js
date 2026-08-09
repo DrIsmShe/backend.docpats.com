@@ -40,6 +40,52 @@ const DEFAULT_MAX_ROUNDS = 3;
 const issueCount = (review) => review?.issues?.length ?? 0;
 
 /**
+ * ТОЧЕЧНАЯ ПРАВКА: один круг по заданному списку замечаний.
+ *
+ * Отдельная функция, а не режим цикла, из-за правила «возвращаем лучшую
+ * версию». Оно меряет качество числом замечаний и для полного прохода верно, а
+ * для точечной правки — ровно наоборот: автор просит исправить ОДНО замечание
+ * из четырёх, после правки рецензент честно возвращает оставшиеся три, и цикл
+ * счёл бы это ухудшением (1 → 3) и откатил сделанное. Автор нажал кнопку и не
+ * увидел никаких изменений.
+ *
+ * Здесь результат правки принимается всегда: что править — решил человек.
+ * Перепроверка при этом остаётся обязательной, потому что сохранённая рецензия
+ * должна относиться к новой версии кейса, а не к той, которой уже нет.
+ */
+export async function runTargetedFix({ draft, issues, revise, verify }) {
+  const usage = { inputTokens: 0, outputTokens: 0 };
+  const revised = await revise(draft, issues);
+  usage.inputTokens += revised.usage?.inputTokens ?? 0;
+  usage.outputTokens += revised.usage?.outputTokens ?? 0;
+
+  const review = await verify(revised.draft);
+  usage.inputTokens += review.usage?.inputTokens ?? 0;
+  usage.outputTokens += review.usage?.outputTokens ?? 0;
+
+  return {
+    draft: revised.draft,
+    review,
+    rounds: [
+      {
+        round: 1,
+        issuesBefore: issues.length,
+        issuesAfter: issueCount(review),
+        verdict: review.verdict,
+        changes: revised.changes ?? [],
+        disputed: revised.disputed ?? [],
+        summary: review.summary ?? "",
+      },
+    ],
+    converged: issueCount(review) === 0,
+    stoppedBy: "targeted",
+    changes: revised.changes ?? [],
+    disputed: revised.disputed ?? [],
+    usage,
+  };
+}
+
+/**
  * Довести черновик до чистой рецензии.
  *
  * @param {object}   args

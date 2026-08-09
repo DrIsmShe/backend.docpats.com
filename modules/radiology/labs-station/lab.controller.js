@@ -21,7 +21,7 @@ import LabCase from "./models/labCase.model.js";
 import { generateLabCase } from "../ai/caseGenerator.js";
 import { verifyLabCase } from "../ai/caseVerifier.js";
 import { reviseLabCase } from "../ai/caseReviser.js";
-import { runAutoFix } from "../ai/autoFix.js";
+import { runAutoFix, runTargetedFix } from "../ai/autoFix.js";
 import { MODEL } from "../ai/aiRunner.js";
 import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
 import { generateLabVariants } from "../ai/caseVariants.js";
@@ -112,18 +112,26 @@ export const aiVerifyLabCaseController = asyncHandler(async (req, res) => {
 export const aiAutofixLabCaseController = asyncHandler(async (req, res) => {
   const parsed = aiAutofixLabSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
-  const { caseId, draft, maxRounds } = parsed.data;
+  const { caseId, draft, maxRounds, issues, hint } = parsed.data;
 
-  const out = await runAutoFix({
-    draft,
-    revise: (current, issues) => reviseLabCase({ draft: current, issues }),
-    verify: (current) => verifyLabCase({ draft: current }),
-    // По умолчанию два круга, а не три, как у ночного прогона: здесь ответа
-    // ждёт открытый браузер через nginx, и каждый круг — два вызова Opus с
-    // рассуждением. Третий круг доступен явным maxRounds, если автор готов
-    // ждать.
-    maxRounds: maxRounds ?? 2,
-  });
+  const revise = (current, list) => reviseLabCase({ draft: current, issues: list, hint });
+  const verify = (current) => verifyLabCase({ draft: current });
+
+  // Автор указал, ЧТО править (кнопка «исправить» у замечания) — один круг
+  // ровно по этому списку. Иначе полный проход: сервер сам рецензирует кейс и
+  // доводит его, пока замечания не кончатся.
+  const out = issues?.length
+    ? await runTargetedFix({ draft, issues, revise, verify })
+    : await runAutoFix({
+        draft,
+        revise,
+        verify,
+        // По умолчанию два круга, а не три, как у ночного прогона: здесь ответа
+        // ждёт открытый браузер через nginx, и каждый круг — два вызова Opus с
+        // рассуждением. Третий круг доступен явным maxRounds, если автор готов
+        // ждать.
+        maxRounds: maxRounds ?? 2,
+      });
 
   // Несохранённый кейс (автор ещё не нажимал «Сохранить») просто возвращаем в
   // форму: записывать нечего, и рецензию прятать некуда.

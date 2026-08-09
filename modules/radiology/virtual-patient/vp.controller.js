@@ -23,7 +23,7 @@ import {
 import { generateVpCase } from "../ai/caseGenerator.js";
 import { verifyVpCase } from "../ai/caseVerifier.js";
 import { reviseVpCase } from "../ai/caseReviser.js";
-import { runAutoFix } from "../ai/autoFix.js";
+import { runAutoFix, runTargetedFix } from "../ai/autoFix.js";
 import { MODEL } from "../ai/aiRunner.js";
 import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
 import { generateVpVariants } from "../ai/caseVariants.js";
@@ -109,16 +109,23 @@ export const aiVerifyVpController = asyncHandler(async (req, res) => {
 export const aiAutofixVpController = asyncHandler(async (req, res) => {
   const parsed = aiAutofixVpSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
-  const { caseId, draft, maxRounds } = parsed.data;
+  const { caseId, draft, maxRounds, issues, hint } = parsed.data;
 
-  const out = await runAutoFix({
-    draft,
-    revise: (current, issues) => reviseVpCase({ draft: current, issues }),
-    verify: (current) => verifyVpCase({ draft: current }),
-    // Два круга, а не три: ответа ждёт браузер через nginx, а круг — это два
-    // вызова Opus с рассуждением.
-    maxRounds: maxRounds ?? 2,
-  });
+  const revise = (current, list) => reviseVpCase({ draft: current, issues: list, hint });
+  const verify = (current) => verifyVpCase({ draft: current });
+
+  // Список от автора (кнопка «исправить» у замечания) — один круг ровно по
+  // нему; иначе полный проход до чистой рецензии.
+  const out = issues?.length
+    ? await runTargetedFix({ draft, issues, revise, verify })
+    : await runAutoFix({
+        draft,
+        revise,
+        verify,
+        // Два круга, а не три: ответа ждёт браузер через nginx, а круг — это
+        // два вызова Opus с рассуждением.
+        maxRounds: maxRounds ?? 2,
+      });
 
   if (!caseId) {
     return res.json({ ...out, case: null, variantsStale: false, saved: false });

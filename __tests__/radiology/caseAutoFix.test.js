@@ -14,7 +14,7 @@
 // целым, но оценивает неверно.
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { runAutoFix } from "../../modules/radiology/ai/autoFix.js";
+import { runAutoFix, runTargetedFix } from "../../modules/radiology/ai/autoFix.js";
 import { applyLabAiRevision } from "../../modules/radiology/labs-station/lab.service.js";
 import LabCase from "../../modules/radiology/labs-station/models/labCase.model.js";
 
@@ -192,6 +192,50 @@ describe("цикл правка → перепроверка", () => {
     expect(out.stoppedBy).toBe("error");
     expect(out.draft.round).toBe(1);
     expect(out.review.issues).toHaveLength(1);
+  });
+});
+
+describe("точечная правка одного замечания", () => {
+  it("принимает результат, даже если рецензент нашёл остальные замечания", async () => {
+    // Автор просит исправить ОДНО замечание из четырёх. Рецензент честно
+    // возвращает три оставшихся — по правилу «лучшая версия» это выглядело бы
+    // ухудшением (1 → 3), и полный цикл откатил бы правку. Здесь результат
+    // принимается: что править, решил человек.
+    const out = await runTargetedFix({
+      draft: BASE_DRAFT,
+      issues: [issue(1)],
+      revise: reviserOf(),
+      verify: verifierOf([3]),
+    });
+
+    expect(out.draft.round).toBe(1);
+    expect(out.stoppedBy).toBe("targeted");
+    expect(out.converged).toBe(false);
+    expect(out.review.issues).toHaveLength(3);
+    expect(out.changes).toHaveLength(1);
+  });
+
+  it("делает ровно один круг — большего у него не просили", async () => {
+    const revise = reviserOf();
+    const verify = verifierOf([2, 1, 0]);
+
+    await runTargetedFix({ draft: BASE_DRAFT, issues: [issue(1)], revise, verify });
+
+    expect(revise.calls()).toBe(1);
+    // Одна перепроверка: сохранённая рецензия должна относиться к новой
+    // версии кейса, но доводить его до чистой здесь не просили.
+    expect(verify.calls()).toBe(1);
+  });
+
+  it("сошлось с первого раза — отмечает это как converged", async () => {
+    const out = await runTargetedFix({
+      draft: BASE_DRAFT,
+      issues: [issue(1)],
+      revise: reviserOf(),
+      verify: verifierOf([0]),
+    });
+    expect(out.converged).toBe(true);
+    expect(out.review.issues).toHaveLength(0);
   });
 });
 
