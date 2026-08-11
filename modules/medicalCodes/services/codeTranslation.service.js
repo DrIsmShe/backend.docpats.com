@@ -40,6 +40,14 @@ export const BATCH_SIZE = Number(process.env.MEDICAL_CODES_TRANSLATION_BATCH ?? 
 // Расход токенов за текущий запуск. Живёт в модуле, а не возвращается из
 // translateBatch: у неё уже есть осмысленный результат — сколько кодов
 // записано, — и подмешивать туда бухгалтерию значило бы ломать вызывающих.
+// Повторы на одну пачку и паузы между ними. Перевод справочника — часы работы,
+// и за это время разовый сбой почти неизбежен: прекращать из-за него весь
+// прогон значило бы не доводить перевод до конца никогда.
+const RETRIES_PER_BATCH = Number(process.env.MEDICAL_CODES_TRANSLATION_RETRIES ?? 2);
+const RETRY_DELAYS_MS = [5_000, 20_000, 60_000];
+
+const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const usage = { requests: 0, inputTokens: 0, outputTokens: 0 };
 
 /** Расход с начала процесса (или с последнего resetUsage). */
@@ -220,7 +228,7 @@ export async function countUntranslated(targetLocale, { system = null } = {}) {
  */
 export async function nextUntranslatedBatch(
   targetLocale,
-  { system = null, limit = BATCH_SIZE } = {},
+  { system = null, limit = BATCH_SIZE, skip = 0 } = {},
 ) {
   const filter = {
     $or: [
@@ -232,6 +240,7 @@ export async function nextUntranslatedBatch(
 
   return MedicalCode.find(filter)
     .sort({ code: 1 })
+    .skip(skip)
     .limit(limit)
     .select("_id code titles")
     .lean();
@@ -245,43 +254,101 @@ export async function nextUntranslatedBatch(
  * @param {number} options.max      сколько кодов перевести за запуск
  * @param {string} [options.system]
  * @param {Function} [options.onProgress]
+ * @param {Function} [options.shouldStop] вызывается ПЕРЕД каждой пачкой;
+ *   вернула true — прогон завершается штатно. Через неё скрипт держит потолок
+ *   трат: массовый перевод идёт часами без присмотра и тратит тот же баланс,
+ *   что надиктовка, диагностика и ночная генерация кейсов. Без потолка деньги
+ *   могут кончиться ночью, а обнаружится это утром отказом у врача.
  */
 export async function translateCodes(
   targetLocale,
-  { max = BATCH_SIZE, system = null, onProgress = null } = {},
+  {
+    max = BATCH_SIZE,
+    system = null,
+    onProgress = null,
+    retries = RETRIES_PER_BATCH,
+    sleep = defaultSleep,
+    shouldStop = null,
+  } = {},
 ) {
   let translated = 0;
   let failedBatches = 0;
+  let stoppedBy = null;
+  // Насколько отступить от начала списка непереведённых. Пачка, которая не
+  // далась и после повторов, остаётся непереведённой и снова оказалась бы
+  // первой в выборке — без этого смещения перевод бесконечно топтался бы
+  // на ней. Смещение сбрасывается после каждой удачной пачки.
+  let skip = 0;
 
   while (translated < max) {
-    const limit = Math.min(BATCH_SIZE, max - translated);
-    const batch = await nextUntranslatedBatch(targetLocale, { system, limit });
-    if (batch.length === 0) break;
-
-    try {
-      const count = await translateBatch(batch, targetLocale);
-      translated += count;
-      onProgress?.({ translated, lastBatch: count, total: max });
-    } catch (err) {
-      failedBatches++;
-      logger?.warn?.(
-        { err: err.message, locale: targetLocale, codes: batch.length },
-        "medicalCodes: пачка не переведена",
-      );
-
-      // Три подряд — значит проблема не в конкретной пачке (ключ, лимиты,
-      // недоступность), и продолжать бессмысленно: будем жечь запросы впустую.
-      if (failedBatches >= 3) {
-        throw new Error(
-          `Три пачки подряд не переведены, последняя ошибка: ${err.message}`,
-        );
-      }
-
-      // Пропускаем эту пачку: помечать нечем, поэтому просто выходим, чтобы
-      // не зациклиться на одних и тех же кодах.
+    // Проверяем ДО запроса, а не после: потолок должен не дать потратить
+    // лишнее, а не сообщить, что уже потратили.
+    const stop = await shouldStop?.({ translated, usage: getUsage() });
+    if (stop) {
+      stoppedBy = typeof stop === "string" ? stop : "shouldStop";
       break;
     }
+
+    const limit = Math.min(BATCH_SIZE, max - translated);
+    const batch = await nextUntranslatedBatch(targetLocale, {
+      system,
+      limit,
+      skip,
+    });
+    if (batch.length === 0) break;
+
+    let lastError = null;
+    let done = false;
+
+    // Повторы на ту же пачку. Перевод всего справочника — это часы работы и
+    // тысячи запросов; за это время разовый сбой (перегрузка, обрыв сети,
+    // упор в лимит) практически неизбежен, и прекращать из-за него всю
+    // работу — значит не доводить её до конца никогда.
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const count = await translateBatch(batch, targetLocale);
+        translated += count;
+        skip = 0;
+        failedBatches = 0;
+        onProgress?.({ translated, lastBatch: count, total: max });
+        done = true;
+        break;
+      } catch (err) {
+        lastError = err;
+        if (attempt < retries) {
+          // Пауза растёт: 5с, 20с, 60с. Быстрый повтор при перегрузке
+          // сервиса только усугубляет её.
+          await sleep(RETRY_DELAYS_MS[attempt] ?? 60_000);
+        }
+      }
+    }
+
+    if (done) continue;
+
+    failedBatches++;
+    logger?.warn?.(
+      {
+        err: lastError?.message,
+        locale: targetLocale,
+        codes: batch.length,
+        attempts: retries + 1,
+      },
+      "medicalCodes: пачка не переведена",
+    );
+
+    // Три пачки подряд — значит дело не в конкретных названиях, а в общем:
+    // кончились кредиты, отозван ключ, сервис недоступен. Продолжать значит
+    // жечь запросы впустую.
+    if (failedBatches >= 3) {
+      throw new Error(
+        `Три пачки подряд не переведены, последняя ошибка: ${lastError?.message}`,
+      );
+    }
+
+    // Не далась одна пачка — переступаем через неё и идём дальше. Она
+    // осталась непереведённой и будет подобрана следующим запуском.
+    skip += batch.length;
   }
 
-  return { translated, failedBatches };
+  return { translated, failedBatches, stoppedBy };
 }

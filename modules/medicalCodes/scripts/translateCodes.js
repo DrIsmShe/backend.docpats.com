@@ -41,7 +41,8 @@ const PRICE_PER_MTOK = {
 };
 
 function reportUsage(translated) {
-  const { requests, inputTokens, outputTokens } = getUsage();
+  const usage = getUsage();
+  const { requests, inputTokens, outputTokens } = usage;
   if (requests === 0) return;
 
   console.log(
@@ -49,11 +50,9 @@ function reportUsage(translated) {
       `${outputTokens.toLocaleString("ru")} на выход`,
   );
 
-  const price = PRICE_PER_MTOK[MODEL];
-  if (!price) return;
+  const cost = costOf(usage);
+  if (cost === null) return;
 
-  const cost =
-    (inputTokens / 1e6) * price.input + (outputTokens / 1e6) * price.output;
   const perCode = translated > 0 ? cost / translated : 0;
   console.log(
     `   Примерная стоимость: $${cost.toFixed(2)}` +
@@ -63,17 +62,40 @@ function reportUsage(translated) {
   );
 }
 
+// Потолок трат на ОДИН запуск, в долларах. Нужен потому, что ключ Anthropic в
+// проекте один на всё: этим же балансом живут надиктовка, диагностика,
+// ИИ-консультация, ночная генерация кейсов радиологии и движок новостей.
+// Массовый перевод идёт часами без присмотра — без потолка он способен
+// доесть баланс ночью, и обнаружится это утром отказом у врача, а не здесь.
+// Ноль или --budget 0 снимает ограничение.
+const DEFAULT_BUDGET_USD = Number(process.env.MEDICAL_CODES_TRANSLATION_BUDGET ?? 60);
+
 function parseArgs(argv) {
-  const args = { lang: null, max: 100, dryRun: false, status: false, yes: false };
+  const args = {
+    lang: null,
+    max: 100,
+    dryRun: false,
+    status: false,
+    yes: false,
+    budget: DEFAULT_BUDGET_USD,
+  };
   for (let i = 2; i < argv.length; i++) {
     const flag = argv[i];
     if (flag === "--lang") args.lang = argv[++i];
     else if (flag === "--max") args.max = Number(argv[++i]) || 100;
+    else if (flag === "--budget") args.budget = Math.max(0, Number(argv[++i]) || 0);
     else if (flag === "--dry-run") args.dryRun = true;
     else if (flag === "--status") args.status = true;
     else if (flag === "--yes") args.yes = true;
   }
   return args;
+}
+
+/** Во сколько обошёлся расход. null — цена этой модели неизвестна. */
+function costOf({ inputTokens, outputTokens }) {
+  const price = PRICE_PER_MTOK[MODEL];
+  if (!price) return null;
+  return (inputTokens / 1e6) * price.input + (outputTokens / 1e6) * price.output;
 }
 
 async function showStatus() {
@@ -129,7 +151,12 @@ async function main() {
     console.log(`Модель:      ${MODEL}`);
     console.log(`Без перевода: ${left}`);
     console.log(`Переведём:   ${planned} (пачками по ${BATCH_SIZE})`);
-    console.log(`Запросов к модели: ~${Math.ceil(planned / BATCH_SIZE)}\n`);
+    console.log(`Запросов к модели: ~${Math.ceil(planned / BATCH_SIZE)}`);
+    console.log(
+      args.budget > 0
+        ? `Потолок трат: $${args.budget} за запуск (снять: --budget 0)\n`
+        : `Потолок трат: снят — прогон остановится только по кодам или ошибкам\n`,
+    );
 
     if (args.dryRun) {
       const batch = await nextUntranslatedBatch(args.lang, { limit: 5 });
@@ -177,14 +204,33 @@ async function main() {
     }
 
     const started = Date.now();
-    const { translated, failedBatches } = await translateCodes(args.lang, {
-      max: planned,
-      onProgress: ({ translated: done, total }) =>
-        console.log(`   ${done}/${total}`),
-    });
+    const { translated, failedBatches, stoppedBy } = await translateCodes(
+      args.lang,
+      {
+        max: planned,
+        onProgress: ({ translated: done, total }) =>
+          console.log(`   ${done}/${total}`),
+        // Потолок проверяется перед каждой пачкой. Считаем по уже
+        // израсходованным токенам, а не по прикидке: цена названия заметно
+        // разная у языков (арабский и азербайджанский дороже русского).
+        shouldStop: args.budget > 0
+          ? ({ usage }) => {
+              const spent = costOf(usage);
+              return spent !== null && spent >= args.budget ? "budget" : false;
+            }
+          : null,
+      },
+    );
 
     const seconds = Math.round((Date.now() - started) / 1000);
     console.log(`\n✅ Переведено ${translated} за ${seconds}с`);
+    if (stoppedBy === "budget") {
+      console.log(
+        `   ⛔ Остановлено потолком трат ($${args.budget}). Баланс общий с ` +
+          `надиктовкой, диагностикой и ночными кейсами — остаток им и оставлен.`,
+      );
+      console.log(`   Продолжить: тот же запуск, при желании --budget больше.`);
+    }
     if (failedBatches > 0) {
       console.log(`   Пачек с ошибкой: ${failedBatches}`);
     }
