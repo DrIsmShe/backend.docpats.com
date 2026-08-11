@@ -28,7 +28,40 @@ import {
   nextUntranslatedBatch,
   BATCH_SIZE,
   MODEL,
+  getUsage,
 } from "../services/codeTranslation.service.js";
+
+// Цены за миллион токенов. Нужны только для того, чтобы в конце запуска было
+// видно порядок суммы: решение «переводить ли оставшиеся языки» иначе
+// принимается вслепую. Прайс меняется — цифра справочная, не бухгалтерская.
+const PRICE_PER_MTOK = {
+  "claude-opus-5": { input: 5, output: 25 },
+  "claude-sonnet-5": { input: 3, output: 15 },
+  "claude-haiku-4-5": { input: 1, output: 5 },
+};
+
+function reportUsage(translated) {
+  const { requests, inputTokens, outputTokens } = getUsage();
+  if (requests === 0) return;
+
+  console.log(
+    `   Запросов: ${requests}, токенов: ${inputTokens.toLocaleString("ru")} на вход, ` +
+      `${outputTokens.toLocaleString("ru")} на выход`,
+  );
+
+  const price = PRICE_PER_MTOK[MODEL];
+  if (!price) return;
+
+  const cost =
+    (inputTokens / 1e6) * price.input + (outputTokens / 1e6) * price.output;
+  const perCode = translated > 0 ? cost / translated : 0;
+  console.log(
+    `   Примерная стоимость: $${cost.toFixed(2)}` +
+      (perCode > 0
+        ? ` (~$${(perCode * 1000).toFixed(2)} за 1000 кодов)`
+        : ""),
+  );
+}
 
 function parseArgs(argv) {
   const args = { lang: null, max: 100, dryRun: false, status: false, yes: false };
@@ -155,6 +188,7 @@ async function main() {
     if (failedBatches > 0) {
       console.log(`   Пачек с ошибкой: ${failedBatches}`);
     }
+    reportUsage(translated);
     console.log(`   Осталось без перевода: ${await countUntranslated(args.lang)}`);
   } catch (err) {
     console.error("\n❌", err.message);

@@ -152,3 +152,84 @@ describe("перевод кодов", () => {
     expect(await countUntranslated("az")).toBe(3);
   });
 });
+
+// ── Параллельный перевод на несколько языков ──────────────────────────────────
+//
+// Языки переводятся отдельными процессами одновременно — иначе весь справочник
+// на четыре языка занимает больше суток. Здесь проверяется, что они не портят
+// работу друг друга.
+
+describe("несколько языков одновременно", () => {
+  beforeEach(async () => {
+    resetSearchStrategy();
+    await seed();
+  });
+
+  it("не теряет чужой перевод из строки поиска", async () => {
+    // Оба «процесса» читают документ ДО того, как записал другой — ровно та
+    // ситуация, в которой прежняя сборка searchText из прочитанной копии
+    // молча выбрасывала название, добавленное соседом.
+    const forRu = await nextUntranslatedBatch("ru", { limit: 3 });
+    const forTr = await nextUntranslatedBatch("tr", { limit: 3 });
+
+    createMock.mockResolvedValueOnce(
+      reply('["Холера, вызванная Vibrio cholerae","Холера неуточнённая","Хронический тонзиллит"]'),
+    );
+    await translateBatch(forRu, "ru");
+
+    createMock.mockResolvedValueOnce(
+      reply('["Vibrio cholerae kaynaklı kolera","Kolera, tanımlanmamış","Kronik tonsillit"]'),
+    );
+    await translateBatch(forTr, "tr");
+
+    const doc = await MedicalCode.findOne({ code: "J35.01" }).lean();
+
+    expect(doc.titles.ru).toBe("Хронический тонзиллит");
+    expect(doc.titles.tr).toBe("Kronik tonsillit");
+    // Главное: в строке поиска остались ОБА названия.
+    expect(doc.searchText).toContain("Хронический тонзиллит");
+    expect(doc.searchText).toContain("Kronik tonsillit");
+    expect(doc.searchText).toContain("Chronic tonsillitis");
+    expect(doc.searchText).toContain("J3501");
+  });
+
+  it("после этого код находится на каждом из языков", async () => {
+    const forRu = await nextUntranslatedBatch("ru", { limit: 3 });
+    const forTr = await nextUntranslatedBatch("tr", { limit: 3 });
+
+    createMock.mockResolvedValueOnce(
+      reply('["Холера, вызванная Vibrio cholerae","Холера неуточнённая","Хронический тонзиллит"]'),
+    );
+    await translateBatch(forRu, "ru");
+    createMock.mockResolvedValueOnce(
+      reply('["Vibrio cholerae kaynaklı kolera","Kolera, tanımlanmamış","Kronik tonsillit"]'),
+    );
+    await translateBatch(forTr, "tr");
+
+    const ru = await searchCodes({ query: "тонзиллит", locale: "ru" });
+    const tr = await searchCodes({ query: "tonsillit", locale: "tr" });
+
+    expect(ru.items.map((i) => i.code)).toContain("J35.01");
+    expect(tr.items.map((i) => i.code)).toContain("J35.01");
+  });
+
+  it("строка поиска не копит мусор при повторной записи", async () => {
+    const batch = await nextUntranslatedBatch("ru", { limit: 3 });
+    createMock.mockResolvedValueOnce(
+      reply('["Холера, вызванная Vibrio cholerae","Холера неуточнённая","Хронический тонзиллит"]'),
+    );
+    await translateBatch(batch, "ru");
+
+    // Перевод стёрли и перевели заново — так бывает при смене промпта.
+    await MedicalCode.updateOne({ code: "J35.01" }, { $set: { "titles.ru": "" } });
+    const again = await nextUntranslatedBatch("ru", { limit: 1 });
+    createMock.mockResolvedValueOnce(reply('["Тонзиллит хронический"]'));
+    await translateBatch(again, "ru");
+
+    const doc = await MedicalCode.findOne({ code: "J35.01" }).lean();
+    // Строка пересобирается целиком, а не дописывается: старого названия в ней
+    // остаться не должно, иначе она разрастётся за много прогонов.
+    expect(doc.searchText).toContain("Тонзиллит хронический");
+    expect(doc.searchText).not.toContain("Хронический тонзиллит");
+  });
+});

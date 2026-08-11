@@ -23,7 +23,7 @@ import {
 } from "../../education/education-ingest/extractors/claude.extractor.js";
 import MedicalCode, {
   SUPPORTED_LOCALES,
-  buildSearchText,
+  searchTextExpression,
 } from "../models/medicalCode.model.js";
 import logger from "../../../common/logger.js";
 
@@ -36,6 +36,22 @@ export const MODEL = process.env.MEDICAL_CODES_TRANSLATION_MODEL || "claude-opus
 // Сколько названий уходит в один запрос. Больше — дешевле, но выше риск, что
 // модель собьётся с нумерации на длинном списке.
 export const BATCH_SIZE = Number(process.env.MEDICAL_CODES_TRANSLATION_BATCH ?? 50);
+
+// Расход токенов за текущий запуск. Живёт в модуле, а не возвращается из
+// translateBatch: у неё уже есть осмысленный результат — сколько кодов
+// записано, — и подмешивать туда бухгалтерию значило бы ломать вызывающих.
+const usage = { requests: 0, inputTokens: 0, outputTokens: 0 };
+
+/** Расход с начала процесса (или с последнего resetUsage). */
+export function getUsage() {
+  return { ...usage };
+}
+
+export function resetUsage() {
+  usage.requests = 0;
+  usage.inputTokens = 0;
+  usage.outputTokens = 0;
+}
 
 const LANGUAGE_NAMES = {
   ru: "русский",
@@ -137,6 +153,14 @@ export async function translateBatch(items, targetLocale) {
     // к content[0].text даёт undefined при совершенно нормальном ответе.
     text = message.content?.find((block) => block.type === "text")?.text;
     if (!text) throw new Error("Пустой ответ модели");
+
+    // Расход считаем здесь, а не по прикидке «сколько это может стоить»:
+    // перевод всего справочника на язык — это полторы тысячи запросов, и
+    // решение «переводить ли остальные четыре языка» принимается по реальной
+    // цифре после первой сотни пачек, а не по догадке.
+    usage.requests += 1;
+    usage.inputTokens += message.usage?.input_tokens ?? 0;
+    usage.outputTokens += message.usage?.output_tokens ?? 0;
   } catch (err) {
     // describeApiError отдаёт объект {retryable, message}, а не строку:
     // передать его в Error целиком — получить "[object Object]" вместо причины.
@@ -153,16 +177,17 @@ export async function translateBatch(items, targetLocale) {
     // записать пустую строку и потерять возможность найти код вообще.
     if (!translation) continue;
 
-    const titles = { ...items[i].titles, [targetLocale]: translation };
+    // Пайплайн из двух шагов, а не один $set: во втором шаге выражение видит
+    // уже записанный перевод, и строка поиска пересобирается сервером по
+    // актуальному документу. Так параллельные языки не затирают друг друга —
+    // подробности в searchTextExpression().
     operations.push({
       updateOne: {
         filter: { _id: items[i]._id },
-        update: {
-          $set: {
-            [`titles.${targetLocale}`]: translation,
-            searchText: buildSearchText({ ...items[i], titles }),
-          },
-        },
+        update: [
+          { $set: { [`titles.${targetLocale}`]: translation } },
+          { $set: { searchText: searchTextExpression() } },
+        ],
       },
     });
   }

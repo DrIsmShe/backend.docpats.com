@@ -132,6 +132,50 @@ export function buildSearchText(doc) {
   return parts.filter(Boolean).join(" ");
 }
 
+/**
+ * То же, что buildSearchText, но выражением Mongo — для update-пайплайна.
+ *
+ * ЗАЧЕМ ОТДЕЛЬНЫЙ ВАРИАНТ. buildSearchText собирает строку из документа,
+ * прочитанного ДО записи. Пока переводы шли по одному языку за раз, это было
+ * безразлично. Как только языки идут параллельно, получается гонка: оба
+ * процесса прочитали документ без чужого перевода, оба пересобрали строку по
+ * своей копии, и записавший вторым молча выкинул из searchText название,
+ * добавленное первым. Сами titles при этом целы — расходится только строка
+ * поиска, то есть код перестаёт находиться на одном из языков, и заметить это
+ * можно лишь случайно.
+ *
+ * Выражение считается сервером по АКТУАЛЬНОМУ документу, поэтому читать
+ * заранее нечего и терять нечего.
+ */
+export function searchTextExpression() {
+  const parts = [
+    "$code",
+    "$codeNormalized",
+    ...SUPPORTED_LOCALES.map((locale) => `$titles.${locale}`),
+  ];
+
+  return {
+    $reduce: {
+      input: {
+        $filter: {
+          input: parts,
+          cond: {
+            $and: [{ $ne: ["$$this", null] }, { $ne: ["$$this", ""] }],
+          },
+        },
+      },
+      initialValue: "",
+      in: {
+        $cond: [
+          { $eq: ["$$value", ""] },
+          "$$this",
+          { $concat: ["$$value", " ", "$$this"] },
+        ],
+      },
+    },
+  };
+}
+
 /** Нормализует код к виду для сравнения: "j35.01" → "J3501". */
 export function normalizeCode(code) {
   return String(code || "")
