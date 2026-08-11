@@ -51,6 +51,12 @@ import newPatientMedicalHistoryModel from "../../common/models/Polyclinic/Medica
 import * as service from "../../modules/dictation/dictation.service.js";
 import { getSink, hasSink, listSinks } from "../../modules/dictation/sinks/index.js";
 import { cleanTranscript } from "../../modules/dictation/providers/stt.provider.js";
+import MedicalCode, {
+  CODE_SYSTEMS,
+  normalizeCode,
+  buildSearchText,
+} from "../../modules/medicalCodes/models/medicalCode.model.js";
+import { resetSearchStrategy } from "../../modules/medicalCodes/services/codeSearch.service.js";
 
 const DOCTOR = new mongoose.Types.ObjectId();
 const PATIENT = new mongoose.Types.ObjectId();
@@ -526,5 +532,81 @@ describe("постфильтр расшифровки", () => {
   it("не трогает нормальный медицинский текст", () => {
     const text = "Живот мягкий, безболезненный. Печень не увеличена.";
     expect(cleanTranscript(text)).toBe(text);
+  });
+});
+
+// ── Справочник МКБ в сквозном пути ────────────────────────────────────────────
+//
+// Проверяется не подбор кодов (это __tests__/dictation/codeSuggest.test.js), а
+// то, что официальное название доезжает до карты и НЕ отстаёт от кода, когда
+// врач правит код руками.
+
+describe("название кода в карте", () => {
+  async function seedCatalog() {
+    const rows = [
+      { code: "K81.0", en: "Acute cholecystitis", ru: "Острый холецистит" },
+      { code: "K81.1", en: "Chronic cholecystitis", ru: "Хронический холецистит" },
+    ];
+    await MedicalCode.insertMany(
+      rows.map(({ code, en, ru }) => {
+        const doc = {
+          system: CODE_SYSTEMS.ICD10CM,
+          code,
+          codeNormalized: normalizeCode(code),
+          titles: { en, ru, az: "", tr: "", ar: "" },
+          parentCode: "K81",
+          isBillable: true,
+        };
+        return { ...doc, searchText: buildSearchText(doc) };
+      }),
+    );
+  }
+
+  beforeEach(async () => {
+    resetSearchStrategy();
+    await seedCatalog();
+  });
+
+  it("подставляет официальное название к названному коду", async () => {
+    const job = await makeJob();
+    await runToDraft();
+
+    const { medicalHistoryId } = await service.attachJob(job._id, DOCTOR);
+    const record = await newPatientMedicalHistoryModel.findById(medicalHistoryId);
+
+    expect(record.mainDiagnosis.code).toBe("K81.0");
+    expect(record.mainDiagnosis.codeTitle).toBe("Острый холецистит");
+    // Формулировка врача остаётся отдельно от официального названия.
+    expect(record.mainDiagnosis.text).toBe("Острый холецистит");
+  });
+
+  it("обновляет название, когда врач меняет код правкой", async () => {
+    const job = await makeJob();
+    await runToDraft();
+
+    await service.updateDraft(job._id, DOCTOR, {
+      mainDiagnosisCode: "K81.1",
+      mainDiagnosisText: "Хронический холецистит",
+    });
+
+    const { medicalHistoryId } = await service.attachJob(job._id, DOCTOR);
+    const record = await newPatientMedicalHistoryModel.findById(medicalHistoryId);
+
+    // Название от прежнего кода здесь было бы прямой ошибкой в карте.
+    expect(record.mainDiagnosis.code).toBe("K81.1");
+    expect(record.mainDiagnosis.codeTitle).toBe("Хронический холецистит");
+  });
+
+  it("снимает название, когда врач стирает код", async () => {
+    const job = await makeJob();
+    await runToDraft();
+
+    await service.updateDraft(job._id, DOCTOR, { mainDiagnosisCode: null });
+
+    const { medicalHistoryId } = await service.attachJob(job._id, DOCTOR);
+    const record = await newPatientMedicalHistoryModel.findById(medicalHistoryId);
+
+    expect(record.mainDiagnosis.code).toBe("");
+    expect(record.mainDiagnosis.codeTitle).toBe("");
   });
 });

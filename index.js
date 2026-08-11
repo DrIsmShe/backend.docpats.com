@@ -69,6 +69,7 @@ import educationGuestRoutes from "./modules/education/education-guest/index.js";
 import radiologyRoutes from "./modules/radiology/index.js";
 import diagnosticsRoutes from "./modules/diagnostics/index.js";
 import dictationRoutes from "./modules/dictation/index.js";
+import medicalCodesRoutes from "./modules/medicalCodes/index.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -364,6 +365,14 @@ app.use("/api/v1/diagnostics", diagnosticsRoutes);
 // врач опознаётся по req.session.userId, а пациент — по resolvePatient.
 // Результат — ЧЕРНОВИК записи; подписывает врач обычным путём модуля.
 app.use("/api/v1/dictation", dictationRoutes);
+
+// Справочник медицинских кодов (МКБ-10, дальше ICHI для вмешательств).
+// Глобальный модуль без tenantMiddleware: коды одинаковы для всех клиник и не
+// содержат данных пациентов. Раньше автокомплит МКБ ходил из браузера врача в
+// публичный API NLM — только по-английски и только при живой связи; здесь
+// справочник свой.
+app.use("/api/v1/medical-codes", medicalCodesRoutes);
+
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
 await import("./common/models/index.js")

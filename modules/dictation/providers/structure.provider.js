@@ -157,6 +157,7 @@ export async function structure({ transcript, hint } = {}) {
     statusLocalis: str(parsed.statusLocalis),
     mainDiagnosisText: str(parsed.mainDiagnosisText, 2000),
     mainDiagnosisCode: str(parsed.mainDiagnosisCode, 20),
+    mainDiagnosisTermEn: str(parsed.mainDiagnosisTermEn, 200),
     recommendations: str(parsed.recommendations),
     ctScanResults: str(parsed.ctScanResults),
     mriResults: str(parsed.mriResults),

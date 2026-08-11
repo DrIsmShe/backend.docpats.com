@@ -20,6 +20,7 @@ import { getSink, hasSink } from "./sinks/index.js";
 import * as sttProvider from "./providers/stt.provider.js";
 import * as structureProvider from "./providers/structure.provider.js";
 import { fetchAudio } from "./providers/audio.store.js";
+import { enrichDraftWithCodes } from "./services/codeSuggest.service.js";
 import { uploadFile, deleteFile } from "../../common/middlewares/uploadMiddleware.js";
 import {
   ValidationError,
@@ -64,7 +65,30 @@ export function parseDraft(raw) {
 }
 
 /** Оставляет только разрешённые поля и приводит пустое к null. */
-export function sanitizeDraft(input) {
+/**
+ * Поля, которые НЕ диктует врач и НЕ правит руками: их выводит система.
+ *
+ * Отделены от EDITABLE_DRAFT_FIELDS намеренно. Официальное название кода
+ * приходит из справочника МКБ, а не из речи, и принимать его в PATCH от
+ * клиента нельзя: тогда через правку черновика можно было бы подставить к
+ * коду произвольное «официальное» название. По той же причине их не может
+ * прислать браузер — они переживают правку, но приходят только изнутри.
+ */
+export const DERIVED_DRAFT_FIELDS = [
+  "mainDiagnosisCodeTitle", // официальное название кода из справочника
+  "mainDiagnosisCodeUnknown", // код назван, но в справочнике не найден
+  "codeSuggestions", // кандидаты для выбора врачом
+];
+
+/**
+ * @param {object} input
+ * @param {object} [options]
+ * @param {boolean} [options.keepDerived] сохранить служебные поля из input.
+ *   Ставится ТОЛЬКО внутренним кодом (после структурирования и при правке,
+ *   чтобы подсказки не терялись), но никогда — для данных, пришедших от
+ *   клиента напрямую.
+ */
+export function sanitizeDraft(input, { keepDerived = false } = {}) {
   const out = { ...EMPTY_DRAFT };
   for (const field of EDITABLE_DRAFT_FIELDS) {
     const value = input?.[field];
@@ -72,6 +96,28 @@ export function sanitizeDraft(input) {
     const text = String(value).trim();
     out[field] = text ? text.slice(0, 8000) : null;
   }
+
+  if (keepDerived) {
+    if (input?.mainDiagnosisCodeTitle) {
+      out.mainDiagnosisCodeTitle = String(input.mainDiagnosisCodeTitle)
+        .trim()
+        .slice(0, 500);
+    }
+    if (input?.mainDiagnosisCodeUnknown) {
+      out.mainDiagnosisCodeUnknown = true;
+    }
+    if (Array.isArray(input?.codeSuggestions)) {
+      out.codeSuggestions = input.codeSuggestions
+        .slice(0, 5)
+        .map((item) => ({
+          code: String(item?.code || "").slice(0, 20),
+          title: String(item?.title || "").slice(0, 500),
+          titleEn: String(item?.titleEn || "").slice(0, 500),
+        }))
+        .filter((item) => item.code);
+    }
+  }
+
   return out;
 }
 
@@ -194,7 +240,16 @@ async function runStructure(job) {
       transcript: job.transcript,
     });
 
-    job.draftJson = JSON.stringify(sanitizeDraft(draft));
+    // Подсказки кодов МКБ. Ничего не проставляют сами: подставляют официальное
+    // название к коду, который назвал врач, и предлагают кандидатов, если код
+    // не прозвучал. Выбор остаётся за врачом.
+    //
+    // Служебное поле mainDiagnosisTermEn (английский термин для поиска) в
+    // черновик не попадает: sanitizeDraft его отбрасывает, и это правильно —
+    // врачу оно ни к чему, а нужно было только для запроса в справочник.
+    const enriched = await enrichDraftWithCodes(draft, job.lang || "ru");
+
+    job.draftJson = JSON.stringify(sanitizeDraft(enriched, { keepDerived: true }));
     job.structureModel = model;
     job.status = "drafted";
     job.lastError = null;
@@ -293,7 +348,32 @@ export async function updateDraft(jobId, doctorId, patch) {
     );
   }
   const current = parseDraft(job.draftJson) ?? { ...EMPTY_DRAFT };
-  job.draftJson = JSON.stringify(sanitizeDraft({ ...current, ...patch }));
+
+  // Правка врача накладывается только на редактируемые поля. Служебные
+  // (название кода из справочника, подсказки) берутся из ТЕКУЩЕГО черновика,
+  // а не из присланного патча: иначе через правку можно было бы подставить к
+  // коду произвольное «официальное» название.
+  const merged = { ...current, ...patch };
+  const derived = {
+    mainDiagnosisCodeTitle: current.mainDiagnosisCodeTitle,
+    mainDiagnosisCodeUnknown: current.mainDiagnosisCodeUnknown,
+    codeSuggestions: current.codeSuggestions,
+  };
+
+  // Врач сменил код руками (или выбрал из подсказок) — прежнее название
+  // относилось к прежнему коду, и оставлять его нельзя: в карту ушла бы пара
+  // «новый код + чужое официальное название». Спрашиваем справочник заново.
+  const codeChanged =
+    (merged.mainDiagnosisCode ?? null) !== (current.mainDiagnosisCode ?? null);
+
+  const next = codeChanged
+    ? await enrichDraftWithCodes(
+        { ...merged, mainDiagnosisCodeTitle: null, mainDiagnosisCodeUnknown: null },
+        job.lang || "ru",
+      )
+    : { ...merged, ...derived };
+
+  job.draftJson = JSON.stringify(sanitizeDraft(next, { keepDerived: true }));
   await job.save();
   return presentJob(job);
 }

@@ -71,15 +71,20 @@ export async function attach({ draft, job }) {
     if (value != null && String(value).trim()) payload[field] = String(value).trim();
   }
 
-  // Диагноз — вложенный объект. codeTitle не заполняем: его источник —
-  // справочник МКБ, а не речь врача; подставлять туда текст диагноза значило
-  // бы выдавать формулировку за официальное название кода.
+  // Диагноз — вложенный объект.
+  //
+  // codeTitle берётся ТОЛЬКО из справочника МКБ (modules/medicalCodes подставил
+  // его в черновик по названному коду) и никогда из речи врача: записать туда
+  // формулировку диагноза значило бы выдать её за официальное название кода.
+  // Пока справочника в проекте не было, поле оставалось пустым — это было
+  // сознательное «лучше пусто, чем неверно», а не недоделка.
   const text = draft?.mainDiagnosisText;
   const code = draft?.mainDiagnosisCode;
+  const codeTitle = draft?.mainDiagnosisCodeTitle;
   if ((text && String(text).trim()) || (code && String(code).trim())) {
     payload.mainDiagnosis = {
       code: code ? String(code).trim() : "",
-      codeTitle: "",
+      codeTitle: codeTitle ? String(codeTitle).trim() : "",
       text: text ? String(text).trim() : "",
     };
   }
