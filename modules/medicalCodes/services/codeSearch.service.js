@@ -116,36 +116,52 @@ function toResult(doc, locale) {
 }
 
 /**
- * Поиск через Atlas Search. Бросает исключение, если индекса нет, — вызывающий
- * код по этому и понимает, что надо переключиться на regex.
+ * Собирает стадию $search.
+ *
+ * Вынесено из searchWithAtlas и экспортировано ради тестов: Atlas Search
+ * недоступен в mongodb-memory-server, поэтому проверить сам запрос можно
+ * только по его форме. Ошибка с пустым text.query жила незамеченной именно
+ * потому, что проверять было нечего: на проде запрос падал, поиск молча
+ * скатывался на обычный Mongo, и снаружи это выглядело как «просто не нашлось».
  */
-async function searchWithAtlas({ query, system, locale, limit }) {
+export function buildAtlasPipeline({ query, locale }) {
   const normalized = normalizeCode(query);
 
-  const pipeline = [
+  return [
     {
       $search: {
         index: ATLAS_INDEX,
         compound: {
           should: [
-            // Точное совпадение кода — всегда первым, с большим весом:
-            // если врач набрал "J35.01", он хочет именно его, а не похожие
-            // по названию.
-            {
-              text: {
-                query: normalized,
-                path: "codeNormalized",
-                score: { boost: { value: 10 } },
-              },
-            },
-            // Начало кода: набрал "J35" — показать всю рубрику.
-            {
-              autocomplete: {
-                query: normalized,
-                path: "codeNormalized",
-                score: { boost: { value: 5 } },
-              },
-            },
+            // Клаузы по коду добавляются, ТОЛЬКО если из запроса вообще вышел
+            // код. normalizeCode оставляет латиницу и цифры, поэтому на любом
+            // кириллическом, турецком или арабском запросе она даёт пустую
+            // строку, а пустой text.query — ошибка Atlas, а не «ноль
+            // совпадений». Из-за этого весь запрос падал и поиск откатывался
+            // на обычный Mongo: терпимость к опечаткам не работала ровно на
+            // тех языках, ради которых индекс и заводился.
+            ...(normalized
+              ? [
+                  // Точное совпадение кода — всегда первым, с большим весом:
+                  // если врач набрал "J35.01", он хочет именно его, а не
+                  // похожие по названию.
+                  {
+                    text: {
+                      query: normalized,
+                      path: "codeNormalized",
+                      score: { boost: { value: 10 } },
+                    },
+                  },
+                  // Начало кода: набрал "J35" — показать всю рубрику.
+                  {
+                    autocomplete: {
+                      query: normalized,
+                      path: "codeNormalized",
+                      score: { boost: { value: 5 } },
+                    },
+                  },
+                ]
+              : []),
             // Названия на всех языках, с допуском на одну-две опечатки.
             ...SUPPORTED_LOCALES.map((loc) => ({
               text: {
@@ -164,6 +180,14 @@ async function searchWithAtlas({ query, system, locale, limit }) {
       },
     },
   ];
+}
+
+/**
+ * Поиск через Atlas Search. Бросает исключение, если индекса нет, — вызывающий
+ * код по этому и понимает, что надо переключиться на regex.
+ */
+async function searchWithAtlas({ query, system, locale, limit }) {
+  const pipeline = buildAtlasPipeline({ query, locale });
 
   if (system) {
     pipeline.push({ $match: { system } });

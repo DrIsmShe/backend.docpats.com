@@ -9,6 +9,7 @@ import {
   getCode,
   getStats,
   resetSearchStrategy,
+  buildAtlasPipeline,
 } from "../../modules/medicalCodes/services/codeSearch.service.js";
 
 // Тесты идут против mongodb-memory-server, где Atlas Search недоступен, —
@@ -201,5 +202,75 @@ describe("справочник кодов — модель", () => {
       titles: { en: "Chronic tonsillitis (WHO)" },
     });
     expect(other.system).toBe(CODE_SYSTEMS.ICD10WHO);
+  });
+});
+
+// ── Форма запроса к Atlas Search ─────────────────────────────────────────────
+//
+// Atlas Search недоступен в mongodb-memory-server, поэтому здесь проверяется
+// не результат, а САМ ЗАПРОС. Повод конкретный: пустой text.query — это ошибка
+// Atlas, а не «ноль совпадений», и на проде из-за неё каждый кириллический
+// запрос падал и молча скатывался на обычный Mongo. Снаружи это выглядело как
+// «просто не нашлось», а на деле не работала терпимость к опечаткам — ровно то,
+// ради чего индекс и заводился.
+
+describe("запрос к Atlas Search", () => {
+  const clauses = (query, locale = "ru") =>
+    buildAtlasPipeline({ query, locale })[0].$search.compound.should;
+
+  it("не отправляет пустой запрос по коду на кириллице", () => {
+    for (const clause of clauses("тонзиллит")) {
+      const value = clause.text?.query ?? clause.autocomplete?.query;
+      expect(value).toBeTruthy();
+    }
+  });
+
+  it("то же для турецкого и арабского", () => {
+    for (const query of ["bademcik iltihabı", "التهاب اللوزتين"]) {
+      for (const clause of clauses(query)) {
+        const value = clause.text?.query ?? clause.autocomplete?.query;
+        expect(value).toBeTruthy();
+      }
+    }
+  });
+
+  it("ищет по коду, когда код в запросе есть", () => {
+    const byCode = clauses("J35.01").filter(
+      (c) =>
+        c.text?.path === "codeNormalized" ||
+        c.autocomplete?.path === "codeNormalized",
+    );
+
+    expect(byCode).toHaveLength(2);
+    expect(byCode[0].text.query).toBe("J3501");
+  });
+
+  it("на кириллице ищет только по названиям", () => {
+    const byCode = clauses("тонзиллит").filter(
+      (c) =>
+        c.text?.path === "codeNormalized" ||
+        c.autocomplete?.path === "codeNormalized",
+    );
+
+    expect(byCode).toHaveLength(0);
+  });
+
+  it("ищет по названиям на всех пяти языках с допуском на опечатку", () => {
+    const byTitle = clauses("тонзиллит").filter((c) =>
+      c.text?.path?.startsWith("titles."),
+    );
+
+    expect(byTitle).toHaveLength(5);
+    expect(byTitle.every((c) => c.text.fuzzy?.maxEdits >= 1)).toBe(true);
+  });
+
+  it("язык врача весит больше остальных", () => {
+    const byTitle = clauses("тонзиллит", "ru").filter((c) =>
+      c.text?.path?.startsWith("titles."),
+    );
+    const ru = byTitle.find((c) => c.text.path === "titles.ru");
+    const tr = byTitle.find((c) => c.text.path === "titles.tr");
+
+    expect(ru.text.score.boost.value).toBeGreaterThan(tr.text.score.boost.value);
   });
 });
