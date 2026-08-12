@@ -70,6 +70,7 @@ import radiologyRoutes from "./modules/radiology/index.js";
 import diagnosticsRoutes from "./modules/diagnostics/index.js";
 import dictationRoutes from "./modules/dictation/index.js";
 import medicalCodesRoutes from "./modules/medicalCodes/index.js";
+import ebmRoutes from "./modules/ebm/index.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -372,6 +373,12 @@ app.use("/api/v1/dictation", dictationRoutes);
 // публичный API NLM — только по-английски и только при живой связи; здесь
 // справочник свой.
 app.use("/api/v1/medical-codes", medicalCodesRoutes);
+
+// Доказательная медицина: поиск по PubMed с раскладкой по силе дизайна
+// исследования. Тоже глобальный модуль без tenantMiddleware — данных пациентов
+// здесь нет ни в запросе, ни в ответе. Модель к поиску не допускается: все
+// названия, журналы и идентификаторы приходят из PubMed.
+app.use("/api/v1/ebm", ebmRoutes);
 
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
