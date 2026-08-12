@@ -245,6 +245,53 @@ async function streamCollection(res, db, name) {
 }
 
 /**
+ * Пишет весь дамп: конверт, коллекции, счётчики и отметку о завершении.
+ *
+ * Вынесено отдельно и экспортировано намеренно — чтобы проверять полноту
+ * выгрузки на НАСТОЯЩЕЙ базе тем же кодом, который работает у администратора,
+ * а не его пересказом в скрипте проверки. Приёмник любой, лишь бы у него был
+ * write(): ответ Express, файл, счётчик.
+ *
+ * @param {{write: Function}} sink
+ * @param {object} db      база (mongodb Db)
+ * @param {string[]} names коллекции в порядке записи
+ * @returns {Promise<object>} счётчики по коллекциям
+ */
+export async function writeDump(sink, db, names) {
+  const stats = {};
+
+  sink.write("{\n");
+  sink.write(`"format":${JSON.stringify(FORMAT)},\n`);
+  sink.write(`"database":${JSON.stringify(db.databaseName)},\n`);
+  sink.write(`"exportedAt":${JSON.stringify(new Date().toISOString())},\n`);
+  sink.write('"collections":{');
+
+  let first = true;
+  for (const name of names) {
+    sink.write(first ? "\n" : ",\n");
+    first = false;
+    sink.write(`${JSON.stringify(name)}:`);
+    stats[name] = await streamCollection(sink, db, name);
+  }
+
+  sink.write("\n},\n");
+  sink.write(`"stats":${JSON.stringify(stats)},\n`);
+  // Последняя строка файла. Её отсутствие — единственный надёжный признак
+  // того, что закачка оборвалась: без неё файл даже не разберётся как JSON.
+  sink.write('"completed":true\n}');
+
+  return stats;
+}
+
+/** Коллекции базы, которые попадают в выгрузку. */
+export async function exportableCollections(db) {
+  return (await db.listCollections().toArray())
+    .map((c) => c.name)
+    .filter((n) => !n.startsWith("system.") && !SKIP_ON_EXPORT.has(n))
+    .sort();
+}
+
+/**
  * POST /api/admin/transfer/export-database  { database, password }
  *
  * Вся база одним файлом, потоком.
@@ -257,10 +304,7 @@ export async function exportDatabase(req, res) {
   });
   if (!db) return;
 
-  const infos = (await db.listCollections().toArray())
-    .map((c) => c.name)
-    .filter((n) => !n.startsWith("system.") && !SKIP_ON_EXPORT.has(n))
-    .sort();
+  const infos = await exportableCollections(db);
 
   // Пишем в журнал ДО начала выгрузки. Данные покидают контур с этой секунды;
   // если соединение оборвётся на середине, событие всё равно должно остаться
@@ -274,28 +318,8 @@ export async function exportDatabase(req, res) {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
   startDownload(res, `${db.databaseName}-${stamp}.json`);
 
-  const stats = {};
-
   try {
-    res.write("{\n");
-    res.write(`"format":${JSON.stringify(FORMAT)},\n`);
-    res.write(`"database":${JSON.stringify(db.databaseName)},\n`);
-    res.write(`"exportedAt":${JSON.stringify(new Date().toISOString())},\n`);
-    res.write('"collections":{');
-
-    let first = true;
-    for (const name of infos) {
-      res.write(first ? "\n" : ",\n");
-      first = false;
-      res.write(`${JSON.stringify(name)}:`);
-      stats[name] = await streamCollection(res, db, name);
-    }
-
-    res.write("\n},\n");
-    res.write(`"stats":${JSON.stringify(stats)},\n`);
-    // Последняя строка файла. Её отсутствие — единственный надёжный признак
-    // того, что закачка оборвалась: без неё файл даже не разберётся как JSON.
-    res.write('"completed":true\n}');
+    await writeDump(res, db, infos);
     res.end();
   } catch (err) {
     console.error("❌ exportDatabase error:", err);
@@ -336,18 +360,9 @@ export async function exportCollection(req, res) {
   startDownload(res, `${db.databaseName}-${name}-${stamp}.json`);
 
   try {
-    // Тот же формат, что у полного дампа, — чтобы файл одной коллекции
-    // загружался тем же путём и теми же проверками.
-    res.write("{\n");
-    res.write(`"format":${JSON.stringify(FORMAT)},\n`);
-    res.write(`"database":${JSON.stringify(db.databaseName)},\n`);
-    res.write(`"exportedAt":${JSON.stringify(new Date().toISOString())},\n`);
-    res.write('"collections":{');
-    res.write(`\n${JSON.stringify(name)}:`);
-    const written = await streamCollection(res, db, name);
-    res.write("\n},\n");
-    res.write(`"stats":${JSON.stringify({ [name]: written })},\n`);
-    res.write('"completed":true\n}');
+    // Тот же формат и тот же код, что у полного дампа, — чтобы файл одной
+    // коллекции загружался тем же путём и с теми же проверками.
+    await writeDump(res, db, [name]);
     res.end();
   } catch (err) {
     console.error("❌ exportCollection error:", err);
