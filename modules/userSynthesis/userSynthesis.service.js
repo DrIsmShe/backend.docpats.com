@@ -6,6 +6,11 @@ import {
   resolveEffectivePlan,
   getLimit,
 } from "../../common/config/aiPlanLimits.js";
+import {
+  consumeGuestQuota,
+  peekGuestQuota,
+} from "../../common/services/guestQuota.service.js";
+import { verifyAndAnnotate } from "../../common/services/citationCheck.service.js";
 
 // ─── Роли пациентов (для дисклеймера и блокировки личных тем) ──
 const PATIENT_ROLES = ["patient", "user"];
@@ -29,18 +34,71 @@ function getClient() {
 // ────────────────────────────────────────────────────────────────
 // ПРОВЕРКА ЛИМИТА — теперь работает через resolveEffectivePlan
 // ────────────────────────────────────────────────────────────────
-export async function checkUserLimit(userId) {
-  if (!userId) {
-    console.log("[checkUserLimit] userId=null → guest");
-    const limit = getLimit("guest", "aiArticles");
+/**
+ * Вырезает из готовой статьи неподтверждённые ссылки.
+ *
+ * Работает только с разделом «Литература»: остальной текст не трогаем — там
+ * ссылок в проверяемом виде нет, а резать по живому опаснее, чем оставить.
+ *
+ * Ошибку проверки НЕ пробрасываем: статья без сверки лучше, чем отсутствие
+ * статьи из-за недоступности стороннего реестра.
+ */
+async function cleanCitations(body) {
+  const match = body.match(/(##\s*(?:Литература|References|Ədəbiyyat|Kaynakça|المراجع)\s*\n)([\s\S]*)$/i);
+  if (!match) return { body, citationReport: null };
+
+  const [, heading, list] = match;
+
+  try {
+    const result = await verifyAndAnnotate(list);
+    const annotated = body.slice(0, match.index) + heading + result.text;
+
     return {
-      allowed: true,
-      used: 0,
-      limit,
-      plan: "guest",
-      role: "guest",
-      remaining: limit,
+      body: annotated,
+      citationReport: {
+        ok: result.ok,
+        flagged: result.flagged.length,
+        unchecked: result.unchecked,
+        details: result.flagged,
+      },
     };
+  } catch (err) {
+    console.warn("[userSynthesis] сверка литературы не выполнена:", err.message);
+    return { body, citationReport: null };
+  }
+}
+
+// Общий суточный потолок на ВСЕХ гостей. Личный потолок не защищает от
+// десятка адресов, а расход идёт с того же баланса, которым живут надиктовка
+// и ночная генерация кейсов. Ноль снимает ограничение.
+const GUEST_DAILY_CAP = Number(process.env.USER_SYNTHESIS_GUEST_DAILY_CAP ?? 50);
+
+/**
+ * @param {string|null} userId
+ * @param {object} [options]
+ * @param {object} [options.req]     нужен гостю: по нему считается отпечаток
+ * @param {boolean} [options.consume] списать попытку (при генерации), а не
+ *   просто посмотреть (при показе счётчика на странице)
+ */
+export async function checkUserLimit(userId, { req, consume = false } = {}) {
+  if (!userId) {
+    const limit = getLimit("guest", "aiArticles");
+
+    // Раньше здесь стояло allowed: true, used: 0 захардкоженно — счётчик на
+    // странице показывал «0 из 1», но ничего не считал, и открытый эндпоинт
+    // генерации тратил деньги без потолка. Теперь считаем по-настоящему.
+    const quota = req
+      ? consume
+        ? await consumeGuestQuota({
+            req,
+            feature: "aiArticles",
+            limit,
+            globalDaily: GUEST_DAILY_CAP,
+          })
+        : await peekGuestQuota({ req, feature: "aiArticles", limit })
+      : { allowed: false, used: limit, limit, remaining: 0, reason: "no-request" };
+
+    return { ...quota, plan: "guest", role: "guest" };
   }
 
   const user = await User.findById(userId).lean();
@@ -79,14 +137,23 @@ export async function checkUserLimit(userId) {
 // ────────────────────────────────────────────────────────────────
 export async function generateUserSynthesis({
   userId,
+  req,
   topic,
   sources = [],
   language = "ru",
   style = "analytical",
 }) {
-  const limitCheck = await checkUserLimit(userId);
+  // consume: true — попытка списывается ДО обращения к модели. Проверка
+  // «посмотреть и потом списать» пропускала бы два одновременных запроса при
+  // лимите в одну штуку.
+  const limitCheck = await checkUserLimit(userId, { req, consume: true });
 
   if (!limitCheck.allowed) {
+    if (limitCheck.reason === "global") {
+      throw new Error(
+        "Бесплатные генерации на сегодня закончились. Войдите в аккаунт — у зарегистрированных свой лимит.",
+      );
+    }
     throw new Error(
       `Лимит исчерпан. Использовано ${limitCheck.used} из ${limitCheck.limit} статей в этом месяце. Обновите план.`,
     );
@@ -148,37 +215,48 @@ ${s.excerpt ? "Аннотация: " + s.excerpt.slice(0, 400) : ""}
 Напиши глубокую аналитическую статью ${LANG_MAP[language] || "на русском языке"} ${STYLE_MAP[style] || STYLE_MAP.analytical}.
 
 Тема: ${topic}
-ОБЯЗАТЕЛЬНЫЙ объём: не менее 3000 слов.${disclaimerInstruction}
+Объём: 2000-3000 слов.${disclaimerInstruction}
 
 ИСТОЧНИКИ:
 ${sourcesText}
 
 ТРЕБОВАНИЯ:
-1. Минимум 3000 слов
+1. Объём 2000-3000 слов. Не добирай объём водой: лучше короче и плотнее.
 2. Синтез источников в единый авторский нарратив
 3. Конкретные данные и механизмы
 4. Живой язык без шаблонных фраз
 5. Не упоминай ИИ
-6. В конце каждого раздела — блок "Что это значит на практике:" (2-3 предложения)
-7. ОБЯЗАТЕЛЬНО завершить статью разделом Литература с 10 источниками
+6. В конце каждого раздела — блок "Что это значит на практике:" с КОНКРЕТНЫМ
+   выводом: что делать, на что смотреть, чего избегать. Общие слова вроде
+   "понимание механизмов помогает выбрать терапию" не годятся — если конкретного
+   вывода нет, раздел пропусти.
 
 СТРУКТУРА (строго соблюдай):
 # [Яркий заголовок]
-${isGuestOrPatient ? "> [Блок-дисклеймер из инструкции выше]\n" : ""}[Введение — 400-500 слов]
-## [Раздел 1] — 600-700 слов
-## [Раздел 2] — 600-700 слов
-## [Раздел 3] — 500-600 слов
-## [Раздел 4] — 400-500 слов
+${isGuestOrPatient ? "> [Блок-дисклеймер из инструкции выше]\n" : ""}[Введение — 300-400 слов]
+## [Раздел 1] — 400-600 слов
+## [Раздел 2] — 400-600 слов
+## [Раздел 3] — 400-500 слов
+## [Раздел 4] — 300-400 слов (если теме есть что сказать; иначе пропусти)
 ## Заключение — 300-400 слов
 ## Литература
 
-ВАЖНО: Раздел "Литература" — ОБЯЗАТЕЛЬНЫЙ. Приведи ровно 10 реальных источников из PubMed, The Lancet, NEJM, WHO, CDC, PLOS Medicine.
+РАЗДЕЛ "ЛИТЕРАТУРА" — ОСОБЫЕ ПРАВИЛА.
 
-Формат каждого источника:
-[1] Фамилия И.О., Фамилия И.О. Название статьи. Название журнала. Год; Том(Номер): Страницы. DOI
+Приводи ТОЛЬКО те работы, в существовании которых уверен и DOI которых помнишь
+точно. Количество не задано: пять проверяемых источников лучше десяти, из
+которых часть выдумана. Если уверенных источников нет вообще — напиши
+"## Литература" и строку "Проверяемых источников по теме привести не удалось".
 
-Пример:
-[1] Smith J.A., Johnson R.B. Gut microbiome alterations in type 2 diabetes. Nature Medicine. 2023; 29(4): 891-902. https://doi.org/10.1038/s41591-023-0001-1
+НЕ ПРИДУМЫВАЙ DOI. Номер, собранный по образцу правдоподобного, — это ложная
+ссылка: читатель нажмёт и попадёт на чужую работу или в никуда. Сомневаешься в
+номере — не приводи эту работу совсем.
+
+Каждый источник в формате:
+[1] Фамилия И.О., Фамилия И.О. Название статьи. Название журнала. Год; Том(Номер): Страницы. https://doi.org/DOI
+
+Все ссылки будут автоматически сверены с реестром Crossref, и не подтвердившиеся
+будут удалены из статьи.
 
 Начни с # заголовка и закончи разделом Литература:`;
 
@@ -192,7 +270,20 @@ ${isGuestOrPatient ? "> [Блок-дисклеймер из инструкции
     throw new Error("Пустой ответ от AI. Попробуйте ещё раз.");
   }
 
-  const body = message.content[0].text;
+  const rawBody = message.content[0].text;
+
+  // Сверка литературы с реестром Crossref. Модель пишет ссылки по памяти, и
+  // проверка восьми ранее опубликованных статей показала: из 80 ссылок 14
+  // указывали на несуществующий DOI, а 20 — на реальный DOI ЧУЖОЙ работы.
+  // Вторая категория опаснее: читатель нажимает, попадает на настоящую статью
+  // и не видит подлога.
+  //
+  // Неподтверждённые ПОМЕЧАЮТСЯ, а не удаляются: проверка может ошибиться на
+  // нестандартном оформлении записи, и тогда удаление унесло бы достоверный
+  // источник безвозвратно. Лишнее предупреждение у хорошей ссылки — цена
+  // несопоставимо меньшая.
+  const { body, citationReport } = await cleanCitations(rawBody);
+
   const titleMatch = body.match(/^#\s+(.+)/m);
   const title = titleMatch ? titleMatch[1].trim() : `Обзор: ${topic}`;
   const wordCount = body.split(/\s+/).filter(Boolean).length;
@@ -285,6 +376,9 @@ tags (5 штук — категориальные теги):
       language,
       wordCount,
       style,
+      // Итог сверки литературы. Хранится, чтобы можно было ответить на вопрос
+      // «сколько ссылок в этой статье пришлось убрать» без повторной проверки.
+      citationReport,
       sources: sources.map((s) => ({
         title: s.title,
         url: s.url,

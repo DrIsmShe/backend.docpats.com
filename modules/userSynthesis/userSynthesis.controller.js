@@ -8,13 +8,11 @@ import {
 // POST /api/user-synthesis/generate
 export async function generate(req, res) {
   try {
-    console.log("━━━━━━━━━━ [GENERATE] ━━━━━━━━━━");
-    console.log("[GENERATE] sessionID =", req.sessionID);
-    console.log("[GENERATE] session =", JSON.stringify(req.session));
-    console.log("[GENERATE] userId =", req.session?.userId);
-    console.log("[GENERATE] cookie header =", req.headers.cookie);
-    console.log("[GENERATE] origin =", req.headers.origin);
-
+    // Ни сессия, ни заголовок cookie в лог НЕ пишутся. Подписанная кука —
+    // это готовый ключ входа: вставил в браузер и ты этот пользователь, без
+    // пароля. Логи читают шире, чем базу, живут дольше и попадают в резервные
+    // копии, поэтому им там не место. (На момент правки в логе прода лежало
+    // 26 таких кук.)
     const userId = req.session?.userId || null;
     const {
       topic,
@@ -39,6 +37,8 @@ export async function generate(req, res) {
 
     const result = await generateUserSynthesis({
       userId,
+      // req нужен для учёта гостей: по нему считается отпечаток адреса.
+      req,
       topic: topic.trim(),
       sources,
       language,
@@ -58,15 +58,10 @@ export async function generate(req, res) {
 // GET /api/user-synthesis/limit
 export async function getLimit(req, res) {
   try {
-    console.log("━━━━━━━━━━ [LIMIT] ━━━━━━━━━━");
-    console.log("[LIMIT] sessionID =", req.sessionID);
-    console.log("[LIMIT] session =", JSON.stringify(req.session));
-    console.log("[LIMIT] userId =", req.session?.userId);
-    console.log("[LIMIT] cookie header =", req.headers.cookie);
-    console.log("[LIMIT] origin =", req.headers.origin);
-
     const userId = req.session?.userId || null;
-    const result = await checkUserLimit(userId);
+    // Без consume: страница спрашивает счётчик при каждом открытии, и списывать
+    // здесь попытку значило бы тратить лимит на просмотр.
+    const result = await checkUserLimit(userId, { req });
 
     console.log("[LIMIT] checkUserLimit result =", result);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -82,9 +77,7 @@ export async function getLimit(req, res) {
 export async function getMy(req, res) {
   try {
     console.log("━━━━━━━━━━ [MY] ━━━━━━━━━━");
-    console.log("[MY] sessionID =", req.sessionID);
     console.log("[MY] userId =", req.session?.userId);
-    console.log("[MY] cookie header =", req.headers.cookie);
 
     const userId = req.session?.userId;
     if (!userId) {

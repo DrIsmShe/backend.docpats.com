@@ -16,6 +16,17 @@ const userSynthesisSchema = new mongoose.Schema(
     style: { type: String },
     isPublic: { type: Boolean, default: false },
     lsiKeywords: [{ type: String }],
+
+    // Итог автоматической сверки списка литературы с реестром Crossref.
+    // Модель пишет ссылки по памяти, поэтому часть из них указывает на
+    // несуществующие или чужие работы. Такие помечаются в тексте, а здесь
+    // остаётся сводка — сколько и почему.
+    citationReport: {
+      ok: { type: Number },
+      flagged: { type: Number },
+      unchecked: { type: Number },
+      details: { type: Array, default: undefined },
+    },
     sources: [
       {
         title: { type: String },
