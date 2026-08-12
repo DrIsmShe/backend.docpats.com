@@ -10,6 +10,15 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import express from "express";
 import request from "supertest";
 
+// Разбор вопроса замокан: живой вызов модели в HTTP-тестах стоил бы денег и
+// зависел бы от сети. Логика самого разбора покрыта в question.test.js.
+const askMock = vi.fn();
+
+vi.mock("../../modules/ebm/services/question.service.js", () => ({
+  askEvidence: (...args) => askMock(...args),
+  isAiConfigured: () => true,
+}));
+
 import ebmRouter from "../../modules/ebm/routes/ebm.routes.js";
 import { requireMedicalStaff } from "../../modules/ebm/middlewares/ebmAuth.js";
 import { createTestDoctor } from "../helpers/createTestUser.js";
@@ -170,5 +179,71 @@ describe("разбор параметров", () => {
     expect(res.body.levels.map((l) => l.key)).toContain("meta_analysis");
     // Порядок смысловой, а не алфавитный: он и есть иерархия доказательств.
     expect(res.body.levels.map((l) => l.rank)).toEqual([1, 2, 3, 4, 5]);
+  });
+});
+
+describe("свободный вопрос", () => {
+  let doctor;
+
+  beforeEach(async () => {
+    doctor = await makeUser("doctor");
+    askMock.mockReset();
+    askMock.mockResolvedValue({
+      question: "q",
+      usedQuery: "(metformin)",
+      widened: false,
+      understood: { isClinical: true, pico: {} },
+      levels: [],
+      verdict: { kind: "strong", text: "…" },
+    });
+  });
+
+  const post = (body) =>
+    request(makeApp({ userId: doctor })).post("/ebm/ask").send(body);
+
+  it("без сессии — 401, модель не трогаем", async () => {
+    const res = await request(makeApp())
+      .post("/ebm/ask")
+      .send({ question: "Помогает ли метформин при преддиабете?" });
+
+    expect(res.status).toBe(401);
+    expect(askMock).not.toHaveBeenCalled();
+  });
+
+  it("врачу — 200, вопрос уходит в разбор", async () => {
+    const res = await post({ question: "Помогает ли метформин при преддиабете?" });
+
+    expect(res.status).toBe(200);
+    expect(askMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        question: "Помогает ли метформин при преддиабете?",
+      }),
+    );
+    // Врач должен видеть, по какому запросу ему ответили.
+    expect(res.body.usedQuery).toBe("(metformin)");
+  });
+
+  it("отвергает пустой вопрос, не тратя вызов модели", async () => {
+    const res = await post({ question: "  " });
+
+    expect(res.status).toBe(400);
+    expect(askMock).not.toHaveBeenCalled();
+  });
+
+  it("зажимает perLevel и years", async () => {
+    await post({ question: "вопрос про метформин", perLevel: 999, years: 999 });
+
+    const args = askMock.mock.calls[0][0];
+    expect(args.perLevel).toBeLessThanOrEqual(20);
+    expect(args.yearsBack).toBeLessThanOrEqual(50);
+  });
+
+  it("сообщает интерфейсу, настроен ли разбор вопросов", async () => {
+    // Без ключа модели поле свободного вопроса показывать незачем, а поиск по
+    // запросу PubMed работает в любом случае.
+    const res = await request(makeApp({ userId: doctor })).get("/ebm/status");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ask: true, search: true });
   });
 });

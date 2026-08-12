@@ -12,6 +12,10 @@ import {
   searchEvidence,
   EVIDENCE_LEVELS,
 } from "../services/evidence.service.js";
+import {
+  askEvidence,
+  isAiConfigured,
+} from "../services/question.service.js";
 
 const router = express.Router();
 
@@ -99,6 +103,61 @@ router.get(
     res.json(result);
   }),
 );
+
+// Свободный вопрос дороже поиска по готовому запросу: сначала модель, потом до
+// двенадцати обращений к NCBI (шесть на точный запрос, шесть на широкий).
+// Поэтому лимит вдвое строже, чем у /search.
+const askLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: Number(process.env.EBM_ASK_RPM ?? 10),
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => String(req.ebmActor?.userId || "anonymous"),
+  skip: () => process.env.NODE_ENV === "test",
+  message: {
+    error: "Слишком много вопросов подряд. Подождите минуту.",
+  },
+});
+
+/**
+ * POST /api/v1/ebm/ask   { question, perLevel?, years? }
+ *
+ * Свободный вопрос на любом языке → разбор PICO → поиск в PubMed.
+ *
+ * Модель здесь строит только ЗАПРОС; публикации приходят из PubMed. В ответе
+ * отдаётся и разбор (`understood`), и запрос, который реально сработал
+ * (`usedQuery`), — врач должен видеть, по чему ему ответили, иначе система
+ * превращается в оракула.
+ */
+router.post(
+  "/ask",
+  askLimiter,
+  asyncHandler(async (req, res) => {
+    const question = String(req.body?.question || "").trim();
+    if (question.length < 5) {
+      throw new ValidationError("Слишком короткий вопрос");
+    }
+
+    const result = await askEvidence({
+      question,
+      perLevel: clampInt(req.body?.perLevel, 5, 1, MAX_PER_LEVEL),
+      yearsBack: clampInt(req.body?.years, 0, 0, MAX_YEARS_BACK),
+    });
+
+    res.json(result);
+  }),
+);
+
+/**
+ * GET /api/v1/ebm/status
+ *
+ * Настроен ли разбор вопросов. Нужен интерфейсу: без ключа модели поле ввода
+ * свободного вопроса показывать незачем, а поиск по запросу PubMed работает
+ * в любом случае.
+ */
+router.get("/status", (req, res) => {
+  res.json({ ask: isAiConfigured(), search: true });
+});
 
 /**
  * Число из query в разумных границах.
