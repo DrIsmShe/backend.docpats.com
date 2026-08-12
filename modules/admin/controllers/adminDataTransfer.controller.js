@@ -224,28 +224,48 @@ export async function listCollections(req, res) {
     const db = resolveDatabase(req.query?.database);
     if (!db) return res.status(400).json({ message: "Неизвестная база данных" });
 
-    const infos = await db.listCollections().toArray();
-    const collections = [];
-
-    for (const info of infos) {
-      if (info.name.startsWith("system.")) continue;
-      let count = 0;
-      let size = 0;
-      try {
-        const stats = await db.command({ collStats: info.name });
-        count = stats.count ?? 0;
-        size = stats.size ?? 0;
-      } catch {
-        count = await db.collection(info.name).estimatedDocumentCount();
-      }
-      collections.push({
-        name: info.name,
-        count,
-        size,
-        exportable: !SKIP_ON_EXPORT.has(info.name),
-        importable: !isProtected(info.name),
+    // Сводка — ОДНОЙ командой. Раньше страница ради трёх чисел обходила все 221
+    // коллекцию по очереди: 45 секунд с обычной сети, и всё это время на месте
+    // счётчиков было пусто, что читается как поломка. dbStats даёт те же числа
+    // за 150 мс. Подробный список коллекций нужен только на странице выгрузки
+    // по одной — там за него и платим.
+    if (req.query?.summary === "1") {
+      const stats = await db.command({ dbStats: 1 });
+      return res.json({
+        database: db.databaseName,
+        collectionCount: stats.collections ?? 0,
+        totalDocuments: stats.objects ?? 0,
+        totalSize: stats.dataSize ?? 0,
       });
     }
+
+    const infos = (await db.listCollections().toArray()).filter(
+      (info) => !info.name.startsWith("system."),
+    );
+
+    // Здесь запросы идут ПАРАЛЛЕЛЬНО: по очереди те же данные собираются вчетверо
+    // дольше, а страница выгрузки коллекций без них бесполезна — на ней и надо
+    // видеть, где сколько документов.
+    const collections = await Promise.all(
+      infos.map(async (info) => {
+        let count = 0;
+        let size = 0;
+        try {
+          const stats = await db.command({ collStats: info.name });
+          count = stats.count ?? 0;
+          size = stats.size ?? 0;
+        } catch {
+          count = await db.collection(info.name).estimatedDocumentCount();
+        }
+        return {
+          name: info.name,
+          count,
+          size,
+          exportable: !SKIP_ON_EXPORT.has(info.name),
+          importable: !isProtected(info.name),
+        };
+      }),
+    );
 
     collections.sort((a, b) => b.count - a.count);
 

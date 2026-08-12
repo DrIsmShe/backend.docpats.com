@@ -726,3 +726,32 @@ describe("защита записи и рабочая копия", () => {
     expect(res.body.report[0].status).toBe("refused");
   });
 });
+
+// Сводка отдельной командой: перебор всех коллекций ради трёх чисел занимал
+// с обычной сети 45 секунд, и всё это время на странице было пусто — читается
+// как поломка. dbStats даёт те же числа за 150 мс.
+describe("сводка по базе", () => {
+  it("возвращает счётчики одним запросом", async () => {
+    await seedRaw("widgets", [{ n: 1 }, { n: 2 }, { n: 3 }]);
+
+    const res = await request(app)
+      .get("/transfer/collections")
+      .query({ database: dbName(), summary: "1" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.collectionCount).toBeGreaterThan(0);
+    expect(res.body.totalDocuments).toBeGreaterThanOrEqual(3);
+    // Подробного списка в сводке нет — за ним отдельный запрос.
+    expect(res.body.collections).toBeUndefined();
+  });
+
+  it("подробный список по-прежнему доступен", async () => {
+    await seedRaw("widgets", [{ n: 1 }]);
+
+    const res = await request(app)
+      .get("/transfer/collections")
+      .query({ database: dbName() });
+
+    expect(res.body.collections.find((c) => c.name === "widgets").count).toBe(1);
+  });
+});
