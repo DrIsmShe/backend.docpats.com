@@ -113,9 +113,11 @@ beforeEach(async () => {
   admin = created.user;
   app = buildApp(admin._id);
 
-  // Имя тестовой базы у mongodb-memory-server своё, поэтому список
-  // разрешённых баз подменяем на неё же — проверяем поведение, а не имена.
-  process.env.MONGODB_DB = mongoose.connection.name;
+  // У mongodb-memory-server имя базы своё, поэтому разрешаем именно её:
+  // проверяем поведение, а не совпадение имён. Заодно это проверяет, что
+  // список баз для переноса берётся из своей переменной, а не из MONGODB_DB —
+  // локально та указывает на черновую базу, и админка предлагала бы её.
+  process.env.ADMIN_TRANSFER_DATABASES = mongoose.connection.name;
 });
 
 const dbName = () => mongoose.connection.name;
@@ -594,5 +596,50 @@ describe("режимы загрузки", () => {
       .sort({ createdAt: -1 })
       .lean();
     expect(entry.metadata.mode).toBe("replace");
+  });
+});
+
+// ── Какие базы доступны ──────────────────────────────────────────────────────
+//
+// Список НЕ должен зависеть от того, с какой базой работает само приложение.
+// Локально MONGODB_DB=DOCPATS_NEW_LOCAL, и если брать имя оттуда, админка на
+// машине разработчика предлагала бы выгрузить черновую базу вместо боевой — а
+// нужна как раз боевая, ради резервных копий.
+
+describe("список баз для переноса", () => {
+  const ORIGINAL = process.env.ADMIN_TRANSFER_DATABASES;
+
+  afterEach(() => {
+    process.env.ADMIN_TRANSFER_DATABASES = ORIGINAL;
+  });
+
+  it("по умолчанию — боевые базы, а не рабочая база приложения", async () => {
+    delete process.env.ADMIN_TRANSFER_DATABASES;
+    process.env.MONGODB_DB = "DOCPATS_NEW_LOCAL";
+
+    const res = await request(app).get("/transfer/databases");
+    const names = res.body.databases.map((d) => d.name);
+
+    expect(names).toEqual(["DOCPATS_NEW", "DOCPATS_AI_NEWS"]);
+    expect(names).not.toContain("DOCPATS_NEW_LOCAL");
+  });
+
+  it("помечает базу с данными пациентов, а движок новостей — нет", async () => {
+    delete process.env.ADMIN_TRANSFER_DATABASES;
+
+    const res = await request(app).get("/transfer/databases");
+    const byName = Object.fromEntries(res.body.databases.map((d) => [d.name, d]));
+
+    // От этой пометки зависит предупреждение в интерфейсе.
+    expect(byName.DOCPATS_NEW.phi).toBe(true);
+    expect(byName.DOCPATS_AI_NEWS.phi).toBe(false);
+  });
+
+  it("список можно задать своей переменной", async () => {
+    process.env.ADMIN_TRANSFER_DATABASES = " ОДНА , ДРУГАЯ ";
+
+    const res = await request(app).get("/transfer/databases");
+
+    expect(res.body.databases.map((d) => d.name)).toEqual(["ОДНА", "ДРУГАЯ"]);
   });
 });
