@@ -37,12 +37,14 @@
 //    завести пользователя с ролью admin. Скачивать их можно, записывать —
 //    нельзя.
 
+import fs from "node:fs";
 import mongoose from "mongoose";
 import { EJSON } from "bson";
 import argon2 from "argon2";
 
 import User from "../../../common/models/Auth/users.js";
 import { auditAdminAccess } from "../adminAudit.js";
+import { readDump, scanDump, detectFormat, FORMAT } from "./dumpReader.js";
 
 /* ───────────────────────── Базы ───────────────────────── */
 
@@ -211,7 +213,8 @@ export async function listCollections(req, res) {
 
 /* ───────────────────────── Выгрузка ───────────────────────── */
 
-const FORMAT = "docpats-dump-v2";
+// FORMAT объявлен в dumpReader.js: писатель и читатель обязаны знать одну и ту
+// же строку, а две константы с одним значением рано или поздно разъезжаются.
 
 function startDownload(res, filename) {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -372,53 +375,162 @@ export async function exportCollection(req, res) {
 
 /* ───────────────────────── Загрузка ───────────────────────── */
 
+// Файл загрузки читается ПОТОКОМ, а не целиком в строку. Причина конкретная:
+// дамп базы новостей весит 1081 МБ (17 000 документов по 33 КБ — полные тексты
+// статей), а строка такой длины в V8 невозможна, предел около 512 МБ. То есть
+// файл скачивался целиком, а вернуть его было нельзя.
+//
+// Проверка идёт ОТДЕЛЬНЫМ проходом до записи: отметка о завершении лежит в
+// конце файла, и без предварительного прохода обрезанный дамп успел бы
+// записаться наполовину — ровно то, чего формат и должен не допускать.
+// Документы в проверочном проходе не разбираются, только считаются.
+
 /**
- * Разбирает присланный файл и проверяет, что он полон.
- * @returns {{collections: object, stats: object}|{error: string}}
+ * Проверяет файл целиком, ничего не записывая.
+ * @returns {Promise<{ok: true, counts: object, stats: object}|{error: string}>}
  */
-function parseDump(buffer) {
-  let parsed;
+async function validateDump(filePath) {
+  let scan;
   try {
-    // EJSON.parse понимает и наш канонический формат, и обычный JSON —
-    // поэтому старые дампы тоже загрузятся, просто без восстановления типов.
-    parsed = EJSON.parse(buffer.toString("utf-8"), { relaxed: false });
+    scan = await scanDump(filePath);
   } catch (err) {
+    return { error: `Файл не читается: ${err.message}` };
+  }
+
+  if (!scan.completed) {
     return {
       error:
-        "Файл не разбирается. Обычная причина — оборванная закачка: " +
-        `дамп сохранён не целиком (${err.message})`,
+        "Файл неполный: в нём нет отметки о завершении выгрузки. Обычная " +
+        "причина — оборванная закачка. Скачайте базу заново: загружать " +
+        "обрезанный дамп нельзя.",
     };
   }
 
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return { error: "Ожидается объект с коллекциями" };
-  }
-
-  // Наш формат — с проверкой завершённости. Старый (просто карта коллекций)
-  // принимаем тоже, но честно предупреждаем, что проверить его нечем.
-  if (parsed.format === FORMAT || parsed.collections) {
-    if (parsed.completed !== true) {
-      return {
-        error:
-          "Файл неполный: в нём нет отметки о завершении выгрузки. " +
-          "Скачайте базу заново — загружать обрезанный дамп нельзя.",
-      };
+  // Сверка «сколько заявлено» с «сколько лежит». Расхождение означает, что
+  // файл побился между выгрузкой и загрузкой.
+  const bad = [];
+  for (const [name, declared] of Object.entries(scan.stats || {})) {
+    const actual = scan.counts[name] ?? 0;
+    if (Number(declared) !== actual) {
+      bad.push(`${name}: ${actual} вместо ${declared}`);
     }
-    return { collections: parsed.collections || {}, stats: parsed.stats || {} };
+  }
+  if (bad.length > 0) {
+    return {
+      error: `Файл побит, число документов не сходится — ${bad.join("; ")}`,
+    };
   }
 
-  return { collections: parsed, stats: {}, legacy: true };
+  return { ok: true, counts: scan.counts, stats: scan.stats };
 }
 
-async function importInto(db, collections, stats) {
-  const report = [];
+/* ─────────────────── Режимы загрузки ───────────────────
+ *
+ * «Добавить» недостаточно для восстановления: документ с тем же _id
+ * пропускается, поэтому изменённые записи остаются старыми, и база после
+ * загрузки не равна дампу. Отсюда три режима с разной ценой ошибки.
+ *
+ *   add     — только недостающее. Ничего не теряется, но и не исправляется.
+ *   restore — документ из дампа замещает существующий по _id. База становится
+ *             такой, как в дампе, но записи, созданные ПОСЛЕ выгрузки и
+ *             отсутствующие в файле, остаются на месте.
+ *   replace — коллекция очищается и наполняется из дампа. Единственный режим,
+ *             дающий точное состояние на момент выгрузки, и единственный, в
+ *             котором данные УДАЛЯЮТСЯ: всё, что появилось после выгрузки,
+ *             исчезнет.
+ */
+export const IMPORT_MODES = Object.freeze(["add", "restore", "replace"]);
 
-  for (const [name, documents] of Object.entries(collections)) {
-    if (PROTECTED_ON_IMPORT.has(name)) {
+function normalizeMode(value) {
+  const mode = String(value || "add").trim();
+  return IMPORT_MODES.includes(mode) ? mode : "add";
+}
+
+/** Записывает порцию документов согласно режиму. */
+async function writeBatch(db, name, docs, tally, mode) {
+  if (mode === "restore") {
+    // replaceOne с upsert по _id: существующий документ замещается целиком,
+    // отсутствующий создаётся. Именно это и значит «восстановить».
+    const ops = docs.map((doc) => ({
+      replaceOne: { filter: { _id: doc._id }, replacement: doc, upsert: true },
+    }));
+    const result = await db.collection(name).bulkWrite(ops, { ordered: false });
+    tally.inserted += result.upsertedCount ?? 0;
+    tally.updated += result.modifiedCount ?? 0;
+    return;
+  }
+
+  // add и replace пишут одинаково: в replace коллекция уже очищена, поэтому
+  // дубликатов там взяться неоткуда.
+  try {
+    const result = await db.collection(name).insertMany(docs, { ordered: false });
+    tally.inserted += result.insertedCount;
+  } catch (err) {
+    // E11000 — документы с такими _id уже есть. В режиме add это не ошибка:
+    // при повторном заливе того же дампа так и должно быть.
+    const inserted = err.result?.insertedCount ?? err.result?.nInserted ?? 0;
+    tally.inserted += inserted;
+    tally.duplicates += docs.length - inserted;
+  }
+}
+
+/**
+ * Загружает дамп в базу.
+ *
+ * @param {object} db
+ * @param {string} filePath
+ * @param {string|null} only  загрузить только эту коллекцию
+ */
+async function importDump(db, filePath, { only = null, mode = "add" } = {}) {
+  const tallies = new Map();
+
+  const tallyFor = (name) => {
+    if (!tallies.has(name)) {
+      tallies.set(name, {
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        duplicates: 0,
+        refused: false,
+      });
+    }
+    return tallies.get(name);
+  };
+
+  await readDump(filePath, {
+    onCollection: async (name) => {
+      const tally = tallyFor(name);
+      if (PROTECTED_ON_IMPORT.has(name)) {
+        tally.refused = true;
+        return;
+      }
+      if (only && name !== only) return;
+
+      // Очистка — ЗДЕСЬ, до первой порции, и только для тех коллекций, что
+      // действительно есть в файле. Коллекции, которых в дампе нет, остаются
+      // нетронутыми: «восстановить из копии» не значит «стереть остальное».
+      if (mode === "replace") {
+        const result = await db.collection(name).deleteMany({});
+        tally.deleted += result.deletedCount ?? 0;
+      }
+    },
+    onBatch: async (name, docs) => {
+      const tally = tallyFor(name);
+      if (tally.refused) return;
+      if (only && name !== only) return;
+      await writeBatch(db, name, docs, tally, mode);
+    },
+  });
+
+  const report = [];
+  for (const [name, tally] of tallies) {
+    if (only && name !== only) continue;
+
+    if (tally.refused) {
       report.push({
         collection: name,
         inserted: 0,
-        skipped: Array.isArray(documents) ? documents.length : 0,
+        skipped: 0,
         status: "refused",
         reason:
           name === "users"
@@ -428,52 +540,35 @@ async function importInto(db, collections, stats) {
       continue;
     }
 
-    if (!Array.isArray(documents) || documents.length === 0) {
-      report.push({ collection: name, inserted: 0, skipped: 0, status: "empty" });
-      continue;
-    }
-
-    // Сверка с заявленным числом: если в файле сказано 1000 документов, а
-    // лежит 900, значит скачалось не всё — записывать такое молча нельзя.
-    // Number(), а не typeof: канонический EJSON отдаёт числа объектами Int32,
-    // и проверка «это число» на них не срабатывала — сверка молча не работала.
-    const declared = Number(stats?.[name]);
-    if (Number.isFinite(declared) && declared !== documents.length) {
-      report.push({
-        collection: name,
-        inserted: 0,
-        skipped: documents.length,
-        status: "mismatch",
-        reason: `в файле ${documents.length} документов вместо заявленных ${declared}`,
-      });
-      continue;
-    }
-
-    try {
-      const result = await db
-        .collection(name)
-        .insertMany(documents, { ordered: false });
-      report.push({
-        collection: name,
-        inserted: result.insertedCount,
-        skipped: documents.length - result.insertedCount,
-        status: "ok",
-      });
-    } catch (err) {
-      // E11000 — документы с такими _id уже есть. Это не ошибка загрузки:
-      // при повторном заливе того же дампа так и должно быть.
-      const inserted = err.result?.insertedCount ?? err.result?.nInserted ?? 0;
-      report.push({
-        collection: name,
-        inserted,
-        skipped: documents.length - inserted,
-        status: "partial",
-        reason: "часть документов уже есть в базе (совпадение _id)",
-      });
-    }
+    const touched = tally.inserted + tally.updated;
+    report.push({
+      collection: name,
+      inserted: tally.inserted,
+      updated: tally.updated,
+      deleted: tally.deleted,
+      skipped: tally.duplicates,
+      status:
+        tally.duplicates > 0 ? "partial" : touched > 0 || tally.deleted > 0 ? "ok" : "empty",
+      reason:
+        tally.duplicates > 0
+          ? "часть документов уже есть в базе — они оставлены как были"
+          : undefined,
+    });
   }
 
   return report;
+}
+
+const sumBy = (rows, field) => rows.reduce((sum, r) => sum + (r[field] || 0), 0);
+
+/** Файл во временной папке нужен только на время загрузки. */
+async function discard(filePath) {
+  if (!filePath) return;
+  try {
+    await fs.promises.unlink(filePath);
+  } catch {
+    // Файла уже нет — не повод падать.
+  }
 }
 
 /**
@@ -486,39 +581,58 @@ export async function importDatabase(req, res) {
     resourceType: "database",
     scope: { database: String(req.body?.database ?? mainDb()) },
   });
-  if (!db) return;
+  if (!db) {
+    await discard(req.file?.path);
+    return;
+  }
 
   if (!req.file) return res.status(400).json({ message: "Файл не передан" });
 
-  const parsed = parseDump(req.file.buffer);
-  if (parsed.error) return res.status(400).json({ message: parsed.error });
-
   try {
-    const report = await importInto(db, parsed.collections, parsed.stats);
+    const format = await detectFormat(req.file.path);
+    if (format !== FORMAT) {
+      return res.status(400).json({
+        message:
+          "Файл не в формате выгрузки DocPats. Загружать можно только то, " +
+          "что скачано этой же админкой.",
+      });
+    }
 
+    const check = await validateDump(req.file.path);
+    if (check.error) return res.status(400).json({ message: check.error });
+
+    const mode = normalizeMode(req.body?.mode);
+    const report = await importDump(db, req.file.path, { mode });
+
+    // Режим — часть события: «добавили недостающее» и «стёрли и залили
+    // заново» при разборе инцидента отвечают на разные вопросы.
     auditAdminAccess(req, {
       action: "admin.database.import",
       resourceType: "database",
       metadata: {
         database: db.databaseName,
+        mode,
         collectionCount: report.length,
-        insertedTotal: report.reduce((s, r) => s + r.inserted, 0),
+        insertedTotal: sumBy(report, "inserted"),
+        updatedTotal: sumBy(report, "updated"),
+        deletedTotal: sumBy(report, "deleted"),
         refused: report.filter((r) => r.status === "refused").length,
-        legacyFormat: Boolean(parsed.legacy),
       },
     });
 
     res.json({
       database: db.databaseName,
+      mode,
       report,
-      insertedTotal: report.reduce((s, r) => s + r.inserted, 0),
-      warning: parsed.legacy
-        ? "Файл в старом формате: типы данных (ссылки, даты) могли не восстановиться."
-        : null,
+      insertedTotal: sumBy(report, "inserted"),
+      updatedTotal: sumBy(report, "updated"),
+      deletedTotal: sumBy(report, "deleted"),
     });
   } catch (err) {
     console.error("❌ importDatabase error:", err);
     res.status(500).json({ message: "Ошибка загрузки данных" });
+  } finally {
+    await discard(req.file?.path);
   }
 }
 
@@ -537,27 +651,37 @@ export async function importCollection(req, res) {
     resourceType: "database-collection",
     scope: { database: String(req.body?.database ?? mainDb()), collection: name },
   });
-  if (!db) return;
+  if (!db) {
+    await discard(req.file?.path);
+    return;
+  }
 
   if (!req.file) return res.status(400).json({ message: "Файл не передан" });
-  if (!name) return res.status(400).json({ message: "Не указана коллекция" });
-
-  const parsed = parseDump(req.file.buffer);
-  if (parsed.error) return res.status(400).json({ message: parsed.error });
-
-  const documents = parsed.collections[name];
-  if (!documents) {
-    return res.status(400).json({
-      message: `В файле нет коллекции «${name}». Есть: ${Object.keys(parsed.collections).join(", ") || "ничего"}`,
-    });
+  if (!name) {
+    await discard(req.file.path);
+    return res.status(400).json({ message: "Не указана коллекция" });
   }
 
   try {
-    const report = await importInto(
-      db,
-      { [name]: documents },
-      parsed.stats,
-    );
+    const format = await detectFormat(req.file.path);
+    if (format !== FORMAT) {
+      return res
+        .status(400)
+        .json({ message: "Файл не в формате выгрузки DocPats." });
+    }
+
+    const check = await validateDump(req.file.path);
+    if (check.error) return res.status(400).json({ message: check.error });
+
+    if (!(name in check.counts)) {
+      const available = Object.keys(check.counts).join(", ") || "ничего";
+      return res.status(400).json({
+        message: `В файле нет коллекции «${name}». Есть: ${available}`,
+      });
+    }
+
+    const mode = normalizeMode(req.body?.mode);
+    const report = await importDump(db, req.file.path, { only: name, mode });
 
     auditAdminAccess(req, {
       action: "admin.collection.import",
@@ -565,15 +689,20 @@ export async function importCollection(req, res) {
       metadata: {
         database: db.databaseName,
         collection: name,
+        mode,
         inserted: report[0]?.inserted ?? 0,
+        updated: report[0]?.updated ?? 0,
+        deleted: report[0]?.deleted ?? 0,
         status: report[0]?.status,
       },
     });
 
-    res.json({ database: db.databaseName, report });
+    res.json({ database: db.databaseName, mode, report });
   } catch (err) {
     console.error("❌ importCollection error:", err);
     res.status(500).json({ message: "Ошибка загрузки коллекции" });
+  } finally {
+    await discard(req.file?.path);
   }
 }
 

@@ -11,7 +11,11 @@
 //   3. каждое обращение к базе целиком попадает в HIPAA-журнал;
 //   4. загрузкой нельзя дописать журнал аудита и завести администратора.
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { randomUUID } from "node:crypto";
 import mongoose from "mongoose";
 import express from "express";
 import request from "supertest";
@@ -28,12 +32,26 @@ import {
   exportCollection,
   importDatabase,
   importCollection,
+  writeDump,
 } from "../../modules/admin/controllers/adminDataTransfer.controller.js";
 
 const PASSWORD = "Admin-Password-123";
 
 let admin;
 let app;
+const tempFiles = [];
+
+afterEach(() => {
+  // Контроллер удаляет файл сам; здесь подчищаем то, что осталось после
+  // отказов, — чтобы временная папка не росла от прогона к прогону.
+  for (const path of tempFiles.splice(0)) {
+    try {
+      rmSync(path, { force: true });
+    } catch {
+      // уже удалён контроллером — так и должно быть
+    }
+  }
+});
 
 /** Приложение без сессий: подставляем req.userId так же, как requireAdmin. */
 function buildApp(actingUserId) {
@@ -50,10 +68,15 @@ function buildApp(actingUserId) {
   a.post("/transfer/export-database", exportDatabase);
   a.post("/transfer/export-collection", exportCollection);
 
-  // multer в тестах не нужен: подкладываем req.file вручную из тела.
+  // multer в тестах не нужен, но файл теперь читается С ДИСКА потоком —
+  // значит и в тесте он должен быть настоящим файлом, иначе проверялся бы
+  // не тот путь, которым идут данные в бою.
   const asFile = (req, _res, next) => {
     if (req.body?.fileContent) {
-      req.file = { buffer: Buffer.from(req.body.fileContent, "utf-8") };
+      const path = join(tmpdir(), `dump-test-${randomUUID()}.json`);
+      writeFileSync(path, req.body.fileContent, "utf-8");
+      tempFiles.push(path);
+      req.file = { path };
     }
     next();
   };
@@ -250,67 +273,81 @@ describe("состав базы", () => {
   });
 });
 
-describe("загрузка", () => {
-  const dumpOf = (collections, stats) =>
-    JSON.stringify({
-      format: "docpats-dump-v2",
-      database: "test",
-      collections,
-      stats,
-      completed: true,
-    });
 
+// ── Загрузка ─────────────────────────────────────────────────────────────────
+//
+// Файлы для тестов пишет НАСТОЯЩИЙ writeDump — тот же, что отдаёт дамп
+// администратору. Иначе тесты проверяли бы формат, придуманный в тестах, и
+// разошлись бы с боевым молча. Порча файла делается явно, поверх настоящего.
+
+/** Поддельная база: writeDump'у нужны только имя и курсор по коллекции. */
+function fakeDb(data) {
+  return {
+    databaseName: "test",
+    collection: (name) => ({
+      find: () => ({
+        async *[Symbol.asyncIterator]() {
+          for (const doc of data[name] || []) yield doc;
+        },
+      }),
+    }),
+  };
+}
+
+/** Настоящий дамп из заданных коллекций. */
+async function makeDump(data) {
+  const parts = [];
+  await writeDump({ write: (c) => parts.push(c) }, fakeDb(data), Object.keys(data));
+  return parts.join("");
+}
+
+describe("загрузка", () => {
   it("отбивает оборванный файл до записи в базу", async () => {
     // Обрезанная закачка: файл кончился на середине.
-    const truncated = dumpOf({ widgets: [{ n: 1 }] }, { widgets: 1 }).slice(0, 60);
+    const full = await makeDump({ widgets: [{ n: 1 }, { n: 2 }] });
+    const truncated = full.slice(0, Math.floor(full.length * 0.6));
 
     const res = await request(app)
       .post("/transfer/import-database")
       .send({ database: dbName(), password: PASSWORD, fileContent: truncated });
 
     expect(res.status).toBe(400);
-    expect(res.text).toMatch(/оборванная закачка|не разбирается/i);
+    expect(res.text).toMatch(/неполн|оборванная/i);
+    // Главное: до базы не дошло НИЧЕГО, хотя часть документов в файле была.
     expect(await mongoose.connection.db.collection("widgets").countDocuments()).toBe(0);
   });
 
-  it("отказывается от файла без отметки о завершении", async () => {
-    const noFlag = JSON.stringify({
-      format: "docpats-dump-v2",
-      collections: { widgets: [{ n: 1 }] },
-    });
+  it("отказывается, если документов меньше заявленного", async () => {
+    // Отметка о завершении на месте, но счётчик не сходится — файл побит.
+    const full = await makeDump({ widgets: [{ n: 1 }, { n: 2 }] });
+    const tampered = full.replace('"stats":{"widgets":2}', '"stats":{"widgets":5}');
 
     const res = await request(app)
       .post("/transfer/import-database")
-      .send({ database: dbName(), password: PASSWORD, fileContent: noFlag });
+      .send({ database: dbName(), password: PASSWORD, fileContent: tampered });
 
     expect(res.status).toBe(400);
-    expect(res.text).toMatch(/неполн/i);
+    expect(res.text).toMatch(/не сходится/i);
+    expect(await mongoose.connection.db.collection("widgets").countDocuments()).toBe(0);
   });
 
-  it("отказывается, если документов меньше заявленного", async () => {
-    // Файл «полный» по отметке, но счётчик не сходится — значит потерялось.
-    const short = dumpOf({ widgets: [{ n: 1 }] }, { widgets: 5 });
-
+  it("не принимает посторонний JSON", async () => {
     const res = await request(app)
       .post("/transfer/import-database")
-      .send({ database: dbName(), password: PASSWORD, fileContent: short });
+      .send({
+        database: dbName(),
+        password: PASSWORD,
+        fileContent: JSON.stringify({ widgets: [{ n: 1 }] }),
+      });
 
-    const widgets = res.body.report.find((r) => r.collection === "widgets");
-    expect(widgets.status).toBe("mismatch");
-    expect(widgets.inserted).toBe(0);
+    expect(res.status).toBe(400);
+    expect(res.text).toMatch(/формат/i);
   });
 
   it("восстанавливает ссылки между документами, а не строки", async () => {
     const ref = new mongoose.Types.ObjectId();
-    const content = EJSON.stringify(
-      {
-        format: "docpats-dump-v2",
-        collections: { widgets: [{ ownerId: ref }] },
-        stats: { widgets: 1 },
-        completed: true,
-      },
-      { relaxed: false },
-    );
+    const when = new Date("2026-08-12T10:00:00.000Z");
+    const content = await makeDump({ widgets: [{ ownerId: ref, createdAt: when }] });
 
     await request(app)
       .post("/transfer/import-database")
@@ -319,20 +356,21 @@ describe("загрузка", () => {
     const doc = await mongoose.connection.db.collection("widgets").findOne({});
     expect(doc.ownerId?._bsontype).toBe("ObjectId");
     expect(String(doc.ownerId)).toBe(String(ref));
+    expect(doc.createdAt).toBeInstanceOf(Date);
+    expect(doc.createdAt.toISOString()).toBe(when.toISOString());
   });
 
   it("НЕ даёт дописать журнал аудита", async () => {
     // Журнал неизменяем хуками модели, но загрузка пишет сырым драйвером и
     // обошла бы их. Журнал, в который можно подмешать записи, перестаёт быть
     // доказательством.
-    const forged = dumpOf(
-      { hipaa_audit_logs: [{ action: "read", userId: admin._id }] },
-      { hipaa_audit_logs: 1 },
-    );
+    const content = await makeDump({
+      hipaa_audit_logs: [{ action: "read", userId: admin._id }],
+    });
 
     const res = await request(app)
       .post("/transfer/import-database")
-      .send({ database: dbName(), password: PASSWORD, fileContent: forged });
+      .send({ database: dbName(), password: PASSWORD, fileContent: content });
 
     const line = res.body.report.find((r) => r.collection === "hipaa_audit_logs");
     expect(line.status).toBe("refused");
@@ -342,14 +380,13 @@ describe("загрузка", () => {
   it("НЕ даёт завести пользователя загрузкой", async () => {
     // Иначе это чёрный ход: документ с role admin и своим хэшем пароля
     // переживёт смену пароля настоящего администратора.
-    const forged = dumpOf(
-      { users: [{ email: "x@y.z", role: "admin", password: "hash" }] },
-      { users: 1 },
-    );
+    const content = await makeDump({
+      users: [{ email: "x@y.z", role: "admin", password: "hash" }],
+    });
 
     const res = await request(app)
       .post("/transfer/import-database")
-      .send({ database: dbName(), password: PASSWORD, fileContent: forged });
+      .send({ database: dbName(), password: PASSWORD, fileContent: content });
 
     const line = res.body.report.find((r) => r.collection === "users");
     expect(line.status).toBe("refused");
@@ -357,7 +394,7 @@ describe("загрузка", () => {
   });
 
   it("загружает обычные коллекции и пишет это в журнал", async () => {
-    const content = dumpOf({ widgets: [{ n: 1 }, { n: 2 }] }, { widgets: 2 });
+    const content = await makeDump({ widgets: [{ n: 1 }, { n: 2 }] });
 
     const res = await request(app)
       .post("/transfer/import-database")
@@ -373,10 +410,9 @@ describe("загрузка", () => {
   });
 
   it("повторная загрузка того же файла не удваивает данные", async () => {
-    const content = dumpOf(
-      { widgets: [{ _id: new mongoose.Types.ObjectId(), n: 1 }] },
-      { widgets: 1 },
-    );
+    const content = await makeDump({
+      widgets: [{ _id: new mongoose.Types.ObjectId(), n: 1 }],
+    });
     const send = () =>
       request(app)
         .post("/transfer/import-database")
@@ -390,10 +426,7 @@ describe("загрузка", () => {
   });
 
   it("берёт из файла одну названную коллекцию", async () => {
-    const content = dumpOf(
-      { widgets: [{ n: 1 }], gadgets: [{ n: 2 }] },
-      { widgets: 1, gadgets: 1 },
-    );
+    const content = await makeDump({ widgets: [{ n: 1 }], gadgets: [{ n: 2 }] });
 
     await request(app)
       .post("/transfer/import-collection")
@@ -406,5 +439,160 @@ describe("загрузка", () => {
 
     expect(await mongoose.connection.db.collection("widgets").countDocuments()).toBe(1);
     expect(await mongoose.connection.db.collection("gadgets").countDocuments()).toBe(0);
+  });
+
+  it("переживает файл, который не помещается в одну строку JS", async () => {
+    // Ради этого загрузка и переписана на поток. Дамп базы новостей весит
+    // 1081 МБ, а строка длиннее ~512 МБ в V8 невозможна: прежняя загрузка
+    // читала файл целиком в строку и такой дамп вернуть не могла.
+    // Здесь объём меньше (тесты должны быть быстрыми), но путь ровно тот же:
+    // файл читается с диска построчно и вставляется порциями.
+    const many = Array.from({ length: 5000 }, (_, i) => ({
+      _id: new mongoose.Types.ObjectId(),
+      n: i,
+      text: "x".repeat(200),
+    }));
+    const content = await makeDump({ widgets: many });
+
+    const res = await request(app)
+      .post("/transfer/import-database")
+      .send({ database: dbName(), password: PASSWORD, fileContent: content });
+
+    expect(res.status).toBe(200);
+    // Ни один документ не потерялся на границах порций.
+    expect(res.body.insertedTotal).toBe(5000);
+    expect(await mongoose.connection.db.collection("widgets").countDocuments()).toBe(5000);
+  });
+});
+
+// ── Режимы загрузки ──────────────────────────────────────────────────────────
+//
+// «Добавить» — не восстановление: документ с тем же _id пропускается, поэтому
+// изменённые записи остаются старыми и база после загрузки не равна дампу.
+// Здесь проверяется, что каждый режим делает ровно то, что обещает, и что
+// разрушительный режим не трогает лишнего.
+
+describe("режимы загрузки", () => {
+  const ID = () => new mongoose.Types.ObjectId();
+
+  async function dumpWith(docs) {
+    return makeDump({ widgets: docs });
+  }
+
+  const load = (content, mode) =>
+    request(app)
+      .post("/transfer/import-database")
+      .send({ database: dbName(), password: PASSWORD, mode, fileContent: content });
+
+  it("«добавить» не трогает существующий документ", async () => {
+    const id = ID();
+    await seedRaw("widgets", [{ _id: id, name: "в базе" }]);
+    const content = await dumpWith([{ _id: id, name: "из копии" }]);
+
+    const res = await load(content, "add");
+
+    const doc = await mongoose.connection.db.collection("widgets").findOne({ _id: id });
+    expect(doc.name).toBe("в базе");
+    expect(res.body.report[0].skipped).toBe(1);
+  });
+
+  it("«восстановить» замещает документ версией из копии", async () => {
+    const id = ID();
+    await seedRaw("widgets", [{ _id: id, name: "испорчено", лишнее: true }]);
+    const content = await dumpWith([{ _id: id, name: "из копии" }]);
+
+    const res = await load(content, "restore");
+
+    const doc = await mongoose.connection.db.collection("widgets").findOne({ _id: id });
+    expect(doc.name).toBe("из копии");
+    // Замещение целиком: поля, которых нет в копии, не остаются.
+    expect(doc.лишнее).toBeUndefined();
+    expect(res.body.updatedTotal).toBe(1);
+  });
+
+  it("«восстановить» добавляет то, чего в базе нет", async () => {
+    const content = await dumpWith([{ _id: ID(), name: "новый" }]);
+
+    const res = await load(content, "restore");
+
+    expect(res.body.insertedTotal).toBe(1);
+    expect(await mongoose.connection.db.collection("widgets").countDocuments()).toBe(1);
+  });
+
+  it("«восстановить» оставляет записи, созданные после выгрузки", async () => {
+    // Важная граница: это НЕ точное восстановление состояния. Документ,
+    // появившийся после копии, в файле отсутствует — и остаётся на месте.
+    const later = ID();
+    await seedRaw("widgets", [{ _id: later, name: "появился позже" }]);
+    const content = await dumpWith([{ _id: ID(), name: "из копии" }]);
+
+    await load(content, "restore");
+
+    expect(await mongoose.connection.db.collection("widgets").countDocuments()).toBe(2);
+  });
+
+  it("«заменить» даёт точное состояние копии", async () => {
+    const later = ID();
+    await seedRaw("widgets", [
+      { _id: later, name: "появился позже" },
+      { _id: ID(), name: "тоже лишний" },
+    ]);
+    const kept = ID();
+    const content = await dumpWith([{ _id: kept, name: "из копии" }]);
+
+    const res = await load(content, "replace");
+
+    const all = await mongoose.connection.db.collection("widgets").find({}).toArray();
+    expect(all).toHaveLength(1);
+    expect(String(all[0]._id)).toBe(String(kept));
+    expect(res.body.deletedTotal).toBe(2);
+  });
+
+  it("«заменить» не трогает коллекции, которых нет в файле", async () => {
+    // «Восстановить из копии» не значит «стереть всё остальное».
+    await seedRaw("gadgets", [{ name: "чужая коллекция" }]);
+    const content = await dumpWith([{ _id: ID(), name: "из копии" }]);
+
+    await load(content, "replace");
+
+    expect(await mongoose.connection.db.collection("gadgets").countDocuments()).toBe(1);
+  });
+
+  it("защищённые коллекции не очищаются даже в режиме замены", async () => {
+    // Иначе «замена» стала бы способом стереть журнал аудита — обойти его
+    // неизменяемость не дописыванием, так удалением.
+    const before = await HIPAAAuditLog.countDocuments();
+    const content = await makeDump({
+      hipaa_audit_logs: [{ action: "read", userId: admin._id }],
+    });
+
+    const res = await load(content, "replace");
+
+    expect(res.body.report[0].status).toBe("refused");
+    expect(await HIPAAAuditLog.countDocuments()).toBeGreaterThanOrEqual(before);
+  });
+
+  it("неизвестный режим считается самым безопасным", async () => {
+    const id = ID();
+    await seedRaw("widgets", [{ _id: id, name: "в базе" }]);
+    const content = await dumpWith([{ _id: id, name: "из копии" }]);
+
+    await load(content, "чтототакое");
+
+    const doc = await mongoose.connection.db.collection("widgets").findOne({ _id: id });
+    expect(doc.name).toBe("в базе");
+  });
+
+  it("режим попадает в журнал аудита", async () => {
+    const content = await dumpWith([{ _id: ID(), name: "x" }]);
+    await load(content, "replace");
+    await new Promise((r) => setTimeout(r, 150));
+
+    const entry = await HIPAAAuditLog.findOne({
+      action: "admin.database.import",
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+    expect(entry.metadata.mode).toBe("replace");
   });
 });
