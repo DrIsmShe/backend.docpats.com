@@ -182,7 +182,13 @@ async function authorize(req, res, { action, resourceType, scope = {} }) {
 
 /** GET /api/admin/transfer/databases — какие базы доступны. */
 export async function listDatabases(req, res) {
-  res.json({ databases: allowedDatabases() });
+  res.json({
+    databases: allowedDatabases(),
+    // С какой базой работает САМО приложение. Локально это черновая база, а
+    // выгружаются боевые — и не видеть этой разницы прямо на странице значит
+    // рано или поздно перепутать, куда только что залил файл.
+    appDatabase: mongoose.connection?.name || null,
+  });
 }
 
 /**
