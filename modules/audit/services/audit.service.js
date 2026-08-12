@@ -73,11 +73,20 @@ export const recordAction = async (params) => {
   // У "list dialogs" / "search patients" / "search users" нет одного
   // конкретного resourceId: они работают над выборкой, а не над записью.
   // Для всех остальных действий resourceId обязателен.
+  // Перенос данных администратором — тоже действие над выборкой, а не над
+  // записью: у выгрузки всей базы нет и не может быть одного resourceId,
+  // ресурсом является сама база. Без этой строки самое важное для аудита
+  // событие («скачали всё») отбрасывалось валидацией и терялось молча —
+  // recordActionAsync ошибку не пробрасывает.
+  const isAdminTransfer = action.startsWith("admin.database.") ||
+    action.startsWith("admin.collection.");
+
   const isCollectionAction =
     action === "list" ||
     action.endsWith(".list") ||
     action.endsWith(".search") ||
     action.endsWith(".user_search") ||
+    isAdminTransfer ||
     action === "system.r2_orphan.cleanup";
   if (!resourceId && !isCollectionAction) {
     throw new Error(

@@ -17,7 +17,14 @@ import { recordActionAsync } from "../audit/index.js";
  */
 export function auditAdminAccess(
   req,
-  { action, resourceType, resourceId = null, resourceOwnerId = null, metadata = {} },
+  {
+    action,
+    resourceType,
+    resourceId = null,
+    resourceOwnerId = null,
+    metadata = {},
+    outcome = "success",
+  },
 ) {
   recordActionAsync({
     actor: { userId: req.userId || req.session?.userId, role: "admin" },
@@ -25,7 +32,9 @@ export function auditAdminAccess(
     resourceType,
     resourceId,
     resourceOwnerId,
-    outcome: "success",
+    // Отказы тоже пишем: серия denied на выгрузке базы — это и есть сигнал
+    // подбора пароля к админке, ради которого журнал заводят.
+    outcome,
     context: {
       ipAddress: req.ip,
       userAgent: req.get("user-agent"),
