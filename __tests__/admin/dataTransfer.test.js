@@ -105,6 +105,12 @@ async function dropRaw() {
 beforeEach(async () => {
   await dropRaw();
 
+  // Защита записи по умолчанию ВКЛЮЧЕНА, независимо от .env разработчика.
+  // Без этой строки локальная переменная ADMIN_TRANSFER_ALLOW_PROTECTED
+  // просачивалась в тесты и молча ослабляла проверки, которые как раз и
+  // сторожат запрет на запись журнала аудита и пользователей.
+  delete process.env.ADMIN_TRANSFER_ALLOW_PROTECTED;
+
   const created = await createTestDoctor({
     role: "admin",
     isDoctor: false,
@@ -651,5 +657,72 @@ describe("рабочая база приложения", () => {
   it("возвращается вместе со списком", async () => {
     const res = await request(app).get("/transfer/databases");
     expect(res.body.appDatabase).toBe(mongoose.connection.name);
+  });
+});
+
+// ── Снятие защиты для рабочей копии ──────────────────────────────────────────
+//
+// Запрет на запись users осмыслен на бою и мешает на копии: без пользователей
+// в неё не под кем войти, и копия бесполезна. Поэтому запрет снимается — но
+// только вне production, и это здесь главное.
+
+describe("защита записи и рабочая копия", () => {
+  const ORIGINAL_ENV = process.env.NODE_ENV;
+
+  afterEach(() => {
+    process.env.NODE_ENV = ORIGINAL_ENV;
+    // Саму переменную снимает общий beforeEach — здесь дублировать незачем.
+  });
+
+  const loadUsers = async () => {
+    const content = await makeDump({
+      users: [{ _id: new mongoose.Types.ObjectId(), email: "copy@test", role: "admin" }],
+    });
+    return request(app)
+      .post("/transfer/import-database")
+      .send({ database: dbName(), password: PASSWORD, fileContent: content });
+  };
+
+  it("на боевом сервере переменная игнорируется", async () => {
+    // Самое важное: защиту от чёрного хода нельзя снять строчкой в .env,
+    // добавленной второпях на прод.
+    process.env.NODE_ENV = "production";
+    process.env.ADMIN_TRANSFER_ALLOW_PROTECTED = "true";
+
+    const res = await loadUsers();
+
+    expect(res.body.report[0].status).toBe("refused");
+    expect(await User.countDocuments({ email: "copy@test" })).toBe(0);
+  });
+
+  it("вне production со снятой защитой пользователи загружаются", async () => {
+    process.env.NODE_ENV = "development";
+    process.env.ADMIN_TRANSFER_ALLOW_PROTECTED = "true";
+
+    const res = await loadUsers();
+
+    expect(res.body.report[0].status).toBe("ok");
+    expect(await User.countDocuments({ email: "copy@test" })).toBe(1);
+  });
+
+  it("без переменной запрет действует и вне production", async () => {
+    process.env.NODE_ENV = "development";
+    delete process.env.ADMIN_TRANSFER_ALLOW_PROTECTED;
+
+    const res = await loadUsers();
+
+    expect(res.body.report[0].status).toBe("refused");
+  });
+
+  it("сессии не загружаются никогда — это живые ключи доступа", async () => {
+    process.env.NODE_ENV = "development";
+    process.env.ADMIN_TRANSFER_ALLOW_PROTECTED = "true";
+    const content = await makeDump({ sessions: [{ session: "чужая" }] });
+
+    const res = await request(app)
+      .post("/transfer/import-database")
+      .send({ database: dbName(), password: PASSWORD, fileContent: content });
+
+    expect(res.body.report[0].status).toBe("refused");
   });
 });

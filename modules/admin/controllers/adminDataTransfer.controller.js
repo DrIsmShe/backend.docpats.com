@@ -113,6 +113,27 @@ const PROTECTED_ON_IMPORT = new Set([
   "sessions",
 ]);
 
+/**
+ * Снята ли защита записи для этого запуска.
+ *
+ * Нужна ровно для одного случая: восстановить рабочую копию базы для
+ * разработки. Без users в копии не под кем войти, и копия бесполезна — то
+ * есть запрет, осмысленный на бою, там мешает.
+ *
+ * На боевом сервере переменная ИГНОРИРУЕТСЯ, даже если её туда занесут:
+ * защита от чёрного хода не должна сниматься строчкой в .env, которую легко
+ * добавить второпях.
+ */
+function protectionLifted() {
+  if (process.env.NODE_ENV === "production") return false;
+  return process.env.ADMIN_TRANSFER_ALLOW_PROTECTED === "true";
+}
+
+function isProtected(name) {
+  if (name === "sessions") return true; // живые ключи доступа — никогда
+  return PROTECTED_ON_IMPORT.has(name) && !protectionLifted();
+}
+
 function resolveDatabase(requested) {
   const name = String(requested || mainDb()).trim();
   const allowed = allowedDatabases().find((d) => d.name === name);
@@ -222,7 +243,7 @@ export async function listCollections(req, res) {
         count,
         size,
         exportable: !SKIP_ON_EXPORT.has(info.name),
-        importable: !PROTECTED_ON_IMPORT.has(info.name),
+        importable: !isProtected(info.name),
       });
     }
 
@@ -535,7 +556,7 @@ async function importDump(db, filePath, { only = null, mode = "add" } = {}) {
   await readDump(filePath, {
     onCollection: async (name) => {
       const tally = tallyFor(name);
-      if (PROTECTED_ON_IMPORT.has(name)) {
+      if (isProtected(name)) {
         tally.refused = true;
         return;
       }
