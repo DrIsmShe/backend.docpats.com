@@ -15,6 +15,7 @@
 // должна оставаться честной: «что нашлось и какого дизайна».
 
 import { esearch, esummary } from "./pubmed.service.js";
+import { attachFullTexts } from "./fullText.service.js";
 
 /**
  * Ступени доказательности, от сильной к слабой.
@@ -138,7 +139,12 @@ export async function searchEvidence({
       limit: perLevel,
     });
 
-    const items = count > 0 ? await esummary(ids) : [];
+    const raw = count > 0 ? await esummary(ids) : [];
+
+    // Где работа есть в нашем архиве целиком — врач прочитает её здесь.
+    // PubMed отдаёт только аннотации, и без этого шага каждый переход к
+    // полному тексту ведёт к издателю, а там половина за подпиской.
+    const items = await attachFullTexts(raw);
 
     found.push({
       key: level.key,
