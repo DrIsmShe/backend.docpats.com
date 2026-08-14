@@ -28,6 +28,14 @@ import {
   importDatabase,
   importCollection,
 } from "../controllers/adminDataTransfer.controller.js";
+import {
+  listDoctors,
+  listSpecializations,
+  getDoctor,
+  createDoctor,
+  updateDoctor,
+  deleteDoctor,
+} from "../controllers/adminDoctors.controller.js";
 
 // Файл дампа кладётся на ДИСК, а не в память. Причина измеренная: дамп базы
 // новостей весит 1081 МБ (17 000 документов по 33 КБ — полные тексты статей).
@@ -62,5 +70,17 @@ router.post(
   upload.single("file"),
   importCollection,
 );
+
+// ── Профили врачей ──
+//
+// Справочник специальностей идёт ПЕРЕД /doctors/:userId — иначе Express
+// примет слово "specializations" за идентификатор и уйдёт искать врача с
+// таким _id, свалившись на приведении к ObjectId.
+router.get("/doctors", requireAdmin, listDoctors);
+router.get("/doctors/specializations", requireAdmin, listSpecializations);
+router.get("/doctors/:userId", requireAdmin, getDoctor);
+router.post("/doctors", requireAdmin, createDoctor);
+router.put("/doctors/:userId", requireAdmin, updateDoctor);
+router.delete("/doctors/:userId", requireAdmin, deleteDoctor);
 
 export default router;
