@@ -4,6 +4,10 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import User from "../../../common/models/Auth/users.js";
+import {
+  isValidPhoneInput,
+  INVALID_PHONE_MESSAGE,
+} from "../../../common/utils/phone.js";
 
 dotenv.config();
 
@@ -102,6 +106,12 @@ export default async function addPatientPolyclinicController(req, res) {
 
     // НЕ нормализуем телефон перед сохранением — это делает сеттер модели!
     const phoneNumberRaw = pickStr(body, "phoneNumber"); // сырая строка
+
+    // Ворота для новых данных: обрезанный номер («+99450») раньше проходил
+    // проверку «плюс и до 15 цифр» и оседал в карточке навсегда.
+    if (!isValidPhoneInput(phoneNumberRaw)) {
+      return res.status(400).json({ message: INVALID_PHONE_MESSAGE });
+    }
 
     const chronicDiseases = pickStr(body, "chronicDiseases") || undefined;
     const operations = pickStr(body, "operations") || undefined;

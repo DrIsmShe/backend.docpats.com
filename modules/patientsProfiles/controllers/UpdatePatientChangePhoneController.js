@@ -2,6 +2,10 @@
 import mongoose from "mongoose";
 import crypto from "crypto";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import {
+  isValidPhoneInput,
+  INVALID_PHONE_MESSAGE,
+} from "../../../common/utils/phone.js";
 
 /* ===== crypto & helpers (совместимы с моделью NPC) ===== */
 const RAW_KEY = process.env.ENCRYPTION_KEY || "default_secret_key";
@@ -76,6 +80,16 @@ export async function updatePatientChangePhoneController(req, res) {
     const userId = new mongoose.Types.ObjectId(rawUserId);
 
     const incomingRaw = String(req.body?.phoneNumber ?? "").trim();
+
+    // Смена телефона — то место, где обрезанный номер особенно дорог:
+    // по нему пациента потом ищут и с ним связывают карту клиники.
+    if (!isValidPhoneInput(incomingRaw)) {
+      return res.status(400).json({
+        ok: false,
+        error: "INVALID_PHONE",
+        message: INVALID_PHONE_MESSAGE,
+      });
+    }
     const col = NewPatientPolyclinic.collection;
 
     // найдём карту сырым способом (без геттеров)

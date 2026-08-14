@@ -12,6 +12,7 @@ import { z } from "zod";
 import * as svc from "../services/labResult.service.js";
 import { recordActionAsync } from "../../../audit/services/audit.service.js";
 import { ACTIONS } from "../rbac/clinicMedicalRBAC.js";
+import { LAB_PANEL_TYPES } from "../models/labResult.model.js";
 import {
   UnprocessableError,
   toErrorResponse,
@@ -38,30 +39,10 @@ const sharedWithSchema = z.preprocess(
   z.array(z.string().regex(objectIdRegex)).optional(),
 );
 
-const PANEL_TYPES = [
-  "BloodTestGeneral",
-  "BloodTestBiochemistry",
-  "UrineTest",
-  "StoolTest",
-  "HormonePanel",
-  "TumorMarkers",
-  "PCR",
-  "Immunology",
-  "GeneticScreening",
-  "CoagulationPanel",
-  "LipidProfile",
-  "LiverFunction",
-  "RenalElectrolytes",
-  "IronStudies",
-  "DiabetesPanel",
-  "ThyroidPanel",
-  "CardiacMarkers",
-  "VitaminsTrace",
-  "InfectiousSerology",
-  "UrineAlbuminACR",
-  "StoolInflammation",
-  "Other",
-];
+// Список берём из модели — там он и есть источник истины для enum-а
+// Mongoose. Своя копия здесь означала бы, что панель, принятая
+// контроллером, отвергается моделью при сохранении.
+const PANEL_TYPES = LAB_PANEL_TYPES;
 
 const referenceRangeSchema = z
   .object({

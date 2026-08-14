@@ -3,6 +3,10 @@ import mongoose from "mongoose";
 import crypto from "crypto";
 import User from "../../../common/models/Auth/users.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import {
+  isValidPhoneInput,
+  INVALID_PHONE_MESSAGE,
+} from "../../../common/utils/phone.js";
 
 /* helpers */
 const cleanStr = (v) => (v == null ? undefined : String(v).trim());
@@ -121,6 +125,11 @@ const profileMainUpdatePatientController = async (req, res) => {
       if (trimmed === "") {
         clearPhone = true;
       } else {
+        // Пустая строка выше — это осознанная очистка поля, а здесь номер
+        // указан, и он обязан быть настоящим.
+        if (!isValidPhoneInput(trimmed)) {
+          return res.status(400).json({ message: INVALID_PHONE_MESSAGE });
+        }
         normalizedPhone = normalizePhone(trimmed);
         if (!normalizedPhone) {
           return res
