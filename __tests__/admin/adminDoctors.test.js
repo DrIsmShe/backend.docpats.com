@@ -13,11 +13,19 @@
 //      только первый, врач появится в системе без карточки: в каталоге его
 //      видно, а открыть нечего.
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import express from "express";
 import request from "supertest";
 import mongoose from "mongoose";
 import crypto from "crypto";
+
+// Хранилище подменяем: настоящий uploadFile в тестовой среде писал бы файлы
+// в папку uploads рядом с исходниками, а в проде уходил бы в Cloudflare R2.
+// Проверяем маршрут и проверки доступа, а не работу S3-клиента.
+vi.mock("../../common/middlewares/uploadMiddleware.js", async (importOriginal) => ({
+  ...(await importOriginal()),
+  uploadFile: vi.fn(async (file) => `https://cdn.test/${file.originalname}.webp`),
+}));
 
 import adminRoute from "../../modules/admin/routes/adminRoute.js";
 import { createTestDoctor } from "../helpers/createTestUser.js";
@@ -229,6 +237,44 @@ describe("список и правка", () => {
 
     const list = await request(app()).get("/api/admin/doctors");
     expect(list.body.doctors.some((d) => d.email === VALID.email)).toBe(false);
+  });
+
+  it("принимает фотографию файлом и возвращает ссылку", async () => {
+    // 1x1 PNG — минимальная настоящая картинка: multer фильтрует по MIME и
+    // расширению, поэтому подсунуть произвольные байты нельзя.
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "base64",
+    );
+
+    const res = await request(app())
+      .post("/api/admin/doctors/photo")
+      .attach("image", png, { filename: "avatar.png", contentType: "image/png" });
+
+    expect(res.status).toBe(201);
+    // Ссылку форма подставляет в profileImage — в базу маршрут не пишет.
+    expect(res.body.url).toContain("avatar.png");
+  });
+
+  it("не принимает не-картинку", async () => {
+    const res = await request(app())
+      .post("/api/admin/doctors/photo")
+      .attach("image", Buffer.from("%PDF-1.4"), {
+        filename: "scan.pdf",
+        contentType: "application/pdf",
+      });
+
+    // Ошибка загрузчика — это ошибка запроса, а не сбой сервера.
+    expect(res.status).toBe(400);
+  });
+
+  it("загрузка фото закрыта для не-администратора", async () => {
+    const { userId } = await createTestDoctor();
+    const res = await request(makeApp({ userId }))
+      .post("/api/admin/doctors/photo")
+      .attach("image", Buffer.from("x"), "a.png");
+
+    expect(res.status).toBe(403);
   });
 
   it("справочник специальностей не путается с идентификатором врача", async () => {

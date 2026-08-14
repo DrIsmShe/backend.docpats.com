@@ -35,7 +35,12 @@ import {
   createDoctor,
   updateDoctor,
   deleteDoctor,
+  uploadDoctorPhoto,
 } from "../controllers/adminDoctors.controller.js";
+// Отдельный multer под фотографии: тот, что объявлен ниже, пишет дампы базы
+// на диск и пропускает файл любого типа до 4 ГБ. Этот — только картинки,
+// в память, до 15 МБ.
+import { upload as photoUpload } from "../middlewares/common/uploadMiddleware.js";
 
 // Файл дампа кладётся на ДИСК, а не в память. Причина измеренная: дамп базы
 // новостей весит 1081 МБ (17 000 документов по 33 КБ — полные тексты статей).
@@ -79,6 +84,21 @@ router.post(
 router.get("/doctors", requireAdmin, listDoctors);
 router.get("/doctors/specializations", requireAdmin, listSpecializations);
 router.get("/doctors/:userId", requireAdmin, getDoctor);
+// Загрузка фотографии врача с компьютера. Отдельным маршрутом, а не полем
+// формы: профиль сохраняется как JSON, и переводить его на multipart ради
+// одной картинки значило бы переписать разбор всех двадцати полей.
+//
+// Ошибки multer (не картинка, больше 15 МБ) перехватываются здесь: общий
+// обработчик превратил бы их в 500, хотя это ошибка того, кто загружает.
+router.post(
+  "/doctors/photo",
+  requireAdmin,
+  (req, res, next) =>
+    photoUpload.single("image")(req, res, (err) =>
+      err ? res.status(400).json({ message: err.message }) : next(),
+    ),
+  uploadDoctorPhoto,
+);
 router.post("/doctors", requireAdmin, createDoctor);
 router.put("/doctors/:userId", requireAdmin, updateDoctor);
 router.delete("/doctors/:userId", requireAdmin, deleteDoctor);

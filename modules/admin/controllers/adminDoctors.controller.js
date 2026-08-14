@@ -20,6 +20,7 @@
 import crypto from "crypto";
 import mongoose from "mongoose";
 import User from "../../../common/models/Auth/users.js";
+import { uploadFile } from "../../../common/middlewares/uploadMiddleware.js";
 import { auditAdminAccess } from "../adminAudit.js";
 
 const RAW_KEY = process.env.ENCRYPTION_KEY || "";
@@ -447,6 +448,38 @@ export async function deleteDoctor(req, res) {
   res.json({ success: true });
 }
 
+/**
+ * Загрузка фотографии врача с компьютера администратора.
+ *
+ * Возвращает только ссылку и ничего не пишет в базу: профиль сохраняется
+ * отдельной кнопкой, и если админ передумает, залитый файл просто останется
+ * невостребованным вместо того, чтобы подменить фото в открытой карточке.
+ *
+ * Само хранение — общий uploadFile: в проде это Cloudflare R2, в разработке
+ * папка uploads. Он же пережимает картинку в webp, поэтому размер оригинала
+ * с телефона врача роли не играет.
+ */
+export async function uploadDoctorPhoto(req, res) {
+  if (!req.file) {
+    return res.status(400).json({ message: "Файл не получен" });
+  }
+
+  // Multer уже отфильтровал по расширению и MIME, но проверка дешёвая, а
+  // маршрут доступен только администратору — пусть отказ будет явным.
+  if (!String(req.file.mimetype || "").startsWith("image/")) {
+    return res.status(400).json({ message: "Ожидается изображение" });
+  }
+
+  const url = await uploadFile(req.file);
+
+  // В аудит здесь не пишем сознательно. Врача на этот момент может ещё не
+  // существовать (фото выбирают до сохранения формы), а recordAction требует
+  // ObjectId ресурса и отбрасывает запись без него — молча, потому что вызов
+  // fire-and-forget. Событие, которое действительно нужно в журнале, — смена
+  // профиля, и она пишется в createDoctor/updateDoctor вместе со ссылкой.
+  res.status(201).json({ url });
+}
+
 export default {
   listDoctors,
   listSpecializations,
@@ -454,4 +487,5 @@ export default {
   createDoctor,
   updateDoctor,
   deleteDoctor,
+  uploadDoctorPhoto,
 };
