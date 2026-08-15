@@ -21,6 +21,8 @@ import {
 import {
   getExamQuota,
   assertCanStart,
+  assertModeAllowed,
+  getExamModes,
   claimGuestAttempts,
 } from "../../modules/education/services/quota.service.js";
 
@@ -131,7 +133,12 @@ describe("квота: гость", () => {
     await answerN(first, actor, 20);
     // Закрываем попытку: иначе следующий старт упрётся в «уже есть
     // незавершённая», а проверять мы хотим именно квоту.
-    await submitAttempt(first._id, actor);
+    const closed = await submitAttempt(first._id, actor);
+
+    // Проверяем ЯВНО, что попытка закрыта. Без этой строки провал ниже
+    // выглядит как «пришёл 409 вместо 402» и уводит расследование в
+    // сторону квот, хотя настоящая причина — незакрытая попытка.
+    expect(closed.status).toBe("submitted");
 
     const spent = await getExamQuota(actor);
     expect(spent.used).toBe(20);
@@ -203,7 +210,7 @@ describe("квота: зарегистрированный", () => {
     expect((await getExamQuota({ userId: user._id })).used).toBe(0);
   });
 
-  it("аддон Exam Prep поднимает лимит, просроченный — нет", async () => {
+  it("аддон Exam Prep снимает лимит вопросов, просроченный — нет", async () => {
     const tomorrow = new Date(Date.now() + 86400000);
     const yesterday = new Date(Date.now() - 86400000);
 
@@ -216,8 +223,12 @@ describe("квота: зарегистрированный", () => {
       examAddonEndsAt: yesterday,
     });
 
+    // Оба аддона снимают лимит вопросов: банк меньше любой прежней квоты,
+    // и количество перестало быть осью различия. Различаются они режимами
+    // прохождения — это проверяет отдельный блок ниже.
     const withAddon = await getExamQuota({ userId: active._id });
-    expect(withAddon.limit).toBe(2000);
+    expect(withAddon.limit).toBe(-1);
+    expect(withAddon.unlimited).toBe(true);
     expect(withAddon.addon).toBe("exam_plus");
     expect(withAddon.addonLabel).toBe("Exam Prep Plus");
 
@@ -239,7 +250,7 @@ describe("квота: зарегистрированный", () => {
   });
 
   it("план сильнее аддона, если у плана уже безлимит", async () => {
-    // doctor_pro — безлимит; докупленный Plus не должен опустить до 2000.
+    // doctor_pro — безлимит; докупленный Plus не должен его понизить.
     const user = await makeUser({
       role: "doctor",
       subscriptionPlan: "doctor_pro",
@@ -356,5 +367,78 @@ describe("модель попытки", () => {
         guestSessionId: "sess-both",
       }),
     ).rejects.toThrow(/ровно один владелец/);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// Режимы прохождения.
+//
+// Аддоны Exam Prep различаются не количеством вопросов (банк меньше любой
+// прежней квоты, поэтому цифры были неразличимы), а режимами: платное —
+// репетиция экзамена, учебное — бесплатно.
+// ─────────────────────────────────────────────────────────────────────
+describe("режимы прохождения", () => {
+  const addonActive = { examAddonEndsAt: new Date(Date.now() + 86400000) };
+
+  it("гостю доступен только разбор", async () => {
+    const { modes } = await getExamModes({ userId: null });
+    expect(modes).toEqual(["tutor"]);
+
+    await expect(
+      assertModeAllowed({ guestSessionId: "sess-modes", mode: "mock" }),
+    ).rejects.toThrow(/Зарегистрируйтесь/);
+  });
+
+  it("без аддона открыты учебные режимы, экзаменационные — нет", async () => {
+    const user = await makeUser(); // patient_free, лимит по вопросам есть
+    const { modes } = await getExamModes({ userId: user._id });
+    expect(modes).toEqual(["tutor", "drill"]);
+
+    await assertModeAllowed({ userId: user._id, mode: "drill" });
+    await expect(
+      assertModeAllowed({ userId: user._id, mode: "timed" }),
+    ).rejects.toThrow(/на время/i);
+    await expect(
+      assertModeAllowed({ userId: user._id, mode: "mock" }),
+    ).rejects.toThrow(/симуляция/i);
+  });
+
+  it("Plus открывает прохождение на время, но не полную симуляцию", async () => {
+    const user = await makeUser({ examAddon: "exam_plus", ...addonActive });
+    const { modes } = await getExamModes({ userId: user._id });
+    expect(modes).toEqual(["tutor", "drill", "timed"]);
+
+    await assertModeAllowed({ userId: user._id, mode: "timed" });
+    await expect(
+      assertModeAllowed({ userId: user._id, mode: "mock" }),
+    ).rejects.toThrow(/Unlimited/);
+  });
+
+  it("Unlimited открывает полную симуляцию", async () => {
+    const user = await makeUser({ examAddon: "exam_unlimited", ...addonActive });
+    const { modes } = await getExamModes({ userId: user._id });
+    expect(modes).toEqual(["tutor", "drill", "timed", "mock"]);
+    await assertModeAllowed({ userId: user._id, mode: "mock" });
+  });
+
+  it("план с безлимитом даёт все режимы без аддона", async () => {
+    // Иначе покупка старшего тарифа была бы ухудшением: врач платит больше
+    // всех и при этом теряет симуляцию, пока не докупит аддон.
+    const user = await makeUser({
+      role: "doctor",
+      subscriptionPlan: "doctor_pro",
+    });
+    const { modes, addon } = await getExamModes({ userId: user._id });
+    expect(addon).toBeNull();
+    expect(modes).toEqual(["tutor", "drill", "timed", "mock"]);
+  });
+
+  it("просроченный аддон закрывает экзаменационные режимы", async () => {
+    const user = await makeUser({
+      examAddon: "exam_unlimited",
+      examAddonEndsAt: new Date(Date.now() - 86400000),
+    });
+    const { modes } = await getExamModes({ userId: user._id });
+    expect(modes).toEqual(["tutor", "drill"]);
   });
 });

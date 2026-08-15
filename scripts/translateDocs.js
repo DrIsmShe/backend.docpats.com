@@ -234,6 +234,12 @@ async function translateWithRetry(client, params, attempts = 3) {
  * разошёлся бы с диском на первом же новом разделе. Манифест пересобирается
  * при каждом прогоне скрипта, то есть ровно тогда, когда состав меняется.
  */
+/** Первый заголовок первого уровня — он же название раздела. */
+function headingOf(text) {
+  const line = text.split("\n").find((l) => l.startsWith("# "));
+  return line ? line.slice(2).trim() : null;
+}
+
 async function writeManifest() {
   const entries = await fs.readdir(DOCS_ROOT, { withFileTypes: true });
   const sections = [];
@@ -245,19 +251,33 @@ async function writeManifest() {
     if (!source) continue;
 
     const hash = sha1(source);
-    const heading = source.split("\n").find((l) => l.startsWith("# "));
-    const languages = { [SOURCE_LANG]: { status: "source", bytes: source.length } };
+    const languages = {
+      [SOURCE_LANG]: {
+        status: "source",
+        bytes: source.length,
+        title: headingOf(source) ?? entry.name,
+      },
+    };
 
     for (const lang of ALL_LANGS) {
       const text = await readIfExists(path.join(dir, `${lang}.md`));
+      // Заголовок каждого перевода кладём сюда же. Оглавлению на сайте
+      // иначе пришлось бы тянуть все тринадцать файлов, чтобы прочитать
+      // из каждого первую строку.
       languages[lang] = text
-        ? { status: stampOf(text) === hash ? "fresh" : "stale", bytes: text.length }
-        : { status: "missing", bytes: 0 };
+        ? {
+            status: stampOf(text) === hash ? "fresh" : "stale",
+            bytes: text.length,
+            title: headingOf(text) ?? entry.name,
+          }
+        : { status: "missing", bytes: 0, title: null };
     }
 
     sections.push({
       name: entry.name,
-      title: heading ? heading.slice(2).trim() : entry.name,
+      // Заголовок оригинала. Оставлен для админки и совместимости —
+      // переводы своих заголовков лежат в languages[lang].title.
+      title: languages[SOURCE_LANG].title,
       sourceHash: hash,
       languages,
     });

@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import mongoose from "mongoose";
 import ExamProgram from "../../modules/education/education-catalog/models/examProgram.model.js";
 import ExamItem from "../../modules/education/education-items/models/examItem.model.js";
+import User from "../../common/models/Auth/users.js";
 import {
   buildBlueprintPlan,
   isAnswerCorrect,
@@ -18,6 +19,35 @@ import {
 } from "../../modules/education/education-attempts/services/attempt.service.js";
 
 const oid = () => new mongoose.Types.ObjectId();
+
+/**
+ * Учащийся с доступом ко ВСЕМ режимам прохождения.
+ *
+ * Раньше здесь хватало голого ObjectId: startAttempt не спрашивал, кто
+ * запускает попытку. Теперь спрашивает — режимы timed и mock платные, — и
+ * несуществующий пользователь резолвится как гость, которому доступен
+ * только tutor. Поэтому нужен настоящий документ с планом, дающим всё:
+ * doctor_pro имеет безлимит по вопросам, а значит и все четыре режима.
+ */
+async function makeLearner(overrides = {}) {
+  const suffix = new mongoose.Types.ObjectId().toString();
+  return User.create({
+    emailEncrypted: `attempts-${suffix}@example.com`,
+    firstNameEncrypted: "Тест",
+    lastNameEncrypted: "Учащийся",
+    emailHash: "placeholder",
+    firstNameHash: "placeholder",
+    lastNameHash: "placeholder",
+    username: `attempts-${suffix}`,
+    password: "hashed-password-placeholder",
+    dateOfBirth: new Date("1990-01-01"),
+    bio: "test",
+    agreement: true,
+    role: "doctor",
+    subscriptionPlan: "doctor_pro",
+    ...overrides,
+  });
+}
 
 async function makeProgram(overrides = {}) {
   return ExamProgram.create({
@@ -124,7 +154,7 @@ describe("прохождение попытки", () => {
 
   beforeEach(async () => {
     program = await makeProgram();
-    userId = oid();
+    userId = (await makeLearner())._id;
     await seedItems(program._id, "cardio", 4);
     await seedItems(program._id, "neuro", 4);
   });
@@ -296,7 +326,7 @@ describe("готовность к экзамену", () => {
         { code: "neuro", title: "Неврология", weightPercent: 20 },
       ],
     });
-    const userId = oid();
+    const userId = (await makeLearner())._id;
     await seedItems(program._id, "cardio", 5);
     await seedItems(program._id, "neuro", 5);
 

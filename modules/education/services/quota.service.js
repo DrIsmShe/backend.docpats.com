@@ -27,6 +27,7 @@ import ExamAttempt from "../education-attempts/models/examAttempt.model.js";
 import User from "../../../common/models/Auth/users.js";
 import {
   resolveExamQuestionLimit,
+  resolveExamModes,
   EXAM_ADDON_DISPLAY_NAMES,
   PLAN_DISPLAY_NAMES,
 } from "../../../common/config/aiPlanLimits.js";
@@ -160,6 +161,61 @@ export async function assertCanStart({
   }
 
   return { quota, allowed: Math.min(requested, quota.remaining) };
+}
+
+/**
+ * Какие режимы прохождения доступны — для витрины.
+ *
+ * @returns {Promise<{modes: string[], plan: string, addon: string|null}>}
+ */
+export async function getExamModes({ userId = null }) {
+  if (!userId) return resolveExamModes(null);
+  const user = await User.findById(userId)
+    .select("role subscriptionPlan subscriptionEndsAt trialEndsAt examAddon examAddonEndsAt")
+    .lean();
+  return resolveExamModes(user);
+}
+
+/**
+ * Проверка режима перед запуском попытки.
+ *
+ * Учебные режимы (tutor, drill) доступны всем зарегистрированным: учиться
+ * платформа не мешает. Платное — репетиция экзамена: timed по аддону Plus,
+ * mock по Unlimited. Планы с безлимитом вопросов получают всё сразу.
+ *
+ * Гостю оставлен только tutor: демо-проход показывает формат, а не заменяет
+ * подготовку.
+ */
+export async function assertModeAllowed({
+  userId = null,
+  guestSessionId = null,
+  mode,
+}) {
+  if (!mode) return;
+
+  const { modes, plan, addon } = userId
+    ? await getExamModes({ userId })
+    : resolveExamModes(null);
+
+  if (modes.includes(mode)) return;
+
+  const isGuest = !userId && !!guestSessionId;
+  throw new QuotaExceededError(
+    isGuest
+      ? "В демо-проходе доступен только режим с объяснениями. Зарегистрируйтесь, чтобы открыть остальные."
+      : mode === "mock"
+        ? "Полная симуляция экзамена входит в Exam Prep Unlimited и в тарифы Growth и Pro."
+        : "Прохождение на время входит в Exam Prep и в тарифы Growth и Pro.",
+    {
+      feature: "examModes",
+      isGuest,
+      plan,
+      addon,
+      mode,
+      allowedModes: modes,
+      upgrade: isGuest ? "register" : "exam_addon",
+    },
+  );
 }
 
 /**

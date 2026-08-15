@@ -73,7 +73,12 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 60,
     patientsInOffice: 600,
     videoMinutes: 720,
-    docpatsCommissionPct: 12,
+    // Комиссия пробного = комиссия Lite, куда аккаунт и переходит по его
+    // окончании. Раньше стояло 12 % (как у Growth, чьи лимиты пробный
+    // повторяет), и окончание пробного было ухудшением сразу по двум осям:
+    // появлялась подписка И росла комиссия. Теперь переход на Lite не
+    // меняет комиссию вовсе, а любой старший тариф её снижает.
+    docpatsCommissionPct: 15,
   },
   // «Базовый» — вход для врачей: лимиты втрое меньше Start (doctor_basic)
   // за $3/мес. Дробные лимиты округлены до ближайшего целого; комиссия —
@@ -180,10 +185,38 @@ export const PLAN_PRICES = {
 //
 // Действует ровно одна фича — квота вопросов в месяц. Всё остальное
 // (какие тесты видны, какие режимы доступны) определяется планом.
+// РАЗЛИЧИЕ ТАРИФОВ — РЕЖИМЫ, А НЕ КОЛИЧЕСТВО.
+//
+// Раньше Plus продавал 2000 вопросов в месяц, а Unlimited — безлимит. При
+// банке примерно в тысячу вопросов обе цифры перекрывают его с запасом, то
+// есть тарифы были неразличимы: платить 15 $ вместо 7 $ было не за что.
+// Количество перестаёт быть осью, пока банк меньше любой из квот.
+//
+// Ось теперь — режимы прохождения (ATTEMPT_MODES в
+// modules/education/constants.js):
+//   tutor — объяснение сразу после ответа, без таймера
+//   drill — добивка слабых тем по статистике прошлых попыток
+//   timed — таймер, объяснения в конце
+//   mock  — полная симуляция экзамена: состав по blueprint, таймер, отчёт
+//
+// Учиться можно бесплатно (tutor + drill). Платное — репетиция экзамена:
+// 7 $ дают работу на время, 15 $ — полную симуляцию с разнарядкой по
+// blueprint. Это то, ради чего человек и готовится к экзамену.
 export const EXAM_ADDONS = {
-  exam_plus: { examQuestions: 2000 },
-  exam_unlimited: { examQuestions: -1 },
+  exam_plus: { examQuestions: -1, examModes: ["tutor", "drill", "timed"] },
+  exam_unlimited: {
+    examQuestions: -1,
+    examModes: ["tutor", "drill", "timed", "mock"],
+  },
 };
+
+// Режимы, доступные без аддона.
+//
+// Планы с безлимитом вопросов (пробный, Growth, Pro, клиники) получают всё:
+// они уже платят за модуль в составе тарифа, и отнимать у них симуляцию
+// ради продажи аддона было бы ухудшением для тех, кто платит больше всех.
+export const BASE_EXAM_MODES = ["tutor", "drill"];
+export const ALL_EXAM_MODES = ["tutor", "drill", "timed", "mock"];
 
 export const EXAM_ADDON_PRICES = {
   exam_plus: { monthly: 7, yearly: 70 },
@@ -252,7 +285,18 @@ export function resolveEffectivePlan(user) {
     if (user.trialEndsAt && new Date() < new Date(user.trialEndsAt)) {
       return "doctor_trial";
     }
-    return "doctor_basic"; // после trial — платный basic
+    // После trial — САМЫЙ ДЕШЁВЫЙ платный тариф, а не Start.
+    //
+    // Раньше здесь стоял doctor_basic (19 $). Правило писалось, когда Lite
+    // ещё не существовало — он появился позже и описан в этом же файле
+    // «втрое меньше Start», а откат не тронули. Получалось, что врач,
+    // не выбиравший вообще ничего, оказывался на тарифе в шесть раз
+    // дороже минимального.
+    //
+    // Молча записывать человека на что-то дороже нижней ступени нельзя.
+    // Пациенты при этом не теряются: requireDoctorPatientLimit блокирует
+    // только ДОБАВЛЕНИЕ новых, уже заведённые остаются доступны.
+    return "doctor_lite";
   }
 
   if (role === "admin") return "doctor_pro";
@@ -315,6 +359,34 @@ export function resolveExamQuestionLimit(user) {
 }
 
 /**
+ * Какие режимы прохождения доступны человеку.
+ *
+ * Режимы складываются, а не выбираются: если план уже даёт всё (безлимит по
+ * вопросам), докупленный аддон ничего не отнимает. Гость — только tutor:
+ * демо-проход существует, чтобы показать формат, а не чтобы репетировать
+ * экзамен.
+ *
+ * @param {Object|null} user — документ User из Mongo
+ * @returns {{ modes: string[], plan: string, addon: string|null }}
+ */
+export function resolveExamModes(user) {
+  const plan = user ? resolveEffectivePlan(user) : "guest";
+  if (!user) return { modes: ["tutor"], plan, addon: null };
+
+  const planUnlimited = getLimit(plan, "examQuestions") === -1;
+  const addon = resolveExamAddon(user);
+
+  const set = new Set(planUnlimited ? ALL_EXAM_MODES : BASE_EXAM_MODES);
+  if (addon) for (const m of EXAM_ADDONS[addon].examModes) set.add(m);
+
+  return {
+    modes: ALL_EXAM_MODES.filter((m) => set.has(m)),
+    plan,
+    addon,
+  };
+}
+
+/**
  * Маппинг плана на features.maxPatients (для совместимости со старым
  * pre-save хуком и middleware requireDoctorPatientLimit).
  *
@@ -338,6 +410,10 @@ export const PLAN_DISPLAY_NAMES = {
   patient_std: "Patient Plus",
   patient_pro: "Patient Pro",
   doctor_trial: "Doctor Growth (trial)",
+  // doctor_lite забыли добавить сюда вместе с самим тарифом: quota.service
+  // берёт имя как PLAN_DISPLAY_NAMES[plan] ?? plan, и врач видел в
+  // интерфейсе сырой ключ «doctor_lite».
+  doctor_lite: "Doctor Lite",
   doctor_basic: "Doctor Start",
   doctor_super: "Doctor Growth",
   doctor_pro: "Doctor Pro",

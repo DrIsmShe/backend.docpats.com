@@ -21,7 +21,7 @@ import {
   ForbiddenError,
   QuotaExceededError,
 } from "../../../../common/utils/errors.js";
-import { assertCanStart } from "../../services/quota.service.js";
+import { assertCanStart, assertModeAllowed } from "../../services/quota.service.js";
 import logger from "../../../../common/logger.js";
 
 // Потолок времени на один вопрос — таймер приходит с клиента, и доверять
@@ -184,6 +184,13 @@ export async function startAttempt({
   if (program.status !== "published") {
     throw new ConflictError("Exam program is not published");
   }
+
+  // Режим проверяется ДО сборки состава: собрать симуляцию экзамена, а
+  // потом отказать — значит впустую сходить в базу за вопросами и списать
+  // время пользователя. Проверка живёт здесь, в единственной точке входа
+  // в попытку, а не в контроллере: тогда любой другой вызывающий (сидер,
+  // будущий фоновой прогон) получает то же правило бесплатно.
+  await assertModeAllowed({ userId, guestSessionId, mode });
   // Гостю доступны ВСЕ опубликованные тесты — ограничивает не список, а
   // квота: 20 вопросов на пробу против 250 в месяц у зарегистрированного.
   // Прятать каталог за регистрацией смысла нет: человек должен увидеть,

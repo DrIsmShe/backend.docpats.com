@@ -17,7 +17,11 @@ import educationAttemptsRouter from "./education-attempts/index.js";
 import educationIngestRouter from "./education-ingest/index.js";
 import educationTranslationRouter from "./education-translation/index.js";
 import { requireLearner } from "./middlewares/educationAuth.js";
-import { getExamQuota, claimGuestAttempts } from "./services/quota.service.js";
+import {
+  getExamQuota,
+  getExamModes,
+  claimGuestAttempts,
+} from "./services/quota.service.js";
 import {
   asyncHandler,
   errorHandler,
@@ -53,7 +57,15 @@ router.get(
   asyncHandler(async (req, res) => {
     const userId = req.educationActor.userId;
     await claimGuestAttempts({ userId, guestSessionId: req.sessionID });
-    res.json(await getExamQuota({ userId }));
+
+    // Режимы отдаём тем же ответом, а не отдельным маршрутом: витрине они
+    // нужны ровно там же, где квота, — на экране перед стартом попытки.
+    // Без них интерфейс предлагал бы кнопки, которые сервер отклонит.
+    const [quota, { modes }] = await Promise.all([
+      getExamQuota({ userId }),
+      getExamModes({ userId }),
+    ]);
+    res.json({ ...quota, modes });
   }),
 );
 

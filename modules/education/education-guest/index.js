@@ -33,6 +33,7 @@ import {
   submitAttempt,
 } from "../education-attempts/services/attempt.service.js";
 import { getExamQuota } from "../services/quota.service.js";
+import { resolveExamModes } from "../../../common/config/aiPlanLimits.js";
 import {
   asyncHandler,
   errorHandler,
@@ -95,7 +96,10 @@ router.get(
 router.get(
   "/quota",
   asyncHandler(async (req, res) => {
-    res.json(await getExamQuota(guestActor(req)));
+    // Гостю доступен только режим с разбором — витрина должна знать это
+    // заранее, а не узнавать из отказа после нажатия.
+    const quota = await getExamQuota(guestActor(req));
+    res.json({ ...quota, modes: resolveExamModes(null).modes });
   }),
 );
 
