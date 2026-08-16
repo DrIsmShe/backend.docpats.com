@@ -20,6 +20,7 @@ import {
   createInvoiceRequest,
   listInvoiceRequests,
   markInvoicePaid,
+  deleteInvoiceRequest,
 } from "./controllers/invoice.controller.js";
 
 const router = express.Router();
@@ -105,6 +106,12 @@ router.post(
   requireAuth,
   requireAdmin,
   markInvoicePaid,
+);
+router.delete(
+  "/invoice-requests/:id",
+  requireAuth,
+  requireAdmin,
+  deleteInvoiceRequest,
 );
 
 // ─── Ручная выдача тарифа ─────────────────────────────────────────────

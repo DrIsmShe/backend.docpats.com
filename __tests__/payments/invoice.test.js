@@ -28,6 +28,7 @@ import {
   createInvoiceRequest,
   listInvoiceRequests,
   markInvoicePaid,
+  deleteInvoiceRequest,
 } from "../../modules/payments/controllers/invoice.controller.js";
 import { createTestDoctor } from "../helpers/createTestUser.js";
 
@@ -257,6 +258,43 @@ describe("подтверждение оплаты по счёту", () => {
 
     const tx = await PaymentTransaction.findById(res.body.transactionId).lean();
     expect(tx.amount).toBe(478.35);
+  });
+
+  it("неоплаченную заявку можно удалить: проверочные и дубли не должны копиться", async () => {
+    const id = await makeRequest();
+    const res = mockRes();
+
+    await deleteInvoiceRequest(
+      { params: { id }, session: { userId: String(doctor._id) } },
+      res,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(await InvoiceRequest.countDocuments()).toBe(0);
+  });
+
+  it("оплаченную удалить нельзя — на ней транзакция", async () => {
+    const id = await makeRequest();
+    await markInvoicePaid(
+      {
+        params: { id },
+        body: { userId: String(doctor._id) },
+        session: { userId: String(doctor._id) },
+      },
+      mockRes(),
+    );
+
+    const res = mockRes();
+    await deleteInvoiceRequest(
+      { params: { id }, session: { userId: String(doctor._id) } },
+      res,
+    );
+
+    // Удалив заявку, мы оставили бы в реестре деньги, происхождение
+    // которых уже не восстановить.
+    expect(res.statusCode).toBe(409);
+    expect(await InvoiceRequest.countDocuments()).toBe(1);
+    expect(await PaymentTransaction.countDocuments()).toBe(1);
   });
 
   it("список фильтруется по статусу — иначе он свалка, а не инструмент", async () => {

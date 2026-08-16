@@ -216,6 +216,48 @@ export async function listInvoiceRequests(req, res) {
 }
 
 /**
+ * DELETE /api/payments/invoice-requests/:id
+ *
+ * Убрать заявку из списка: проверочная, дубль, передумали. Без этого
+ * список зарастает и перестаёт быть рабочим инструментом — а именно
+ * рабочим он и должен быть, счета выписывает человек по нему.
+ *
+ * ОПЛАЧЕННЫЕ НЕ УДАЛЯЮТСЯ. На них висит транзакция; удалив заявку, мы
+ * оставим в реестре деньги, происхождение которых уже не восстановить.
+ * Такую заявку можно только пометить отменённой — но и это не отменяет
+ * платежа, поэтому решение остаётся за человеком.
+ */
+export async function deleteInvoiceRequest(req, res) {
+  try {
+    const request = await InvoiceRequest.findById(req.params.id);
+    if (!request) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Заявка не найдена" });
+    }
+
+    if (request.status === "paid") {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Заявка оплачена: на ней транзакция, удаление разорвало бы связь с деньгами",
+        transactionId: request.transactionId,
+      });
+    }
+
+    await request.deleteOne();
+    console.log(
+      `invoice: заявка ${request._id} (${request.companyName}) удалена админом ${req.session.userId}`,
+    );
+
+    return res.status(200).json({ success: true, id: String(request._id) });
+  } catch (err) {
+    console.error("deleteInvoiceRequest error:", err.message);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
+/**
  * POST /api/payments/invoice-requests/:id/paid
  * { userId?, invoiceNumber?, amount? }
  *
