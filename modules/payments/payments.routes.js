@@ -16,6 +16,11 @@ import {
   listWaitlist,
 } from "./controllers/waitlist.controller.js";
 import { grantPlanByAdmin } from "./controllers/grant.controller.js";
+import {
+  createInvoiceRequest,
+  listInvoiceRequests,
+  markInvoicePaid,
+} from "./controllers/invoice.controller.js";
 
 const router = express.Router();
 
@@ -78,6 +83,29 @@ router.post(
 // который ещё не завёл аккаунт — именно он и есть будущий покупатель.
 router.post("/waitlist", joinWaitlist);
 router.get("/waitlist", requireAuth, requireAdmin, listWaitlist);
+
+// ─── Оплата по счёту ──────────────────────────────────────────────────
+//
+// ПАРАЛЛЕЛЬНЫЙ канал к онлайн-оплате, а не замена ей: бухгалтерия клиники
+// не платит корпоративной картой, и для чека в 99–499 $ счёт с
+// закрывающими документами — основной способ. Канал остаётся и после
+// подключения эквайринга.
+//
+// Заявка открыта без авторизации по той же причине, что и лист ожидания:
+// счёт просит бухгалтер, у которого аккаунта здесь нет и не будет.
+router.post("/invoice-request", createInvoiceRequest);
+router.get(
+  "/invoice-requests",
+  requireAuth,
+  requireAdmin,
+  listInvoiceRequests,
+);
+router.post(
+  "/invoice-requests/:id/paid",
+  requireAuth,
+  requireAdmin,
+  markInvoicePaid,
+);
 
 // ─── Ручная выдача тарифа ─────────────────────────────────────────────
 // Продажа мимо сайта (перевод, счёт), промо, компенсация, партнёрский

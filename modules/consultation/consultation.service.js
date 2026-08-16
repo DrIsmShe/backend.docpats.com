@@ -2,6 +2,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import mongoose from "mongoose";
 import { ConsultationSession } from "./consultation.model.js";
 import User from "../../common/models/Auth/users.js";
+import {
+  resolveEffectivePlan,
+  getLimit,
+} from "../../common/config/aiPlanLimits.js";
 
 const claude = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -58,17 +62,43 @@ function getMaxes(isAuth) {
   };
 }
 
-// Максимум консультаций с учётом бонусов за рефералов (bonusConsultations).
+// Максимум консультаций: тариф + бонусы за рефералов (bonusConsultations).
+//
+// РАНЬШЕ ТАРИФ НЕ УЧИТЫВАЛСЯ ВОВСЕ. Предел брался из константы модуля
+// (CONSULTATION_LIMITS.auth = 50), одинаковой для всех авторизованных, а
+// страница тарифов при этом продавала «10 консультаций на Plus» и «25 на
+// Pro». То есть бесплатный пациент получал ровно столько же, сколько
+// платящий, а числа в прайсе не читала ни одна строка кода — ровно как с
+// комиссией и месячными квотами разборов.
+//
+// Теперь предел берётся из плана. Константа модуля осталась запасным
+// значением: план может не описывать фичу (служебные роли, админ), и
+// падать в ноль там, где раньше работало, — хуже, чем отдать прежние 50.
+//
 // Для гостей бонусов нет. Ошибку чтения User трактуем как «без бонуса».
 async function consultationMaxFor(userId, isAuth) {
-  let max = isAuth ? CONSULTATION_LIMITS.auth : CONSULTATION_LIMITS.guest;
-  if (isAuth && userId) {
-    try {
-      const u = await User.findById(userId).select("bonusConsultations").lean();
-      if (u?.bonusConsultations) max += u.bonusConsultations;
-    } catch {
-      /* без бонуса */
-    }
+  if (!isAuth || !userId) return CONSULTATION_LIMITS.guest;
+
+  let user = null;
+  try {
+    user = await User.findById(userId)
+      .select("role subscriptionPlan trialEndsAt bonusConsultations")
+      .lean();
+  } catch {
+    /* сеть/база недоступны — работаем по запасному значению */
+  }
+
+  const planLimit = user ? getLimit(resolveEffectivePlan(user), "aiConsultations") : 0;
+  // -1 = безлимит; 0 = фича у плана не описана → запасное значение модуля.
+  let max =
+    planLimit === -1
+      ? Number.MAX_SAFE_INTEGER
+      : planLimit > 0
+        ? planLimit
+        : CONSULTATION_LIMITS.auth;
+
+  if (user?.bonusConsultations && max !== Number.MAX_SAFE_INTEGER) {
+    max += user.bonusConsultations;
   }
   return max;
 }

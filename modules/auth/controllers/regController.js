@@ -5,9 +5,17 @@ import "dotenv/config";
 import { sendEmail } from "../../../common/services/emailService.js";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import crypto from "crypto";
-import { SUBSCRIPTION_PRESETS } from "../../../common/config/subscriptions.js";
-// 💎 Новый импорт — для trial-периода врачей
-import { DOCTOR_TRIAL_DAYS } from "../../../common/config/aiPlanLimits.js";
+// Единственный источник правды по тарифам и лимитам.
+//
+// Раньше здесь же импортировался common/config/subscriptions.js — второй,
+// более старый конфиг подписок со своими значениями. Он расходился с
+// aiPlanLimits: выдавал новому врачу maxPatients = 10 там, где пробный
+// период обещает сотню. Удалён; всё берётся отсюда.
+import {
+  DOCTOR_TRIAL_DAYS,
+  PLAN_LIMITS,
+  resolveEffectivePlan,
+} from "../../../common/config/aiPlanLimits.js";
 
 // ---------- utils ----------
 const safeLower = (v) => (typeof v === "string" ? v.toLowerCase() : "");
@@ -107,7 +115,26 @@ export const registerUser = async (req, res) => {
 
     // 🎯 Старая система — выбор стартового тарифа по роли (объект subscription)
     const defaultTier = role === "doctor" ? "doctor_free" : "patient_free";
-    const defaultFeatures = SUBSCRIPTION_PRESETS[defaultTier];
+
+    // features — кэш для старого кода. Собираем его из действующего плана,
+    // а не из отдельной таблицы: две таблицы про одно и то же расходятся
+    // молча, и именно так новый врач получал лимит в 5 пациентов при
+    // пробном периоде на сотню.
+    const effectivePlan = resolveEffectivePlan({
+      role,
+      subscriptionPlan: null,
+      trialEndsAt:
+        role === "doctor"
+          ? new Date(Date.now() + DOCTOR_TRIAL_DAYS * 24 * 60 * 60 * 1000)
+          : null,
+    });
+    const planLimits = PLAN_LIMITS[effectivePlan] || {};
+    const defaultFeatures = {
+      maxPatients: planLimits.patientsInOffice ?? 5,
+      aiAccess: role === "doctor",
+      prioritySupport: false,
+      familyMembers: planLimits.familyMembers ?? 0,
+    };
 
     // 💎 НОВАЯ СИСТЕМА — расчёт trial и плоского subscriptionPlan
     //

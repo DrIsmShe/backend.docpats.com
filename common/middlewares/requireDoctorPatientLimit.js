@@ -3,6 +3,7 @@ import User from "../models/Auth/users.js";
 import DoctorPrivatePatient from "../models/Polyclinic/DoctorPrivatePatient.js";
 import DoctorProfile from "../models/DoctorProfile/profileDoctor.js";
 import NewPatientPolyclinic from "../models/Polyclinic/newPatientPolyclinic.js";
+import { resolveEffectivePlan, getLimit } from "../config/aiPlanLimits.js";
 
 export default async function requireDoctorPatientLimit(req, res, next) {
   try {
@@ -107,11 +108,29 @@ export default async function requireDoctorPatientLimit(req, res, next) {
     // 4️⃣ Лимит по подписке
     // ========================
 
+    // Предел берём из ДЕЙСТВУЮЩЕГО плана, а не из features.maxPatients.
+    //
+    // features.maxPatients — кэш, который пишется хуком модели только при
+    // изменении subscriptionPlan или subscription.tier. При регистрации
+    // subscriptionPlan = null, а subscription.tier = "doctor_free", и хук
+    // записывал туда легаси-значение 5. Дальше во время пробного периода
+    // ничего не менялось, save не вызывался — и врач, прошедший
+    // верификацию, упирался в 5 пациентов вместо сотни, обещанной пробным
+    // периодом. Кэш ещё и не умеет протухать: окончание пробного никем не
+    // сохраняется, значит и лимит бы не понизился.
+    //
+    // resolveEffectivePlan считает план каждый раз заново — из роли,
+    // сохранённого тарифа и даты окончания пробного. Кэш остаётся
+    // запасным вариантом на случай плана без описанного лимита.
     const doctor = await User.findById(doctorUserId)
-      .select("features.maxPatients")
+      .select("role subscriptionPlan trialEndsAt features.maxPatients")
       .lean();
 
-    const maxPatients = doctor?.features?.maxPatients ?? 5;
+    const planLimit = doctor
+      ? getLimit(resolveEffectivePlan(doctor), "patientsInOffice")
+      : 0;
+    const maxPatients =
+      planLimit !== 0 ? planLimit : (doctor?.features?.maxPatients ?? 5);
 
     if (maxPatients === -1) return next();
 

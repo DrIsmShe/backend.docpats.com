@@ -28,6 +28,8 @@ import mongoose from "mongoose";
 import crypto from "crypto";
 import "dotenv/config";
 import { sanitizeUsername } from "../../utils/sanitizeUsername.js";
+// aiPlanLimits не импортирует ничего — цикла не будет.
+import { resolveEffectivePlan } from "../../config/aiPlanLimits.js";
 
 /* ======================= Крипто-константы и утилиты ======================= */
 const RAW_KEY = process.env.ENCRYPTION_KEY || "";
@@ -241,6 +243,7 @@ const PLAN_TO_MAX_PATIENTS = {
   doctor_trial: 100, // как Start: пробный сокращён до 3 месяцев на лимитах Start
 
   patient_free: 0,
+  patient_care: 0,
   patient_std: 0,
   patient_pro: 0,
 
@@ -270,6 +273,7 @@ const userSchema = new mongoose.Schema(
       enum: [
         // Новые ключи v2
         "patient_free",
+        "patient_care",
         "patient_std",
         "patient_pro",
         // doctor_lite появился позже остальных, и в этот список его не
@@ -922,9 +926,22 @@ userSchema.pre("save", function (next) {
   // с кодом который мог использовать старый формат.
   if (
     this.isModified("subscriptionPlan") ||
-    this.isModified("subscription.tier")
+    this.isModified("subscription.tier") ||
+    this.isModified("trialEndsAt")
   ) {
-    const planKey = this.subscriptionPlan || this.subscription?.tier;
+    // Считаем ДЕЙСТВУЮЩИЙ план, а не берём сохранённый ключ.
+    //
+    // Раньше здесь стояло `this.subscriptionPlan || this.subscription.tier`.
+    // При регистрации subscriptionPlan = null, а tier = "doctor_free", и в
+    // кэш уходило легаси-значение 5 — при том что пробный период даёт сотню.
+    // resolveEffectivePlan учитывает роль и дату окончания пробного, поэтому
+    // кэш сразу совпадает с тем, что видит остальной код.
+    //
+    // Кэш всё равно остаётся приблизительным: окончание пробного периода
+    // никто не сохраняет, значит и хук не сработает. Поэтому потребители
+    // (requireDoctorPatientLimit) считают лимит от плана сами, а features —
+    // только для обратной совместимости со старым кодом.
+    const planKey = resolveEffectivePlan(this) || this.subscription?.tier;
     const mapped = PLAN_TO_MAX_PATIENTS[planKey];
     if (mapped !== undefined) {
       // Инициализируем features если его ещё нет

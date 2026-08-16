@@ -51,7 +51,15 @@ const paymentTransactionSchema = new mongoose.Schema(
     // Провайдер и его идентификаторы
     provider: {
       type: String,
-      enum: ["mock", "iyzico", "stripe", "local"],
+      // "invoice" — оплата по счёту (параллельный канал, подтверждает
+      // администратор), "local" — ручная выдача без денег (промо,
+      // компенсация). Различать их обязательно: первое — выручка,
+      // второе — нет, и в отчёте они не должны смешиваться.
+      //
+      // "paddle" добавлен вместе с адаптером: без него запись о первой же
+      // реальной оплате упала бы на валидации enum, уже после того как
+      // деньги списаны.
+      enum: ["mock", "iyzico", "stripe", "paddle", "invoice", "local"],
       required: true,
     },
     providerRef: { type: String, default: null }, // checkoutId / paymentIntentId / token
