@@ -1,18 +1,26 @@
 // server/modules/payments/providers/index.js
 // ─────────────────────────────────────────────────────────────────────
 //   Реестр платёжных провайдеров. Активный выбирается через env
-//   PAYMENTS_PROVIDER (mock | iyzico | stripe). По умолчанию — mock,
-//   чтобы в проде без ключей ничего не списывалось.
+//   PAYMENTS_PROVIDER (mock | iyzico | stripe | paddle). По умолчанию —
+//   mock, чтобы в проде без ключей ничего не списывалось.
+//
+//   Провайдер здесь один на всю платформу, и это осознанное упрощение на
+//   сегодня. Если рынки разойдутся (Paddle на подписки по миру, iyzico на
+//   Турцию, Stripe Connect на приём пациентов), выбор станет зависеть от
+//   вида платежа и страны — тогда getActiveProvider() придётся заменить на
+//   выбор по контексту сделки, а не по одной переменной окружения.
 // ─────────────────────────────────────────────────────────────────────
 
 import mockProvider from "./mock.provider.js";
 import iyzicoProvider from "./iyzico.provider.js";
 import stripeProvider from "./stripe.provider.js";
+import paddleProvider from "./paddle.provider.js";
 
 const PROVIDERS = {
   mock: mockProvider,
   iyzico: iyzicoProvider,
   stripe: stripeProvider,
+  paddle: paddleProvider,
 };
 
 export function getActiveProviderName() {

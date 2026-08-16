@@ -233,12 +233,12 @@ const ReissueHistorySchema = new mongoose.Schema(
    Числа должны совпадать с patientsInOffice в aiPlanLimits.js.
 ========================================================================= */
 const PLAN_TO_MAX_PATIENTS = {
-  // Новые ключи (тарифная сетка v3) — совпадают с patientsInOffice в aiPlanLimits.js
-  doctor_lite: 17, // «Базовый» — втрое меньше Start (50/3 ≈ 17)
+  // Новые ключи (тарифная сетка v4) — совпадают с patientsInOffice в aiPlanLimits.js
+  doctor_lite: 30, // было 17, вместе с ценой 3 $ → 9 $
   doctor_basic: 100,
   doctor_super: 600,
-  doctor_pro: -1, // -1 = безлимит (middleware requireDoctorPatientLimit это понимает)
-  doctor_trial: 600, // как Growth во время trial
+  doctor_pro: 2000, // было -1 (безлимит); см. пояснение в aiPlanLimits.js v4
+  doctor_trial: 100, // как Start: пробный сокращён до 3 месяцев на лимитах Start
 
   patient_free: 0,
   patient_std: 0,
@@ -272,6 +272,14 @@ const userSchema = new mongoose.Schema(
         "patient_free",
         "patient_std",
         "patient_pro",
+        // doctor_lite появился позже остальных, и в этот список его не
+        // внесли. Сохранение врача с самым дешёвым тарифом падало с
+        // ValidationError: «doctor_lite is not a valid enum value».
+        // Незаметно это было ровно потому, что тариф ещё никто не покупал:
+        // после пробного периода план не записывается в базу, а вычисляется
+        // (resolveEffectivePlan), и до записи дело не доходило. Первая же
+        // покупка Lite упала бы — как и выдача Lite администратором.
+        "doctor_lite",
         "doctor_basic",
         "doctor_super",
         "doctor_pro",

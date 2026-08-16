@@ -25,6 +25,12 @@
 // это тупик, из которого врач не понимает, что делать.
 
 import DiagnosticJob from "../models/diagnosticJob.model.js";
+import User from "../../../../common/models/Auth/users.js";
+import {
+  resolveEffectivePlan,
+  getLimit,
+  PLAN_DISPLAY_NAMES,
+} from "../../../../common/config/aiPlanLimits.js";
 import { ValidationError } from "../../../../common/utils/errors.js";
 
 /** Пределы. Вынесены в .env: у разных клиник разный аппетит и бюджет. */
@@ -37,6 +43,46 @@ export const LIMITS = {
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
+const MONTH_MS = 30 * DAY_MS;
+
+// ─── Третий предел: месячная квота ТАРИФА ─────────────────────────────
+//
+// Пределы выше — про поведение (петля, азарт) и одинаковы для всех. Этот —
+// про деньги, и у каждого тарифа он свой: aiAnalyses в aiPlanLimits.js.
+//
+// До сих пор связи между тарифом и разборами не было вовсе. Тарифная
+// страница обещала 3 разбора на Lite и 60 на Growth, а фактически любой
+// врач мог сделать 60 в сутки — то есть около 1800 в месяц, независимо от
+// того, платит он 3 $ или 99 $. Цифры в прайсе были украшением: ни одна
+// строка кода их не читала.
+//
+// Считаем по тем же фактическим записям, что и остальные пределы: счётчик
+// в памяти обнулялся бы при каждом деплое.
+//
+// Окно скользящее (30 дней назад от «сейчас»), а не календарный месяц.
+// Так проще и честнее: врач, зарегистрировавшийся 28-го, иначе получил бы
+// полную месячную квоту за три дня.
+
+/** План врача и его месячная квота разборов. null — квоту не применяем. */
+async function planQuota(ownerId) {
+  const user = await User.findById(ownerId)
+    .select("role subscriptionPlan trialEndsAt")
+    .lean();
+
+  // Пользователя нет (служебный вызов, тест, удалённый аккаунт) — молча не
+  // применяем тарифный предел. Часовой и суточный при этом работают, то
+  // есть без защиты вызов не остаётся.
+  if (!user) return null;
+
+  const plan = resolveEffectivePlan(user);
+  const limit = getLimit(plan, "aiAnalyses");
+
+  // 0 — фича у плана не описана (пациентские планы), -1 — безлимит.
+  // Ни то, ни другое не повод отказывать.
+  if (!limit || limit < 0) return null;
+
+  return { plan, limit };
+}
 
 /** Человеческое «через сколько можно». Минуты, а не миллисекунды. */
 function humanWait(ms) {
@@ -92,6 +138,28 @@ export async function assertAnalyzeAllowed(ownerId, now = Date.now()) {
       { limit: "analyzePerDay", retryAfterMs: oldest + DAY_MS - now },
     );
   }
+
+  // Месячная квота тарифа — последней: она дороже (лишний запрос к User и
+  // выборка за 30 дней), а два предела выше отсекают основную массу.
+  const quota = await planQuota(ownerId);
+  if (!quota) return;
+
+  const monthJobs = await usageSince(ownerId, new Date(now - MONTH_MS));
+  if (monthJobs.length >= quota.limit) {
+    const oldest = monthJobs[0].createdAt.getTime();
+    const planName = PLAN_DISPLAY_NAMES[quota.plan] || quota.plan;
+    throw new ValidationError(
+      `Исчерпана месячная квота разборов тарифа ${planName} ` +
+        `(${quota.limit}). Место освободится через ` +
+        `${humanWait(oldest + MONTH_MS - now)}, либо перейдите на старший тариф.`,
+      {
+        limit: "analyzePerMonth",
+        plan: quota.plan,
+        planLimit: quota.limit,
+        retryAfterMs: oldest + MONTH_MS - now,
+      },
+    );
+  }
 }
 
 /**
@@ -136,10 +204,25 @@ export async function assertExtractAllowed(AuditModel, ownerId, now = Date.now()
 
 /** Остаток лимитов — чтобы интерфейс мог показать его до нажатия. */
 export async function analyzeQuotaLeft(ownerId, now = Date.now()) {
-  const dayJobs = await usageSince(ownerId, new Date(now - DAY_MS));
+  const monthJobs = await usageSince(ownerId, new Date(now - MONTH_MS));
+  const dayJobs = monthJobs.filter((j) => j.createdAt.getTime() >= now - DAY_MS);
   const hourJobs = dayJobs.filter((j) => j.createdAt.getTime() >= now - HOUR_MS);
+
+  const quota = await planQuota(ownerId);
+
   return {
     hour: { used: hourJobs.length, limit: LIMITS.analyzePerHour },
     day: { used: dayJobs.length, limit: LIMITS.analyzePerDay },
+    // month отсутствует, когда тарифная квота неприменима — интерфейсу
+    // нужно уметь это отличать от «квота есть и она нулевая».
+    ...(quota
+      ? {
+          month: {
+            used: monthJobs.length,
+            limit: quota.limit,
+            plan: quota.plan,
+          },
+        }
+      : {}),
   };
 }

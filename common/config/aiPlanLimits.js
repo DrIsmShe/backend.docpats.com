@@ -5,9 +5,37 @@
 //   Используется во всех AI-сервисах: user-synthesis, consultation-ai,
 //   SOAP-генератор и т.д. Если меняешь лимит — меняй ТОЛЬКО здесь.
 //
-//   Обновлено: 2026-07-18 — тарифная сетка v3, валюта USD.
+//   Обновлено: 2026-08-15 — тарифная сетка v4, валюта USD.
 //   3 тарифа на аудиторию (пациенты / врачи / клиники). Цены в долларах.
 //   patientsInOffice синхронизирован с PLAN_TO_MAX_PATIENTS в модели User.
+//
+//   ─── Что изменилось в v4 и почему ─────────────────────────────────
+//
+//   1. УБРАНА КОМИССИЯ (docpatsCommissionPct). Процент с приёма требует
+//      держать чужие деньги в потоке платформы, а это лицензия платёжного
+//      посредника либо Stripe Connect — который платит только в США,
+//      Британию, ЕЭЗ, Канаду и Швейцарию. Комиссия упирала выплаты врачам
+//      в этот список. Без неё достаточно продавца записи (merchant of
+//      record), и география перестаёт ограничивать. Врач оставляет себе
+//      всё, что заработал; выручка платформы — только подписка.
+//      Кода за полем не было ни строчки: оно нигде не читалось.
+//
+//   2. ЗАКРЫТЫ БЕЗЛИМИТЫ НА ВЫЗОВЫ МОДЕЛИ. Раньше doctor_pro, patient_pro,
+//      clinic и clinic_pro имели -1 на разборах, эпикризах, статьях и
+//      AI-консультациях. Выручка при этом ограничена ценой тарифа, а
+//      расход — ничем: каждый разбор это обращение к claude-opus-5 со
+//      стоимостью порядка $0.2–0.9. Пока комиссия существовала, перерасход
+//      тяжёлого пользователя частично покрывался оборотом с его приёмов;
+//      без комиссии подписка — единственный доход, и потолок обязателен.
+//
+//      -1 остаётся только там, где обращения к модели нет:
+//      examQuestions (свой банк вопросов) и documentExports (свои данные).
+//
+//      ВАЖНО: числа ниже — ПОТОЛОК на случай аномалии, а не ожидаемое
+//      потребление. Обычный врач расходует малую долю.
+//
+//   3. doctor_pro перестал быть безлимитным по пациентам. Цена за пациента
+//      падала до нуля ровно там, где сидят самые загруженные врачи.
 // ─────────────────────────────────────────────────────────────────────
 
 // ─── Пациентские планы (USD) ────────────────────────────────────────
@@ -31,32 +59,41 @@ export const PLAN_LIMITS = {
   guest: {
     examQuestions: 20,
     aiConsultations: 1,
-    aiArticles: 1,
+    // Было 1. Гостю статья не положена, раз её нет у зарегистрированного
+    // Free: иначе регистрация ухудшала бы условия, а число гостей ничем не
+    // ограничено — платить за них некому.
+    aiArticles: 0,
     soapEpicrises: 0,
     documentExports: 0,
     bookingDiscount: 0,
   },
   patient_free: {
     examQuestions: 250,
-    aiConsultations: 5,
-    aiArticles: 1,
-    soapEpicrises: 3,
+    // Бесплатный уровень — демонстрация, а не продукт: платить за него
+    // некому, а расход умножается на каждую регистрацию. Было 5/1/3 —
+    // $0,68 в месяц с каждого зарегистрировавшегося.
+    aiConsultations: 2,
+    aiArticles: 0,
+    soapEpicrises: 1,
     documentExports: -1, // -1 = без лимита (свои данные)
     bookingDiscount: 0,
   },
   patient_std: {
     examQuestions: 1000,
-    aiConsultations: 30,
-    aiArticles: 5,
-    soapEpicrises: 20,
+    aiConsultations: 10,
+    aiArticles: 2,
+    soapEpicrises: 10,
     documentExports: -1,
     bookingDiscount: 10, // % скидка на видео-приём с врачом
   },
   patient_pro: {
     examQuestions: -1,
-    aiConsultations: -1, // безлимит (fair use)
-    aiArticles: 20,
-    soapEpicrises: -1,
+    // Было -1 «безлимит (fair use)». Fair use — не предел, а надежда на
+    // добросовестность: при 19 $ выручки сотня консультаций уже съедает
+    // тариф целиком. Потолок высокий, обычному пациенту недостижимый.
+    aiConsultations: 25,
+    aiArticles: 8,
+    soapEpicrises: 25,
     documentExports: -1,
     bookingDiscount: 20,
   },
@@ -64,99 +101,127 @@ export const PLAN_LIMITS = {
   // ═════════════════════ ВРАЧИ ═══════════════════════════
   // patientsInOffice ДОЛЖЕН совпадать с PLAN_TO_MAX_PATIENTS в users.js.
   // Middleware requireDoctorPatientLimit трактует -1 как безлимит.
+  // Пробный период. Был 6 месяцев на лимитах Growth — и это была самая
+  // крупная статья расхода всей платформы: до $143 на одного врача, без
+  // платёжных данных и без всякой гарантии, что он останется. Сто
+  // зарегистрировавшихся стоили до $14 000 ещё до первого доллара выручки.
+  //
+  // Стало 3 месяца на лимитах Start (значения синхронны с doctor_basic):
+  // около $16 на врача. Трёх месяцев достаточно, чтобы понять продукт;
+  // шесть месяцев на старшем тарифе — это уже не проба, а бесплатная работа.
   doctor_trial: {
-    examQuestions: -1,
-    // Первые 6 месяцев — даём как Doctor Growth (значения синхронны с doctor_super).
-    aiAnalyses: 60,
-    aiArticles: 18,
-    soapEpicrises: 60,
-    aiPatientConsultations: 60,
-    patientsInOffice: 600,
-    videoMinutes: 720,
-    // Комиссия пробного = комиссия Lite, куда аккаунт и переходит по его
-    // окончании. Раньше стояло 12 % (как у Growth, чьи лимиты пробный
-    // повторяет), и окончание пробного было ухудшением сразу по двум осям:
-    // появлялась подписка И росла комиссия. Теперь переход на Lite не
-    // меняет комиссию вовсе, а любой старший тариф её снижает.
-    docpatsCommissionPct: 15,
-  },
-  // «Базовый» — вход для врачей: лимиты втрое меньше Start (doctor_basic)
-  // за $3/мес. Дробные лимиты округлены до ближайшего целого; комиссия —
-  // не лимит, поэтому остаётся как у Start.
-  doctor_lite: {
-    examQuestions: 167,
-    aiAnalyses: 3,
-    aiArticles: 1,
-    soapEpicrises: 3,
-    aiPatientConsultations: 2,
-    patientsInOffice: 17,
-    videoMinutes: 40,
-    docpatsCommissionPct: 15,
-  },
-  doctor_basic: {
-    examQuestions: 1000,
-    aiAnalyses: 20,
-    aiArticles: 6,
-    soapEpicrises: 20,
-    aiPatientConsultations: 10,
+    // Совпадает со Start намеренно: пробный период объявлен «на лимитах
+    // Start» и в документации, и на витрине. Меняете здесь — меняйте и там.
+    examQuestions: 1500,
+    aiAnalyses: 15,
+    aiArticles: 4,
+    soapEpicrises: 15,
+    aiPatientConsultations: 8,
     patientsInOffice: 100,
     videoMinutes: 240,
-    docpatsCommissionPct: 13,
+  },
+  // Lite — вход для врачей.
+  //
+  // Стоил 3 $. При такой цене правило «выручка втрое выше расхода»
+  // недостижимо арифметически: 50 ¢ комиссии Paddle плюс 50 ¢
+  // инфраструктуры — это доллар постоянных расходов ещё до первого
+  // обращения к модели, а трёхкратное покрытие требует трёх долларов, то
+  // есть всей цены тарифа при нулевом ИИ. Годовая оплата не спасает:
+  // остаётся 17 ¢ в месяц, меньше одного разбора.
+  //
+  // Поэтому 9 $ — минимальная цена, при которой тариф вообще может быть
+  // прибыльным. Взамен лимиты выросли: 30 пациентов вместо 17 и 5 разборов
+  // вместо 3, то есть это теперь рабочий тариф, а не витрина.
+  doctor_lite: {
+    examQuestions: 500,
+    aiAnalyses: 5,
+    aiArticles: 1,
+    soapEpicrises: 5,
+    aiPatientConsultations: 3,
+    patientsInOffice: 30,
+    videoMinutes: 60,
+  },
+  doctor_basic: {
+    // 1500 при банке примерно в 1011 вопросов — квота заведомо больше банка
+    // и сегодня не ограничивает ничего. Сделано сознательно: прохождение
+    // вопросов не обращается к модели и платформе ничего не стоит, а банк
+    // будет расти. Различие тарифов в модуле экзаменов держится на РЕЖИМАХ
+    // (см. EXAM_ADDONS ниже), а не на количестве вопросов.
+    examQuestions: 1500,
+    aiAnalyses: 15,
+    aiArticles: 4,
+    soapEpicrises: 15,
+    aiPatientConsultations: 8,
+    patientsInOffice: 100,
+    videoMinutes: 240,
   },
   doctor_super: {
     examQuestions: -1,
-    aiAnalyses: 60,
-    aiArticles: 18,
-    soapEpicrises: 60,
-    aiPatientConsultations: 60,
+    aiAnalyses: 40,
+    aiArticles: 12,
+    soapEpicrises: 40,
+    aiPatientConsultations: 30,
     patientsInOffice: 600,
-    videoMinutes: 720,
-    docpatsCommissionPct: 12,
+    videoMinutes: 600,
   },
+  // Pro. Все безлимиты, кроме банка вопросов, заменены потолками.
+  //
+  // Пациентов было -1. При 99 $ это означало, что цена за пациента у самых
+  // загруженных врачей стремится к нулю: на Growth выходило 8 центов за
+  // пациента, на Pro — сколько угодно мало. Пока платформа брала процент с
+  // приёмов, объём сам себя окупал; без процента подписка — единственный
+  // доход, и «безлимит» превращается в скидку тем, кто пользуется больше
+  // всех. 2000 — втрое больше Growth за вдвое большую цену: запас, который
+  // реальной практике не выбрать, но конечный.
   doctor_pro: {
     examQuestions: -1,
-    aiAnalyses: -1,
-    aiArticles: -1,
-    soapEpicrises: -1,
-    aiPatientConsultations: -1, // ∞ AI-консультаций
-    patientsInOffice: -1, // безлимит (middleware понимает -1)
-    videoMinutes: 1500,
-    docpatsCommissionPct: 10,
+    aiAnalyses: 100,
+    aiArticles: 25,
+    soapEpicrises: 100,
+    aiPatientConsultations: 60,
+    patientsInOffice: 2000,
+    videoMinutes: 1200,
   },
 
   // ═════════════════════ КЛИНИКИ ═════════════════════════
   clinic_start: {
     examQuestions: -1,
     doctors: 5,
-    aiAnalyses: 100,
-    aiArticles: 30,
-    soapEpicrises: 100,
+    aiAnalyses: 120,
+    aiArticles: 25,
+    soapEpicrises: 90,
     videoMinutes: 1500,
     analytics: false,
     topInRecommendations: false,
-    docpatsCommissionPct: 10,
   },
+  // Клинические потолки заданы «на врача, помноженное на штат»: Business —
+  // 15 врачей, значит ~27 разборов на врача в месяц. Enterprise штат не
+  // ограничивает, поэтому именно там безлимит на модель был опаснее всего:
+  // неограниченное число врачей, каждый с неограниченным расходом.
   clinic: {
     examQuestions: -1,
     doctors: 15,
-    aiAnalyses: -1,
-    aiArticles: -1,
-    soapEpicrises: -1,
+    aiAnalyses: 280,
+    aiArticles: 80,
+    soapEpicrises: 300,
     videoMinutes: 5000,
     analytics: true,
     topInRecommendations: true,
-    docpatsCommissionPct: 7,
   },
+  // Штат перестал быть безлимитным. Пока число врачей не ограничено,
+  // расход на инфраструктуру нельзя даже оценить — а значит и проверить,
+  // окупается ли тариф. 50 врачей это $25 000 годовой выручки клиники при
+  // 499 $ в месяц; кому нужно больше, тому нужен индивидуальный договор,
+  // а не строчка в прайсе.
   clinic_pro: {
     examQuestions: -1,
-    doctors: -1,
-    aiAnalyses: -1,
-    aiArticles: -1,
-    soapEpicrises: -1,
-    videoMinutes: -1,
+    doctors: 50,
+    aiAnalyses: 480,
+    aiArticles: 150,
+    soapEpicrises: 550,
+    videoMinutes: 15000,
     analytics: true,
     topInRecommendations: true,
-    docpatsCommissionPct: 5,
   },
 };
 
@@ -165,7 +230,7 @@ export const PLAN_LIMITS = {
 export const PLAN_PRICES = {
   patient_std: { monthly: 9, yearly: 90 },
   patient_pro: { monthly: 19, yearly: 190 },
-  doctor_lite: { monthly: 3, yearly: 30 },
+  doctor_lite: { monthly: 9, yearly: 90 },
   doctor_basic: { monthly: 19, yearly: 190 },
   doctor_super: { monthly: 49, yearly: 490 },
   doctor_pro: { monthly: 99, yearly: 990 },
@@ -232,7 +297,9 @@ export const EXAM_ADDON_DISPLAY_NAMES = {
 export const PLAN_CURRENCY = "USD";
 
 // ─── Длительность бесплатного trial для врачей ─────────────────────
-export const DOCTOR_TRIAL_DAYS = 180; // 6 месяцев
+// Было 180 (6 месяцев). См. пояснение у doctor_trial: полгода на лимитах
+// Growth стоили до $143 на врача, из которых платить оставалась малая часть.
+export const DOCTOR_TRIAL_DAYS = 90; // 3 месяца
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -252,9 +319,15 @@ export function resolveEffectivePlan(user) {
   const isDoctor = role === "doctor";
 
   // ─── 1. Новые ключи планов — используем как есть ──────────
+  // doctor_lite здесь отсутствовал. Сегодня это ничем не проявлялось —
+  // купивший Lite проваливался в fallback ниже, который возвращает ровно
+  // doctor_lite. Но совпадение случайное: стоит поменять fallback, и
+  // оплаченный тариф молча подменится другим. Платный план обязан
+  // распознаваться по своей записи, а не по совпадению с запасным путём.
   const NEW_PAID_PLANS = [
     "patient_std",
     "patient_pro",
+    "doctor_lite",
     "doctor_basic",
     "doctor_super",
     "doctor_pro",

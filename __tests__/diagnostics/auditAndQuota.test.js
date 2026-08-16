@@ -194,3 +194,109 @@ describe("пределы обращений к модели", () => {
     expect(left.hour.used).toBe(0);
   });
 });
+
+/* ─── Месячная квота тарифа ───────────────────────────────────────────── */
+//
+// Часовой и суточный пределы одинаковы для всех и защищают от петли. Этот —
+// про деньги: у Lite за 3 $ и у Pro за 99 $ разная себестоимость обращений,
+// и до сих пор кода за этой разницей не стояло. Врач на Lite мог делать 60
+// разборов в сутки при обещанных трёх в месяц.
+
+describe("месячная квота разборов по тарифу", () => {
+  let User;
+  // Числа берём из конфига, а не зашиваем: тариф пересматривается, и тест,
+  // повторяющий цифру, ломается при каждой правке прайса, ничего не проверив.
+  let LIMIT_LITE;
+
+  beforeEach(async () => {
+    User = (await import("../../common/models/Auth/users.js")).default;
+    const { PLAN_LIMITS } = await import("../../common/config/aiPlanLimits.js");
+    LIMIT_LITE = PLAN_LIMITS.doctor_lite.aiAnalyses;
+  });
+
+  /** Врач с заданным тарифом и заведомо истёкшим пробным периодом. */
+  async function doctorOn(plan) {
+    const suffix = new mongoose.Types.ObjectId().toString();
+    return User.create({
+      emailEncrypted: `quota-${suffix}@example.com`,
+      firstNameEncrypted: "Тест",
+      lastNameEncrypted: "Врач",
+      emailHash: "placeholder",
+      firstNameHash: "placeholder",
+      lastNameHash: "placeholder",
+      username: `quota-${suffix}`,
+      password: "hashed-password-placeholder",
+      dateOfBirth: new Date("1990-01-01"),
+      bio: "test",
+      agreement: true,
+      role: "doctor",
+      subscriptionPlan: plan,
+      // Пробный период выдаёт лимиты Growth и перекрыл бы тариф.
+      trialEndsAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+    });
+  }
+
+  async function fillJobs(ownerId, count, at) {
+    if (count <= 0) return;
+    await DiagnosticJob.insertMany(
+      Array.from({ length: count }, () => ({
+        caseId: new mongoose.Types.ObjectId(),
+        ownerId,
+        modality: "xray",
+        analyzer: "report",
+        status: "done",
+      })),
+    );
+    if (at) {
+      await DiagnosticJob.collection.updateMany(
+        { ownerId },
+        { $set: { createdAt: at } },
+      );
+    }
+  }
+
+  it("Lite упирается в квоту тарифа, хотя суточный предел ещё далеко", async () => {
+    const doc = await doctorOn("doctor_lite");
+    const now = Date.now();
+    // Сутки назад: часовой и суточный пределы уже не в игре, месячный — да.
+    await fillJobs(doc._id, LIMIT_LITE, new Date(now - 25 * 60 * 60 * 1000));
+    // Проверка осмысленна, только пока месячная квота строго меньше суточной.
+    expect(LIMIT_LITE).toBeLessThan(LIMITS.analyzePerDay);
+
+    await expect(assertAnalyzeAllowed(doc._id, now)).rejects.toThrow(/месячная квота/i);
+    // Отказ обязан называть тариф — иначе непонятно, что делать дальше.
+    await expect(assertAnalyzeAllowed(doc._id, now)).rejects.toThrow(/Doctor Lite/);
+  });
+
+  it("Pro на том же объёме работает: квота больше", async () => {
+    const doc = await doctorOn("doctor_pro");
+    const now = Date.now();
+    await fillJobs(doc._id, LIMIT_LITE, new Date(now - 25 * 60 * 60 * 1000));
+
+    await expect(assertAnalyzeAllowed(doc._id, now)).resolves.toBeUndefined();
+  });
+
+  it("разборы старше 30 дней квоту не занимают", async () => {
+    const doc = await doctorOn("doctor_lite");
+    const now = Date.now();
+    await fillJobs(doc._id, 10, new Date(now - 31 * 24 * 60 * 60 * 1000));
+
+    await expect(assertAnalyzeAllowed(doc._id, now)).resolves.toBeUndefined();
+  });
+
+  it("остаток показывает месячную квоту и тариф", async () => {
+    const doc = await doctorOn("doctor_lite");
+    const left = await analyzeQuotaLeft(doc._id);
+    expect(left.month).toEqual({ used: 0, limit: LIMIT_LITE, plan: "doctor_lite" });
+  });
+
+  it("без пользователя тарифный предел не применяется, но часовой остаётся", async () => {
+    // Служебный вызов или удалённый аккаунт не должны падать на отсутствии
+    // тарифа — иначе фоновая задача умрёт там, где раньше работала.
+    const orphan = new mongoose.Types.ObjectId();
+    await expect(assertAnalyzeAllowed(orphan)).resolves.toBeUndefined();
+    const left = await analyzeQuotaLeft(orphan);
+    expect(left.month).toBeUndefined();
+    expect(left.hour.limit).toBe(LIMITS.analyzePerHour);
+  });
+});
