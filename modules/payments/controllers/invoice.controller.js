@@ -20,8 +20,40 @@ import {
   PLAN_PRICES,
   PLAN_DISPLAY_NAMES,
 } from "../../../common/config/aiPlanLimits.js";
+// Берём сервис из auth, а не из admin: в admin/emailService from задан
+// как SMTP_USER — это логин Brevo, а не адрес, и письма с ним молча не
+// доходят. Здесь from резолвится в проверенный отправитель.
+import { sendEmail } from "../../auth/services/emailService.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Куда падают заявки. Отдельная переменная, потому что счета обычно
+// смотрит не тот, кто отвечает на обращения в поддержку.
+const BILLING_INBOX =
+  process.env.BILLING_EMAIL || process.env.SUPPORT_EMAIL || "support@docpats.com";
+
+/**
+ * Письмо, которое НЕ должно ломать заявку.
+ *
+ * Заявка к этому моменту уже сохранена. Если SMTP недоступен, потерять
+ * её из-за письма — худший исход: клиент считает, что попросил счёт, а в
+ * базе пусто. Поэтому ошибка только пишется в лог.
+ */
+function sendSafe(to, subject, text) {
+  return sendEmail(to, subject, text).catch((e) => {
+    console.error(`invoice: письмо на ${to} не ушло — ${e.message}`);
+  });
+}
+
+/** Человеческое описание заявки — общая часть обоих писем. */
+function describe(doc, planName, amount) {
+  const period = doc.period === "yearly" ? "год" : "месяц";
+  return [
+    `Тариф: ${planName}`,
+    `Период: ${period}, ${doc.months} мес.`,
+    `Сумма: ${amount} USD`,
+  ].join("\n");
+}
 
 /**
  * POST /api/payments/invoice-request
@@ -94,16 +126,66 @@ export async function createInvoiceRequest(req, res) {
     // цифре речь, и мог сверить со счётом.
     const price = PLAN_PRICES[planKey];
     const amount =
-      cleanPeriod === "yearly"
-        ? price.yearly * (cleanMonths / 12)
-        : price.monthly * cleanMonths;
+      Math.round(
+        (cleanPeriod === "yearly"
+          ? price.yearly * (cleanMonths / 12)
+          : price.monthly * cleanMonths) * 100,
+      ) / 100;
+    const planName = PLAN_DISPLAY_NAMES[planKey] || planKey;
+
+    // Два письма, и оба обязательны.
+    //
+    // Заявителю — потому что ответ на экране исчезает вместе со вкладкой,
+    // а обещание «счёт придёт» остаётся. Без письма человек через день не
+    // помнит, отправил он форму или передумал.
+    //
+    // Нам — потому что счёт выписывает человек. Заявка, о которой никто не
+    // узнал, эквивалентна неотправленной: ровно то, чем эта форма была до
+    // сих пор.
+    sendSafe(
+      doc.email,
+      `DocPats — счёт на ${planName}`,
+      [
+        `Здравствуйте!`,
+        ``,
+        `Мы получили заявку на счёт от «${cleanCompany}».`,
+        ``,
+        describe(doc, planName, amount),
+        ``,
+        `Счёт придёт на этот адрес в течение рабочего дня.`,
+        `Если заявку оставили по ошибке — просто ответьте на это письмо.`,
+        ``,
+        `— DocPats`,
+      ].join("\n"),
+    );
+
+    sendSafe(
+      BILLING_INBOX,
+      `Заявка на счёт: ${cleanCompany} — ${planName}`,
+      [
+        `Организация: ${cleanCompany}`,
+        `Контакт: ${String(contactName ?? "").trim() || "—"}`,
+        `Email: ${doc.email}`,
+        `Телефон: ${doc.phone || "—"}`,
+        `Налоговый номер: ${doc.taxId || "—"}`,
+        `Страна: ${doc.country || "—"}`,
+        ``,
+        describe(doc, planName, amount),
+        ``,
+        doc.note ? `Комментарий: ${doc.note}` : "",
+        `Аккаунт на платформе: ${doc.userId ? String(doc.userId) : "не привязан"}`,
+        `Идентификатор заявки: ${doc._id}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
 
     return res.status(201).json({
       success: true,
       id: doc._id,
-      planName: PLAN_DISPLAY_NAMES[planKey] || planKey,
+      planName,
       months: cleanMonths,
-      amount: Math.round(amount * 100) / 100,
+      amount,
       currency: "USD",
       message:
         "Заявка принята. Счёт придёт на указанный email в течение рабочего дня.",
@@ -224,6 +306,28 @@ export async function markInvoicePaid(req, res) {
     request.processedBy = req.session.userId;
     request.transactionId = tx._id;
     await request.save();
+
+    // Клиент заплатил и ждёт подтверждения. Без письма он узнает, что
+    // тариф включён, только зайдя в кабинет и заметив разницу.
+    const planName = PLAN_DISPLAY_NAMES[request.planKey] || request.planKey;
+    sendSafe(
+      request.email,
+      `DocPats — тариф ${planName} подключён`,
+      [
+        `Здравствуйте!`,
+        ``,
+        `Оплата получена, тариф подключён.`,
+        ``,
+        `Тариф: ${planName}`,
+        `Оплачено месяцев: ${request.months}`,
+        `Сумма: ${amount} USD`,
+        request.invoiceNumber ? `Счёт: ${request.invoiceNumber}` : "",
+        ``,
+        `— DocPats`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
 
     return res.status(200).json({
       success: true,

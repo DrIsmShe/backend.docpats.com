@@ -7,8 +7,20 @@
 // онлайн-оплатой, и в базе появятся подписки, происхождение которых
 // через полгода никто не восстановит.
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import mongoose from "mongoose";
+
+// Почту подменяем: тесты не должны стучаться в Brevo, а нам нужно
+// проверить, что письма вообще отправляются и кому.
+const sent = [];
+vi.mock("../../modules/auth/services/emailService.js", () => ({
+  sendEmail: vi.fn(async (to, subject, text) => {
+    sent.push({ to, subject, text });
+    return { messageId: "test" };
+  }),
+}));
+
+const { sendEmail } = await import("../../modules/auth/services/emailService.js");
 import User from "../../common/models/Auth/users.js";
 import PaymentTransaction from "../../modules/payments/models/paymentTransaction.js";
 import InvoiceRequest from "../../modules/payments/models/invoiceRequest.js";
@@ -47,6 +59,47 @@ const validBody = (over = {}) => ({
 });
 
 describe("заявка на счёт", () => {
+  beforeEach(() => {
+    sent.length = 0;
+    sendEmail.mockClear();
+  });
+
+  it("уведомляет обе стороны: заявителя и того, кто выпишет счёт", async () => {
+    const res = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, res);
+    expect(res.statusCode).toBe(201);
+
+    // Письма уходят фоном — дать промисам разрешиться.
+    await new Promise((r) => setImmediate(r));
+
+    expect(sent).toHaveLength(2);
+
+    const toClient = sent.find((m) => m.to === "buh@clinic.example");
+    expect(toClient).toBeTruthy();
+    expect(toClient.text).toContain("990");
+    expect(toClient.text).toContain("Clinic Start");
+
+    // Заявка, о которой никто не узнал, эквивалентна неотправленной.
+    const toUs = sent.find((m) => m.to !== "buh@clinic.example");
+    expect(toUs).toBeTruthy();
+    expect(toUs.text).toContain("Клиника Здоровье");
+    expect(toUs.text).toContain("1234567890"); // налоговый номер — без него счёт не выписать
+  });
+
+  it("недоступный SMTP не теряет заявку", async () => {
+    sendEmail.mockRejectedValueOnce(new Error("SMTP down"));
+    sendEmail.mockRejectedValueOnce(new Error("SMTP down"));
+
+    const res = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, res);
+    await new Promise((r) => setImmediate(r));
+
+    // Заявка сохранена, ответ успешный: потерять её из-за письма — худший
+    // исход, клиент считает что попросил счёт, а в базе пусто.
+    expect(res.statusCode).toBe(201);
+    expect(await InvoiceRequest.countDocuments()).toBe(1);
+  });
+
   it("принимается без авторизации: счёт просит бухгалтер, а не пользователь", async () => {
     const res = mockRes();
     await createInvoiceRequest({ body: validBody(), session: {} }, res);
@@ -134,6 +187,13 @@ describe("подтверждение оплаты по счёту", () => {
     expect(tx.status).toBe("paid");
     expect(tx.amount).toBe(490);
     expect(tx.providerRef).toBe("INV-2026-001");
+
+    // Клиент должен узнать, что тариф включён, не заходя в кабинет.
+    await new Promise((r) => setImmediate(r));
+    const activation = sent.find((m) => /подключён/.test(m.subject));
+    expect(activation).toBeTruthy();
+    expect(activation.to).toBe("buh@clinic.example");
+    expect(activation.text).toContain("INV-2026-001");
 
     const request = await InvoiceRequest.findById(id).lean();
     expect(request.status).toBe("paid");
