@@ -89,4 +89,26 @@ export async function clinicDoctorLimit(clinicId) {
   return { plan, limit };
 }
 
-export default { resolveClinicPlan, clinicDoctorLimit };
+/**
+ * Проверить, что тариф клиники включает фичу-флаг.
+ *
+ * Отличие от прав доступа: `can(analytics, read)` отвечает на вопрос
+ * «этой роли положено?», а здесь — «этой клинике продано?». Обе проверки
+ * нужны, и подменять одну другой нельзя: владелец клиники на Start имеет
+ * роль с полным доступом, но аналитику ему не продавали — карточка Start
+ * прямо говорит, что её нет.
+ *
+ * План не определён — не отказываем: клиника без владельца и без tier
+ * это служебное состояние, а не попытка получить лишнее.
+ *
+ * @param {string|object} clinicId
+ * @param {string} feature — ключ из PLAN_LIMITS ("analytics", …)
+ * @returns {Promise<boolean>}
+ */
+export async function clinicHasFeature(clinicId, feature) {
+  const plan = await resolveClinicPlan(clinicId);
+  if (!plan || !PLAN_LIMITS[plan]) return true;
+  return Boolean(PLAN_LIMITS[plan][feature]);
+}
+
+export default { resolveClinicPlan, clinicDoctorLimit, clinicHasFeature };

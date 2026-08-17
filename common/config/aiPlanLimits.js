@@ -246,8 +246,11 @@ export const PLAN_LIMITS = {
     soapEpicrises: 90,
     videoMinutes: 1500,
     storedFiles: 7000,
+    // Читается в clinic-analytics: без него /analytics/overview отдаёт 403.
+    // topInRecommendations отсюда убран: каталога клиник с ранжированием в
+    // проекте нет — публичные страницы это витрины по slug. Поднимать было
+    // некуда, и поле три тарифа подряд обещало несуществующее.
     analytics: false,
-    topInRecommendations: false,
   },
   // Клинические потолки заданы «на врача, помноженное на штат»: Business —
   // 15 врачей, значит ~27 разборов на врача в месяц. Enterprise штат не
@@ -262,7 +265,6 @@ export const PLAN_LIMITS = {
     videoMinutes: 5000,
     storedFiles: 20000,
     analytics: true,
-    topInRecommendations: true,
   },
   // Штат перестал быть безлимитным. Пока число врачей не ограничено,
   // расход на инфраструктуру нельзя даже оценить — а значит и проверить,
@@ -278,7 +280,6 @@ export const PLAN_LIMITS = {
     videoMinutes: 15000,
     storedFiles: 60000,
     analytics: true,
-    topInRecommendations: true,
   },
 };
 

@@ -21,6 +21,7 @@ import {
 } from "../../../../common/auth/can.js";
 import { RESOURCES } from "../../../../common/auth/permissions.js";
 import * as analyticsService from "../services/analytics.service.js";
+import { clinicHasFeature } from "../../clinic-core/services/clinicPlan.service.js";
 
 // ── helpers ───────────────────────────────────────────────
 // clinicId is resolved from ALS tenant-context (tenantMiddleware sets it
@@ -45,6 +46,20 @@ export const getOverview = asyncHandler(async (req, res) => {
   requirePermission(RESOURCES.ANALYTICS, ACTIONS.READ);
 
   const clinicId = requireClinicId();
+
+  // Тарифный гейт — ОТДЕЛЬНО от прав доступа.
+  //
+  // requirePermission выше отвечает на вопрос «этой роли положено?».
+  // Здесь — «этой клинике продано?». Карточка Start прямо говорит, что
+  // аналитики в нём нет, но владелец Start имеет роль owner с полным
+  // доступом, и до сих пор открывал её беспрепятственно: флаг analytics
+  // из тарифа не читала ни одна строка кода.
+  if (!(await clinicHasFeature(clinicId, "analytics"))) {
+    throw new ForbiddenError(
+      "Аналитика по клинике входит в тарифы Business и Enterprise",
+    );
+  }
+
   const { range } = req.query;
 
   const overview = await analyticsService.getOverview({ clinicId, range });

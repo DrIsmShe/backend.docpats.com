@@ -30,6 +30,11 @@ const CONSULTATION_LIMITS = {
   auth: parseInt(process.env.CONSULTATION_AUTH_LIMIT) || 50,
 };
 
+// Роли, у которых тариф описывает консультации отдельным полем.
+// Совпадает с тем, как роль трактует resolveEffectivePlan: врачебные
+// планы там выдаются только роли doctor.
+const DOCTOR_ROLES = ["doctor"];
+
 const EPICRISIS_LIMITS = {
   guest: parseInt(process.env.EPICRISIS_GUEST_LIMIT) || 1,
   auth: parseInt(process.env.EPICRISIS_AUTH_LIMIT) || 10,
@@ -84,7 +89,20 @@ async function consultationMaxFor(userId, isAuth) {
     /* сеть/база недоступны — работаем по запасному значению */
   }
 
-  const planLimit = user ? getLimit(resolveEffectivePlan(user), "aiConsultations") : 0;
+  // У врача и у пациента это РАЗНЫЕ поля тарифа, и путать их нельзя.
+  //
+  // Пациент консультируется о себе — aiConsultations. Врач запускает
+  // консультацию о своём пациенте — aiPatientConsultations, и в прайсе
+  // это отдельная строка («3 / 8 / 30 / 60 AI-консультаций пациентов»).
+  //
+  // Врачебные планы поля aiConsultations не описывают вовсе, поэтому
+  // раньше здесь получался 0 → запасные 7 из .env. Врач на Pro, которому
+  // продали 60 консультаций, получал 7; врач на Lite, которому продали 3,
+  // получал те же 7. Ошибались в обе стороны сразу.
+  const field = DOCTOR_ROLES.includes(user?.role)
+    ? "aiPatientConsultations"
+    : "aiConsultations";
+  const planLimit = user ? getLimit(resolveEffectivePlan(user), field) : 0;
   // -1 = безлимит; 0 = фича у плана не описана → запасное значение модуля.
   let max =
     planLimit === -1
@@ -206,6 +224,99 @@ export async function checkEpicrisisLimit(userId, guestId) {
     remaining: Math.max(0, max - used),
     max,
   };
+}
+
+/**
+ * Занять место ДО обращения к модели — атомарно.
+ *
+ * Почему не «проверить, потом списать»: между двумя запросами к базе
+ * помещается второй запрос пользователя, и при остатке в одну штуку
+ * пройдут оба. Условие `$lt: max` в самом фильтре делает проверку и
+ * списание одной операцией, которую база не разрывает.
+ *
+ * Возвращает null, если места нет.
+ */
+async function reserve(query, field, max) {
+  if (max <= 0) return null;
+
+  // Два шага, и оба обязательны.
+  //
+  // Соблазн сделать это одним findOneAndUpdate с upsert и условием
+  // `$lt: max` в фильтре — ловушка: когда лимит исчерпан, фильтр не
+  // совпадает, и upsert не отказывает, а СОЗДАЁТ вторую запись со
+  // счётчиком 1. Лимит при этом перестаёт существовать вовсе.
+  //
+  // Поэтому сначала гарантируем наличие записи (upsert без условия),
+  // и только потом делаем условный инкремент БЕЗ upsert — вот он уже
+  // честно возвращает null, когда места нет.
+  await ConsultationSession.updateOne(
+    query,
+    { $setOnInsert: { ...query } },
+    { upsert: true, setDefaultsOnInsert: true },
+  ).catch((e) => {
+    // Гонка двух первых запросов: запись создал сосед — это и требовалось.
+    if (e?.code !== 11000) throw e;
+  });
+
+  const rec = await ConsultationSession.findOneAndUpdate(
+    { ...query, [field]: { $lt: max } },
+    { $inc: { [field]: 1 } },
+    { new: true },
+  );
+
+  if (!rec) return null;
+  return {
+    used: rec[field],
+    remaining: Math.max(0, max - rec[field]),
+    max,
+  };
+}
+
+/** Вернуть занятое место: модель не ответила, платить человеку не за что. */
+async function release(query, field) {
+  await ConsultationSession.updateOne(
+    { ...query, [field]: { $gt: 0 } },
+    { $inc: { [field]: -1 } },
+  ).catch((e) => {
+    // Возврат не критичен настолько, чтобы ронять ответ пользователю:
+    // хуже потерять одну единицу, чем показать ошибку поверх ошибки.
+    console.error(`consultation: возврат ${field} не удался — ${e.message}`);
+  });
+}
+
+/**
+ * Занять консультацию ДО обращения к модели.
+ * Возвращает null, если лимит исчерпан.
+ */
+export async function reserveConsultation(userId, guestId) {
+  const { query, isAuth } = buildQuery(userId, guestId);
+  const max = await consultationMaxFor(userId, isAuth);
+  return reserve(query, "consultationsUsed", max);
+}
+
+/** Вернуть консультацию, если модель не ответила. */
+export async function releaseConsultation(userId, guestId) {
+  const { query } = buildQuery(userId, guestId);
+  return release(query, "consultationsUsed");
+}
+
+/**
+ * Занять эпикриз ДО обращения к модели.
+ *
+ * Раньше проверка стояла ПОСЛЕ генерации: человек сверх лимита ничего не
+ * получал, но каждый его запрос всё равно уходил в модель и стоил денег.
+ * Отказ, за который мы платим, — худший вид отказа.
+ */
+export async function reserveEpicrisis(userId, guestId) {
+  const { query, isAuth } = buildQuery(userId, guestId);
+  const max = await epicrisisMaxFor(userId, isAuth);
+  return reserve(query, "epicrisesUsed", max);
+}
+
+/** Вернуть эпикриз, если модель не ответила. */
+export async function releaseEpicrisis(userId, guestId) {
+  const { query } = buildQuery(userId, guestId);
+  return release(query, "epicrisesUsed");
 }
 
 // Атомарный инкремент ПОСЛЕ успешной генерации эпикриза
