@@ -22,6 +22,12 @@ import {
   markInvoicePaid,
   deleteInvoiceRequest,
 } from "./controllers/invoice.controller.js";
+import {
+  listRequisites,
+  createRequisite,
+  updateRequisite,
+  deactivateRequisite,
+} from "./controllers/requisites.controller.js";
 
 const router = express.Router();
 
@@ -113,6 +119,22 @@ router.delete(
   requireAdmin,
   deleteInvoiceRequest,
 );
+
+// ─── Реквизиты для оплаты ─────────────────────────────────────────────
+//
+// Справочник, которым администратор управляет сам: банк закрыл счёт,
+// добавили карту в другой валюте, для Турции один счёт, для Азербайджана
+// другой. Переменная окружения требовала бы доступа к серверу и рестарта
+// на каждую правку — то есть зависимости от разработчика в вопросе, к
+// разработке отношения не имеющем.
+//
+// Чтение закрыто админом намеренно: список реквизитов на публичной
+// странице — приглашение для мошенников подменить его в почтовой рассылке.
+// Заявитель получает их письмом, адресно.
+router.get("/requisites", requireAuth, requireAdmin, listRequisites);
+router.post("/requisites", requireAuth, requireAdmin, createRequisite);
+router.patch("/requisites/:id", requireAuth, requireAdmin, updateRequisite);
+router.delete("/requisites/:id", requireAuth, requireAdmin, deactivateRequisite);
 
 // ─── Ручная выдача тарифа ─────────────────────────────────────────────
 // Продажа мимо сайта (перевод, счёт), промо, компенсация, партнёрский

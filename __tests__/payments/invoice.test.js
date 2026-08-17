@@ -87,6 +87,97 @@ describe("заявка на счёт", () => {
     expect(toUs.text).toContain("1234567890"); // налоговый номер — без него счёт не выписать
   });
 
+  it("несколько способов подаются как выбор, а не списком", async () => {
+    const PaymentRequisite = (
+      await import("../../modules/payments/models/paymentRequisite.js")
+    ).default;
+    await PaymentRequisite.create({
+      title: "Банковский перевод",
+      kind: "bank",
+      currency: "USD",
+      details: "IBAN AZ00 1111",
+      sortOrder: 1,
+    });
+    await PaymentRequisite.create({
+      title: "Карта",
+      kind: "card",
+      currency: "AZN",
+      details: "4169 0000 0000 0000",
+      sortOrder: 2,
+    });
+
+    const res = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, res);
+    await new Promise((r) => setImmediate(r));
+
+    const text = sent.find((m) => m.to === "buh@clinic.example").text;
+
+    // Без явного «один раз» заявитель гадает, не нужно ли платить дважды.
+    expect(text).toMatch(/оплатить нужно один раз/i);
+    expect(text).toContain("1. Банковский перевод");
+    expect(text).toContain("2. Карта");
+    // Подпись вида говорит, куда этот способ ведёт.
+    expect(text).toMatch(/интернет-банка/);
+    expect(text).toMatch(/приложения банка/);
+  });
+
+  it("единственный способ не нумеруется: выбирать не из чего", async () => {
+    const PaymentRequisite = (
+      await import("../../modules/payments/models/paymentRequisite.js")
+    ).default;
+    await PaymentRequisite.create({
+      title: "Банковский перевод",
+      kind: "bank",
+      details: "IBAN AZ00 1111",
+    });
+
+    const res = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, res);
+    await new Promise((r) => setImmediate(r));
+
+    const text = sent.find((m) => m.to === "buh@clinic.example").text;
+    expect(text).toContain("Реквизиты для оплаты:");
+    expect(text).not.toContain("1. Банковский перевод");
+  });
+
+  it("реквизиты из справочника попадают в письмо заявителю", async () => {
+    const PaymentRequisite = (
+      await import("../../modules/payments/models/paymentRequisite.js")
+    ).default;
+    await PaymentRequisite.create({
+      title: "Банковский перевод",
+      details: "IBAN AZ00 0000 0000\nSWIFT TESTAZ22",
+      currency: "USD",
+      note: "в назначении укажите номер счёта",
+      sortOrder: 1,
+    });
+    // Отключённый не должен попасть: банк закрыт, платить туда нельзя.
+    await PaymentRequisite.create({
+      title: "Старый счёт",
+      details: "IBAN OLD",
+      isActive: false,
+    });
+
+    const res = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, res);
+    await new Promise((r) => setImmediate(r));
+
+    const toClient = sent.find((m) => m.to === "buh@clinic.example");
+    expect(toClient.text).toContain("IBAN AZ00 0000 0000");
+    expect(toClient.text).toContain("в назначении укажите номер счёта");
+    expect(toClient.text).not.toContain("IBAN OLD");
+  });
+
+  it("без заведённых реквизитов письмо не показывает пустой раздел", async () => {
+    const res = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, res);
+    await new Promise((r) => setImmediate(r));
+
+    const toClient = sent.find((m) => m.to === "buh@clinic.example");
+    expect(toClient.text).not.toContain("Реквизиты для оплаты");
+    expect(toClient.text).toContain("в течение рабочего дня");
+  });
+
   it("недоступный SMTP не теряет заявку", async () => {
     sendEmail.mockRejectedValueOnce(new Error("SMTP down"));
     sendEmail.mockRejectedValueOnce(new Error("SMTP down"));

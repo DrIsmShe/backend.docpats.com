@@ -13,6 +13,8 @@ import { getCurrentClinicId } from "../../../../common/context/tenantContext.js"
 import { ROLES } from "../../../../common/auth/permissions.js";
 import logger from "../../../../common/logger.js";
 
+import { clinicDoctorLimit } from "../../clinic-core/services/clinicPlan.service.js";
+
 const log = logger.child({ module: "clinic-staff/service" });
 
 function requireClinicId() {
@@ -21,6 +23,36 @@ function requireClinicId() {
     throw new ForbiddenError("No active clinic context");
   }
   return clinicId;
+}
+
+/**
+ * Предел числа сотрудников по тарифу клиники.
+ *
+ * Считаем ДЕЙСТВУЮЩИЕ членства (leftAt: null): уволенный сотрудник место
+ * не занимает, иначе клиника с текучкой упёрлась бы в предел, имея пять
+ * работающих врачей из тридцати заведённых за годы.
+ *
+ * Отказ называет тариф и текущее число — «превышен лимит» без цифр
+ * оставляет администратора клиники в тупике.
+ *
+ * @param {string|object} clinicId
+ */
+export async function assertStaffLimit(clinicId) {
+  const quota = await clinicDoctorLimit(clinicId);
+  if (!quota) return; // план не определён, безлимит или фича не описана
+
+  const active = await ClinicMembership.countDocuments({
+    clinicId,
+    leftAt: null,
+  });
+
+  if (active >= quota.limit) {
+    throw new UnprocessableError(
+      `Тариф клиники допускает ${quota.limit} сотрудников, сейчас ${active}. ` +
+        `Освободите место или перейдите на старший тариф.`,
+      { limit: "clinicDoctors", plan: quota.plan, planLimit: quota.limit, current: active },
+    );
+  }
 }
 
 // ─── listStaff ──────────────────────────────────────────────────────────
@@ -177,6 +209,14 @@ export async function addStaff(data, actor) {
       { membershipId: String(existing._id) },
     );
   }
+
+  // Предел штата по тарифу — до создания записи.
+  //
+  // Раньше его не существовало: Clinic Start за 99 $ обещал «до 5 врачей»,
+  // а завести можно было сколько угодно. Ограничение самой дорогой линейки
+  // не работало, потому что тариф клиники и её документ связывало ничто —
+  // см. clinicPlan.service.js.
+  await assertStaffLimit(clinicId);
 
   const membership = await ClinicMembership.create({
     userId: data.userId,

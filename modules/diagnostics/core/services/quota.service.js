@@ -66,7 +66,7 @@ const MONTH_MS = 30 * DAY_MS;
 /** План врача и его месячная квота разборов. null — квоту не применяем. */
 async function planQuota(ownerId) {
   const user = await User.findById(ownerId)
-    .select("role subscriptionPlan trialEndsAt")
+    .select("role subscriptionPlan subscriptionEndsAt trialEndsAt")
     .lean();
 
   // Пользователя нет (служебный вызов, тест, удалённый аккаунт) — молча не

@@ -38,9 +38,7 @@ const ADDON_ALLOWED_ROLES = ["patient", "user", "doctor", "admin"];
 // нельзя — assertPlanAllowed отвергал покупку с «Role doctor cannot
 // purchase plan doctor_lite». Проявилось бы в день открытия кассы.
 const PLAN_ALLOWED_ROLES = {
-  patient_care: ["patient", "user"],
   patient_std: ["patient", "user"],
-  patient_pro: ["patient", "user"],
   doctor_lite: ["doctor"],
   doctor_basic: ["doctor"],
   doctor_super: ["doctor"],

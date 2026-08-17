@@ -123,7 +123,7 @@ export default async function requireDoctorPatientLimit(req, res, next) {
     // сохранённого тарифа и даты окончания пробного. Кэш остаётся
     // запасным вариантом на случай плана без описанного лимита.
     const doctor = await User.findById(doctorUserId)
-      .select("role subscriptionPlan trialEndsAt features.maxPatients")
+      .select("role subscriptionPlan subscriptionEndsAt trialEndsAt features.maxPatients")
       .lean();
 
     const planLimit = doctor

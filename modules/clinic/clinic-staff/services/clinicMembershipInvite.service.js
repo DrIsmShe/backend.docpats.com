@@ -53,6 +53,7 @@ import {
 
 import { sendRichEmail } from "../email/sendInvitationEmail.js";
 import { renderInvitationEmail } from "../email/templates.js";
+import { assertStaffLimit } from "./staff.service.js";
 
 const log = logger.child({ module: "clinic-staff/membership-invite" });
 
@@ -406,6 +407,11 @@ async function persistAccept({ invite, userId, session }) {
   let alreadyMember = Boolean(existing);
 
   if (!existing) {
+    // Предел штата по тарифу — второй путь появления сотрудника.
+    // Проверять только addStaff недостаточно: через приглашение клиника
+    // набрала бы штат мимо ограничения.
+    await assertStaffLimit(invite.clinicId);
+
     const docs = await ClinicMembership.create(
       [
         {

@@ -31,6 +31,7 @@ import {
   mintRoomToken,
   isJitsiConfigured,
 } from "../../../common/video/jitsiToken.service.js";
+import { assertVideoAllowed } from "../../../common/video/videoQuota.service.js";
 import {
   ValidationError,
   ForbiddenError,
@@ -87,6 +88,11 @@ export async function issueAppointmentRoomToken({
   if (!isDoctor && !isPatient) {
     throw new ForbiddenError("You are not a participant of this appointment");
   }
+
+  // Месячная квота минут — до входа в комнату. Прерывать разговор из-за
+  // квоты нельзя: это медицинская консультация. Проверяем того, кто
+  // входит: минуты списываются с обеих сторон, и у каждой свой тариф.
+  await assertVideoAllowed(userId);
 
   return mintRoomToken({
     room: `appointment-${String(appointmentId)}`,

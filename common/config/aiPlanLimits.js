@@ -104,63 +104,47 @@ export const PLAN_LIMITS = {
   // на платформе, — и растут у него же вместе с расходом платформы на
   // хранение и на видеосервер.
   //
-  // ⚠ videoMinutes и storedFiles СЕГОДНЯ НЕ МЕТРИРУЮТСЯ — ни здесь, ни у
-  // врачей: поля описаны, но ни одна строка кода их не читает. До того как
-  // счётчики появятся, это заявленные, а не действующие пределы.
+  // storedFiles у пациентов НЕТ намеренно: пациент файлы не загружает.
+  // Записи в архив вносит врач, у которого он наблюдается, — так устроен
+  // продукт и так написано в документации. Лимит на пациентской карточке
+  // означал бы «врач не может приложить снимок, потому что его пациент на
+  // бесплатном тарифе», то есть блокировку врача посреди приёма из-за
+  // чужой подписки. Квота хранилища перенесена на врача и клинику: там
+  // совпадают тот, кто расходует, и тот, кто платит.
+  //
   // documentExports (-1 везде) трогать нельзя: выгрузка собственных данных
   // не может зависеть от тарифа.
+  // ═══ Пробный период пациента — 3 месяца ═══════════════════════════
+  //
+  // ЩЕДРО ТАМ, ГДЕ ДЁШЕВО. Видеосервер у нас свой (Jitsi), минута стоит
+  // доли цента: 600 минут — 30 копеек. Обращение к модели стоит 9 центов.
+  // Поэтому пробный даёт видео на уровне Pro, а консультации ИИ — чуть
+  // выше бесплатного.
+  //
+  // Пробный на полном уровне Pro (25 консультаций) обходился бы в $2,25 в
+  // месяц на человека. Пациенты регистрируются массово, конверсия у
+  // потребительских медицинских приложений низкая, и при 3 % платящих
+  // привлечение одного стоило бы больше его пожизненной прибыли. Здесь —
+  // $0,75 в месяц, и при этом человек видит главное: видеоприём у врача.
+  //
+  // По окончании аккаунт переходит на patient_free. Данные остаются: см.
+  // documentExports (-1 на всех тарифах).
+  patient_trial: {
+    examQuestions: 250,
+    aiConsultations: 10,
+    documentExports: -1,
+  },
   patient_free: {
     examQuestions: 250,
     // Бесплатный уровень — демонстрация, а не продукт: платить за него
     // некому, а расход умножается на каждую регистрацию.
     aiConsultations: 2,
     documentExports: -1, // -1 = без лимита: это СВОИ данные пациента
-    storedFiles: 50,
-    videoMinutes: 30,
-    familyMembers: 0,
-  },
-  // ═══ Care — 1,5 $/мес, 15 $/год ═══════════════════════════════════
-  //
-  // ЕДИНСТВЕННЫЙ ТАРИФ, НАРУШАЮЩИЙ ПРАВИЛО «ВЫРУЧКА ≥ 3× РАСХОД». Это
-  // осознанное исключение, а не недосмотр — не «оптимизируйте» его молча.
-  //
-  // Арифметика: фиксированные 50 ¢ комиссии Paddle с транзакции — это
-  // треть тарифа. Помесячно выходит 1,08×, годовой оплатой 2,18×
-  // (комиссия платится раз в год, а не двенадцать). Поэтому тариф
-  // задуман преимущественно годовым; там же он проходит порог Paddle,
-  // который для продуктов дешевле 10 $ требует отдельных условий.
-  //
-  // Чтобы удержать хотя бы это, Care НЕ ДОБАВЛЯЕТ расхода на модель:
-  // консультации и статьи те же, что на бесплатном. Платят за то, что
-  // платформе почти ничего не стоит, — профили близких, напоминания,
-  // перевод своих документов. Добавите сюда обращения к модели — тариф
-  // уйдёт в минус, там нет запаса.
-  patient_care: {
-    examQuestions: 250,
-    aiConsultations: 2,
-    documentExports: -1,
-    storedFiles: 300,
-    videoMinutes: 60,
-    familyMembers: 2,
   },
   patient_std: {
     examQuestions: 1000,
-    aiConsultations: 10,
+    aiConsultations: 15,
     documentExports: -1,
-    storedFiles: 1000,
-    videoMinutes: 180,
-    familyMembers: 5,
-  },
-  patient_pro: {
-    examQuestions: -1,
-    // Было -1 «безлимит (fair use)». Fair use — не предел, а надежда на
-    // добросовестность: при 19 $ выручки сотня консультаций уже съедает
-    // тариф целиком. Потолок высокий, обычному пациенту недостижимый.
-    aiConsultations: 25,
-    documentExports: -1,
-    storedFiles: 5000,
-    videoMinutes: 600,
-    familyMembers: 10,
   },
 
   // ═════════════════════ ВРАЧИ ═══════════════════════════
@@ -184,6 +168,7 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 8,
     patientsInOffice: 100,
     videoMinutes: 240,
+    storedFiles: 1500,
   },
   // Lite — вход для врачей.
   //
@@ -205,6 +190,7 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 3,
     patientsInOffice: 30,
     videoMinutes: 60,
+    storedFiles: 400,
   },
   doctor_basic: {
     // 1500 при банке примерно в 1011 вопросов — квота заведомо больше банка
@@ -219,6 +205,7 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 8,
     patientsInOffice: 100,
     videoMinutes: 240,
+    storedFiles: 1500,
   },
   doctor_super: {
     examQuestions: -1,
@@ -228,6 +215,7 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 30,
     patientsInOffice: 600,
     videoMinutes: 600,
+    storedFiles: 6000,
   },
   // Pro. Все безлимиты, кроме банка вопросов, заменены потолками.
   //
@@ -246,6 +234,7 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 60,
     patientsInOffice: 2000,
     videoMinutes: 1200,
+    storedFiles: 20000,
   },
 
   // ═════════════════════ КЛИНИКИ ═════════════════════════
@@ -256,6 +245,7 @@ export const PLAN_LIMITS = {
     aiArticles: 25,
     soapEpicrises: 90,
     videoMinutes: 1500,
+    storedFiles: 7000,
     analytics: false,
     topInRecommendations: false,
   },
@@ -270,6 +260,7 @@ export const PLAN_LIMITS = {
     aiArticles: 80,
     soapEpicrises: 300,
     videoMinutes: 5000,
+    storedFiles: 20000,
     analytics: true,
     topInRecommendations: true,
   },
@@ -285,6 +276,7 @@ export const PLAN_LIMITS = {
     aiArticles: 150,
     soapEpicrises: 550,
     videoMinutes: 15000,
+    storedFiles: 60000,
     analytics: true,
     topInRecommendations: true,
   },
@@ -294,12 +286,6 @@ export const PLAN_LIMITS = {
 // Витрина client/src/pages/PricingPage.jsx (PRICES_USD) должна совпадать.
 export const PLAN_PRICES = {
   patient_std: { monthly: 9, yearly: 90 },
-  // Care: годовая НЕ равна десяти месячным, как у остальных, а двенадцати
-  // с копейками вниз. При 1,5 $ обычная скидка «два месяца в подарок» дала
-  // бы 15 $ в год — и тариф ушёл бы в 1,35×. Здесь годовая цена и есть
-  // рабочий режим, а помесячная существует только чтобы попробовать.
-  patient_care: { monthly: 1.5, yearly: 15 },
-  patient_pro: { monthly: 19, yearly: 190 },
   doctor_lite: { monthly: 9, yearly: 90 },
   doctor_basic: { monthly: 19, yearly: 190 },
   doctor_super: { monthly: 49, yearly: 490 },
@@ -371,6 +357,11 @@ export const PLAN_CURRENCY = "USD";
 // Growth стоили до $143 на врача, из которых платить оставалась малая часть.
 export const DOCTOR_TRIAL_DAYS = 90; // 3 месяца
 
+// Пробный период пациента. Тот же срок, что у врача: разные числа здесь
+// пришлось бы объяснять на витрине, а объяснения нет — три месяца и там,
+// и там просто «время попробовать».
+export const PATIENT_TRIAL_DAYS = 90;
+
 // ─── Helpers ────────────────────────────────────────────────────────
 
 /**
@@ -395,9 +386,7 @@ export function resolveEffectivePlan(user) {
   // оплаченный тариф молча подменится другим. Платный план обязан
   // распознаваться по своей записи, а не по совпадению с запасным путём.
   const NEW_PAID_PLANS = [
-    "patient_care",
     "patient_std",
-    "patient_pro",
     "doctor_lite",
     "doctor_basic",
     "doctor_super",
@@ -406,22 +395,43 @@ export function resolveEffectivePlan(user) {
     "clinic",
     "clinic_pro",
   ];
+  // ПОДПИСКА ЗАКАНЧИВАЕТСЯ. До этого не заканчивалась никогда: срок
+  // записывался в subscriptionEndsAt при оплате, и ни одна строка его не
+  // читала. Клиника, заплатившая за один месяц Clinic Business, получала
+  // тариф бессрочно. Аддон экзаменов при этом истекал правильно
+  // (resolveExamAddon) — то есть за 7 $ срок соблюдался, а за 499 $ нет.
+  //
+  // Пустой subscriptionEndsAt трактуем как «срок неизвестен», а не как
+  // «истёк»: у выданных вручную и у старых записей даты может не быть, и
+  // отключать их задним числом нельзя.
   if (stored && NEW_PAID_PLANS.includes(stored)) {
-    return stored;
+    const until = user.subscriptionEndsAt
+      ? new Date(user.subscriptionEndsAt)
+      : null;
+    if (!until || new Date() <= until) return stored;
+    // Срок вышел — проваливаемся в правила ниже: пациент на бесплатный,
+    // врач на Lite. Данные при этом не теряются, ограничивается только
+    // добавление нового (см. requireDoctorPatientLimit).
   }
 
   // ─── 2. Legacy маппинг для существующих юзеров ────────────
   // У старых пациентов в БД могло стоять "standard" или "premium"
   if (isPatient) {
     if (stored === "standard") return "patient_std";
-    if (stored === "premium") return "patient_pro";
+    if (stored === "premium") return "patient_std"; // тарифа Pro больше нет
   }
   // Старый "doctor_free" → переход в trial/basic через шаг 3 ниже
   // Старый "free" → fallback на роль через шаг 3 ниже
 
   // ─── 3. Fallback по роли ──────────────────────────────────
   if (isPatient) {
-    return "patient_free"; // бессрочный free для всех пациентов
+    // Пробный период есть и у пациента — так же, как у врача, и по той же
+    // причине: попробовать видеоприём и помощника, не платя вперёд.
+    // Раньше его не было вовсе, пациент сразу попадал на 30 минут видео.
+    if (user.trialEndsAt && new Date() < new Date(user.trialEndsAt)) {
+      return "patient_trial";
+    }
+    return "patient_free"; // бессрочный free после пробного
   }
 
   if (isDoctor) {
@@ -550,10 +560,9 @@ export function getMaxPatientsForPlan(planKey) {
  */
 export const PLAN_DISPLAY_NAMES = {
   guest: "Гость",
+  patient_trial: "Patient Free (пробный)",
   patient_free: "Patient Free",
-  patient_care: "Patient Care",
   patient_std: "Patient Plus",
-  patient_pro: "Patient Pro",
   doctor_trial: "Doctor Growth (trial)",
   // doctor_lite забыли добавить сюда вместе с самим тарифом: quota.service
   // берёт имя как PLAN_DISPLAY_NAMES[plan] ?? plan, и врач видел в

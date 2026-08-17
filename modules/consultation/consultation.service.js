@@ -53,14 +53,10 @@ function buildQuery(userId, guestId) {
   };
 }
 
-function getMaxes(isAuth) {
-  return {
-    consultations: isAuth
-      ? CONSULTATION_LIMITS.auth
-      : CONSULTATION_LIMITS.guest,
-    epicrises: isAuth ? EPICRISIS_LIMITS.auth : EPICRISIS_LIMITS.guest,
-  };
-}
+// getMaxes() убрана: оба предела теперь резолвятся из тарифа
+// (consultationMaxFor / epicrisisMaxFor), а константы модуля остались у них
+// запасным значением. Держать рядом функцию, отдающую те же числа мимо
+// тарифа, — верный способ однажды позвать не ту.
 
 // Максимум консультаций: тариф + бонусы за рефералов (bonusConsultations).
 //
@@ -82,7 +78,7 @@ async function consultationMaxFor(userId, isAuth) {
   let user = null;
   try {
     user = await User.findById(userId)
-      .select("role subscriptionPlan trialEndsAt bonusConsultations")
+      .select("role subscriptionPlan subscriptionEndsAt trialEndsAt bonusConsultations")
       .lean();
   } catch {
     /* сеть/база недоступны — работаем по запасному значению */
@@ -103,11 +99,41 @@ async function consultationMaxFor(userId, isAuth) {
   return max;
 }
 
+/**
+ * Максимум эпикризов: тариф, если он эту фичу описывает.
+ *
+ * У пациентских планов soapEpicrises НЕТ намеренно — эпикриз убран из
+ * пациентских тарифов как клинический документ, который человек делает
+ * сам себе без врача. Но саму функцию мы не гасили: она работает у живых
+ * пользователей, и отключать её посреди дня — не правка прайса. Поэтому
+ * здесь запасное значение модуля, а не отказ.
+ *
+ * Врачебные и клинические планы фичу описывают (5–100 в месяц), и когда
+ * генератор эпикризов для врача появится, предел заработает сам — считать
+ * он будет по той же сессии.
+ */
+async function epicrisisMaxFor(userId, isAuth) {
+  if (!isAuth || !userId) return EPICRISIS_LIMITS.guest;
+
+  let user = null;
+  try {
+    user = await User.findById(userId)
+      .select("role subscriptionPlan subscriptionEndsAt trialEndsAt")
+      .lean();
+  } catch {
+    /* база недоступна — работаем по запасному значению */
+  }
+
+  const planLimit = user ? getLimit(resolveEffectivePlan(user), "soapEpicrises") : 0;
+  if (planLimit === -1) return Number.MAX_SAFE_INTEGER;
+  return planLimit > 0 ? planLimit : EPICRISIS_LIMITS.auth;
+}
+
 // ─── Статус обоих лимитов ──────────────────────────────────────────
 export async function getStatus(userId, guestId) {
   const { query, isAuth } = buildQuery(userId, guestId);
-  const max = getMaxes(isAuth);
   const consMax = await consultationMaxFor(userId, isAuth);
+  const epicMax = await epicrisisMaxFor(userId, isAuth);
   const rec = await ConsultationSession.findOne(query).lean();
 
   const consUsed = rec?.consultationsUsed || 0;
@@ -122,8 +148,8 @@ export async function getStatus(userId, guestId) {
     },
     epicrises: {
       used: epicUsed,
-      remaining: Math.max(0, max.epicrises - epicUsed),
-      max: max.epicrises,
+      remaining: Math.max(0, epicMax - epicUsed),
+      max: epicMax,
     },
     limits: {
       consultationGuest: CONSULTATION_LIMITS.guest,
@@ -171,7 +197,7 @@ export async function consumeConsultation(userId, guestId) {
 // Проверка лимита БЕЗ инкремента
 export async function checkEpicrisisLimit(userId, guestId) {
   const { query, isAuth } = buildQuery(userId, guestId);
-  const max = getMaxes(isAuth).epicrises;
+  const max = await epicrisisMaxFor(userId, isAuth);
   const rec = await ConsultationSession.findOne(query).lean();
   const used = rec?.epicrisesUsed || 0;
   return {
@@ -185,7 +211,7 @@ export async function checkEpicrisisLimit(userId, guestId) {
 // Атомарный инкремент ПОСЛЕ успешной генерации эпикриза
 export async function consumeEpicrisis(userId, guestId) {
   const { query, isAuth } = buildQuery(userId, guestId);
-  const max = getMaxes(isAuth).epicrises;
+  const max = await epicrisisMaxFor(userId, isAuth);
 
   const rec = await ConsultationSession.findOneAndUpdate(
     query,

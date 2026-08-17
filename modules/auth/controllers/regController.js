@@ -13,6 +13,7 @@ import crypto from "crypto";
 // период обещает сотню. Удалён; всё берётся отсюда.
 import {
   DOCTOR_TRIAL_DAYS,
+  PATIENT_TRIAL_DAYS,
   PLAN_LIMITS,
   resolveEffectivePlan,
 } from "../../../common/config/aiPlanLimits.js";
@@ -123,10 +124,14 @@ export const registerUser = async (req, res) => {
     const effectivePlan = resolveEffectivePlan({
       role,
       subscriptionPlan: null,
-      trialEndsAt:
-        role === "doctor"
-          ? new Date(Date.now() + DOCTOR_TRIAL_DAYS * 24 * 60 * 60 * 1000)
-          : null,
+      trialEndsAt: new Date(
+        Date.now() +
+          (role === "doctor" ? DOCTOR_TRIAL_DAYS : PATIENT_TRIAL_DAYS) *
+            24 *
+            60 *
+            60 *
+            1000,
+      ),
     });
     const planLimits = PLAN_LIMITS[effectivePlan] || {};
     const defaultFeatures = {
@@ -138,15 +143,17 @@ export const registerUser = async (req, res) => {
 
     // 💎 НОВАЯ СИСТЕМА — расчёт trial и плоского subscriptionPlan
     //
-    // Врачам даём 6 месяцев trial → resolveEffectivePlan() будет
-    // возвращать "doctor_trial" (= лимиты Doctor Super) пока trial активен,
-    // а после окончания — "doctor_basic" (платный базовый).
+    // Пробный период есть у обеих ролей, по 3 месяца:
+    //   врач   → doctor_trial  (лимиты Doctor Start)
+    //   пациент→ patient_trial (видео как на Pro, помощник чуть выше Free)
     //
-    // Пациентам trial не нужен — у них Free навсегда.
-    const trialEndsAt =
-      role === "doctor"
-        ? new Date(Date.now() + DOCTOR_TRIAL_DAYS * 24 * 60 * 60 * 1000)
-        : null;
+    // Раньше пациенту ставился null: «у них Free навсегда». Из-за этого
+    // человек, только что зарегистрировавшийся, сразу упирался в 30 минут
+    // видео и не успевал понять, зачем платформа нужна. Видео при этом
+    // почти ничего не стоит — сервер свой.
+    const trialDays =
+      role === "doctor" ? DOCTOR_TRIAL_DAYS : PATIENT_TRIAL_DAYS;
+    const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
 
     // subscriptionPlan = null означает "автоопределение" в resolveEffectivePlan
     // (возьмёт patient_free / doctor_trial / doctor_basic в зависимости от роли)

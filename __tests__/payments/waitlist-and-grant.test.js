@@ -134,7 +134,7 @@ describe("лист ожидания", () => {
     await joinWaitlist(
       {
         session: { userId: userId.toString() },
-        body: { email: "e@f.com", planKey: "patient_pro" },
+        body: { email: "e@f.com", planKey: "patient_std" },
       },
       mockRes(),
     );
@@ -176,7 +176,7 @@ describe("ручная выдача тарифа", () => {
         session: { userId: adminId.toString() },
         body: {
           userId: userId.toString(),
-          planKey: "patient_pro",
+          planKey: "patient_std",
           months: 3,
           reason: "оплата переводом, счёт №12",
         },
@@ -186,7 +186,7 @@ describe("ручная выдача тарифа", () => {
 
     expect(res.statusCode).toBe(200);
     const user = await User.findById(userId);
-    expect(user.subscriptionPlan).toBe("patient_pro");
+    expect(user.subscriptionPlan).toBe("patient_std");
 
     // Срок — ровно три месяца вперёд.
     const now = new Date();
@@ -238,7 +238,7 @@ describe("ручная выдача тарифа", () => {
     await grantPlanByAdmin(
       {
         session: { userId: adminId.toString() },
-        body: { userId: userId.toString(), planKey: "patient_pro", months: 1 },
+        body: { userId: userId.toString(), planKey: "patient_std", months: 1 },
       },
       res,
     );
@@ -256,7 +256,7 @@ describe("ручная выдача тарифа", () => {
         session: { userId: adminId.toString() },
         body: {
           userId: userId.toString(),
-          planKey: "patient_pro",
+          planKey: "patient_std",
           months: 999,
           reason: "опечатка в поле",
         },

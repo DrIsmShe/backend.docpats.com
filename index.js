@@ -34,6 +34,7 @@ import uploadRoutes from "./common/routes/uploadRoutes.js";
 import uploadFileRoutes from "./common/routes/uploadFileRoutes.js";
 import emailLimiter from "./common/middlewares/rateLimiter.js";
 import { scheduleTrialReminders } from "./jobs/checkTrialReminders.js";
+import { scheduleSubscriptionReminders } from "./jobs/checkSubscriptionReminders.js";
 import { scheduleNotificationDigest } from "./jobs/notificationDigest.job.js";
 import { scheduleWeeklyCaseNotification } from "./jobs/radiologyWeeklyCase.job.js";
 import { scheduleDailyCaseGeneration } from "./jobs/radiologyDailyCases.job.js";
@@ -115,6 +116,24 @@ app.use(
 );
 
 app.use(compression());
+
+// Платёжные webhook'и — ДО express.json, и это не стилистика.
+//
+// Провайдеры подписывают СЫРОЕ тело запроса. Если его успел разобрать
+// express.json, восстановить исходные байты нельзя: JSON.stringify даст
+// другой порядок ключей и другие пробелы, подпись не сойдётся, и все
+// платежи будут отвергаться как поддельные. Поэтому здесь express.raw и
+// монтирование выше общего парсера.
+//
+// Ниже стоит второе монтирование того же роутера (после session) — оно
+// осталось для обратной совместимости адреса и ничего не ломает: до него
+// запрос уже не дойдёт.
+app.use(
+  "/api/payments/webhook",
+  express.raw({ type: "*/*", limit: "1mb" }),
+  paymentsWebhookRouter,
+);
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -127,8 +146,9 @@ app.use("/api/v1/public", publicDoctorsRouter);
 // он и делается. У агента нет инструментов и доступа к данным — см.
 // modules/guide/guide.service.js.
 app.use("/api/v1/public", guestGuideRouter);
-// Платёжные webhook'и — server-to-server (вызов от шлюза), до session/CSRF.
-app.use("/api/payments/webhook", paymentsWebhookRouter);
+// (Роутер webhook'ов смонтирован выше, до express.json — подпись
+// проверяется по сырому телу. Здесь оставлено только пояснение, чтобы
+// следующий читатель не искал его среди публичных маршрутов.)
 // ======================= SESSION =======================
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URL;
 
@@ -456,6 +476,10 @@ async function bootstrap(startPort = PORT) {
     // ✅ Call gateway на том же nsp
     initCallGateway(nsp);
     scheduleTrialReminders();
+    // Напоминания о продлении платной подписки: за 7 дней, за 1 день и в
+    // день окончания. До этого платная подписка заканчивалась молча —
+    // напоминания существовали только для пробного периода.
+    scheduleSubscriptionReminders();
     scheduleNotificationDigest();
     scheduleWeeklyCaseNotification();
     // Ночная автогенерация учебных кейсов лучевой станции (по одному на

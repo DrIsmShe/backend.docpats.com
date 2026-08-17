@@ -11,6 +11,11 @@ import {
 } from "@aws-sdk/client-s3";
 import r2 from "../services/r2Client.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  assertStorageAllowed,
+  recordStoredFiles,
+  releaseStoredFile,
+} from "../services/storageQuota.service.js";
 // ============================================================
 //                SETTINGS
 // ============================================================
@@ -182,6 +187,28 @@ export const processFiles = async (req, res, next) => {
     return next();
   }
 
+  // Владелец файлов — тот, кто загружает. Файлы в архив кладёт врач;
+  // пациент не загружает ничего, записи вносит врач, у которого он
+  // наблюдается. Поэтому и квота считается с врача, а не с пациента,
+  // о котором документ.
+  const ownerId = req.user?.userId ?? req.session?.userId ?? null;
+
+  try {
+    // Квоту проверяем ДО отправки в хранилище и сразу на всю пачку:
+    // врач прикладывает к исследованию несколько снимков, и загрузить
+    // три из пяти хуже, чем отказать сразу — частичное исследование
+    // выглядит как потерянные данные.
+    await assertStorageAllowed(ownerId, req.files.length);
+  } catch (err) {
+    // Предел — не сбой сервера: отвечаем 403 с понятным текстом, а не 500.
+    return res.status(403).json({
+      success: false,
+      code: "STORAGE_LIMIT_REACHED",
+      message: err.message,
+      ...(err.details ?? {}),
+    });
+  }
+
   try {
     const studyTypeReference = detectStudyType(req);
 
@@ -195,6 +222,16 @@ export const processFiles = async (req, res, next) => {
         studyTypeReference,
       })),
     );
+
+    // Реестр — единственное место, где можно посчитать «сколько файлов у
+    // этого врача»: сами файлы лежат то встроенным массивом в документе
+    // исследования, то отдельной коллекцией у клиник.
+    //
+    // Ошибка записи в реестр НЕ должна ронять загрузку: файл уже в
+    // хранилище, и отказать сейчас значит потерять его для пользователя,
+    // оставив мусор в R2. Расхождение учёта чинится уборщиком сирот.
+    recordStoredFiles(ownerId, req.uploadedFiles, studyTypeReference || "study")
+      .catch((e) => console.error("storage ledger:", e.message));
 
     next();
   } catch (err) {
@@ -285,6 +322,13 @@ export const resizeImage = async (req, res, next) => {
 
 export const deleteFile = async (fileUrl) => {
   if (!fileUrl) return;
+
+  // Освобождаем место в квоте. Помечаем до удаления из хранилища: если
+  // удаление сорвётся, уборщик сирот подберёт файл, а место у врача уже
+  // свободно — это лучше, чем занятая квота под несуществующий файл.
+  releaseStoredFile(fileUrl).catch((e) =>
+    console.error("storage ledger release:", e.message),
+  );
 
   try {
     if (IS_R2) {

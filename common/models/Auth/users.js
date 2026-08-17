@@ -242,10 +242,10 @@ const PLAN_TO_MAX_PATIENTS = {
   doctor_pro: 2000, // было -1 (безлимит); см. пояснение в aiPlanLimits.js v4
   doctor_trial: 100, // как Start: пробный сокращён до 3 месяцев на лимитах Start
 
+  patient_trial: 0,
   patient_free: 0,
-  patient_care: 0,
   patient_std: 0,
-  patient_pro: 0,
+  patient_pro: 0, // тариф снят с продажи; ключ оставлен для старых записей
 
   clinic_start: 1000,
   clinic: 1000,
@@ -273,7 +273,6 @@ const userSchema = new mongoose.Schema(
       enum: [
         // Новые ключи v2
         "patient_free",
-        "patient_care",
         "patient_std",
         "patient_pro",
         // doctor_lite появился позже остальных, и в этот список его не
@@ -337,6 +336,20 @@ const userSchema = new mongoose.Schema(
     },
 
     // Флаги отправленных email-напоминаний об окончании trial
+    // Напоминания о продлении ПЛАТНОЙ подписки. Отдельно от trialReminders:
+    // пробный период бывает один раз, а подписка продлевается многократно,
+    // и флаги надо сбрасывать при каждой оплате — иначе второе продление
+    // пройдёт молча.
+    subscriptionReminders: {
+      sent7d: { type: Boolean, default: false },
+      sent1d: { type: Boolean, default: false },
+      sentExpired: { type: Boolean, default: false },
+      // Для какого именно срока выставлены флаги. Без этого поля нельзя
+      // отличить «уже напомнили про этот период» от «напомнили про
+      // прошлый»: даты продлеваются, а флаги остались бы стоять.
+      forEndsAt: { type: Date, default: null },
+    },
+
     trialReminders: {
       sent30d: { type: Boolean, default: false },
       sent7d: { type: Boolean, default: false },
