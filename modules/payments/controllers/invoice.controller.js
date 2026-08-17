@@ -187,6 +187,9 @@ export async function createInvoiceRequest(req, res) {
       period: cleanPeriod,
       months: cleanMonths,
       status: { $in: ["new", "invoiced"] },
+      // Заархивированную не воскрешаем: администратор убрал её осознанно,
+      // и повторное обращение — это новая заявка, а не возврат старой.
+      archivedAt: null,
     });
 
     const isRepeat = Boolean(doc);
@@ -379,7 +382,17 @@ export async function listInvoiceRequests(req, res) {
   try {
     const filter = {};
     const { status } = req.query || {};
-    if (status && status !== "all") filter.status = status;
+
+    // Архив — отдельный вид списка, а не фильтр по статусу: в нём лежат
+    // заявки любого статуса, и от «всех» он отличается тем, что все
+    // остальные виды архив НЕ показывают. Иначе убранное с глаз
+    // возвращалось бы во вкладке «Все».
+    if (status === "archived") {
+      filter.archivedAt = { $ne: null };
+    } else {
+      filter.archivedAt = null;
+      if (status && status !== "all") filter.status = status;
+    }
 
     const items = await InvoiceRequest.find(filter)
       .sort({ createdAt: -1 })
@@ -494,6 +507,90 @@ export async function claimInvoicePayment(req, res) {
  * Такую заявку можно только пометить отменённой — но и это не отменяет
  * платежа, поэтому решение остаётся за человеком.
  */
+/**
+ * POST /api/payments/invoice-requests/:id/archive
+ *
+ * Убрать заявку из рабочего списка, не удаляя.
+ *
+ * Оплаченную архивировать МОЖНО и нужно: на ней транзакция, удалить её
+ * нельзя, но и висеть в списке вечно она не должна — иначе через год
+ * рабочие заявки утонут среди закрытых.
+ */
+export async function archiveInvoiceRequest(req, res) {
+  try {
+    const request = await InvoiceRequest.findById(req.params.id);
+    if (!request) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Заявка не найдена" });
+    }
+
+    if (request.archivedAt) {
+      return res
+        .status(200)
+        .json({ success: true, id: String(request._id), archived: true });
+    }
+
+    request.archivedAt = new Date();
+    request.archivedBy = req.session.userId || null;
+    await request.save();
+
+    console.log(
+      `invoice: заявка ${request._id} (${request.companyName}) в архиве, админ ${req.session.userId}`,
+    );
+
+    return res
+      .status(200)
+      .json({ success: true, id: String(request._id), archived: true });
+  } catch (err) {
+    console.error("archiveInvoiceRequest error:", err.message);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
+/**
+ * POST /api/payments/invoice-requests/:id/restore
+ *
+ * Вернуть заявку в рабочий список. Статус и сумму не трогаем: заявка
+ * возвращается ровно той, какой была, — иначе плательщик, оплативший по
+ * старому письму, стал бы неопознаваем.
+ */
+export async function restoreInvoiceRequest(req, res) {
+  try {
+    const request = await InvoiceRequest.findById(req.params.id);
+    if (!request) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Заявка не найдена" });
+    }
+
+    request.archivedAt = null;
+    request.archivedBy = null;
+    await request.save();
+
+    console.log(
+      `invoice: заявка ${request._id} возвращена из архива, админ ${req.session.userId}`,
+    );
+
+    return res
+      .status(200)
+      .json({ success: true, id: String(request._id), archived: false });
+  } catch (err) {
+    console.error("restoreInvoiceRequest error:", err.message);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
+/**
+ * DELETE /api/payments/invoice-requests/:id
+ *
+ * Удаление НАВСЕГДА — только из архива.
+ *
+ * Два шага вместо одного не бюрократия: заявка — это чужое намерение
+ * заплатить, и человек по ту сторону ждёт счёт. Промах по кнопке в
+ * списке из тридцати строк не должен стоить клиента, о котором мы после
+ * удаления не узнаем даже того, что он был.
+ */
 export async function deleteInvoiceRequest(req, res) {
   try {
     const request = await InvoiceRequest.findById(req.params.id);
@@ -509,6 +606,14 @@ export async function deleteInvoiceRequest(req, res) {
         message:
           "Заявка оплачена: на ней транзакция, удаление разорвало бы связь с деньгами",
         transactionId: request.transactionId,
+      });
+    }
+
+    if (!request.archivedAt) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Сначала отправьте заявку в архив — оттуда её можно вернуть, а удаление необратимо",
       });
     }
 

@@ -29,6 +29,8 @@ import {
   listInvoiceRequests,
   markInvoicePaid,
   deleteInvoiceRequest,
+  archiveInvoiceRequest,
+  restoreInvoiceRequest,
 } from "../../modules/payments/controllers/invoice.controller.js";
 import { createTestDoctor } from "../helpers/createTestUser.js";
 
@@ -574,7 +576,7 @@ describe("подтверждение оплаты по счёту", () => {
     expect(tx.amount).toBe(478.35);
   });
 
-  it("неоплаченную заявку можно удалить: проверочные и дубли не должны копиться", async () => {
+  it("удалить сразу нельзя — сначала архив: промах по кнопке не должен стоить клиента", async () => {
     const id = await makeRequest();
     const res = mockRes();
 
@@ -583,8 +585,88 @@ describe("подтверждение оплаты по счёту", () => {
       res,
     );
 
+    expect(res.statusCode).toBe(409);
+    expect(await InvoiceRequest.countDocuments()).toBe(1);
+  });
+
+  it("архив → удаление навсегда", async () => {
+    const id = await makeRequest();
+    const admin = { userId: String(doctor._id) };
+
+    await archiveInvoiceRequest({ params: { id }, session: admin }, mockRes());
+    const archived = await InvoiceRequest.findById(id).lean();
+    expect(archived.archivedAt).toBeInstanceOf(Date);
+    expect(String(archived.archivedBy)).toBe(String(doctor._id));
+
+    const res = mockRes();
+    await deleteInvoiceRequest({ params: { id }, session: admin }, res);
     expect(res.statusCode).toBe(200);
     expect(await InvoiceRequest.countDocuments()).toBe(0);
+  });
+
+  it("архив → возврат: заявка сохраняет номер и сумму", async () => {
+    const id = await makeRequest();
+    const admin = { userId: String(doctor._id) };
+    const before = await InvoiceRequest.findById(id).lean();
+
+    await archiveInvoiceRequest({ params: { id }, session: admin }, mockRes());
+    await restoreInvoiceRequest({ params: { id }, session: admin }, mockRes());
+
+    const after = await InvoiceRequest.findById(id).lean();
+    expect(after.archivedAt).toBeNull();
+    // Иначе плательщик, отправивший деньги по старому письму, стал бы
+    // неопознаваем.
+    expect(after.reference).toBe(before.reference);
+    expect(after.amountExpected).toBe(before.amountExpected);
+  });
+
+  it("архив прячет заявку из рабочих списков, включая «Все»", async () => {
+    const id = await makeRequest();
+    await archiveInvoiceRequest(
+      { params: { id }, session: { userId: String(doctor._id) } },
+      mockRes(),
+    );
+
+    const all = mockRes();
+    await listInvoiceRequests({ query: { status: "all" } }, all);
+    expect(all.body.items).toHaveLength(0);
+
+    const arch = mockRes();
+    await listInvoiceRequests({ query: { status: "archived" } }, arch);
+    expect(arch.body.items).toHaveLength(1);
+  });
+
+  it("оплаченную можно архивировать, но не удалить", async () => {
+    const id = await makeRequest();
+    const admin = { userId: String(doctor._id) };
+    await markInvoicePaid(
+      { params: { id }, body: { userId: String(doctor._id) }, session: admin },
+      mockRes(),
+    );
+
+    const arch = mockRes();
+    await archiveInvoiceRequest({ params: { id }, session: admin }, arch);
+    expect(arch.statusCode).toBe(200);
+
+    const del = mockRes();
+    await deleteInvoiceRequest({ params: { id }, session: admin }, del);
+    expect(del.statusCode).toBe(409);
+    expect(await InvoiceRequest.countDocuments()).toBe(1);
+  });
+
+  it("заархивированную заявку повтор не воскрешает — это новая заявка", async () => {
+    const first = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, first);
+    await archiveInvoiceRequest(
+      { params: { id: first.body.id }, session: { userId: String(doctor._id) } },
+      mockRes(),
+    );
+
+    const second = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, second);
+
+    expect(String(second.body.id)).not.toBe(String(first.body.id));
+    expect(await InvoiceRequest.countDocuments()).toBe(2);
   });
 
   it("оплаченную удалить нельзя — на ней транзакция", async () => {

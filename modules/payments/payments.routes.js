@@ -20,6 +20,8 @@ import {
   createInvoiceRequest,
   listInvoiceRequests,
   markInvoicePaid,
+  archiveInvoiceRequest,
+  restoreInvoiceRequest,
   deleteInvoiceRequest,
   claimInvoicePayment,
 } from "./controllers/invoice.controller.js";
@@ -118,6 +120,22 @@ router.post(
   requireAuth,
   requireAdmin,
   markInvoicePaid,
+);
+// Архив: убрать с глаз → вернуть → удалить навсегда. Промежуточный шаг
+// намеренный — заявка это чужое намерение заплатить, и промах по кнопке
+// не должен стоить клиента, о существовании которого мы после удаления
+// не узнаем.
+router.post(
+  "/invoice-requests/:id/archive",
+  requireAuth,
+  requireAdmin,
+  archiveInvoiceRequest,
+);
+router.post(
+  "/invoice-requests/:id/restore",
+  requireAuth,
+  requireAdmin,
+  restoreInvoiceRequest,
 );
 router.delete(
   "/invoice-requests/:id",
