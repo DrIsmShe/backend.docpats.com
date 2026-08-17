@@ -237,6 +237,229 @@ describe("заявка на счёт", () => {
   });
 });
 
+describe("повторная заявка", () => {
+  beforeEach(() => {
+    sent.length = 0;
+    sendEmail.mockClear();
+  });
+
+  it("на тот же тариф не создаёт вторую: письмо уходит с той же суммой", async () => {
+    const first = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, first);
+    const before = await InvoiceRequest.findById(first.body.id).lean();
+
+    const second = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, second);
+
+    // Иначе плательщик получает два письма с разными суммами и не
+    // понимает, какую переводить.
+    expect(await InvoiceRequest.countDocuments()).toBe(1);
+    expect(String(second.body.id)).toBe(String(first.body.id));
+
+    const after = await InvoiceRequest.findById(first.body.id).lean();
+    expect(after.amountExpected).toBe(before.amountExpected);
+    expect(after.reference).toBe(before.reference);
+  });
+
+  it("повтор шлёт письмо заявителю, но не дёргает администратора", async () => {
+    await createInvoiceRequest({ body: validBody(), session: {} }, mockRes());
+    await new Promise((r) => setImmediate(r));
+    sent.length = 0;
+
+    await createInvoiceRequest({ body: validBody(), session: {} }, mockRes());
+    await new Promise((r) => setImmediate(r));
+
+    expect(sent.filter((m) => m.to === "buh@clinic.example")).toHaveLength(1);
+    // Заявка та же, администратор о ней уже знает.
+    expect(sent.filter((m) => m.to !== "buh@clinic.example")).toHaveLength(0);
+  });
+
+  it("другой тариф — законно новая заявка: это другая сумма", async () => {
+    await createInvoiceRequest({ body: validBody(), session: {} }, mockRes());
+    await createInvoiceRequest(
+      { body: validBody({ planKey: "doctor_pro" }), session: {} },
+      mockRes(),
+    );
+
+    expect(await InvoiceRequest.countDocuments()).toBe(2);
+  });
+
+  it("оплаченная заявка не переиспользуется: это новая покупка", async () => {
+    const first = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, first);
+    await InvoiceRequest.updateOne(
+      { _id: first.body.id },
+      { $set: { status: "paid" } },
+    );
+
+    await createInvoiceRequest({ body: validBody(), session: {} }, mockRes());
+    expect(await InvoiceRequest.countDocuments()).toBe(2);
+  });
+
+  it("уточнённые контакты подхватываются при повторе", async () => {
+    await createInvoiceRequest(
+      { body: validBody({ taxId: "" }), session: {} },
+      mockRes(),
+    );
+    const res = mockRes();
+    await createInvoiceRequest(
+      { body: validBody({ taxId: "9999999999", phone: "+994501112233" }), session: {} },
+      res,
+    );
+
+    const doc = await InvoiceRequest.findById(res.body.id).lean();
+    expect(doc.taxId).toBe("9999999999");
+    expect(doc.phone).toBe("+994501112233");
+  });
+});
+
+describe("опознание платежа в выписке", () => {
+  beforeEach(() => {
+    sent.length = 0;
+    sendEmail.mockClear();
+  });
+
+  it("каждому плательщику даёт свои копейки: 19.01, 19.02, 19.03", async () => {
+    const amounts = [];
+    // Разные плательщики: одинаковые заявки от одного схлопываются в одну,
+    // и это отдельно проверяется выше.
+    for (let i = 0; i < 3; i += 1) {
+      const res = mockRes();
+      await createInvoiceRequest(
+        {
+          body: validBody({
+            email: `doc${i}@clinic.example`,
+            planKey: "doctor_basic",
+            period: "monthly",
+            months: 1,
+          }),
+          session: {},
+        },
+        res,
+      );
+      const doc = await InvoiceRequest.findById(res.body.id).lean();
+      amounts.push(doc.amountExpected);
+    }
+
+    // Ровно этим платёж и опознаётся: в банке видно «19 $ от Ivanov»,
+    // и при трёх врачах на одном тарифе это ничего не говорит.
+    expect(new Set(amounts).size).toBe(3);
+    for (const a of amounts) expect(Math.floor(a)).toBe(19);
+  });
+
+  it("оплаченная заявка освобождает свои копейки", async () => {
+    const first = mockRes();
+    await createInvoiceRequest(
+      { body: validBody({ planKey: "doctor_basic", period: "monthly" }), session: {} },
+      first,
+    );
+    const doc = await InvoiceRequest.findById(first.body.id);
+    const takenCents = Math.round((doc.amountExpected % 1) * 100);
+
+    doc.status = "paid";
+    await doc.save();
+
+    const second = mockRes();
+    await createInvoiceRequest(
+      { body: validBody({ planKey: "doctor_basic", period: "monthly" }), session: {} },
+      second,
+    );
+    const next = await InvoiceRequest.findById(second.body.id).lean();
+
+    // Закрытая заявка ни с чем не спутается — «хвостик» можно переиспользовать.
+    expect(Math.round((next.amountExpected % 1) * 100)).toBe(takenCents);
+  });
+
+  it("номер для назначения платежа уникален и не выдаёт число клиентов", async () => {
+    const res = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, res);
+    const doc = await InvoiceRequest.findById(res.body.id).lean();
+
+    expect(doc.reference).toMatch(/^DP-[0-9A-F]{6}$/);
+  });
+
+  it("в письме стоит точная сумма с копейками и предупреждение не округлять", async () => {
+    const res = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, res);
+    await new Promise((r) => setImmediate(r));
+
+    const doc = await InvoiceRequest.findById(res.body.id).lean();
+    const text = sent.find((m) => m.to === "buh@clinic.example").text;
+
+    expect(text).toContain(doc.amountExpected.toFixed(2));
+    expect(text).toMatch(/округлите/i);
+    expect(text).toContain(doc.reference);
+  });
+});
+
+describe("«я оплатил»", () => {
+  let claimInvoicePayment;
+  let createSignedToken;
+
+  beforeEach(async () => {
+    sent.length = 0;
+    sendEmail.mockClear();
+    process.env.SIGNED_URL_SECRET =
+      process.env.SIGNED_URL_SECRET || "test-signed-url-secret-32-chars-min";
+    ({ claimInvoicePayment } = await import(
+      "../../modules/payments/controllers/invoice.controller.js"
+    ));
+    ({ createSignedToken } = await import(
+      "../../common/utils/signedUrl.js"
+    ));
+  });
+
+  async function makeRequest() {
+    const res = mockRes();
+    await createInvoiceRequest({ body: validBody(), session: {} }, res);
+    return res.body.id;
+  }
+
+  it("сообщает нам, что искать в выписке, но тариф не включает", async () => {
+    const id = await makeRequest();
+    const token = createSignedToken({ invoiceRequestId: String(id) }, "30d");
+    sent.length = 0;
+
+    const res = mockRes();
+    await claimInvoicePayment(
+      { params: { token }, body: { note: "перевёл 17.08, карта *1234" } },
+      res,
+    );
+    await new Promise((r) => setImmediate(r));
+
+    expect(res.statusCode).toBe(200);
+
+    const request = await InvoiceRequest.findById(id).lean();
+    expect(request.paymentClaimedAt).toBeTruthy();
+    expect(request.claimNote).toContain("17.08");
+    // Заявление плательщика — не оплата: сверяет человек по выписке.
+    expect(request.status).toBe("new");
+    expect(await PaymentTransaction.countDocuments()).toBe(0);
+
+    const toUs = sent.find((m) => /Оплачено/.test(m.subject));
+    expect(toUs).toBeTruthy();
+    expect(toUs.text).toContain("перевёл 17.08");
+  });
+
+  it("повторное нажатие не задваивает письмо администратору", async () => {
+    const id = await makeRequest();
+    const token = createSignedToken({ invoiceRequestId: String(id) }, "30d");
+    sent.length = 0;
+
+    await claimInvoicePayment({ params: { token }, body: {} }, mockRes());
+    await claimInvoicePayment({ params: { token }, body: {} }, mockRes());
+    await new Promise((r) => setImmediate(r));
+
+    expect(sent.filter((m) => /Оплачено/.test(m.subject))).toHaveLength(1);
+  });
+
+  it("поддельная ссылка отвергается", async () => {
+    const res = mockRes();
+    await claimInvoicePayment({ params: { token: "не-токен" }, body: {} }, res);
+    expect(res.statusCode).toBe(400);
+  });
+});
+
 describe("подтверждение оплаты по счёту", () => {
   let doctor;
 

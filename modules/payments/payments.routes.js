@@ -21,6 +21,7 @@ import {
   listInvoiceRequests,
   markInvoicePaid,
   deleteInvoiceRequest,
+  claimInvoicePayment,
 } from "./controllers/invoice.controller.js";
 import {
   listRequisites,
@@ -101,6 +102,11 @@ router.get("/waitlist", requireAuth, requireAdmin, listWaitlist);
 // Заявка открыта без авторизации по той же причине, что и лист ожидания:
 // счёт просит бухгалтер, у которого аккаунта здесь нет и не будет.
 router.post("/invoice-request", createInvoiceRequest);
+
+// «Я оплатил» — плательщик сообщает, что отправил деньги. Без авторизации:
+// доступ даёт подписанная ссылка из письма. Тариф от этого НЕ включается,
+// иначе это была бы кнопка «получить тариф даром».
+router.post("/invoice-claim/:token", claimInvoicePayment);
 router.get(
   "/invoice-requests",
   requireAuth,
