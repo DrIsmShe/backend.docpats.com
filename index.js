@@ -70,6 +70,8 @@ import educationGuestRoutes from "./modules/education/education-guest/index.js";
 import radiologyRoutes from "./modules/radiology/index.js";
 import diagnosticsRoutes from "./modules/diagnostics/index.js";
 import dictationRoutes from "./modules/dictation/index.js";
+import labInsightRoutes from "./modules/labInsight/index.js";
+import previsitRoutes from "./modules/previsit/index.js";
 import medicalCodesRoutes from "./modules/medicalCodes/index.js";
 import ebmRoutes from "./modules/ebm/index.js";
 // ======================= PATHS =======================
@@ -386,6 +388,25 @@ app.use("/api/v1/diagnostics", diagnosticsRoutes);
 // врач опознаётся по req.session.userId, а пациент — по resolvePatient.
 // Результат — ЧЕРНОВИК записи; подписывает врач обычным путём модуля.
 app.use("/api/v1/dictation", dictationRoutes);
+
+// Расшифровка анализов для ПАЦИЕНТА: фото бланка → объяснение простыми
+// словами. После session-middleware: разбор принадлежит человеку.
+//
+// Фотография не сохраняется нигде — ни на диск, ни в R2. В базу попадают
+// только показатели: бланк это ФИО, дата рождения и номер карты.
+//
+// Что считать отклонением, решает арифметика, а не модель: суждение
+// «это тревожно» пациент проверить не может, а «98 при норме 120–160» —
+// может. Подробнее в services/labFlags.service.js.
+app.use("/api/v1/lab-insight", labInsightRoutes);
+
+// Опрос пациента перед приёмом. Публичный контур: доступ даёт подписанная
+// ссылка, а не сессия — у пациента клиники аккаунта может не быть вовсе.
+//
+// Смонтирован ВНЕ /api/v1/clinic намеренно: заморозка неоплаченной
+// клиники не должна мешать пациенту заполнить анкету, он к расчётам
+// клиники отношения не имеет.
+app.use("/api/v1/previsit", previsitRoutes);
 
 // Справочник медицинских кодов (МКБ-10, дальше ICHI для вмешательств).
 // Глобальный модуль без tenantMiddleware: коды одинаковы для всех клиник и не

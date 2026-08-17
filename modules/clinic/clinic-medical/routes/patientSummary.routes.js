@@ -1,0 +1,67 @@
+// server/modules/clinic/clinic-medical/routes/patientSummary.routes.js
+//
+//   GET /clinic/medical/patients/:patientId/summary
+//
+// Один экран вместо двенадцати вкладок. Цепочка проверок та же, что у
+// остальных разделов карты, и это обязательно: сводка показывает больше
+// сведений сразу, значит требования к доступу у неё не ниже, а выше.
+//
+// Согласие проверяется по scope "encounters" — как у анализов и приёмов.
+// Внутри сервис ещё раз спрашивает каждый источник по его собственным
+// правилам, так что раздел, к которому доступа нет, просто окажется
+// пустым, а не откроется заодно с остальными.
+
+import express from "express";
+import auditMiddleware from "../../../audit/middleware/auditMiddleware.js";
+import { ACTIONS } from "../rbac/clinicMedicalRBAC.js";
+import { checkClinicMedicalAccess } from "../middleware/checkClinicMedicalAccess.middleware.js";
+import { resolveClinicPatient } from "../middleware/resolveClinicPatient.middleware.js";
+import { checkConsent } from "../middleware/checkConsent.middleware.js";
+import * as ctrl from "../controllers/patientSummary.controller.js";
+import * as fhirCtrl from "../controllers/fhirExport.controller.js";
+
+const router = express.Router();
+const ENC = ACTIONS.ENCOUNTER;
+
+router.get(
+  "/patients/:patientId/summary",
+  // Сводка — это чтение всей карты одним движением, и в журнале она
+  // должна выглядеть именно так, а не как восемь отдельных списков.
+  auditMiddleware({
+    resourceType: "clinic-medical-summary",
+    action: ENC.LIST,
+    resourceIdFrom: () => null,
+    resourceOwnerIdFrom: (req) => req.clinicPatient?.linkedUserId || null,
+    metaFrom: (req) => ({ patientId: req.params?.patientId }),
+  }),
+  checkClinicMedicalAccess({ action: ENC.LIST }),
+  resolveClinicPatient,
+  checkConsent({ scope: "encounters", patientLevel: true }),
+  ctrl.getPatientSummaryController,
+);
+
+// ─── Выгрузка карты в FHIR R4 ─────────────────────────────────────────
+//
+// Стоит рядом со сводкой не случайно: оба маршрута собирают карту
+// целиком из одних и тех же источников. Разница в том, что сводка
+// показывает выжимку на экране, а выгрузка кладёт ВСЮ карту вместе с
+// именем в файл, который дальше живёт своей жизнью.
+//
+// Поэтому здесь действие WRITE, а не READ, и свой тип ресурса в
+// журнале: через полгода надо уметь ответить, кто и когда унёс карту.
+router.get(
+  "/patients/:patientId/fhir",
+  auditMiddleware({
+    resourceType: "clinic-medical-fhir-export",
+    action: ENC.CREATE,
+    resourceIdFrom: () => null,
+    resourceOwnerIdFrom: (req) => req.clinicPatient?.linkedUserId || null,
+    metaFrom: (req) => ({ patientId: req.params?.patientId }),
+  }),
+  checkClinicMedicalAccess({ action: ENC.CREATE }),
+  resolveClinicPatient,
+  checkConsent({ scope: "encounters", patientLevel: true }),
+  fhirCtrl.exportPatientFhirController,
+);
+
+export default router;

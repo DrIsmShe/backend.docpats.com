@@ -132,6 +132,11 @@ export const PLAN_LIMITS = {
   patient_trial: {
     examQuestions: 250,
     aiConsultations: 10,
+    // Расшифровка бланка анализов: фото → объяснение человеческим
+    // языком. Стоит примерно как консультация (чтение бланка плюс
+    // объяснение), поэтому и считается отдельно, а не списывается с
+    // консультаций: это разные поводы прийти.
+    labExplanations: 5,
     documentExports: -1,
   },
   patient_free: {
@@ -139,11 +144,13 @@ export const PLAN_LIMITS = {
     // Бесплатный уровень — демонстрация, а не продукт: платить за него
     // некому, а расход умножается на каждую регистрацию.
     aiConsultations: 2,
+    labExplanations: 1,
     documentExports: -1, // -1 = без лимита: это СВОИ данные пациента
   },
   patient_std: {
     examQuestions: 1000,
     aiConsultations: 15,
+    labExplanations: 20,
     documentExports: -1,
   },
 
@@ -168,6 +175,8 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 8,
     patientsInOffice: 100,
     videoMinutes: 240,
+    labExplanations: 30,
+    previsitIntakes: 100,
     storedFiles: 1500,
   },
   // Бесплатный врачебный уровень — то, куда врач попадает, когда НЕ платит:
@@ -195,6 +204,8 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 1,
     patientsInOffice: 5, // совпадает с PLAN_TO_MAX_PATIENTS.doctor_free в users.js
     videoMinutes: 15,
+    labExplanations: 1,
+    previsitIntakes: 5,
     storedFiles: 30,
   },
   // Lite — вход для врачей.
@@ -217,6 +228,8 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 3,
     patientsInOffice: 30,
     videoMinutes: 60,
+    labExplanations: 10,
+    previsitIntakes: 30,
     storedFiles: 400,
   },
   doctor_basic: {
@@ -232,6 +245,8 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 8,
     patientsInOffice: 100,
     videoMinutes: 240,
+    labExplanations: 30,
+    previsitIntakes: 100,
     storedFiles: 1500,
   },
   doctor_super: {
@@ -242,6 +257,8 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 30,
     patientsInOffice: 600,
     videoMinutes: 600,
+    labExplanations: 80,
+    previsitIntakes: 600,
     storedFiles: 6000,
   },
   // Pro. Все безлимиты, кроме банка вопросов, заменены потолками.
@@ -261,6 +278,8 @@ export const PLAN_LIMITS = {
     aiPatientConsultations: 60,
     patientsInOffice: 2000,
     videoMinutes: 1200,
+    labExplanations: 200,
+    previsitIntakes: 2000,
     storedFiles: 20000,
   },
 
@@ -272,6 +291,8 @@ export const PLAN_LIMITS = {
     aiArticles: 25,
     soapEpicrises: 90,
     videoMinutes: 1500,
+    labExplanations: 200,
+    previsitIntakes: 1000,
     storedFiles: 7000,
     // Читается в clinic-analytics: без него /analytics/overview отдаёт 403.
     // topInRecommendations отсюда убран: каталога клиник с ранжированием в
@@ -290,6 +311,8 @@ export const PLAN_LIMITS = {
     aiArticles: 80,
     soapEpicrises: 300,
     videoMinutes: 5000,
+    labExplanations: 450,
+    previsitIntakes: 2000,
     storedFiles: 20000,
     analytics: true,
   },
@@ -305,6 +328,8 @@ export const PLAN_LIMITS = {
     aiArticles: 150,
     soapEpicrises: 550,
     videoMinutes: 15000,
+    labExplanations: 800,
+    previsitIntakes: 4000,
     storedFiles: 60000,
     analytics: true,
   },

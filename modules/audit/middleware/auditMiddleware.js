@@ -39,6 +39,7 @@
 // Никогда не падает — все try/catch.
 
 import auditService from "../services/audit.service.js";
+import { getCurrentClinicId } from "../../../common/context/tenantContext.js";
 
 /* ═══════════ getValueByPath ═══════════
    Извлечь значение из объекта по dot-нотации.
@@ -252,7 +253,13 @@ export default function auditMiddleware(opts) {
           outcome = "failure";
         }
 
-        const context = extractContextFromReq(req, res);
+        // Арендатор берётся из ALS-контекста, а не из параметров
+        // маршрута: клиника уже разрешена tenantMiddleware, и брать её
+        // из URL значило бы поверить тому, что прислал клиент.
+        const context = {
+          ...extractContextFromReq(req, res),
+          clinicId: getCurrentClinicId() || null,
+        };
 
         auditService.recordActionAsync({
           actor,

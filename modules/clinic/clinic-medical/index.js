@@ -24,6 +24,7 @@
 import express from "express";
 
 import encounterRoutes from "./routes/medicalHistory.routes.js";
+import patientSummaryRoutes from "./routes/patientSummary.routes.js";
 import allergyRoutes from "./routes/allergy.routes.js";
 import chronicRoutes from "./routes/chronic.routes.js";
 import operationRoutes from "./routes/operation.routes.js";
@@ -40,6 +41,11 @@ router.use("/", labResultRoutes);
 // All mounted at the same root — each sub-router defines its own
 // path prefixes (patients/:patientId/<resource> + <resource>/:recordId),
 // so there are no collisions between them.
+// Сводка идёт ПЕРЕД encounterRoutes: у приёмов есть маршрут
+// /patients/:patientId/encounters/:id, и express сопоставляет по
+// порядку. Отдельный путь /summary с ним не конфликтует, но порядок
+// объявления здесь — единственная защита от такого конфликта в будущем.
+router.use("/", patientSummaryRoutes);
 router.use("/", encounterRoutes);
 router.use("/", allergyRoutes);
 router.use("/", chronicRoutes);

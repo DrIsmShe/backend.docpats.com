@@ -464,6 +464,25 @@ export const RESOURCE_TYPE_ENUM = [
   "clinic-medical-imaging-study", // ImagingStudy
   "clinic-medical-prescription", // Prescription (Rx blanks) — Stage 2 #4
 
+  // clinic-medical-lab-result: LabResult (панели анализов).
+  //
+  // ТИПА ЗДЕСЬ НЕ БЫЛО, хотя маршруты анализов его передают с самого
+  // появления модуля. Запись в журнал не проходила валидацию enum, а
+  // recordActionAsync гасит ошибку в console.warn — то есть доступ к
+  // анализам не аудитился ВООБЩЕ, и об этом ничто не сообщало.
+  //
+  // Так выглядит худший вид дефекта в аудите: не сбой, а тишина.
+  "clinic-medical-lab-result",
+
+  // clinic-medical-summary: сводка карты. Отдельный тип, а не «ещё один
+  // список»: одно обращение показывает всю карту разом, и в журнале это
+  // обязано выглядеть именно так.
+  "clinic-medical-summary",
+
+  // clinic-medical-fhir-export: выгрузка карты в файл. Тем более
+  // отдельный тип — файл уезжает наружу и живёт дальше своей жизнью.
+  "clinic-medical-fhir-export",
+
   // Patient consent (UMR Sprint 2 Phase 1)
   // Глобальное согласие пациент↔клиника. resourceId = PatientConsent._id.
   // resourceOwnerId = User._id пациента (для запроса "все consent'ы пациента").

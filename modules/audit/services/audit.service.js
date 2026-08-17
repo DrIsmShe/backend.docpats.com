@@ -104,6 +104,7 @@ export const recordAction = async (params) => {
     resourceId: resourceId || null,
     caseId: caseId || null,
     resourceOwnerId: resourceOwnerId || null,
+    clinicId: context.clinicId || null,
 
     outcome,
     failureReason: failureReason || null,
