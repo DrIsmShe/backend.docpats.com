@@ -13,6 +13,7 @@ import {
 } from "../../../../common/utils/errors.js";
 import logger from "../../../../common/logger.js";
 import { ROLES } from "../../../../common/auth/permissions.js";
+import { CLINIC_TRIAL_DAYS } from "./clinicPlan.service.js";
 
 const log = logger.child({ module: "clinic-core/service" });
 
@@ -52,9 +53,22 @@ export async function createClinic(data, ownerId) {
   try {
     await session.withTransaction(async () => {
       // 1. Create clinic
-      const [created] = await Clinic.create([{ ...data, slug, ownerId }], {
-        session,
-      });
+      //
+      // Пробный период назначается здесь, а не значением по умолчанию в
+      // схеме: default сработал бы и при импорте, и при восстановлении из
+      // резервной копии, выдав старой клинике новый бесплатный месяц.
+      // Срок принадлежит моменту создания, а не документу.
+      //
+      // Дату можно передать явно — админ заводит клинику вручную с
+      // другим сроком, — но по умолчанию это CLINIC_TRIAL_DAYS от сегодня.
+      const trialEndsAt =
+        data.trialEndsAt ??
+        new Date(Date.now() + CLINIC_TRIAL_DAYS * 24 * 60 * 60 * 1000);
+
+      const [created] = await Clinic.create(
+        [{ ...data, slug, ownerId, trialEndsAt }],
+        { session },
+      );
       clinic = created;
 
       // 2. Create owner membership (skip tenant context — this IS the bootstrap)

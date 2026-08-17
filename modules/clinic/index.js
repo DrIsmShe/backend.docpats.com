@@ -18,6 +18,8 @@ import clinicReviewModerationRouter from "./clinic-core/routes/clinicReviewModer
 // operations, family history, immunization). imaging deferred to 2C.2.
 import clinicMedicalRouter from "./clinic-medical/index.js";
 import { tenantMiddleware } from "../../common/middlewares/tenantMiddleware.js";
+import clinicWriteGate from "./clinic-core/middlewares/clinicWriteGate.js";
+import { resolveClinicAccess } from "./clinic-core/services/clinicPlan.service.js";
 import clinicPharmacyRouter from "./clinic-pharmacy/index.js"; // NEW
 import {
   errorHandler,
@@ -69,6 +71,17 @@ router.use("/", clinicEmployeeAuthRouter);
 // РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’
 
 router.use(tenantMiddleware({ required: false }));
+
+// 2.1 Заморозка неоплаченной клиники.
+//
+// Стоит СРАЗУ за tenantMiddleware: раньше — нет активной клиники в
+// контексте и проверять нечего; позже — пришлось бы вешать на каждый из
+// двадцати подмодулей и забыть на первом новом.
+//
+// Закрывает только запись. Чтение остаётся: в клинике лежат медицинские
+// карты, и отключать к ним доступ из-за неоплаченного счёта значит
+// наказывать пациентов за долг организации.
+router.use(clinicWriteGate);
 
 // РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’РІвЂўС’
 // 3. Built-in endpoints
@@ -131,6 +144,13 @@ router.get(
       .select("_id name departmentId priceType price")
       .lean();
 
+    // Состояние по оплате: active | trial | frozen.
+    //
+    // Отдаём здесь, а не отдельным запросом: /me запрашивает каждая
+    // страница клиники, и предупредить о конце пробного периода надо
+    // ДО того, как человек упрётся в отказ посреди приёма.
+    const access = await resolveClinicAccess(clinicId);
+
     res.json({
       authenticated: true,
       hasClinic: true,
@@ -140,6 +160,11 @@ router.get(
       membershipId: getCurrentMembershipId(),
       permissions: effectivePermissions,
       features: Array.from(features),
+      subscription: {
+        state: access.state,
+        plan: access.plan,
+        until: access.until,
+      },
       clinic: clinic
         ? {
             id: String(clinic._id),

@@ -15,6 +15,7 @@ import {
   resolveClinicPlan,
 } from "../../modules/clinic/clinic-core/services/clinicPlan.service.js";
 import Clinic from "../../modules/clinic/clinic-core/models/clinic.model.js";
+import * as clinicService from "../../modules/clinic/clinic-core/services/clinic.service.js";
 import User from "../../common/models/Auth/users.js";
 import { createTestDoctor } from "../helpers/createTestUser.js";
 
@@ -31,12 +32,13 @@ async function makeClinic({ plan = null, tier = "starter" } = {}) {
     subscriptionEndsAt: new Date(Date.now() + 30 * 864e5),
   });
 
-  const clinic = await Clinic.create({
-    name: "Клиника проверки",
-    slug: `check-${Date.now()}-${Math.floor(performance.now())}`,
-    ownerId: owner._id,
-    tier,
-  });
+  // Через сервис, а не Clinic.create: пробный период назначается именно
+  // там, и клиника, созданная в обход, оказывается сразу замороженной —
+  // тест проверял бы заморозку вместо фич тарифа.
+  const { clinic } = await clinicService.createClinic(
+    { name: `Клиника проверки ${Date.now()}${Math.random()}`, tier },
+    owner._id,
+  );
 
   return { clinic, owner };
 }
@@ -63,15 +65,29 @@ describe("фичи тарифа клиники", () => {
     expect(await clinicHasFeature(clinic._id, "analytics")).toBe(true);
   });
 
-  it("план определить нечем — не отказываем", async () => {
-    // Клиника, у которой не читается ни план владельца, ни tier, —
-    // служебное состояние, а не попытка получить лишнее. Отказ здесь
-    // сломал бы рабочие клиники ради несуществующей угрозы.
+  it("на пробном периоде фичи считаются по tier, а не отказом", async () => {
+    // Клиника без клинического тарифа у владельца, но с идущим пробным
+    // периодом, работает на лимитах Start — значит аналитики у неё нет,
+    // но и заморожена она не считается.
     const { clinic } = await makeClinic({ plan: "doctor_pro" });
-    await Clinic.updateOne({ _id: clinic._id }, { $unset: { tier: 1 } });
+    expect(await resolveClinicPlan(clinic._id)).toBe("clinic_start");
+    expect(await clinicHasFeature(clinic._id, "analytics")).toBe(false);
+  });
 
-    expect(await resolveClinicPlan(clinic._id)).toBeNull();
-    expect(await clinicHasFeature(clinic._id, "analytics")).toBe(true);
+  it("замороженная клиника платных функций не получает", async () => {
+    // Заморозка отбирает витрину тарифа, но не доступ к картам: карты —
+    // дело clinicWriteGate, который закрывает только запись.
+    const { clinic } = await makeClinic({ plan: "clinic" });
+    await Clinic.updateOne(
+      { _id: clinic._id },
+      { $set: { trialEndsAt: new Date(Date.now() - 864e5) } },
+    );
+    await User.updateOne(
+      { _id: (await Clinic.findById(clinic._id).lean()).ownerId },
+      { $set: { subscriptionEndsAt: new Date(Date.now() - 864e5) } },
+    );
+
+    expect(await clinicHasFeature(clinic._id, "analytics")).toBe(false);
   });
 
   it("истёкшая подписка владельца лишает клинику аналитики", async () => {
@@ -83,7 +99,8 @@ describe("фичи тарифа клиники", () => {
       { $set: { subscriptionEndsAt: new Date(Date.now() - 864e5) } },
     );
 
-    // План владельца упал в бесплатный, остаётся tier = starter.
+    // План владельца упал в бесплатный; клиника уходит в пробный период
+    // (он ещё идёт) на лимитах Start — аналитики там нет.
     expect(await clinicHasFeature(clinic._id, "analytics")).toBe(false);
   });
 });
