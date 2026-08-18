@@ -69,6 +69,10 @@ export async function finishSession({ sessionId, doctorId }) {
 
     return {
       sessionId: String(session._id),
+      // Карта пациента, если приём её знал. Интерфейс подставит её сразу
+      // и не станет искать по аккаунту — поиск может не найти, а карта
+      // здесь достоверна.
+      patientRef: session.patientRef ? String(session.patientRef) : null,
       draft,
       // Расшифровку отдаём вместе с черновиком: врач должен иметь
       // возможность свериться с тем, что было сказано, не выходя с

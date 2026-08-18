@@ -253,3 +253,55 @@ describe("поиск сеанса по комнате", () => {
     expect(found).toBeNull();
   });
 });
+
+describe("карта пациента из телемед-приёма", () => {
+  // У назначенного приёма карта известна ЗАРАНЕЕ. Искать её потом по
+  // аккаунту незачем и вредно: поиск может не найти (карта не связана с
+  // аккаунтом, пациент в клинике впервые), и врач упрётся в тупик с уже
+  // записанным разговором.
+  it("берёт карту и пациента из сеанса, а не из запроса", async () => {
+    const TelemedSession = (
+      await import(
+        "../../modules/clinic/clinic-telemed/models/telemedSession.model.js"
+      )
+    ).default;
+    const ClinicPatient = (
+      await import(
+        "../../modules/clinic/clinic-patients/models/clinicPatient.model.js"
+      )
+    ).default;
+
+    const clinicId = oid();
+    const patientUser = oid();
+
+    const card = await ClinicPatient.create({
+      clinicId,
+      firstNameEncrypted: "x",
+      lastNameEncrypted: "y",
+      linkedUserId: patientUser,
+      createdBy: oid(),
+      createdByType: "user",
+    });
+
+    const tele = await TelemedSession.create({
+      clinicId,
+      patientId: card._id,
+      joinKey: `k-${Date.now()}`,
+      title: "Консультация",
+      scheduledAt: new Date(),
+    });
+
+    const s = await svc.startSession({
+      doctorId: oid(),
+      room: `telemed-${tele._id}`,
+      // Пациента НЕ передаём: его должен определить сам приём.
+      patientUserId: null,
+      telemedSessionId: tele._id,
+    });
+
+    expect(String(s.patientRef)).toBe(String(card._id));
+    expect(s.patientTypeModel).toBe("ClinicPatient");
+    const patient = s.participants.find((p) => p.role === "patient");
+    expect(String(patient.userId)).toBe(String(patientUser));
+  });
+});

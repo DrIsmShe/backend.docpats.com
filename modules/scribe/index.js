@@ -50,4 +50,10 @@ router.post("/sessions/:id/finish", ctrl.finishController);
 // сборке: врач должен знать, что перед ним перевод.
 router.post("/sessions/:id/translate", ctrl.translateController);
 
+// Частная практика: своя карта и своё сохранение. Клинический путь
+// врачу без клиники недоступен — там нужен арендатор, которого у него
+// нет, — а черновик без места сохранения бесполезен.
+router.get("/private-patient/by-user/:userId", ctrl.privatePatientByUserController);
+router.post("/sessions/:id/save-private", ctrl.savePrivateController);
+
 export default router;

@@ -6,6 +6,10 @@
 import * as svc from "../services/scribe.service.js";
 import { finishSession } from "../services/scribeDraft.service.js";
 import { translateDraft, TRANSLATABLE } from "../ai/draftTranslator.js";
+import {
+  saveScribeDraftPrivate,
+  findPrivatePatientByUser,
+} from "../services/scribeSavePrivate.service.js";
 import ScribeSession from "../models/scribeSession.model.js";
 import {
   ValidationError,
@@ -56,6 +60,9 @@ export async function startController(req, res) {
       patientUserId: req.body?.patientUserId,
       appointmentId: req.body?.appointmentId || null,
       clinicId: req.body?.clinicId || null,
+      // Телемед-приём знает карту пациента заранее — берём её оттуда,
+      // а не ищем потом по аккаунту.
+      telemedSessionId: req.body?.telemedSessionId || null,
     });
     return res.status(201).json({ success: true, session: shape(session) });
   } catch (err) {
@@ -153,6 +160,49 @@ export async function translateController(req, res) {
 }
 
 /**
+ * GET /private-patient/by-user/:userId — карта ЧАСТНОГО врача.
+ *
+ * Для врача без клиники: клинический поиск ему недоступен (нет
+ * арендатора), а карта у него своя. Ищем только среди ЕГО пациентов —
+ * одноимённая карта у другого врача это чужая запись.
+ */
+export async function privatePatientByUserController(req, res) {
+  try {
+    const patient = await findPrivatePatientByUser({
+      doctorId: req.session.userId,
+      userId: req.params.userId,
+    });
+    // null, а не 404: у врача может не быть карты на этого человека, и
+    // это обычное дело, а не ошибка.
+    return res.json({ success: true, patient });
+  } catch (err) {
+    return handle(res, err);
+  }
+}
+
+/**
+ * POST /sessions/:id/save-private — сохранить черновик частному врачу.
+ *
+ * Отдельно от клинического пути: там запись принадлежит организации и
+ * живёт за проверкой прав арендатора, здесь — врачу, и клиники в ней
+ * нет вовсе.
+ */
+export async function savePrivateController(req, res) {
+  try {
+    const doc = await saveScribeDraftPrivate({
+      sessionId: req.params.id,
+      doctorId: req.session.userId,
+      patientRef: req.body?.patientRef,
+      patientTypeModel: req.body?.patientTypeModel,
+      body: req.body?.fields || {},
+    });
+    return res.status(201).json({ success: true, encounterId: String(doc._id) });
+  } catch (err) {
+    return handle(res, err);
+  }
+}
+
+/**
  * GET /sessions/by-room/:room — найти сеанс приёма по комнате.
  *
  * БЕЗ ЭТОГО МОДУЛЬ НЕ РАБОТАЕТ ВОВСЕ. Сеанс создаёт врач, и его
@@ -216,6 +266,8 @@ export default {
   startController,
   byRoomController,
   translateController,
+  privatePatientByUserController,
+  savePrivateController,
   consentController,
   revokeController,
   chunkController,

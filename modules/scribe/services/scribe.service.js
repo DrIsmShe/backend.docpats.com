@@ -10,6 +10,8 @@
 // ─────────────────────────────────────────────────────────────────────
 
 import ScribeSession from "../models/scribeSession.model.js";
+import TelemedSession from "../../clinic/clinic-telemed/models/telemedSession.model.js";
+import ClinicPatient from "../../clinic/clinic-patients/models/clinicPatient.model.js";
 import { transcribe } from "../../dictation/providers/stt.provider.js";
 import {
   ValidationError,
@@ -44,9 +46,54 @@ function participantOf(session, userId) {
  * разговора без согласия второй стороны — то же самое, что записать
  * весь: в кабинете звучит и голос пациента.
  */
-export async function startSession({ doctorId, room, patientUserId, appointmentId = null, clinicId = null }) {
+export async function startSession({
+  doctorId,
+  room,
+  patientUserId,
+  appointmentId = null,
+  clinicId = null,
+  telemedSessionId = null,
+}) {
   if (!room) throw new ValidationError("Не указана комната приёма");
-  if (!patientUserId) throw new ValidationError("Не указан пациент");
+
+  // ─── КАРТА ИЗ ТЕЛЕМЕД-ПРИЁМА ─────────────────────────────────────
+  //
+  // У назначенного приёма карта пациента известна ЗАРАНЕЕ — она указана
+  // в самом сеансе. Искать её потом по аккаунту незачем и вредно: поиск
+  // может не найти (карта не связана с аккаунтом, пациент в клинике
+  // впервые), и врач упрётся в тупик с уже записанным разговором.
+  //
+  // Здесь гадать не о чем: кто перед врачом, приём знал до его начала.
+  let patientRef = null;
+  let patientTypeModel = null;
+  let resolvedClinicId = clinicId;
+  let resolvedPatientUser = patientUserId;
+
+  if (telemedSessionId) {
+    const tele = await TelemedSession.findById(telemedSessionId)
+      .select("clinicId patientId")
+      .setOptions({ skipTenantScope: true })
+      .lean();
+
+    if (tele?.patientId) {
+      const card = await ClinicPatient.findById(tele.patientId)
+        .select("linkedUserId clinicId")
+        .setOptions({ skipTenantScope: true })
+        .lean();
+
+      if (card) {
+        patientRef = card._id;
+        patientTypeModel = "ClinicPatient";
+        resolvedClinicId = resolvedClinicId || card.clinicId || tele.clinicId;
+        // Пациент для согласия — владелец карты. Если карта ни к кому не
+        // привязана, остаётся тот, кого передал звонок: в комнате всё
+        // равно кто-то есть, и спрашивать согласие надо у него.
+        resolvedPatientUser = card.linkedUserId || patientUserId;
+      }
+    }
+  }
+
+  if (!resolvedPatientUser) throw new ValidationError("Не указан пациент");
 
   // Один активный сеанс на комнату: два параллельных писали бы один и
   // тот же разговор дважды и стоили бы вдвое.
@@ -59,13 +106,15 @@ export async function startSession({ doctorId, room, patientUserId, appointmentI
   return ScribeSession.create({
     room,
     appointmentId,
-    clinicId,
+    clinicId: resolvedClinicId,
     doctorId,
+    patientRef,
+    patientTypeModel,
     participants: [
       // Врач, начавший запись, согласием считается сразу: нажатие
       // кнопки и есть его согласие, спрашивать дважды незачем.
       { userId: doctorId, role: "doctor", consent: "granted", consentAt: new Date() },
-      { userId: patientUserId, role: "patient", consent: "pending" },
+      { userId: resolvedPatientUser, role: "patient", consent: "pending" },
     ],
     status: "awaiting_consent",
   });
