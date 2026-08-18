@@ -64,6 +64,21 @@ export const MODEL =
 // Выключатель на случай, если бета перестанет быть доступной: без него
 // недоступность параметра означала бы 400 на каждый вызов модели в проде.
 const FALLBACKS_ENABLED = process.env.ANTHROPIC_FALLBACKS !== "off";
+
+/**
+ * «Эта модель не принимает fallbacks» — отличаем от прочих 400.
+ *
+ * Проверяем по тексту, а не по коду: отдельного кода у API для этого
+ * случая нет. Условие намеренно узкое — упоминание и параметра, и
+ * недопустимости запроса. Широкая проверка проглотила бы настоящие
+ * ошибки схемы, и мы повторяли бы заведомо неверный запрос дважды.
+ */
+export function isUnsupportedFallbacks(err) {
+  const status = err?.status ?? err?.response?.status ?? null;
+  if (status !== 400) return false;
+  const text = JSON.stringify(err?.error || err?.message || "");
+  return /fallbacks/i.test(text) && /does not support|invalid_request/i.test(text);
+}
 const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 
 // Запасная модель на случай ПЕРЕГРУЗКИ — это другая беда, чем отказ
@@ -165,7 +180,21 @@ export async function runJson({
       async (attemptModel) => {
         // Стрим — потому что разбор с рассуждением дольше HTTP-таймаута SDK.
         // Бета-путь нужен ради fallbacks; на обычный вызов их не передать.
-        const stream = client.beta.messages.stream({
+        //
+        // ─── ПОЧЕМУ ЗДЕСЬ ПОВТОР БЕЗ fallbacks ───────────────────────
+        //
+        // Серверный fallback поддерживают не все модели. claude-sonnet-5
+        // его НЕ принимает и отвечает 400 на КАЖДЫЙ запрос — то есть при
+        // включённом флаге (а он включён по умолчанию) модуль не работает
+        // вовсе. Так и было на проде: разбор диагностики, расшифровка
+        // анализов, опрос перед приёмом и запись приёма падали все.
+        //
+        // Проверять по списку моделей нельзя: список меняется на стороне
+        // API, и наш перечень устареет молча. Поэтому ловим ровно эту
+        // ошибку и повторяем без беты — один лишний запрос в жизни
+        // модели против неработающего модуля.
+        const send = (withFallbacks) =>
+          client.beta.messages.stream({
           model: attemptModel,
           max_tokens: maxTokens,
           thinking: { type: "adaptive" },
@@ -185,11 +214,23 @@ export async function runJson({
             ...(effort ? { effort } : {}),
           },
           messages: [{ role: "user", content: content ?? instruction }],
-          ...(FALLBACKS_ENABLED
+          ...(withFallbacks
             ? { betas: [FALLBACK_BETA], fallbacks: "default" }
             : {}),
-        });
-        return await stream.finalMessage();
+          });
+
+        if (!FALLBACKS_ENABLED) return await send(false).finalMessage();
+
+        try {
+          return await send(true).finalMessage();
+        } catch (err) {
+          if (!isUnsupportedFallbacks(err)) throw err;
+          logger?.warn?.(
+            { model: attemptModel, what },
+            "Модель не принимает fallbacks — повтор без них",
+          );
+          return await send(false).finalMessage();
+        }
       },
       {
         logger,
