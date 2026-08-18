@@ -72,6 +72,7 @@ import diagnosticsRoutes from "./modules/diagnostics/index.js";
 import dictationRoutes from "./modules/dictation/index.js";
 import labInsightRoutes from "./modules/labInsight/index.js";
 import previsitRoutes from "./modules/previsit/index.js";
+import scribeRoutes from "./modules/scribe/index.js";
 import medicalCodesRoutes from "./modules/medicalCodes/index.js";
 import ebmRoutes from "./modules/ebm/index.js";
 // ======================= PATHS =======================
@@ -407,6 +408,15 @@ app.use("/api/v1/lab-insight", labInsightRoutes);
 // клиники не должна мешать пациенту заполнить анкету, он к расчётам
 // клиники отношения не имеет.
 app.use("/api/v1/previsit", previsitRoutes);
+
+// Запись приёма: врач говорит с пациентом, карта пишется сама.
+//
+// Каждая сторона пишет СВОЙ микрофон и шлёт свои куски: из iframe-API
+// Jitsi чужие дорожки недоступны, а серверная запись потребовала бы
+// правки развёртывания Jitsi. Побочный выигрыш важнее обхода — авторство
+// реплик получается точным, а согласие становится техническим: пациент
+// не согласился, его браузер не пишет, записи не существует.
+app.use("/api/v1/scribe", scribeRoutes);
 
 // Справочник медицинских кодов (МКБ-10, дальше ICHI для вмешательств).
 // Глобальный модуль без tenantMiddleware: коды одинаковы для всех клиник и не

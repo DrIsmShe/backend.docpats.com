@@ -64,4 +64,27 @@ router.get(
   fhirCtrl.exportPatientFhirController,
 );
 
+// Сохранение черновика, собранного из разговора на приёме.
+//
+// Действие CREATE и по правам, и по журналу: это создание записи в
+// карте, а то, что текст пришёл из расшифровки, а не с клавиатуры, дела
+// не меняет — отвечает за запись врач.
+router.post(
+  "/patients/:patientId/from-scribe/:sessionId",
+  auditMiddleware({
+    resourceType: "clinic-medical-encounter",
+    action: ENC.CREATE,
+    resourceIdFrom: () => null,
+    resourceOwnerIdFrom: (req) => req.clinicPatient?.linkedUserId || null,
+    metaFrom: (req) => ({
+      patientId: req.params?.patientId,
+      fromScribe: true,
+    }),
+  }),
+  checkClinicMedicalAccess({ action: ENC.CREATE }),
+  resolveClinicPatient,
+  checkConsent({ scope: "encounters", patientLevel: true }),
+  ctrl.saveFromScribeController,
+);
+
 export default router;

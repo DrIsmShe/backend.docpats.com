@@ -8,9 +8,11 @@
 // этого разделение и сделано.
 
 import myClinicSink from "./myClinic.sink.js";
+import clinicSink from "./clinic.sink.js";
 
 const SINKS = {
   [myClinicSink.key]: myClinicSink,
+  [clinicSink.key]: clinicSink,
 };
 
 /** Приёмник по ключу или undefined, если такого нет. */

@@ -501,11 +501,18 @@ describe("аудио и ретеншн", () => {
 });
 
 describe("реестр приёмников", () => {
-  it("myClinic зарегистрирован, несуществующий — нет", () => {
+  it("зарегистрированные приёмники доступны, несуществующий — нет", () => {
+    // Раньше «clinic» стоял здесь примером НЕсуществующего приёмника —
+    // он и был несуществующим, пока не появился. Пример заменён на
+    // заведомо выдуманный ключ: иначе тест ломается каждый раз, когда
+    // добавляется новый модуль-получатель, и ломается не по делу.
     expect(listSinks()).toContain("myClinic");
+    expect(listSinks()).toContain("clinic");
     expect(hasSink("myClinic")).toBe(true);
-    expect(hasSink("clinic")).toBe(false);
+    expect(hasSink("clinic")).toBe(true);
+    expect(hasSink("nowhere-at-all")).toBe(false);
     expect(getSink("myClinic")).toBeTruthy();
+    expect(getSink("clinic")).toBeTruthy();
   });
 
   it("задание с неизвестным приёмником не прикрепляется", async () => {
