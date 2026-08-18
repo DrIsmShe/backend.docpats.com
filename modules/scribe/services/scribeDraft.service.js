@@ -24,7 +24,7 @@ const log = logger.child({ module: "scribe/draft" });
 /**
  * Врач завершает запись и получает черновик.
  */
-export async function finishSession({ sessionId, doctorId, language = "ru" }) {
+export async function finishSession({ sessionId, doctorId }) {
   const session = await ScribeSession.findById(sessionId);
   if (!session) throw new NotFoundError("Сеанс записи не найден");
   if (String(session.doctorId) !== String(doctorId)) {
@@ -52,7 +52,7 @@ export async function finishSession({ sessionId, doctorId, language = "ru" }) {
 
   try {
     const dialogue = dialogueText(session);
-    const draft = await structureDialogue({ dialogue, language });
+    const draft = await structureDialogue({ dialogue });
 
     session.status = "ready";
     session.finishedAt = new Date();

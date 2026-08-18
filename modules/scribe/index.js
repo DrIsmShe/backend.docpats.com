@@ -46,5 +46,8 @@ router.post("/sessions/:id/consent", ctrl.consentController);
 router.post("/sessions/:id/revoke", ctrl.revokeController);
 router.post("/sessions/:id/chunks", chunkUpload.single("audio"), ctrl.chunkController);
 router.post("/sessions/:id/finish", ctrl.finishController);
+// Перевод черновика на язык карты. Отдельным действием, а не при
+// сборке: врач должен знать, что перед ним перевод.
+router.post("/sessions/:id/translate", ctrl.translateController);
 
 export default router;

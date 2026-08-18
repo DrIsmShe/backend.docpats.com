@@ -87,4 +87,13 @@ router.post(
   ctrl.saveFromScribeController,
 );
 
+// Карта пациента по пользователю платформы. Без аудита содержимого:
+// отдаётся только идентификатор и имя, которые врач и так видит в
+// звонке; сам доступ к карте проверяется при чтении и записи.
+router.get(
+  "/patients/by-user/:userId",
+  checkClinicMedicalAccess({ action: ENC.LIST }),
+  ctrl.findPatientByUserController,
+);
+
 export default router;

@@ -5,6 +5,7 @@
 
 import * as svc from "../services/scribe.service.js";
 import { finishSession } from "../services/scribeDraft.service.js";
+import { translateDraft, TRANSLATABLE } from "../ai/draftTranslator.js";
 import ScribeSession from "../models/scribeSession.model.js";
 import {
   ValidationError,
@@ -109,12 +110,43 @@ export async function chunkController(req, res) {
 
 export async function finishController(req, res) {
   try {
+    // Язык не передаём: черновик пишется на языке разговора. Перевести
+    // его врач может отдельным действием, зная, что это перевод.
     const out = await finishSession({
       sessionId: req.params.id,
       doctorId: req.session.userId,
-      language: req.body?.language || "ru",
     });
     return res.json({ success: true, ...out });
+  } catch (err) {
+    return handle(res, err);
+  }
+}
+
+/**
+ * POST /sessions/:id/translate — перевести черновик.
+ *
+ * Переводим ТО, ЧТО СЕЙЧАС В ПОЛЯХ, а не собранное моделью: врач мог всё
+ * переписать, и переводить его правки, а не наш исходный вывод, —
+ * единственное осмысленное поведение.
+ *
+ * Результат НЕ сохраняется: это предложение врачу. В карту попадёт то,
+ * что останется в полях, когда он нажмёт «Сохранить».
+ */
+export async function translateController(req, res) {
+  try {
+    const session = await ScribeSession.findById(req.params.id).lean();
+    if (!session) throw new NotFoundError("Сеанс записи не найден");
+    if (String(session.doctorId) !== String(req.session.userId)) {
+      throw new ForbiddenError("Черновик приёма доступен только его врачу");
+    }
+
+    const to = String(req.body?.to || "").trim();
+    if (!TRANSLATABLE[to]) {
+      throw new ValidationError("Перевод на этот язык не поддерживается");
+    }
+
+    const out = await translateDraft({ fields: req.body?.fields || {}, to });
+    return res.json({ success: true, ...out, to });
   } catch (err) {
     return handle(res, err);
   }
@@ -183,6 +215,7 @@ export async function statusController(req, res) {
 export default {
   startController,
   byRoomController,
+  translateController,
   consentController,
   revokeController,
   chunkController,
