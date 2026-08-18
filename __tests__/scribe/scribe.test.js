@@ -211,3 +211,45 @@ describe("авторство реплик", () => {
     expect(text).toMatch(/^Врач: /m);
   });
 });
+
+describe("поиск сеанса по комнате", () => {
+  // Без него модуль не работает вовсе: идентификатор сеанса существует
+  // только у врача, а пациент знает лишь комнату. Не найдя сеанс, он
+  // никогда не увидит запрос согласия — и врач будет ждать ответа,
+  // которого не будет.
+  it("участник находит сеанс своей комнаты", async () => {
+    const doctorId = oid();
+    const patientId = oid();
+    const room = `room-lookup-${Date.now()}`;
+
+    await svc.startSession({ doctorId, room, patientUserId: patientId });
+
+    const found = await ScribeSession.findOne({
+      room,
+      status: { $in: ["awaiting_consent", "recording", "revoked"] },
+    }).lean();
+
+    expect(found).toBeTruthy();
+    const asPatient = found.participants.find(
+      (p) => String(p.userId) === String(patientId),
+    );
+    expect(asPatient.consent).toBe("pending");
+  });
+
+  it("завершённый сеанс по комнате не находится — иначе панель воскресла бы", async () => {
+    const doctorId = oid();
+    const room = `room-done-${Date.now()}`;
+    const s = await svc.startSession({
+      doctorId,
+      room,
+      patientUserId: oid(),
+    });
+    await ScribeSession.updateOne({ _id: s._id }, { $set: { status: "ready" } });
+
+    const found = await ScribeSession.findOne({
+      room,
+      status: { $in: ["awaiting_consent", "recording", "revoked"] },
+    }).lean();
+    expect(found).toBeNull();
+  });
+});

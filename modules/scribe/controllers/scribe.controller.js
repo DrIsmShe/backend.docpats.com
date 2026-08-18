@@ -120,6 +120,45 @@ export async function finishController(req, res) {
   }
 }
 
+/**
+ * GET /sessions/by-room/:room — найти сеанс приёма по комнате.
+ *
+ * БЕЗ ЭТОГО МОДУЛЬ НЕ РАБОТАЕТ ВОВСЕ. Сеанс создаёт врач, и его
+ * идентификатор существует только у него. Пациент знает лишь комнату, в
+ * которой идёт звонок, — и без поиска по ней он не узнал бы, что у него
+ * спрашивают согласие, а врач ждал бы ответа, которого не будет.
+ *
+ * Отдаём только участникам сеанса: комната известна обеим сторонам, но
+ * посторонний, угадавший её имя, участником не станет.
+ */
+export async function byRoomController(req, res) {
+  try {
+    const session = await ScribeSession.findOne({
+      room: req.params.room,
+      status: { $in: ["awaiting_consent", "recording", "revoked"] },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!session) return res.json({ success: true, session: null });
+
+    const me = (session.participants || []).find(
+      (p) => String(p.userId) === String(req.session.userId),
+    );
+    // Не участник — отвечаем «нет сеанса», а не «доступ запрещён»:
+    // существование чужого приёма посторонним знать незачем.
+    if (!me) return res.json({ success: true, session: null });
+
+    return res.json({
+      success: true,
+      session: shape(session),
+      myConsent: me.consent,
+    });
+  } catch (err) {
+    return handle(res, err);
+  }
+}
+
 /** Состояние сеанса — обе стороны опрашивают его во время приёма. */
 export async function statusController(req, res) {
   try {
@@ -143,6 +182,7 @@ export async function statusController(req, res) {
 
 export default {
   startController,
+  byRoomController,
   consentController,
   revokeController,
   chunkController,

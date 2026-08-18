@@ -38,6 +38,9 @@ const chunkUpload = multer({
 router.use(requireUser);
 
 router.post("/sessions", ctrl.startController);
+// ПЕРЕД /sessions/:id — иначе express примет "by-room" за идентификатор
+// и вернёт 404 на каждый запрос пациента.
+router.get("/sessions/by-room/:room", ctrl.byRoomController);
 router.get("/sessions/:id", ctrl.statusController);
 router.post("/sessions/:id/consent", ctrl.consentController);
 router.post("/sessions/:id/revoke", ctrl.revokeController);
