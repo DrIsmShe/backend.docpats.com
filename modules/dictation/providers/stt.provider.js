@@ -50,6 +50,45 @@ export const MIN_DURATION_SEC = 3;
 /** Осмысленная надиктовка не бывает такой короткой даже одним предложением. */
 export const MIN_TRANSCRIPT_CHARS = 20;
 
+// ─── ЭХО ПОДСКАЗКИ ───────────────────────────────────────────────────
+//
+// Whisper на фрагменте без разборчивой речи возвращает переданный prompt
+// ДОСЛОВНО. Из-за этого MEDICAL_GLOSSARY приезжал обратно как расшифровка:
+// в черновике приёма стояло «МКБ-10, ЭКГ, УЗИ, КТ, МРТ, ФГДС, ЭхоКГ, СОЭ,
+// СРБ», повторённое по куску на каждые 20 секунд записи. Длины хватало,
+// чтобы пройти MIN_TRANSCRIPT_CHARS, и подделка уходила дальше по конвейеру
+// как настоящая речь — вплоть до карты пациента.
+//
+// Ловим по составу: эхо целиком состоит из слов самой подсказки, а живая
+// речь — нет, в ней есть связки («пациент», «жалуется», «назначено»).
+// Порог намеренно строгий: лучше пропустить эхо, чем выбросить приём, где
+// врач надиктовал одни аббревиатуры.
+const GLOSSARY_WORDS = new Set(
+  MEDICAL_GLOSSARY.toLowerCase()
+    .split(/[\s.,]+/)
+    .map((w) => w.replace(/[^\p{L}\p{N}-]/gu, ""))
+    .filter(Boolean),
+);
+
+/**
+ * Похоже ли, что распознаватель вернул нашу же подсказку вместо речи.
+ * Экспортируется отдельно — это чистая функция, её проверяет тест без сети.
+ */
+export function isPromptEcho(raw) {
+  const words = String(raw ?? "")
+    .toLowerCase()
+    .split(/[\s.,]+/)
+    .map((w) => w.replace(/[^\p{L}\p{N}-]/gu, ""))
+    .filter(Boolean);
+
+  if (!words.length) return false;
+
+  const foreign = words.filter((w) => !GLOSSARY_WORDS.has(w));
+  // Одно-два своих слова среди словаря — всё ещё эхо: распознаватель любит
+  // приклеить к подсказке обрывок. Дальше уже похоже на настоящую речь.
+  return foreign.length <= Math.min(2, Math.floor(words.length * 0.1));
+}
+
 let client = null;
 
 export function isConfigured() {
@@ -80,9 +119,12 @@ export function cleanTranscript(raw) {
  * @param {Buffer} args.buffer   содержимое файла
  * @param {string} args.filename имя (нужно распознавателю для определения формата)
  * @param {string} [args.lang]   ISO-код языка; пусто — автоопределение
+ * @param {boolean} [args.allowEmpty] для потоковых вызовов: молчание в куске
+ *   не ошибка, вернуть пустой текст вместо исключения. Целая надиктовка без
+ *   речи — ошибка, и там это остаётся исключением.
  * @returns {Promise<{text: string, model: string, durationSec: number}>}
  */
-export async function transcribe({ buffer, filename, lang } = {}) {
+export async function transcribe({ buffer, filename, lang, allowEmpty = false } = {}) {
   if (!buffer?.length) throw new ValidationError("Пустой аудиофайл");
   if (!isConfigured()) {
     throw new ServiceUnavailableError(
@@ -120,14 +162,35 @@ export async function transcribe({ buffer, filename, lang } = {}) {
   }
 
   const durationSec = Math.round(Number(result?.duration) || 0);
-  const text = cleanTranscript(result?.text);
+  const raw = cleanTranscript(result?.text);
 
-  if (durationSec && durationSec < MIN_DURATION_SEC) {
+  // Эхо подсказки — это НЕ речь. Отбрасываем до всех проверок длины: иначе
+  // словарь на 300 символов проходит их с запасом и едет в карту.
+  const echo = isPromptEcho(raw);
+  if (echo) {
+    logger?.warn?.(
+      { model: STT_MODEL, durationSec, chars: raw.length },
+      "dictation: распознаватель вернул подсказку вместо речи — считаем тишиной",
+    );
+  }
+  const text = echo ? "" : raw;
+
+  const tooShort = durationSec && durationSec < MIN_DURATION_SEC;
+  const noSpeech = text.length < MIN_TRANSCRIPT_CHARS;
+
+  // Потоковому вызову (scribe пишет приём кусками) молчание в отдельном
+  // куске — норма: собеседники не говорят непрерывно. Ошибкой оно остаётся
+  // только для целой надиктовки.
+  if (allowEmpty && (tooShort || noSpeech)) {
+    return { text: "", model: STT_MODEL, durationSec };
+  }
+
+  if (tooShort) {
     throw new ValidationError(
       `Запись короче ${MIN_DURATION_SEC} секунд — надиктуйте осмотр целиком`,
     );
   }
-  if (text.length < MIN_TRANSCRIPT_CHARS) {
+  if (noSpeech) {
     throw new ValidationError(
       "В записи не распознана речь. Проверьте микрофон и надиктуйте заново.",
     );

@@ -50,7 +50,10 @@ import DictationJob from "../../modules/dictation/dictation.model.js";
 import newPatientMedicalHistoryModel from "../../common/models/Polyclinic/MedicalHistory/newPatientMedicalHistory.js";
 import * as service from "../../modules/dictation/dictation.service.js";
 import { getSink, hasSink, listSinks } from "../../modules/dictation/sinks/index.js";
-import { cleanTranscript } from "../../modules/dictation/providers/stt.provider.js";
+import {
+  cleanTranscript,
+  isPromptEcho,
+} from "../../modules/dictation/providers/stt.provider.js";
 import MedicalCode, {
   CODE_SYSTEMS,
   normalizeCode,
@@ -539,6 +542,44 @@ describe("постфильтр расшифровки", () => {
   it("не трогает нормальный медицинский текст", () => {
     const text = "Живот мягкий, безболезненный. Печень не увеличена.";
     expect(cleanTranscript(text)).toBe(text);
+  });
+});
+
+// ── Эхо подсказки ────────────────────────────────────────────────────────────
+//
+// Whisper на фрагменте без разборчивой речи возвращает переданный prompt
+// дословно. Так в черновик приёма попадал сам глоссарий: «МКБ-10, ЭКГ, УЗИ,
+// КТ, МРТ, ФГДС, ЭхоКГ, СОЭ, СРБ» — по одному повтору на каждый кусок записи.
+// Длины хватало, чтобы пройти проверку MIN_TRANSCRIPT_CHARS.
+describe("эхо подсказки распознавателя", () => {
+  it("узнаёт глоссарий, вернувшийся вместо речи", () => {
+    expect(isPromptEcho("МКБ-10, ЭКГ, УЗИ, КТ, МРТ, ФГДС, ЭхоКГ, СОЭ, СРБ.")).toBe(true);
+  });
+
+  it("узнаёт его же, повторённый несколько раз", () => {
+    const line = "МКБ-10, ЭКГ, УЗИ, КТ, МРТ, ФГДС, ЭхоКГ, СОЭ, СРБ.";
+    expect(isPromptEcho(`${line} ${line} ${line}`)).toBe(true);
+  });
+
+  it("узнаёт эхо из другой строки словаря", () => {
+    expect(isPromptEcho("пальпация, перкуссия, аускультация, гиперемия, отёк, инфильтрат")).toBe(true);
+  });
+
+  it("не считает эхом живую речь врача", () => {
+    expect(
+      isPromptEcho(
+        "Пациент жалуется на боль в эпигастрии в течение недели. Назначена ФГДС и УЗИ брюшной полости.",
+      ),
+    ).toBe(false);
+  });
+
+  it("не считает эхом короткую, но настоящую фразу с терминами", () => {
+    expect(isPromptEcho("Сделали ЭКГ, синусовый ритм, отклонений нет")).toBe(false);
+  });
+
+  it("пустой текст эхом не считает — это отдельный случай", () => {
+    expect(isPromptEcho("")).toBe(false);
+    expect(isPromptEcho(null)).toBe(false);
   });
 });
 

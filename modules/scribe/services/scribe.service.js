@@ -219,10 +219,14 @@ export async function ingestChunk({
     return { accepted: false, reason: "limit" };
   }
 
+  // allowEmpty: приём пишется кусками по 20 секунд, и молчание в куске —
+  // обычное дело (говорит второй участник, пауза, осмотр). Ронять на этом
+  // отправку значило бы сыпать ошибками в исправно идущем приёме.
   const { text, durationSec } = await transcribe({
     buffer,
     filename: `scribe-${me.role}.webm`,
     lang,
+    allowEmpty: true,
   });
 
   const clean = String(text || "").trim();
