@@ -53,6 +53,7 @@ export async function startSession({
   appointmentId = null,
   clinicId = null,
   telemedSessionId = null,
+  lang = "",
 }) {
   if (!room) throw new ValidationError("Не указана комната приёма");
 
@@ -110,6 +111,10 @@ export async function startSession({
     doctorId,
     patientRef,
     patientTypeModel,
+    // Язык приёма один на обе стороны — см. комментарий у поля в модели.
+    lang: String(lang || "")
+      .slice(0, 10)
+      .toLowerCase(),
     participants: [
       // Врач, начавший запись, согласием считается сразу: нажатие
       // кнопки и есть его согласие, спрашивать дважды незачем.
@@ -219,13 +224,18 @@ export async function ingestChunk({
     return { accepted: false, reason: "limit" };
   }
 
+  // Язык берём ИЗ СЕАНСА, а не из запроса: его назвал врач до начала
+  // записи, и он один на обе стороны. Браузер пациента о выборе врача не
+  // знает и прислал бы язык своего интерфейса — половина приёма ушла бы
+  // на распознавание не на том языке.
+  //
   // allowEmpty: приём пишется кусками по 20 секунд, и молчание в куске —
   // обычное дело (говорит второй участник, пауза, осмотр). Ронять на этом
   // отправку значило бы сыпать ошибками в исправно идущем приёме.
   const { text, durationSec } = await transcribe({
     buffer,
     filename: `scribe-${me.role}.webm`,
-    lang,
+    lang: session.lang || lang,
     allowEmpty: true,
   });
 

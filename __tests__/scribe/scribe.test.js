@@ -15,10 +15,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import mongoose from "mongoose";
 
-const stt = { calls: 0 };
+const stt = { calls: 0, langs: [] };
 vi.mock("../../modules/dictation/providers/stt.provider.js", () => ({
-  transcribe: vi.fn(async ({ filename }) => {
+  transcribe: vi.fn(async ({ filename, lang }) => {
     stt.calls += 1;
+    stt.langs.push(lang ?? null);
     return {
       text: filename.includes("doctor")
         ? "Дышите глубже. Хрипов нет."
@@ -42,6 +43,7 @@ describe("согласие на запись приёма", () => {
 
   beforeEach(() => {
     stt.calls = 0;
+    stt.langs = [];
     doctorId = oid();
     patientId = oid();
   });
@@ -303,5 +305,75 @@ describe("карта пациента из телемед-приёма", () => {
     expect(s.patientTypeModel).toBe("ClinicPatient");
     const patient = s.participants.find((p) => p.role === "patient");
     expect(String(patient.userId)).toBe(String(patientUser));
+  });
+});
+
+// ── Язык приёма ──────────────────────────────────────────────────────────────
+//
+// Врач называет язык ДО начала записи, и язык хранится в сеансе, а не берётся
+// каждой стороной из своего браузера. Иначе половина приёма распознавалась бы
+// не на том языке: у врача интерфейс на русском, у пациента на азербайджанском.
+//
+// Цена ошибки здесь не «немного неточно»: на неверном языке распознаватель
+// выдаёт связную чушь — азербайджанская речь возвращалась русской
+// транслитерацией, похожей на текст ровно настолько, чтобы сойти за расшифровку.
+describe("язык приёма", () => {
+  let doctorId, patientId;
+
+  beforeEach(() => {
+    stt.calls = 0;
+    stt.langs = [];
+    doctorId = oid();
+    patientId = oid();
+  });
+
+  async function recordingSession(lang) {
+    const s = await svc.startSession({
+      doctorId,
+      room: `room-${Date.now()}-${Math.random()}`,
+      patientUserId: patientId,
+      lang,
+    });
+    await svc.respondToConsent({
+      sessionId: s._id,
+      userId: patientId,
+      granted: true,
+    });
+    return s;
+  }
+
+  it("сохраняется в сеансе при его создании", async () => {
+    const s = await recordingSession("az");
+    expect(s.lang).toBe("az");
+  });
+
+  it("уходит в распознавание для обеих сторон", async () => {
+    const s = await recordingSession("az");
+
+    await svc.ingestChunk({ sessionId: s._id, userId: doctorId, buffer: audio(), startSec: 0 });
+    await svc.ingestChunk({ sessionId: s._id, userId: patientId, buffer: audio(), startSec: 5 });
+
+    expect(stt.langs).toEqual(["az", "az"]);
+  });
+
+  it("язык сеанса перебивает язык из запроса", async () => {
+    const s = await recordingSession("az");
+
+    // Браузер пациента о выборе врача не знает и присылает свой язык.
+    await svc.ingestChunk({
+      sessionId: s._id,
+      userId: patientId,
+      buffer: audio(),
+      startSec: 0,
+      lang: "ru",
+    });
+
+    expect(stt.langs).toEqual(["az"]);
+  });
+
+  it("без выбора язык не навязывается — распознаватель определит сам", async () => {
+    const s = await recordingSession("");
+    await svc.ingestChunk({ sessionId: s._id, userId: doctorId, buffer: audio(), startSec: 0 });
+    expect(stt.langs).toEqual([""]);
   });
 });

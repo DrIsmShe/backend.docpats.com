@@ -63,6 +63,8 @@ export async function startController(req, res) {
       // Телемед-приём знает карту пациента заранее — берём её оттуда,
       // а не ищем потом по аккаунту.
       telemedSessionId: req.body?.telemedSessionId || null,
+      // Язык приёма, выбранный врачом перед записью.
+      lang: req.body?.lang || "",
     });
     return res.status(201).json({ success: true, session: shape(session) });
   } catch (err) {
