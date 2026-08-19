@@ -258,8 +258,18 @@ export const uploadImageForCKEditor = async (req, res) => {
 //                PDF download
 // ============================================================
 
+// Имя файла приходит из URL, а Express уже раскодировал %2F — без этой
+// проверки "..%2f..%2fetc%2fpasswd" уехал бы в path.join и вышел за пределы
+// uploads/, а в R2 — за пределы префикса uploads/documents/. Имена мы
+// генерируем сами (uuid / timestamp-uuid), так что достаточно белого списка.
+const SAFE_FILE_NAME = /^[A-Za-z0-9._-]{1,120}$/;
+
 export const getPDF = async (req, res) => {
   const fileName = req.params.fileName;
+
+  if (!SAFE_FILE_NAME.test(fileName) || fileName.includes("..")) {
+    return res.status(400).json({ message: "Некорректное имя файла" });
+  }
 
   if (IS_R2) {
     try {
