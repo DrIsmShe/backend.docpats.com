@@ -53,6 +53,8 @@ import { getSink, hasSink, listSinks } from "../../modules/dictation/sinks/index
 import {
   cleanTranscript,
   isPromptEcho,
+  promptFor,
+  GLOSSARIES,
 } from "../../modules/dictation/providers/stt.provider.js";
 import MedicalCode, {
   CODE_SYSTEMS,
@@ -580,6 +582,33 @@ describe("эхо подсказки распознавателя", () => {
   it("пустой текст эхом не считает — это отдельный случай", () => {
     expect(isPromptEcho("")).toBe(false);
     expect(isPromptEcho(null)).toBe(false);
+  });
+});
+
+// ── Подсказка по языку ───────────────────────────────────────────────────────
+//
+// Причина эха, а не его симптом. Whisper продолжает prompt как начало
+// расшифровки; русский глоссарий на азербайджанской речи заставлял модель
+// бросить аудио и дописать подсказку. Отсюда «гемоглобин, амоксициллин,
+// метформин, аторвастатин» в черновике приёма, где говорили только
+// по-азербайджански.
+describe("подсказка распознавателю выбирается по языку", () => {
+  it("для русского отдаёт русский глоссарий", () => {
+    expect(promptFor("ru")).toBe(GLOSSARIES.ru);
+    expect(promptFor("ru-RU")).toBe(GLOSSARIES.ru);
+  });
+
+  it("для языка без глоссария не отдаёт ничего", () => {
+    expect(promptFor("az")).toBeNull();
+    expect(promptFor("tr")).toBeNull();
+    expect(promptFor("en")).toBeNull();
+    expect(promptFor("ar")).toBeNull();
+  });
+
+  it("без языка подсказки нет — чужая вредит сильнее, чем помогает своя", () => {
+    expect(promptFor("")).toBeNull();
+    expect(promptFor(undefined)).toBeNull();
+    expect(promptFor(null)).toBeNull();
   });
 });
 
