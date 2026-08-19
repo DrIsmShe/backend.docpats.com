@@ -131,6 +131,41 @@ export async function startSession({
  * Отказ переводит сеанс в declined безвозвратно: повторно спрашивать
  * человека, который уже отказался, — давление, а не уточнение.
  */
+/**
+ * Отметить, что устройство участника писать не может.
+ *
+ * Отдельно от respondToConsent, и это принципиально. Телефон не отказывается
+ * — он не умеет: микрофон занят звонком, и второй захват отбирает его у
+ * разговора. Записать это как «отказался» значило бы внести в запись о
+ * согласии решение, которого человек не принимал, да ещё безвозвратно
+ * (declined закрывает сеанс навсегда).
+ *
+ * Статус сеанса не трогаем: он остаётся awaiting_consent, куски всё равно
+ * не принимаются. Врачу достаточно увидеть это в participants, чтобы не
+ * ждать ответа, которого не будет.
+ */
+export async function markRecordingUnsupported({ sessionId, userId }) {
+  const session = await ScribeSession.findById(sessionId);
+  if (!session) throw new NotFoundError("Сеанс записи не найден");
+
+  const me = participantOf(session, userId);
+  if (!me) throw new ForbiddenError("Вы не участник этого приёма");
+
+  // Уже ответившего не перебиваем: человек мог согласиться с компьютера,
+  // а потом открыть ту же комнату с телефона.
+  if (me.consent !== "pending") return session;
+
+  me.consent = "unsupported";
+  me.consentAt = new Date();
+  await session.save();
+
+  log.info(
+    { sessionId: String(session._id), role: me.role },
+    "Запись невозможна: устройство участника не может писать",
+  );
+  return session;
+}
+
 export async function respondToConsent({ sessionId, userId, granted }) {
   const session = await ScribeSession.findById(sessionId);
   if (!session) throw new NotFoundError("Сеанс записи не найден");
@@ -272,6 +307,7 @@ export function dialogueText(session) {
 export default {
   startSession,
   respondToConsent,
+  markRecordingUnsupported,
   revokeConsent,
   ingestChunk,
   dialogueText,

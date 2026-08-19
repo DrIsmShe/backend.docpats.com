@@ -377,3 +377,81 @@ describe("язык приёма", () => {
     expect(stt.langs).toEqual([""]);
   });
 });
+
+// ── Устройство не может писать ───────────────────────────────────────────────
+//
+// На телефоне микрофон занят звонком, и второй захват мобильные браузеры не
+// делят, а передают: нажатие «Вести запись приёма» оставляло консультацию без
+// звука. Поэтому телефон честно сообщает, что писать не может.
+//
+// Отдельно от отказа, и это не формальность: отказ — решение человека и
+// закрывает сеанс безвозвратно. Записать его там, где человек ничего не
+// решал, значит подделать запись о согласии.
+describe("устройство не может писать", () => {
+  let doctorId, patientId;
+
+  beforeEach(() => {
+    stt.calls = 0;
+    stt.langs = [];
+    doctorId = oid();
+    patientId = oid();
+  });
+
+  async function start() {
+    return svc.startSession({
+      doctorId,
+      room: `room-${Date.now()}-${Math.random()}`,
+      patientUserId: patientId,
+    });
+  }
+
+  it("помечает участника, не трогая статус сеанса", async () => {
+    const s = await start();
+    await svc.markRecordingUnsupported({ sessionId: s._id, userId: patientId });
+
+    const after = await ScribeSession.findById(s._id).lean();
+    const patient = after.participants.find((p) => p.role === "patient");
+    expect(patient.consent).toBe("unsupported");
+    // Не declined: сеанс не закрыт, человек ничего не отклонял.
+    expect(after.status).toBe("awaiting_consent");
+  });
+
+  it("куски не принимаются — записывать всё равно нечего", async () => {
+    const s = await start();
+    await svc.markRecordingUnsupported({ sessionId: s._id, userId: patientId });
+
+    const out = await svc.ingestChunk({
+      sessionId: s._id,
+      userId: doctorId,
+      buffer: audio(),
+      startSec: 0,
+    });
+    expect(out.accepted).toBe(false);
+    expect(stt.calls).toBe(0);
+  });
+
+  it("не перебивает уже данное согласие", async () => {
+    const s = await start();
+    await svc.respondToConsent({
+      sessionId: s._id,
+      userId: patientId,
+      granted: true,
+    });
+
+    // Тот же человек открыл комнату с телефона — согласие, данное с
+    // компьютера, отменять нельзя.
+    await svc.markRecordingUnsupported({ sessionId: s._id, userId: patientId });
+
+    const after = await ScribeSession.findById(s._id).lean();
+    const patient = after.participants.find((p) => p.role === "patient");
+    expect(patient.consent).toBe("granted");
+    expect(after.status).toBe("recording");
+  });
+
+  it("посторонний пометить чужой сеанс не может", async () => {
+    const s = await start();
+    await expect(
+      svc.markRecordingUnsupported({ sessionId: s._id, userId: oid() }),
+    ).rejects.toThrow(/не участник/i);
+  });
+});

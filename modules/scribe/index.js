@@ -43,6 +43,8 @@ router.post("/sessions", ctrl.startController);
 router.get("/sessions/by-room/:room", ctrl.byRoomController);
 router.get("/sessions/:id", ctrl.statusController);
 router.post("/sessions/:id/consent", ctrl.consentController);
+// Устройство участника писать не может — это не отказ, см. контроллер.
+router.post("/sessions/:id/unsupported", ctrl.unsupportedController);
 router.post("/sessions/:id/revoke", ctrl.revokeController);
 router.post("/sessions/:id/chunks", chunkUpload.single("audio"), ctrl.chunkController);
 router.post("/sessions/:id/finish", ctrl.finishController);

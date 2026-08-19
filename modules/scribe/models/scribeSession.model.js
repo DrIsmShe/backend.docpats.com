@@ -47,7 +47,17 @@ export const SESSION_STATUSES = [
   "revoked", // согласие отозвано во время приёма
 ];
 
-export const CONSENT_STATES = ["pending", "granted", "declined", "revoked"];
+// "unsupported" — устройство участника писать не может (телефон: микрофон
+// занят звонком и второй захват отбирает его). Это НЕ отказ, и путать их
+// нельзя: отказ — решение человека, и записывать его там, где человек
+// ничего не решал, значит подделать запись о согласии.
+export const CONSENT_STATES = [
+  "pending",
+  "granted",
+  "declined",
+  "revoked",
+  "unsupported",
+];
 
 const participantSchema = new Schema(
   {

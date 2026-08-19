@@ -85,6 +85,24 @@ export async function consentController(req, res) {
   }
 }
 
+/**
+ * POST /sessions/:id/unsupported — устройство участника писать не может.
+ *
+ * Не «отказался»: телефон не принимает решений, он не умеет. Врачу это
+ * нужно, чтобы не ждать ответа, которого не будет.
+ */
+export async function unsupportedController(req, res) {
+  try {
+    const session = await svc.markRecordingUnsupported({
+      sessionId: req.params.id,
+      userId: req.session.userId,
+    });
+    return res.json({ success: true, session: shape(session) });
+  } catch (err) {
+    return handle(res, err);
+  }
+}
+
 export async function revokeController(req, res) {
   try {
     const session = await svc.revokeConsent({
