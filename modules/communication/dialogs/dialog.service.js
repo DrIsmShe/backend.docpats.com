@@ -28,10 +28,13 @@ const readPreview = (dialog) => {
 // ==========================================
 // СОЗДАТЬ ДИАЛОГ
 // ==========================================
-export async function createDialog({ creatorId, participantIds, type }) {
+// title нужен групповым диалогам: имя приватного собирается из собеседника,
+// а у группы собеседника нет — без названия список показывал бы «Dialog 3f21».
+export async function createDialog({ creatorId, participantIds, type, title }) {
   const dialog = await DialogModel.create({
     type,
     createdBy: creatorId,
+    ...(title ? { title: String(title).trim().slice(0, 120) } : {}),
   });
 
   const uniqueParticipantIds = [...new Set([...participantIds, creatorId])];

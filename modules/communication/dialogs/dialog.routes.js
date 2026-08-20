@@ -22,12 +22,13 @@ router.post(
   async (req, res, next) => {
     try {
       const userId = req.user._id;
-      const { participantIds, type } = req.body;
+      const { participantIds, type, title } = req.body;
 
       const dialog = await dialogService.createDialog({
         creatorId: userId,
         participantIds,
         type,
+        title,
       });
 
       res.status(201).json(dialog);

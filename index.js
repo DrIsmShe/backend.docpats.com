@@ -59,6 +59,8 @@ import "./jobs/prefetch.job.js";
 import userSynthesisRoutes from "./modules/userSynthesis/userSynthesis.routes.js";
 // ✅ NEW: anthropometry module
 import { routes as anthropometryRoutes } from "./modules/anthropometry/index.js";
+import surgicalPlan from "./modules/surgicalPlan/index.js";
+import webinar from "./modules/webinar/index.js";
 import { auditRoutes } from "./modules/audit/index.js";
 import clinicRoutes from "./modules/clinic/index.js";
 import blockUnfinishedRegistration from "./common/middlewares/blockUnfinishedRegistration.middleware.js";
@@ -352,6 +354,10 @@ app.get("/common-for-user", async (req, res) => {
 app.use("/api/user-synthesis", userSynthesisRoutes);
 // ✅ NEW: anthropometry module routes
 app.use("/api/anthropometry", anthropometryRoutes);
+// Разбор промта врача в типизированный план операции.
+app.use(surgicalPlan.basePath, surgicalPlan.routes);
+// Вебинары: встреча по ссылке, отдельно от звонков и групповых диалогов.
+app.use(webinar.basePath, webinar.routes);
 // ======================= ROUTES =======================
 app.use("/api", uploadFileRoutes);
 app.use(uploadRoutes);

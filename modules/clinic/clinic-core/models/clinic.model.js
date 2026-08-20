@@ -306,6 +306,7 @@ const RESERVED_SLUGS = new Set([
   // Корневые публичные разделы, появившиеся позже списка.
   "docs", "user-synthesis", "terms-consent-page", "education", "arena",
   "diagnostics", "medical-codes", "radiology", "previsit", "pay",
+  "webinar", "webinars",
 ]);
 
 // Helper: generate URL-safe slug from name

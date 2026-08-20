@@ -4,11 +4,39 @@ import {
 } from "../../../common/video/jitsiToken.service.js";
 import DialogParticipant from "../dialogs/dialogParticipant.model.js";
 import {
+  getCallRoom,
+  isCallInitiator,
+  isCallParticipant,
+} from "../calls/call.gateway.js";
+import {
   ValidationError,
   ForbiddenError,
 } from "../../../common/utils/errors.js";
 
 const MODERATOR_DIALOG_ROLES = new Set(["doctor", "admin"]);
+
+/* ============================================================
+   КОМНАТА ЗВОНКА
+   ============================================================
+   Список допущенных держит сигнализация звонков, а не база:
+   звонок живёт в памяти процесса ровно столько, сколько идёт,
+   и приглашённый в него третий человек не обязан быть участником
+   чьей-то личной переписки. Именно поэтому конференция и не
+   получалась на dialog-комнате — пропуска взять было негде.
+   ============================================================ */
+function resolveCallRoom(userId, callId) {
+  if (!callId) {
+    throw new ValidationError("id is required for kind=call", { field: "id" });
+  }
+  if (!isCallParticipant(callId, userId)) {
+    throw new ForbiddenError("You are not a participant of this call");
+  }
+  return {
+    room: getCallRoom(callId),
+    // Модератор — тот, кто звонок начал. Он же вправе управлять комнатой.
+    moderator: isCallInitiator(callId, userId),
+  };
+}
 
 async function resolveDialogRoom(userId, dialogId) {
   if (!dialogId) {
@@ -47,11 +75,13 @@ export async function issueVideoTokenController(req, res, next) {
     let resolved;
     if (kind === "dialog") {
       resolved = await resolveDialogRoom(userId, id);
+    } else if (kind === "call") {
+      resolved = resolveCallRoom(String(userId), id);
     } else {
-      throw new ValidationError('Unsupported room kind (expected "dialog")', {
-        field: "kind",
-        received: kind,
-      });
+      throw new ValidationError(
+        'Unsupported room kind (expected "dialog" or "call")',
+        { field: "kind", received: kind },
+      );
     }
     const displayName =
       [req.user?.firstName, req.user?.lastName].filter(Boolean).join(" ") ||
