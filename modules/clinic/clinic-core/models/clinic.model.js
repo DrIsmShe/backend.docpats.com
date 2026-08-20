@@ -303,6 +303,9 @@ const RESERVED_SLUGS = new Set([
   "resetpasswordchange", "otpresetpasswordchange", "confirmationregister",
   "about", "articles", "article", "news", "consultation", "uploads", "static",
   "assets", "images", "sitemap", "robots", "manifest", "sw", "favicon",
+  // Корневые публичные разделы, появившиеся позже списка.
+  "docs", "user-synthesis", "terms-consent-page", "education", "arena",
+  "diagnostics", "medical-codes", "radiology", "previsit", "pay",
 ]);
 
 // Helper: generate URL-safe slug from name

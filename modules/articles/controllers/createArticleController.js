@@ -1,6 +1,6 @@
 import Article from "../../../common/models/Articles/articles.js";
 import Category from "../../../common/models/Articles/articlesCategories.js";
-import { clearSitemapCache } from "../../../common/sitemap/services/sitemap.service.js";
+import { invalidateSitemapCache } from "../../../common/sitemap/services/sitemap.service.js";
 const createArticleController = async (req, res) => {
   const {
     title,
@@ -87,7 +87,7 @@ const createArticleController = async (req, res) => {
     );
 
     const savedArticle = await newArticle.save();
-    await clearSitemapCache();
+    invalidateSitemapCache();
 
     console.log("\u2705 Article saved successfully:", savedArticle);
     return res.status(201).json({
