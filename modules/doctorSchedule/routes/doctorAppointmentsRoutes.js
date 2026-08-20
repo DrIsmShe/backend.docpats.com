@@ -10,12 +10,19 @@ import archiveAppointmentController from "../controllers/archiveAppointmentContr
 import unarchiveAppointmentController from "../controllers/unarchiveAppointmentController.js";
 import { confirmAppointmentController } from "../../appointments/controllers/confirmAppointmentController.js";
 import { getAppointmentAuditController } from "../controllers/getAppointmentAuditController.js";
+import { bookByDoctorController } from "../controllers/bookByDoctorController.js";
+import { searchMyPatientsController } from "../controllers/searchMyPatientsController.js";
 const router = express.Router();
 
 // Получить все приёмы врача
 
 router.get("/audit/:appointmentId", getAppointmentAuditController);
 router.get("/appointments", authMiddleware, getMyAppointments);
+// Врач записывает пациента сам: зарегистрированного, приватного или
+// человека, которого в списках ещё нет (пришёл на приём / позвонил).
+router.post("/book-by-doctor", authMiddleware, bookByDoctorController);
+// Поиск среди СВОИХ пациентов для формы записи — и аккаунты, и карточки.
+router.get("/my-patients", authMiddleware, searchMyPatientsController);
 router.delete("/delete/:id", authMiddleware, deleteMyAppointmentsController);
 router.delete("/delete", authMiddleware, deleteMyAppointmentsController);
 router.put("/archive/:id", authMiddleware, archiveAppointmentController);

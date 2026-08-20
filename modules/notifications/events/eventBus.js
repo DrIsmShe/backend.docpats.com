@@ -1,5 +1,12 @@
 import EventEmitter from "events";
 import Notification from "../../../common/models/Notification/notification.js";
+import { emitNotification } from "../../../common/realtime/userChannel.js";
+
+// Все обработчики ниже раньше слали realtime через `if (global.io)`. Эта
+// переменная нигде не присваивалась, поэтому ни одно из этих уведомлений в
+// открытую вкладку не попадало — только в БД, до следующей перезагрузки.
+// Теперь адрес один: /communication + комната user:<id> (см.
+// common/realtime/userChannel.js).
 
 class EventBus extends EventEmitter {
   constructor() {
@@ -10,7 +17,7 @@ class EventBus extends EventEmitter {
       "appointment.booked",
       async ({ doctorId, patientId, startsAt, appointmentId }) => {
         try {
-          await Notification.create({
+          const n = await Notification.create({
             userId: doctorId,
             type: "appointment_booked",
             title: "Новая запись пациента",
@@ -20,13 +27,7 @@ class EventBus extends EventEmitter {
             link: `/doctor/appointments/${appointmentId}`,
           });
 
-          if (global.io) {
-            global.io.to(doctorId.toString()).emit("new_notification", {
-              title: "Новая запись пациента",
-              message: "Проверьте своё расписание",
-              link: `/doctor/appointments/${appointmentId}`,
-            });
-          }
+          emitNotification(doctorId, n);
         } catch (err) {
           console.error(
             "❌ Ошибка создания уведомления appointment.booked:",
@@ -41,7 +42,7 @@ class EventBus extends EventEmitter {
       "appointment.cancelled",
       async ({ doctorId, patientName, appointmentId }) => {
         try {
-          await Notification.create({
+          const n = await Notification.create({
             userId: doctorId,
             type: "appointment_cancelled",
             title: "Приём отменён",
@@ -49,13 +50,7 @@ class EventBus extends EventEmitter {
             link: `/doctor/doctor-appointment`,
           });
 
-          if (global.io) {
-            global.io.to(doctorId.toString()).emit("new_notification", {
-              title: "Приём отменён",
-              message: `${patientName} отменил свою запись.`,
-              link: `/doctor/doctor-appointment`,
-            });
-          }
+          emitNotification(doctorId, n);
         } catch (err) {
           console.error(
             "❌ Ошибка создания уведомления appointment.cancelled:",
@@ -70,7 +65,7 @@ class EventBus extends EventEmitter {
       "article.commented",
       async ({ authorId, commenterName, articleId, articleTitle }) => {
         try {
-          await Notification.create({
+          const n = await Notification.create({
             userId: authorId,
             type: "comment",
             title: "Новый комментарий к вашей статье",
@@ -78,13 +73,7 @@ class EventBus extends EventEmitter {
             link: `/doctor/article-detail/${articleId}`,
           });
 
-          if (global.io) {
-            global.io.to(authorId.toString()).emit("new_notification", {
-              title: "Новый комментарий к статье",
-              message: `${commenterName} оставил комментарий к статье «${articleTitle}»`,
-              link: `/doctor/article-detail/${articleId}`,
-            });
-          }
+          emitNotification(authorId, n);
         } catch (err) {
           console.error(
             "❌ Ошибка создания уведомления article.commented:",
@@ -105,8 +94,7 @@ class EventBus extends EventEmitter {
         commentId,
       }) => {
         try {
-          // Создаём уведомление
-          await Notification.create({
+          const n = await Notification.create({
             userId: doctorUserId,
             senderId: patientId,
             type: "doctorProfile.commented",
@@ -115,19 +103,7 @@ class EventBus extends EventEmitter {
             link: `/doctor/profile/comments/${commentId}`,
           });
 
-          // Если сокет активен — отправляем уведомление в реальном времени
-          if (global.io) {
-            global.io.to(doctorUserId.toString()).emit("new_notification", {
-              title: "Комментарий к профилю",
-              message: `${patientName} оставил комментарий к вашему профилю.`,
-              link: `/doctor/profile/comments/${commentId}`,
-            });
-          }
-
-          console.log(
-            "✅ Уведомление doctorProfile.commented отправлено врачу:",
-            doctorUserId,
-          );
+          emitNotification(doctorUserId, n);
         } catch (err) {
           console.error(
             "❌ Ошибка создания уведомления doctorProfile.commented:",
@@ -142,7 +118,7 @@ class EventBus extends EventEmitter {
       "appointment.confirmed",
       async ({ patientId, doctorName, startsAt, appointmentId }) => {
         try {
-          await Notification.create({
+          const n = await Notification.create({
             userId: patientId,
             type: "appointment_confirmed",
             title: "Приём подтверждён",
@@ -152,13 +128,7 @@ class EventBus extends EventEmitter {
             link: `/patient/my-appointment/${appointmentId}`,
           });
 
-          if (global.io) {
-            global.io.to(patientId.toString()).emit("new_notification", {
-              title: "Приём подтверждён",
-              message: `Доктор ${doctorName} подтвердил ваш приём`,
-              link: `/patient/my-appointment`,
-            });
-          }
+          emitNotification(patientId, n);
         } catch (err) {
           console.error(
             "❌ Ошибка создания уведомления appointment.confirmed:",
@@ -173,21 +143,19 @@ class EventBus extends EventEmitter {
       "appointment.cancelled.byDoctor",
       async ({ patientId, doctorName, appointmentId }) => {
         try {
-          await Notification.create({
+          const n = await Notification.create({
             userId: patientId,
-            type: "appointment_cancelled_by_doctor",
+            // Было "appointment_cancelled_by_doctor" — такого значения нет в
+            // enum модели, поэтому create падал с ValidationError, ошибку
+            // съедал catch, и пациент об отмене не узнавал вовсе.
+            // Кто отменил, видно из текста.
+            type: "appointment_cancelled",
             title: "Приём отменён",
             message: `Доктор ${doctorName} отменил ваш приём.`,
             link: `/patient/my-appointment`,
           });
 
-          if (global.io) {
-            global.io.to(patientId.toString()).emit("new_notification", {
-              title: "Приём отменён доктором",
-              message: `Доктор ${doctorName} отменил ваш приём`,
-              link: `/patient/my-appointment/${appointmentId}`,
-            });
-          }
+          emitNotification(patientId, n);
         } catch (err) {
           console.error(
             "❌ Ошибка создания уведомления appointment.cancelled.byDoctor:",
@@ -202,19 +170,9 @@ class EventBus extends EventEmitter {
       "chat.message",
       async ({ recipientId, senderId, senderName, preview, dialogId }) => {
         try {
-          // Не создаём DB-запись — колокольчик уже получил push через global.io
+          // Не создаём DB-запись — колокольчик уже получил событие из
+          // message.routes.js (он шлёт его в тот же личный канал напрямую).
           // Запись нужна только если хотим показывать в /doctor/notifications
-          // Раскомментируй если нужно:
-          /*
-          await Notification.create({
-            userId:   recipientId,
-            senderId: senderId,
-            type:     "chat_message",
-            title:    senderName,
-            message:  preview,
-            link:     `/doctor/communication/${dialogId}`,
-          });
-          */
         } catch (err) {
           console.error("❌ Ошибка chat.message eventBus:", err);
         }
@@ -226,7 +184,7 @@ class EventBus extends EventEmitter {
       "comment.replied",
       async ({ recipientId, replierName, articleId }) => {
         try {
-          await Notification.create({
+          const n = await Notification.create({
             userId: recipientId,
             type: "comment_reply",
             title: "Ответ на ваш комментарий",
@@ -234,13 +192,7 @@ class EventBus extends EventEmitter {
             link: `/article/${articleId}`,
           });
 
-          if (global.io) {
-            global.io.to(recipientId.toString()).emit("new_notification", {
-              title: "Ответ на комментарий",
-              message: `${replierName} ответил на ваш комментарий`,
-              link: `/article/${articleId}`,
-            });
-          }
+          emitNotification(recipientId, n);
         } catch (err) {
           console.error("❌ Ошибка создания уведомления comment.replied:", err);
         }

@@ -23,6 +23,10 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       enum: [
         "appointment_booked",
+        // Врач записал пациента сам (из своего календаря). Отдельный тип, а
+        // не appointment_booked: для пациента это другое событие — не он
+        // записался, а его записали, и текст должен это объяснять.
+        "appointment_booked_by_doctor",
         "appointment_cancelled",
         "appointment_confirmed",
         "appointment_completed",

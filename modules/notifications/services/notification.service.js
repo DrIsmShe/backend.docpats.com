@@ -15,6 +15,7 @@
 import mongoose from "mongoose";
 import Notification from "../../../common/models/Notification/notification.js";
 import { sendToUser } from "./webpush.service.js";
+import { emitNotification } from "../../../common/realtime/userChannel.js";
 
 const VALID_PRIORITIES = new Set(["low", "normal", "high"]);
 
@@ -70,6 +71,11 @@ export async function notify({
       priority: VALID_PRIORITIES.has(priority) ? priority : "normal",
       icon: icon || "bell",
     });
+
+    // Колокольчик открытой вкладки — сразу, без перезагрузки страницы.
+    // Раньше notify() не слал в сокет вообще: уведомление появлялось в БД, а
+    // пользователь узнавал о нём только при следующей загрузке.
+    emitNotification(uid, doc);
 
     // Браузерный web-push (fire-and-forget; no-op без VAPID-ключей).
     sendToUser(uid, {

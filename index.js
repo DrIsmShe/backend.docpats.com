@@ -34,6 +34,8 @@ import uploadRoutes from "./common/routes/uploadRoutes.js";
 import uploadFileRoutes from "./common/routes/uploadFileRoutes.js";
 import emailLimiter from "./common/middlewares/rateLimiter.js";
 import { scheduleTrialReminders } from "./jobs/checkTrialReminders.js";
+import { scheduleAppointmentReminders } from "./jobs/appointmentReminders.job.js";
+import { setRealtimeNamespace } from "./common/realtime/userChannel.js";
 import { scheduleSubscriptionReminders } from "./jobs/checkSubscriptionReminders.js";
 import { scheduleNotificationDigest } from "./jobs/notificationDigest.job.js";
 import { scheduleWeeklyCaseNotification } from "./jobs/radiologyWeeklyCase.job.js";
@@ -496,6 +498,11 @@ async function bootstrap(startPort = PORT) {
     // ✅ Создаём namespace ОДИН РАЗ
     const nsp = io.of("/communication");
 
+    // Личный realtime-канал пользователя. До этого уведомления слались через
+    // global.io, который нигде не присваивался, — колокольчик не обновлялся
+    // без перезагрузки. Подробности в common/realtime/userChannel.js.
+    setRealtimeNamespace(nsp);
+
     // ✅ Session middleware — пробрасываем сессию в socket.request
     nsp.use((socket, next) => {
       sessionMiddleware(socket.request, socket.request.res || {}, next);
@@ -506,6 +513,12 @@ async function bootstrap(startPort = PORT) {
 
     // ✅ Call gateway на том же nsp
     initCallGateway(nsp);
+
+    // Напоминания о приёмах: −24ч / −1ч / −10мин обеим сторонам.
+    // Ставится ПОСЛЕ setRealtimeNamespace — задача шлёт уведомления в тот же
+    // личный канал, и до готовности сокета отправлять было бы некуда.
+    scheduleAppointmentReminders();
+
     scheduleTrialReminders();
     // Напоминания о продлении платной подписки: за 7 дней, за 1 день и в
     // день окончания. До этого платная подписка заканчивалась молча —

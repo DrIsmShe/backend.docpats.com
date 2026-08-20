@@ -5,6 +5,7 @@ import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import Notification from "../../../common/models/Notification/notification.js";
 import { eventBus } from "../../notifications/events/eventBus.js";
+import { emitNotification } from "../../../common/realtime/userChannel.js";
 
 /**
  * PUT /appointment-for-patient/cancel/:id
@@ -109,17 +110,8 @@ export const cancelAppointmentByPatientController = async (req, res) => {
         console.log("📩 Уведомление врачу отправлено:", doctorNotification._id);
 
         // --- 🔊 Реальное время (если есть socket.io) ---
-        if (global.io) {
-          const doctorRoom = String(doctorUserId);
-          global.io.to(doctorRoom).emit("new_notification", {
-            title: doctorNotification.title,
-            message: doctorNotification.message,
-            link: doctorNotification.link,
-            type: doctorNotification.type,
-            createdAt: doctorNotification.createdAt,
-          });
-          console.log("🚀 Socket.io уведомление врачу доставлено");
-        }
+        // Личный канал /communication + user:<id> вместо мёртвого global.io.
+        emitNotification(doctorUserId, doctorNotification);
       } else {
         console.warn("⚠️ Не найден userId врача — уведомление не создано");
       }

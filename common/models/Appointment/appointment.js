@@ -15,12 +15,45 @@ const appointmentSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    // ─── КТО ПАЦИЕНТ ────────────────────────────────────────────────────
+    // Ровно одна из двух ссылок (проверяется в pre-validate ниже).
+    //
+    // patientId — пациент С АККАУНТОМ. Ему уходят уведомления и напоминания.
+    // privatePatientId — карточка приватного пациента врача: сюда попадает и
+    // «человек с улицы», которого врач записал по телефону или на пороге.
+    // Отдельной сущности для таких людей нет намеренно: у DoctorPrivatePatient
+    // уже есть шифрование ФИО/телефона, blind-index phoneHash для поиска и
+    // linkedUserId/migrationStatus — когда человек зарегистрируется, карточка
+    // вместе с историей приёмов привязывается к аккаунту, ничего не перенося.
+    //
+    // required снят с patientId (было true): запись врача на непривязанного
+    // пациента иначе невозможна.
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "NewPatientPolyclinic", // профиль пациента поликлиники
-      required: true,
+      default: null,
       index: true,
     },
+
+    privatePatientId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DoctorPrivatePatient",
+      default: null,
+      index: true,
+    },
+
+    // Кто создал запись. Нужно и для аудита, и для текста уведомления:
+    // «вы записались» и «вас записал врач» — разные события для пациента.
+    bookedBy: {
+      type: String,
+      enum: ["patient", "doctor"],
+      default: "patient",
+    },
+
+    // Приём вне сетки расписания (врач принял срочного пациента). Слот
+    // всё равно занимает и пересекаться с другими приёмами не может —
+    // пометка нужна, чтобы отличать его в календаре и в отчётах.
+    offSchedule: { type: Boolean, default: false },
     isArchived: {
       type: Boolean,
       default: false,
@@ -114,6 +147,18 @@ const appointmentSchema = new mongoose.Schema(
       reportNote: { type: String, default: "" }, // можно использовать позже
     },
 
+    // Отметки об отправленных напоминаниях (jobs/appointmentReminders.job.js).
+    // Хранятся на самой записи, а не в отдельной коллекции: напоминание
+    // привязано к приёму и умирает вместе с ним.
+    // Нужны для идемпотентности — задача поднимается каждые 5 минут, и без
+    // отметки пациент получал бы одно и то же напоминание двенадцать раз в
+    // час. Дата, а не boolean: видно, когда именно ушло.
+    reminders: {
+      sent24h: { type: Date, default: null },
+      sent1h: { type: Date, default: null },
+      sent10m: { type: Date, default: null },
+    },
+
     // Служебные
     notesPatient: { type: String, maxlength: 1000 },
     notesDoctor: { type: String, maxlength: 2000 },
@@ -141,6 +186,24 @@ appointmentSchema.index(
     partialFilterExpression: { status: { $in: ["pending", "confirmed"] } },
   },
 );
+// Ровно одна ссылка на пациента. Ни одной — приём в никуда; обе — два
+// разных человека на одном времени, и непонятно, кому напоминать.
+appointmentSchema.pre("validate", function (next) {
+  const hasUser = Boolean(this.patientId);
+  const hasPrivate = Boolean(this.privatePatientId);
+  if (!hasUser && !hasPrivate) {
+    return next(
+      new Error("Appointment requires patientId or privatePatientId"),
+    );
+  }
+  if (hasUser && hasPrivate) {
+    return next(
+      new Error("Appointment cannot have both patientId and privatePatientId"),
+    );
+  }
+  next();
+});
+
 appointmentSchema.pre("validate", function (next) {
   if (!this.uniqueKey && this.doctorId && this.startsAt && this.endsAt) {
     this.uniqueKey = `${
@@ -189,6 +252,12 @@ appointmentSchema.index({ status: 1, startsAt: 1 });
 
 appointmentSchema.index({ doctorId: 1, startsAt: 1, endsAt: 1 });
 appointmentSchema.index({ patientId: 1, startsAt: 1 });
+// «Все приёмы этого приватного пациента» — история карточки открывается
+// так же часто, как история обычного пациента.
+appointmentSchema.index(
+  { privatePatientId: 1, startsAt: 1 },
+  { partialFilterExpression: { privatePatientId: { $type: "objectId" } } },
+);
 appointmentSchema.pre("save", function (next) {
   if (
     this.channel === "whatsapp" &&

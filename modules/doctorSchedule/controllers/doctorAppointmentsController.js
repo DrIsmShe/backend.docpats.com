@@ -2,10 +2,12 @@ import mongoose from "mongoose";
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import AppointmentAudit from "../../../common/models/Appointment/appointmentAudit.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import User from "../../../common/models/Auth/users.js";
 import { eventBus } from "../../notifications/events/eventBus.js"; // ✅ добавлено
 import Notification from "../../../common/models/Notification/notification.js"; // ✅ добавлено
+import { emitNotification } from "../../../common/realtime/userChannel.js";
 export const getMyAppointments = async (req, res) => {
   try {
     const userId = req.userId;
@@ -108,10 +110,39 @@ export const getMyAppointments = async (req, res) => {
       };
     }
 
+    // Приватные пациенты врача — отдельная коллекция. Без этого приём,
+    // который врач завёл сам на человека без аккаунта, показывался бы в
+    // списке безымянным.
+    const privateIds = [
+      ...new Set(
+        appointments.map((a) => a.privatePatientId).filter(Boolean),
+      ),
+    ];
+    if (privateIds.length) {
+      const privates = await DoctorPrivatePatient.find({
+        _id: { $in: privateIds },
+      })
+        .select("firstNameEncrypted lastNameEncrypted phoneEncrypted image")
+        .lean();
+
+      for (const p of privates) {
+        patientMap[p._id.toString()] = {
+          firstName: decrypt(p.firstNameEncrypted),
+          lastName: decrypt(p.lastNameEncrypted),
+          phone: decrypt(p.phoneEncrypted),
+          photo: p.image || null,
+          isPrivate: true,
+        };
+      }
+    }
+
     // Обогащаем приёмы
     const enrichedAppointments = appointments.map((a) => ({
       ...a,
-      patient: patientMap[a.patientId?.toString()] || null,
+      patient:
+        patientMap[a.patientId?.toString()] ||
+        patientMap[a.privatePatientId?.toString()] ||
+        null,
       formattedTime: new Date(a.startsAt).toLocaleString("ru-RU", {
         day: "2-digit",
         month: "2-digit",
@@ -242,16 +273,8 @@ export const updateAppointmentStatus = async (req, res) => {
 
       // 📡 Отправляем по Socket.io, если подключено
       try {
-        if (global.io) {
-          global.io.to(String(patientUserId)).emit("new_notification", {
-            title: patientNotification.title,
-            message: patientNotification.message,
-            link: patientNotification.link,
-            type: patientNotification.type,
-            createdAt: patientNotification.createdAt,
-          });
-          console.log("🚀 Socket.io уведомление пациенту отправлено");
-        }
+        // Личный канал /communication + user:<id> вместо мёртвого global.io.
+        emitNotification(patientUserId, patientNotification);
       } catch (socketErr) {
         console.error("⚠️ Ошибка при отправке socket уведомления:", socketErr);
       }

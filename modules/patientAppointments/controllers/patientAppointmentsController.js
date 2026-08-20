@@ -2,6 +2,7 @@ import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import Notification from "../../../common/models/Notification/notification.js";
+import { emitNotification } from "../../../common/realtime/userChannel.js";
 
 /**
  * @desc Пациент записывается на приём к врачу
@@ -80,17 +81,17 @@ export const bookAppointment = async (req, res) => {
       type: type || "offline",
       status: "pending",
 
-      channel: type === "video" ? "whatsapp" : "clinic",
-
-      // ✅ WhatsApp ОТ ПАЦИЕНТА
-      whatsApp:
-        type === "video" && contact?.phone
-          ? {
-              phone: contact.phone,
-              providedBy: "patient",
-              providedAt: new Date(),
-            }
-          : null,
+      // Канал приёма — ВСЕГДА внутренний.
+      //
+      // Было: `type === "video" ? "whatsapp" : "clinic"`. Две проблемы разом.
+      //   1) Любая онлайн-запись помечалась whatsapp-каналом, то есть чужой
+      //      мессенджер был каналом телемедицины по умолчанию. Для платформы
+      //      с собственным видео, шифрованным чатом и аудитом (hipaa_audit_logs)
+      //      это уводило приём туда, где ничего этого нет.
+      //   2) "clinic" вообще отсутствует в enum канала
+      //      (internal | whatsapp | zoom, common/models/Appointment/appointment.js),
+      //      поэтому офлайн-запись падала на ValidationError.
+      channel: "internal",
 
       location: doctorProfile.address || null,
       priceAZN: doctorProfile.priceAZN || 0,
@@ -165,28 +166,10 @@ export const bookAppointment = async (req, res) => {
        🔊 Socket.io — оповещения в реальном времени
     ============================================================ */
     try {
-      if (global.io) {
-        const doctorRoom = String(doctorProfile.userId);
-        const patientRoom = String(patientId);
-
-        global.io.to(doctorRoom).emit("new_notification", {
-          title: doctorNotification.title,
-          message: doctorNotification.message,
-          link: doctorNotification.link,
-          type: doctorNotification.type,
-          createdAt: doctorNotification.createdAt,
-        });
-
-        global.io.to(patientRoom).emit("new_notification", {
-          title: patientNotification.title,
-          message: patientNotification.message,
-          link: patientNotification.link,
-          type: patientNotification.type,
-          createdAt: patientNotification.createdAt,
-        });
-
-        console.log("🚀 Socket.io уведомления доставлены врачу и пациенту");
-      }
+      // Личный канал /communication + user:<id>. Прежний global.io нигде не
+      // присваивался, так что эти два уведомления никогда не уходили.
+      emitNotification(doctorProfile.userId, doctorNotification);
+      emitNotification(patientId, patientNotification);
     } catch (socketError) {
       console.error("❌ Ошибка Socket.io:", socketError);
     }

@@ -1,4 +1,5 @@
 import Notification from "../../../common/models/Notification/notification.js";
+import { emitNotification } from "../../../common/realtime/userChannel.js";
 
 export const createNotificationController = async (req, res) => {
   try {
@@ -12,10 +13,8 @@ export const createNotificationController = async (req, res) => {
       link,
     });
 
-    // Если Socket.io подключен:
-    if (global.io) {
-      global.io.to(userId.toString()).emit("new_notification", notification);
-    }
+    // Личный канал /communication + user:<id> вместо мёртвого global.io.
+    emitNotification(userId, notification);
 
     res.status(201).json({ success: true, notification });
   } catch (err) {
