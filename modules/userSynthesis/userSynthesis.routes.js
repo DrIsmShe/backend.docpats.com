@@ -7,6 +7,7 @@ import {
   getMy,
   getMyOne,
 } from "./userSynthesis.controller.js";
+import requireDoctorRole from "../../common/middlewares/requireDoctorRole.js";
 
 const router = express.Router();
 
@@ -38,12 +39,21 @@ const readLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Открытый для гостей НАМЕРЕННО: страница — публичная витрина. Но бесплатные
-// попытки теперь считаются по-настоящему (common/services/guestQuota.service.js),
-// а не показываются надписью «0 из 1».
-router.post("/generate", generateLimiter, generate);
-router.get("/limit", readLimiter, getLimit); // проверить свой лимит
-router.get("/my", readLimiter, getMy); // история (только авториз.)
-router.get("/my/:id", readLimiter, getMyOne); // одна статья
+// РАЗДЕЛ ТОЛЬКО ДЛЯ ВРАЧЕЙ.
+//
+// Раньше генерация была открыта гостям намеренно — как публичная витрина, с
+// учётом бесплатных попыток (common/services/guestQuota.service.js). Теперь
+// научную статью по медицинским источникам создаёт только врач: пациенту и
+// незарегистрированному эта возможность не предназначена.
+//
+// Проверка стоит на маршруте, а не только в интерфейсе: скрытая на фронте
+// кнопка не мешает вызвать эндпоинт напрямую, а генерация — самая дорогая
+// операция в приложении (16 000 токенов на запрос).
+//
+// Ограничители частоты остаются: врач тоже может открыть десять вкладок.
+router.post("/generate", requireDoctorRole, generateLimiter, generate);
+router.get("/limit", requireDoctorRole, readLimiter, getLimit); // свой лимит
+router.get("/my", requireDoctorRole, readLimiter, getMy); // история
+router.get("/my/:id", requireDoctorRole, readLimiter, getMyOne); // одна статья
 
 export default router;
