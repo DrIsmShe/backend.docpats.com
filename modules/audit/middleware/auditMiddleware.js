@@ -39,6 +39,10 @@
 // Никогда не падает — все try/catch.
 
 import auditService from "../services/audit.service.js";
+// Развилка «поместится в поле-ObjectId или уйдёт в metadata» — одна на
+// весь модуль: две копии этого правила однажды разъедутся, и половина
+// следа обращения к PHI снова начнёт теряться молча.
+import { splitRefs } from "../utils/objectIdRef.js";
 import { getCurrentClinicId } from "../../../common/context/tenantContext.js";
 
 /* ═══════════ getValueByPath ═══════════
@@ -209,26 +213,19 @@ export default function auditMiddleware(opts) {
           // Не аутентифицирован — нет смысла логировать как user-action.
           return;
         }
-        // Извлекаем resourceId (поддерживает строку и функцию)
-        let resourceId = null;
-        if (opts.resourceIdFrom) {
-          const val = resolveValue(req, opts.resourceIdFrom);
-          resourceId = val ? String(val) : null;
-        }
-
-        // Извлекаем resourceOwnerId (поддерживает строку и функцию)
-        let resourceOwnerId = null;
-        if (opts.resourceOwnerIdFrom) {
-          const val = resolveValue(req, opts.resourceOwnerIdFrom);
-          resourceOwnerId = val ? String(val) : null;
-        }
-
-        // Извлекаем caseId (для anthropometry, поддерживает строку и функцию)
-        let caseId = null;
-        if (opts.caseIdFrom) {
-          const val = resolveValue(req, opts.caseIdFrom);
-          caseId = val ? String(val) : null;
-        }
+        // Извлекаем идентификаторы (источник — строка-путь или функция).
+        // Не-ObjectId не теряется, а переезжает в metadata: см.
+        // utils/objectIdRef.js — там же объяснено, почему.
+        const { ids, refs } = splitRefs({
+          resourceId: opts.resourceIdFrom
+            ? resolveValue(req, opts.resourceIdFrom)
+            : null,
+          resourceOwnerId: opts.resourceOwnerIdFrom
+            ? resolveValue(req, opts.resourceOwnerIdFrom)
+            : null,
+          caseId: opts.caseIdFrom ? resolveValue(req, opts.caseIdFrom) : null,
+        });
+        const { resourceId, resourceOwnerId, caseId } = ids;
 
         // Метаданные
         let metadata = null;
@@ -238,6 +235,12 @@ export default function auditMiddleware(opts) {
           } catch (err) {
             console.warn("[audit] metaFrom error:", err.message);
           }
+        }
+
+        // Идентификаторы — структурные данные, не PHI: в metadata им
+        // место. Свои ключи метаданных маршрута не перетираем.
+        if (Object.keys(refs).length) {
+          metadata = { ...refs, ...(metadata || {}) };
         }
 
         // Определяем outcome по статусу:

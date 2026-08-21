@@ -15,6 +15,7 @@
 //    операция должна быть откачена. Используй внутри транзакции с session.
 
 import HIPAAAuditLog from "../models/AuditLog.model.js";
+import { splitRefs } from "../utils/objectIdRef.js";
 
 /* ═══════════ recordAction — синхронная запись ═══════════ */
 
@@ -93,6 +94,19 @@ export const recordAction = async (params) => {
       `audit.recordAction: resourceId is required for action "${action}"`,
     );
   }
+  // Идентификаторы, не помещающиеся в поле-ObjectId (строка звонка
+  // call_<ts>_<rnd>, имя комнаты), уходят в metadata вместо того, чтобы
+  // ронять всю запись на приведении. Проверка «resourceId обязателен»
+  // выше сделана по ИСХОДНОМУ значению — оно есть, просто не ObjectId.
+  const { ids, refs } = splitRefs({
+    resourceId,
+    resourceOwnerId,
+    caseId,
+  });
+  const metaWithRefs = Object.keys(refs).length
+    ? { ...refs, ...(metadata || {}) }
+    : metadata || null;
+
   const doc = {
     userId: actor.userId,
     impersonatedBy: impersonatedBy || null,
@@ -101,9 +115,9 @@ export const recordAction = async (params) => {
 
     action,
     resourceType,
-    resourceId: resourceId || null,
-    caseId: caseId || null,
-    resourceOwnerId: resourceOwnerId || null,
+    resourceId: ids.resourceId,
+    caseId: ids.caseId,
+    resourceOwnerId: ids.resourceOwnerId,
     clinicId: context.clinicId || null,
 
     outcome,
@@ -120,7 +134,7 @@ export const recordAction = async (params) => {
     sessionId: context.sessionId || null,
     requestId: context.requestId || null,
 
-    metadata: metadata || null,
+    metadata: metaWithRefs,
   };
 
   // Mongoose create() с session требует массив + опции
