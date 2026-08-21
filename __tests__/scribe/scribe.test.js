@@ -486,6 +486,46 @@ describe("устройство не может писать", () => {
   });
 });
 
+describe("поиск сеанса по комнате не воскрешает мёртвое", () => {
+  // Условия поиска по комнате обязаны совпадать с условиями
+  // переиспользования в startSession. Пока они расходились, выходило
+  // нелепое: новый сеанс сервер завести давал, а поиск по комнате
+  // возвращал старый — и панель врача, едва показав выбор языка и
+  // микрофона, тут же сменялась на «пациент подключился с телефона»,
+  // вывод о ЗАКОНЧИВШЕМСЯ звонке. Снаружи: селектор мигнул и пропал.
+  it("сеанс с неспособным устройством не находится по комнате", async () => {
+    const doctorId = oid();
+    const patientId = oid();
+    const room = `room-${Date.now()}-${Math.random()}`;
+
+    const s = await svc.startSession({ doctorId, room, patientUserId: patientId });
+    await svc.markRecordingUnsupported({ sessionId: s._id, userId: patientId });
+
+    // Тот же фильтр, которым пользуется byRoomController, а не его копия:
+    // копия прошла бы тест и при разъехавшемся коде — ровно так баг и
+    // появился.
+    const found = await ScribeSession.findOne(
+      svc.liveSessionFilter(room, ["awaiting_consent", "recording", "revoked"]),
+    ).lean();
+
+    expect(found).toBeNull();
+  });
+
+  it("живой сеанс, ждущий согласия, по комнате находится", async () => {
+    const doctorId = oid();
+    const patientId = oid();
+    const room = `room-${Date.now()}-${Math.random()}`;
+
+    const s = await svc.startSession({ doctorId, room, patientUserId: patientId });
+
+    const found = await ScribeSession.findOne(
+      svc.liveSessionFilter(room, ["awaiting_consent", "recording", "revoked"]),
+    ).lean();
+
+    expect(String(found?._id)).toBe(String(s._id));
+  });
+});
+
 describe("сеанс живёт не дольше приёма", () => {
   // Приём длиннее MAX_SESSION_SEC не бывает — дальше куски не
   // принимаются. Значит сеанс старше этой границы к текущему разговору

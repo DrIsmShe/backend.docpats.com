@@ -238,14 +238,23 @@ export async function savePrivateController(req, res) {
  * находила сеанс прошлого разговора и показывала его состояние как
  * текущее: врач, позвонивший через два часа, видел «пациент подключился
  * с телефона» — вывод, сделанный утром о другом звонке.
+ *
+ * Условия ровно те же, что у startSession, и это обязано быть так.
+ * Пока они расходились, получалось нелепое: начать новый сеанс сервер
+ * врачу давал (startSession сеанс с «устройство не умеет» пропускает),
+ * а поиск по комнате тот же сеанс всё равно возвращал — и панель, едва
+ * показав выбор языка и микрофона, тут же сменялась на приговор
+ * прошлому звонку. Снаружи это выглядит как «селектор мигнул и пропал».
  */
 export async function byRoomController(req, res) {
   try {
-    const session = await ScribeSession.findOne({
-      room: req.params.room,
-      status: { $in: ["awaiting_consent", "recording", "revoked"] },
-      createdAt: { $gte: svc.liveSince() },
-    })
+    const session = await ScribeSession.findOne(
+      svc.liveSessionFilter(req.params.room, [
+        "awaiting_consent",
+        "recording",
+        "revoked",
+      ]),
+    )
       .sort({ createdAt: -1 })
       .lean();
 

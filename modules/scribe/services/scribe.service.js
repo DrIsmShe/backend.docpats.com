@@ -45,6 +45,38 @@ export function liveSince() {
   return new Date(Date.now() - MAX_SESSION_SEC * 1000);
 }
 
+/**
+ * Условие «этот сеанс относится к идущему сейчас разговору».
+ *
+ * ОДНО НА ВЕСЬ МОДУЛЬ, и это не вкусовщина. Условие нужно в двух местах:
+ * startSession решает по нему, переиспользовать ли сеанс, а поиск по
+ * комнате — показывать ли его панели. Пока это были две копии, они
+ * разъехались: сервер давал завести новый сеанс и тут же возвращал
+ * поиском старый, и панель врача, едва показав выбор языка и микрофона,
+ * сменялась приговором законченному звонку — «селектор мигнул и пропал».
+ *
+ * Условий три:
+ *   • комната;
+ *   • возраст меньше длины приёма (см. liveSince);
+ *   • ни у кого из участников устройство не отказалось писать — такой
+ *     сеанс не запишет уже ничего, кем бы он ни числился по статусу.
+ *     Той стороне, что ведёт его прямо сейчас, он виден и так: она
+ *     держит идентификатор и опрашивает сеанс напрямую.
+ *
+ * Статусы у мест разные и потому передаются: startSession занимает
+ * комнату под awaiting_consent и recording, а панели показывается ещё и
+ * revoked — «запись прекращена, сказанное удалено» человек должен
+ * увидеть, даже если перезагрузил страницу.
+ */
+export function liveSessionFilter(room, statuses) {
+  return {
+    room,
+    status: { $in: statuses },
+    createdAt: { $gte: liveSince() },
+    participants: { $not: { $elemMatch: { consent: "unsupported" } } },
+  };
+}
+
 /** Участник по идентификатору. */
 function participantOf(session, userId) {
   return session.participants.find(
@@ -119,16 +151,9 @@ export async function startSession({
   // нового. Утренний приём, где пациент подключился с телефона, делал
   // запись в этом диалоге невозможной до конца дней: сеанс навсегда
   // оставался в awaiting_consent с «устройство не умеет».
-  const existing = await ScribeSession.findOne({
-    room,
-    status: { $in: ["awaiting_consent", "recording"] },
-    createdAt: { $gte: liveSince() },
-    // Сеанс, где устройство участника писать не умеет, не запишет уже
-    // ничего. Возвращать его врачу — значит запереть комнату: кнопки
-    // «начать заново» у него нет, панель показывает сеанс, а сеанс
-    // мёртв. Пусть создастся новый: пациент мог пересесть за компьютер.
-    participants: { $not: { $elemMatch: { consent: "unsupported" } } },
-  });
+  const existing = await ScribeSession.findOne(
+    liveSessionFilter(room, ["awaiting_consent", "recording"]),
+  );
   if (existing) return existing;
 
   return ScribeSession.create({
@@ -336,6 +361,7 @@ export default {
   respondToConsent,
   markRecordingUnsupported,
   revokeConsent,
+  liveSessionFilter,
   ingestChunk,
   dialogueText,
   CHUNK_TARGET_SEC,
