@@ -454,4 +454,92 @@ describe("устройство не может писать", () => {
       svc.markRecordingUnsupported({ sessionId: s._id, userId: oid() }),
     ).rejects.toThrow(/не участник/i);
   });
+
+  // Комната у диалога одна на все звонки за всё время (dialog-<id>).
+  // Пациент, подключившийся утром с телефона, оставлял сеанс висеть в
+  // awaiting_consent с «устройство не умеет» — и следующий звонок из
+  // этого диалога получал его назад. Запись становилась невозможной
+  // навсегда: врач видел приговор, вынесенный прошлому разговору, а
+  // нового сеанса startSession не заводил.
+  it("сеанс с неспособным устройством не выдаётся следующему звонку", async () => {
+    const room = `room-${Date.now()}-${Math.random()}`;
+    const first = await svc.startSession({
+      doctorId,
+      room,
+      patientUserId: patientId,
+    });
+    await svc.markRecordingUnsupported({
+      sessionId: first._id,
+      userId: patientId,
+    });
+
+    // Пациент пересел за компьютер и перезвонил.
+    const second = await svc.startSession({
+      doctorId,
+      room,
+      patientUserId: patientId,
+    });
+
+    expect(String(second._id)).not.toBe(String(first._id));
+    const patient = second.participants.find((p) => p.role === "patient");
+    expect(patient.consent).toBe("pending");
+  });
+});
+
+describe("сеанс живёт не дольше приёма", () => {
+  // Приём длиннее MAX_SESSION_SEC не бывает — дальше куски не
+  // принимаются. Значит сеанс старше этой границы к текущему разговору
+  // отношения не имеет, и подставлять его новому звонку нельзя.
+  it("вчерашний недоотвеченный сеанс не переиспользуется", async () => {
+    const doctorId = oid();
+    const patientId = oid();
+    const room = `room-${Date.now()}-${Math.random()}`;
+
+    const stale = await svc.startSession({
+      doctorId,
+      room,
+      patientUserId: patientId,
+    });
+
+    // Отматываем создание за границу: сеанс заведомо не может идти.
+    // Через драйвер, а не через модель: createdAt у Mongoose immutable,
+    // и $set по нему молча отбрасывается — тест «проходил» бы, ничего
+    // не проверив.
+    await ScribeSession.collection.updateOne(
+      { _id: stale._id },
+      {
+        $set: {
+          createdAt: new Date(Date.now() - (svc.MAX_SESSION_SEC + 60) * 1000),
+        },
+      },
+    );
+
+    const fresh = await svc.startSession({
+      doctorId,
+      room,
+      patientUserId: patientId,
+    });
+
+    expect(String(fresh._id)).not.toBe(String(stale._id));
+    expect(fresh.status).toBe("awaiting_consent");
+  });
+
+  it("идущий сеанс переиспользуется, а не дублируется", async () => {
+    const doctorId = oid();
+    const patientId = oid();
+    const room = `room-${Date.now()}-${Math.random()}`;
+
+    const first = await svc.startSession({
+      doctorId,
+      room,
+      patientUserId: patientId,
+    });
+    const again = await svc.startSession({
+      doctorId,
+      room,
+      patientUserId: patientId,
+    });
+
+    expect(String(again._id)).toBe(String(first._id));
+  });
 });

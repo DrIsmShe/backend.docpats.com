@@ -232,12 +232,19 @@ export async function savePrivateController(req, res) {
  *
  * Отдаём только участникам сеанса: комната известна обеим сторонам, но
  * посторонний, угадавший её имя, участником не станет.
+ *
+ * И только ЖИВОЙ сеанс. Комната у диалога одна на все звонки за всё
+ * время (dialog-<id>), поэтому без ограничения по возрасту панель
+ * находила сеанс прошлого разговора и показывала его состояние как
+ * текущее: врач, позвонивший через два часа, видел «пациент подключился
+ * с телефона» — вывод, сделанный утром о другом звонке.
  */
 export async function byRoomController(req, res) {
   try {
     const session = await ScribeSession.findOne({
       room: req.params.room,
       status: { $in: ["awaiting_consent", "recording", "revoked"] },
+      createdAt: { $gte: svc.liveSince() },
     })
       .sort({ createdAt: -1 })
       .lean();
