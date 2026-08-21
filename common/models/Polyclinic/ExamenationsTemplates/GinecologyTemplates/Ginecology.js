@@ -125,6 +125,14 @@ const GinecologySchema = new mongoose.Schema(
 ); // Автоматическое добавление `createdAt` и `updatedAt`
 
 // Создаем модель CTScan
-const GinecologyScan = mongoose.model("GinecologyScan", GinecologySchema);
+// Регистрация через `mongoose.models.X || …`, а не голым
+// mongoose.model(). Голая форма бросает OverwriteModelError, если имя уже
+// занято, — а занять его успевал файл-двойник GinecologyScan.js в этой же
+// папке (удалён: его не импортировал никто, но ModelLoader обходит
+// common/models/** целиком и загружал его наравне с этим). Кто из двух
+// побеждал, решал порядок обхода каталога, то есть файловая система.
+const GinecologyScan =
+  mongoose.models.GinecologyScan ||
+  mongoose.model("GinecologyScan", GinecologySchema);
 
 export default GinecologyScan;

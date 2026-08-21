@@ -13,10 +13,15 @@ const templateCTScanSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Создаем модель CTScan
-const CTScanTemplateDiagnosis = mongoose.model(
-  "CTScanTemplateDiagnosis",
-  templateCTScanSchema
-);
+// Регистрация через `mongoose.models.X || …`, а не голым
+// mongoose.model(). Голая форма бросает OverwriteModelError, если это имя
+// уже занято, — а занять его успевал дубликат из соседней папки
+// ScansTemplates/ (удалён). Кто из двух побеждал, решал порядок обхода
+// каталога в ModelLoader, то есть файловая система: на одной машине
+// работало, на другой упало бы при старте, и упало бы молча — загрузчик
+// ловит ошибку файла и идёт дальше.
+const CTScanTemplateDiagnosis =
+  mongoose.models.CTScanTemplateDiagnosis ||
+  mongoose.model("CTScanTemplateDiagnosis", templateCTScanSchema);
 
 export default CTScanTemplateDiagnosis;
