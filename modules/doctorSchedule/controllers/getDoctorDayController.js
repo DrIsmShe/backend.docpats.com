@@ -113,11 +113,26 @@ export const getDoctorDayController = async (req, res) => {
     // Приёмы дня грузим ВСЕГДА — даже когда расписания нет вовсе. Иначе врач,
     // ещё не заполнивший расписание, не увидит записей, сделанных вне сетки.
     const { startUtc, endUtc } = dayBoundsUtc(date, zone);
+
+    // ПРОШЛОЕ ПОКАЗЫВАЕМ ЦЕЛИКОМ.
+    //
+    // Для будущего «занято» — это только живая запись: pending/confirmed и не
+    // в архиве. Отменённая или удалённая в архив запись не должна держать
+    // слот, иначе врач не сможет записать туда никого.
+    //
+    // Для прошедшего времени правило обратное. Врач приходит в прошлый месяц
+    // не записывать, а смотреть, кто у него был, — и там нужны все приёмы:
+    // completed, no_show, отменённые и, главное, архивные. Приёмы старше семи
+    // дней уходят в архив автоматически (jobs/autoCleanAppointments.js), так
+    // что без этой ветки прошлый месяц выглядел бы пустым днём.
+    const now = new Date();
     const dayAppointments = await Appointment.find({
       doctorId: profile._id,
-      status: { $in: ACTIVE },
       startsAt: { $gte: startUtc, $lt: endUtc },
-      isArchived: { $ne: true },
+      $or: [
+        { status: { $in: ACTIVE }, isArchived: { $ne: true } },
+        { startsAt: { $lt: now } },
+      ],
     })
       .sort({ startsAt: 1 })
       .lean();

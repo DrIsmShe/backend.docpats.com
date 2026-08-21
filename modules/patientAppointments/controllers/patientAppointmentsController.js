@@ -4,6 +4,12 @@ import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js
 import Notification from "../../../common/models/Notification/notification.js";
 import { emitNotification } from "../../../common/realtime/userChannel.js";
 
+// Допуск на запись «в прошлое» — тот же, что у врача
+// (doctorSchedule/bookByDoctorController.js): расхождение часов клиента с
+// сервером плюс слот, который начался, пока пациент выбирал время в уже
+// открытом списке. Больше пяти минут прощать нечего.
+const PAST_GRACE_MS = 5 * 60 * 1000;
+
 /**
  * @desc Пациент записывается на приём к врачу
  * @route POST /appointment-for-patient/book
@@ -29,6 +35,41 @@ export const bookAppointment = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Необходимо указать doctorId, startsAt и endsAt",
+      });
+    }
+
+    // === Время приёма должно быть в будущем ===
+    //
+    // Раньше этой проверки не было вовсе, и запись на вчерашний день
+    // создавалась молча — со статусом pending, уведомлением врачу и местом
+    // в его календаре. Ни отменить осмысленно, ни провести такой приём
+    // нельзя: он уже «прошёл», не начавшись.
+    //
+    // Проверяем на сервере, а не только скрытием дат в календаре: форму
+    // можно отправить и мимо интерфейса, а запись в чужом расписании —
+    // не то место, где можно доверять клиенту.
+    const startMs = new Date(startsAt).getTime();
+    const endMs = new Date(endsAt).getTime();
+
+    if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
+      return res.status(400).json({
+        success: false,
+        message: "Некорректные дата и время приёма",
+      });
+    }
+
+    if (endMs <= startMs) {
+      return res.status(400).json({
+        success: false,
+        message: "Конец приёма должен быть позже его начала",
+      });
+    }
+
+    if (startMs < Date.now() - PAST_GRACE_MS) {
+      return res.status(400).json({
+        success: false,
+        message: "Нельзя записаться на прошедшее время. Выберите другую дату.",
+        code: "PAST_TIME",
       });
     }
 
