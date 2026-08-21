@@ -44,6 +44,10 @@ const notificationSchema = new mongoose.Schema(
         "doctorProfile.replied",
         "doctorProfile.commentSent",
         "chat_message",
+        // Пропущенный звонок. Отдельный тип, а не system_message: по нему
+        // колокольчик рисует свою иконку, и его же можно однажды скрыть
+        // настройкой, не задев остальные системные сообщения.
+        "call_missed",
         "consent_request_new",
         "clinic_lead",
       ],

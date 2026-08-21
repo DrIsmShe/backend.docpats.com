@@ -29,6 +29,7 @@ import mongoose from "mongoose";
 import User from "../../../common/models/Auth/users.js";
 import DialogParticipant from "../dialogs/dialogParticipant.model.js";
 import CallLogModel from "./callLog.model.js";
+import { pushIncomingCall, notifyMissedCall } from "./callNotify.js";
 
 // Map<callId, CallSession>
 const activeCalls = new Map();
@@ -131,6 +132,22 @@ async function describeUser(userId) {
   }
 }
 
+// Есть ли у человека живое соединение прямо сейчас.
+//
+// Спрашиваем сокет-слой, а не поле status в базе: статус там обновляется
+// с задержкой и переживает падение вкладки, а нам нужен ответ на вопрос
+// «дойдёт ли экран входящего», и он бинарный.
+async function hasLiveSocket(nsp, userId) {
+  try {
+    const sockets = await nsp.in(`user:${String(userId)}`).fetchSockets();
+    return sockets.length > 0;
+  } catch {
+    // Не смогли выяснить — считаем, что человек на месте: лишний пуш
+    // безобиднее пропавшего звонка.
+    return true;
+  }
+}
+
 async function isDialogParticipant(dialogId, userId) {
   if (!mongoose.isValidObjectId(dialogId) || !mongoose.isValidObjectId(userId)) {
     return false;
@@ -174,6 +191,40 @@ async function finishLog(session, status, endedAt = null) {
 export function initCallGateway(nsp) {
   nsp.on("connection", (socket) => {
     const userId = String(socket.user.id);
+
+    /* ────────────────────────────────────────────────────────
+       ПОВТОР ИДУЩЕГО ВЫЗОВА ПОДКЛЮЧИВШЕМУСЯ
+       ────────────────────────────────────────────────────────
+       Пуш о входящем звонке имеет смысл, только если по нему можно
+       ответить. Человек открывает кабинет уже ПОСЛЕ того, как
+       call:incoming был отправлен в пустую комнату, — и без повтора
+       попадал бы на молчащий экран. Здесь мы досылаем ему вызов, если
+       он всё ещё числится «ringing»: окно входящего появится в
+       оставшиеся секунды из тех же 45.
+
+       Тот же путь чинит и обрыв связи посреди вызова: переподключился —
+       снова видишь, что тебе звонят.
+       ──────────────────────────────────────────────────────── */
+    (async () => {
+      for (const session of activeCalls.values()) {
+        if (session.participants.get(userId) !== "ringing") continue;
+        try {
+          const callerInfo = await describeUser(session.callerId);
+          socket.emit("call:incoming", {
+            callId: session.callId,
+            dialogId: session.dialogId,
+            callerId: String(session.callerId),
+            type: session.type,
+            callerInfo,
+            // Точного «кто позвал» сессия не хранит, но состав говорит
+            // сам за себя: больше двоих — это уже разговор, а не вызов.
+            isConference: session.participants.size > 2,
+          });
+        } catch (err) {
+          console.warn("call resume failed:", err?.message);
+        }
+      }
+    })();
 
     /* ────────────────────────────────────────────────────────
        НАЧАТЬ ЗВОНОК
@@ -238,6 +289,18 @@ export function initCallGateway(nsp) {
 
         socket.emit("call:initiated", { callId });
 
+        // Вкладка закрыта — экран входящего показывать некому. Шлём пуш:
+        // по нему человек успевает открыть кабинет, и сигнализация
+        // повторит ему вызов при подключении, пока не вышли 45 секунд.
+        if (!(await hasLiveSocket(nsp, calleeIdStr))) {
+          pushIncomingCall(calleeIdStr, {
+            callerName: callerInfo.name,
+            dialogId,
+          });
+          // Звонящему — прямая подсказка вместо гудков в пустоту.
+          socket.emit("call:offline", { callId, calleeId: calleeIdStr });
+        }
+
         session.ringTimers.set(
           calleeIdStr,
           setTimeout(() => {
@@ -247,6 +310,13 @@ export function initCallGateway(nsp) {
             nsp.to(`user:${calleeIdStr}`).emit("call:cancelled", { callId });
             nsp.to(`user:${userId}`).emit("call:no_answer", { callId });
             finishLog(live, "missed");
+            // След пропущенного: колокольчик переживёт закрытую вкладку,
+            // и человек увидит, кто звонил, когда вернётся.
+            notifyMissedCall(calleeIdStr, {
+              callerId: userId,
+              callerName: callerInfo.name,
+              dialogId,
+            });
             disposeSession(live);
           }, RING_TIMEOUT_MS),
         );
@@ -320,6 +390,18 @@ export function initCallGateway(nsp) {
           inviteeIdStr,
         );
 
+        // Приглашённого зовут ровно так же, как вызываемого, — значит и
+        // узнать о зове он должен так же, с закрытой вкладкой тоже.
+        if (!(await hasLiveSocket(nsp, inviteeIdStr))) {
+          // Здесь НЕ шлём invite_failed: приглашение не провалилось, оно
+          // просто ушло другим каналом. Приглашающий увидит «звоним», а
+          // через 45 секунд — «не ответил», как и при закрытой вкладке.
+          pushIncomingCall(inviteeIdStr, {
+            callerName: inviterInfo.name,
+            dialogId,
+          });
+        }
+
         session.ringTimers.set(
           inviteeIdStr,
           setTimeout(() => {
@@ -330,6 +412,11 @@ export function initCallGateway(nsp) {
             emitToParticipants(nsp, live, "call:participant_no_answer", {
               callId,
               userId: inviteeIdStr,
+            });
+            notifyMissedCall(inviteeIdStr, {
+              callerId: userId,
+              callerName: inviterInfo.name,
+              dialogId,
             });
           }, RING_TIMEOUT_MS),
         );

@@ -693,17 +693,46 @@ export function initCommunicationGateway(nsp) {
     });
 
     // ======================================================
+    // PRESENCE: В СЕТИ ЛИ КОНКРЕТНЫЙ ЧЕЛОВЕК
+    // ======================================================
+    //
+    // Событий user:online / user:offline недостаточно: они рассказывают
+    // только о том, что произошло ПОСЛЕ подписки. Открыв чат, клиент не
+    // знает о собеседнике ничего — а именно в этот момент решается, можно
+    // ли ему звонить. Здесь он спрашивает прямо и получает ответ по живым
+    // сокетам, а не по полю status в базе, которое переживает падение
+    // вкладки.
+    socket.on("presence:get", async ({ userId: whoId } = {}, ack) => {
+      if (typeof ack !== "function") return;
+      try {
+        if (!whoId) return ack({ online: false, known: false });
+        const sockets = await nsp.in(`user:${String(whoId)}`).fetchSockets();
+        ack({ userId: String(whoId), online: sockets.length > 0, known: true });
+      } catch {
+        // Не выяснили — так и говорим. Клиент в этом случае не мешает
+        // звонить: запрещать по незнанию хуже, чем позволить.
+        ack({ online: false, known: false });
+      }
+    });
+
+    // ======================================================
     // DISCONNECT
     // ======================================================
     socket.on("disconnect", async () => {
-      nsp.emit("user:offline", { userId });
-      // Offline только если у пользователя не осталось других вкладок/сокетов.
+      // Offline только если у пользователя не осталось других вкладок и
+      // устройств. Раньше user:offline уходил всем при закрытии ЛЮБОЙ
+      // вкладки, и человек с двумя открытыми окнами «уходил из сети»,
+      // продолжая сидеть на сайте.
       try {
         const remaining = await nsp.in(`user:${userId}`).fetchSockets();
         if (remaining.length === 0) {
+          nsp.emit("user:offline", { userId });
           await setUserPresence(userId, false);
         }
       } catch (e) {
+        // Выяснить не удалось — считаем, что человек ушёл: молчаливо
+        // «оставить в сети» хуже, там ему будут звонить в пустоту.
+        nsp.emit("user:offline", { userId });
         console.warn("[presence] disconnect update failed:", e.message);
       }
     });
