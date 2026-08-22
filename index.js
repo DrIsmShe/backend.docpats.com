@@ -36,6 +36,7 @@ import emailLimiter from "./common/middlewares/rateLimiter.js";
 import { scheduleTrialReminders } from "./jobs/checkTrialReminders.js";
 import { scheduleAppointmentReminders } from "./jobs/appointmentReminders.job.js";
 import { setRealtimeNamespace } from "./common/realtime/userChannel.js";
+import { attachRedisAdapter } from "./common/realtime/socketAdapter.js";
 import { scheduleSubscriptionReminders } from "./jobs/checkSubscriptionReminders.js";
 import { scheduleNotificationDigest } from "./jobs/notificationDigest.job.js";
 import { scheduleWeeklyCaseNotification } from "./jobs/radiologyWeeklyCase.job.js";
@@ -500,6 +501,13 @@ async function bootstrap(startPort = PORT) {
         credentials: true,
       },
     });
+
+    // Presence и рассылки обязаны видеть сокеты ВСЕХ процессов, а не
+    // только своего: иначе со второго инстанса собеседник выглядит
+    // офлайн и кнопки звонка гаснут зря. Включается флагом
+    // SOCKET_REDIS_ADAPTER=on — подробности в
+    // common/realtime/socketAdapter.js. Обязательно ДО io.of().
+    await attachRedisAdapter(io);
 
     // ✅ Создаём namespace ОДИН РАЗ
     const nsp = io.of("/communication");
