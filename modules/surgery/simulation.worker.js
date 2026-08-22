@@ -6,70 +6,41 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
+import {
+  getImageProvider,
+  describeImageProvider,
+} from "./imageProviders/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS_DIR = path.join(__dirname, "../../uploads/surgery");
-const FAL_KEY = process.env.FAL_KEY;
-const FAL_MODEL = "fal-ai/flux-pro/v1/fill";
+// Ключи и модели знает провайдер (imageProviders/), а не воркер:
+// добавление третьего поставщика не должно править этот файл.
 
-console.log(
-  "🔑 [simulation.worker] FAL_KEY:",
-  FAL_KEY ? "✅ задан" : "❌ НЕ ЗАДАН",
-);
-
-// ─── Файл → base64 data URI ──────────────────────────────────────────────
-function fileToDataUri(filename, mimeOverride) {
-  const filePath = path.join(UPLOADS_DIR, filename);
-  const data = fs.readFileSync(filePath);
-  const ext = path.extname(filename).toLowerCase().replace(".", "");
-  const mime =
-    mimeOverride || (ext === "jpg" ? "image/jpeg" : `image/${ext || "png"}`);
-  return `data:${mime};base64,${data.toString("base64")}`;
-}
-
-// ─── Buffer → base64 data URI ─────────────────────────────────────────────
-function bufferToDataUri(buf, mime = "image/png") {
-  return `data:${mime};base64,${buf.toString("base64")}`;
-}
-
-// ─── Скачать результат на диск ───────────────────────────────────────────
-async function downloadToFile(url, filename) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Download failed: ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  const dest = path.join(UPLOADS_DIR, filename);
-  fs.writeFileSync(dest, buf);
-  return filename;
-}
-
-// ─── Вызов Fal.ai ────────────────────────────────────────────────────────
-async function callFal(simulation) {
-  if (!FAL_KEY) throw new Error("FAL_KEY не задан в .env");
-
+// ─── Подготовка входных данных ───────────────────────────────────────────
+//
+// Чтение файлов и работа с размерами живут здесь, а не в провайдерах:
+// провайдер отвечает только за сеть, и добавить третьего — значит написать
+// один HTTP-вызов, а не заново разбираться с масками.
+async function prepareInputs(simulation) {
   const imgPath = path.join(UPLOADS_DIR, simulation.sourcePhotoFilename);
+  const imageBuffer = fs.readFileSync(imgPath);
 
-  // Получаем размер исходного фото
-  const { width, height } = await sharp(imgPath).metadata();
-  console.log(`📐 [simulation.worker] Фото размер: ${width}x${height}`);
+  const { width, height } = await sharp(imageBuffer).metadata();
+  console.log(`📐 [simulation.worker] фото ${width}x${height}`);
 
-  // Исходное фото → base64
-  const imageDataUri = fileToDataUri(simulation.sourcePhotoFilename);
-
-  // Маска → ресайзим под размер фото → base64
-  let maskDataUri;
+  let maskBuffer;
   if (simulation.maskFilename) {
-    const maskPath = path.join(UPLOADS_DIR, simulation.maskFilename);
-    const resizedMask = await sharp(maskPath)
+    // Маску приводим к размеру фото: врач рисует её поверх превью, и
+    // масштаб там почти никогда не совпадает с оригиналом.
+    maskBuffer = await sharp(path.join(UPLOADS_DIR, simulation.maskFilename))
       .resize(width, height, { fit: "fill" })
       .png()
       .toBuffer();
-    maskDataUri = bufferToDataUri(resizedMask, "image/png");
-    console.log(
-      `🎭 [simulation.worker] Маска ресайзнута до ${width}x${height}`,
-    );
+    console.log(`🎭 [simulation.worker] маска приведена к ${width}x${height}`);
   } else {
-    // Нет маски — белая маска полного размера (генерируем всё фото)
-    const whiteMask = await sharp({
+    // Маски нет — белое полотно: перерисовывается весь кадр. Это осознанно
+    // разрешено, но результат тогда не «правка носа», а новое лицо.
+    maskBuffer = await sharp({
       create: {
         width,
         height,
@@ -79,109 +50,10 @@ async function callFal(simulation) {
     })
       .png()
       .toBuffer();
-    maskDataUri = bufferToDataUri(whiteMask, "image/png");
-    console.log(
-      `🎭 [simulation.worker] Создана белая маска ${width}x${height}`,
-    );
+    console.log(`🎭 [simulation.worker] маски нет — белое полотно ${width}x${height}`);
   }
 
-  const body = {
-    image_url: imageDataUri,
-    mask_url: maskDataUri,
-    prompt: simulation.prompt,
-    negative_prompt: simulation.negativePrompt,
-    num_images: simulation.numOutputs || 4,
-    output_format: "jpeg",
-    safety_tolerance: "5",
-  };
-
-  console.log(`📤 [simulation.worker] Отправка в Fal.ai, модель: ${FAL_MODEL}`);
-
-  // ─── Submit ───────────────────────────────────────────────────────────
-  const submitRes = await fetch(`https://queue.fal.run/${FAL_MODEL}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Key ${FAL_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  const submitText = await submitRes.text();
-  console.log(
-    `📥 [simulation.worker] Submit ${submitRes.status}:`,
-    submitText.slice(0, 300),
-  );
-
-  if (!submitRes.ok)
-    throw new Error(`Fal.ai submit ${submitRes.status}: ${submitText}`);
-
-  const submitData = JSON.parse(submitText);
-  const request_id = submitData.request_id;
-  const status_url = submitData.status_url;
-  const response_url = submitData.response_url;
-
-  console.log(`🔄 [simulation.worker] request_id: ${request_id}`);
-
-  // ─── Poll ─────────────────────────────────────────────────────────────
-  const maxWait = 180_000;
-  const interval = 3_000;
-  const start = Date.now();
-
-  while (Date.now() - start < maxWait) {
-    await new Promise((r) => setTimeout(r, interval));
-
-    const statusRes = await fetch(status_url, {
-      headers: { Authorization: `Key ${FAL_KEY}` },
-    });
-
-    if (!statusRes.ok) {
-      console.warn("[simulation.worker] Status poll failed:", statusRes.status);
-      continue;
-    }
-
-    const status = await statusRes.json();
-    console.log(`⏳ [simulation.worker] Status: ${status.status}`);
-
-    if (status.status === "COMPLETED") {
-      // Получаем результат по response_url
-      const resultRes = await fetch(response_url, {
-        headers: { Authorization: `Key ${FAL_KEY}` },
-      });
-      const resultText = await resultRes.text();
-      console.log(
-        `[simulation.worker] Result ${resultRes.status}:`,
-        resultText.slice(0, 500),
-      );
-
-      if (!resultRes.ok) {
-        throw new Error(`Fal.ai result ${resultRes.status}: ${resultText}`);
-      }
-
-      const result = JSON.parse(resultText);
-      const outputUrls = (result.images || result.output?.images || []).map(
-        (img) => (typeof img === "string" ? img : img.url),
-      );
-
-      console.log(`[simulation.worker] Found ${outputUrls.length} images`);
-
-      if (outputUrls.length === 0) {
-        throw new Error(
-          `Fal.ai COMPLETED но images пустой: ${resultText.slice(0, 300)}`,
-        );
-      }
-
-      return { requestId: request_id, outputUrls };
-    }
-
-    if (status.status === "FAILED") {
-      throw new Error(
-        `Fal.ai FAILED: ${JSON.stringify(status.error || status)}`,
-      );
-    }
-  }
-
-  throw new Error("Fal.ai timeout после 3 минут");
+  return { imageBuffer, maskBuffer, width, height };
 }
 
 // ─── BullMQ Worker ────────────────────────────────────────────────────────
@@ -208,16 +80,28 @@ const worker = new Worker(
 
     try {
       const startTime = Date.now();
-      const { requestId, outputUrls } = await callFal(sim);
+
+      const provider = getImageProvider();
+      if (!provider.isConfigured()) throw new Error(provider.missingHint);
+
+      const { imageBuffer, maskBuffer } = await prepareInputs(sim);
+      const { requestId, images, ext } = await provider.run({
+        imageBuffer,
+        maskBuffer,
+        prompt: sim.prompt,
+        negativePrompt: sim.negativePrompt,
+        numOutputs: sim.numOutputs || 4,
+      });
+
       const elapsed = Math.round((Date.now() - startTime) / 1000);
 
-      const resultFilenames = await Promise.all(
-        outputUrls.map(async (url, i) => {
-          const filename = `sim-${simulationId}-${i}-${Date.now()}.jpg`;
-          await downloadToFile(url, filename);
-          return filename;
-        }),
-      );
+      // Провайдер отдаёт готовые буферы — записываем сами. Раньше воркер
+      // умел только скачивать по ссылке, а OpenAI ссылок не даёт вовсе.
+      const resultFilenames = images.map((buf, i) => {
+        const filename = `sim-${simulationId}-${i}-${Date.now()}.${ext || "jpg"}`;
+        fs.writeFileSync(path.join(UPLOADS_DIR, filename), buf);
+        return filename;
+      });
 
       sim.status = "done";
       sim.replicateId = requestId;
@@ -269,5 +153,5 @@ worker.on("failed", (job, err) =>
   console.error(`❌ [simulation.worker] Job ${job?.id} failed:`, err.message),
 );
 
-console.log("🧠 [simulation.worker] Fal.ai воркер симуляций запущен");
+console.log(`🧠 [simulation.worker] воркер симуляций запущен — ${describeImageProvider()}`);
 export default worker;
