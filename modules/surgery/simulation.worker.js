@@ -30,13 +30,45 @@ async function prepareInputs(simulation) {
 
   let maskBuffer;
   if (simulation.maskFilename) {
-    // Маску приводим к размеру фото: врач рисует её поверх превью, и
-    // масштаб там почти никогда не совпадает с оригиналом.
-    maskBuffer = await sharp(path.join(UPLOADS_DIR, simulation.maskFilename))
+    const maskPath = path.join(UPLOADS_DIR, simulation.maskFilename);
+    const maskMeta = await sharp(maskPath).metadata();
+
+    // Проверка геометрии маски — не паранойя, а след реальной поломки.
+    // Канвас кисти монтировался с дефолтными 300×150, потому что размеры
+    // ему задавали до появления в DOM. Врач красил нос, а в маску попадало
+    // пятно в другом месте кадра; результат выглядел как «другой человек,
+    // ничего не изменилось», и в логах не было НИ ОДНОГО признака. Теперь
+    // расхождение пропорций видно сразу.
+    const maskRatio = maskMeta.width / maskMeta.height;
+    const photoRatio = width / height;
+    if (Math.abs(maskRatio - photoRatio) / photoRatio > 0.1) {
+      console.warn(
+        `⚠️ [simulation.worker] пропорции маски (${maskMeta.width}x${maskMeta.height})` +
+          ` не совпадают с фото (${width}x${height}) — область правки уедет.` +
+          ` Похоже на ошибку размера канваса на клиенте.`,
+      );
+    }
+
+    // Доля закрашенного. Ноль означает пустую маску: перерисовывать нечего,
+    // и модель вернёт просто пересобранный кадр.
+    const stats = await sharp(maskPath).greyscale().stats();
+    const painted = (stats.channels[0].mean / 255) * 100;
+    console.log(
+      `🎭 [simulation.worker] маска ${maskMeta.width}x${maskMeta.height}` +
+        ` → ${width}x${height}, закрашено ${painted.toFixed(1)}%`,
+    );
+    if (painted < 0.5) {
+      console.warn(
+        "⚠️ [simulation.worker] маска почти пустая — модель перерисует кадр целиком",
+      );
+    }
+
+    // Приводим к размеру фото: врач рисует поверх превью, и масштаб там
+    // почти никогда не совпадает с оригиналом.
+    maskBuffer = await sharp(maskPath)
       .resize(width, height, { fit: "fill" })
       .png()
       .toBuffer();
-    console.log(`🎭 [simulation.worker] маска приведена к ${width}x${height}`);
   } else {
     // Маски нет — белое полотно: перерисовывается весь кадр. Это осознанно
     // разрешено, но результат тогда не «правка носа», а новое лицо.
