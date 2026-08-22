@@ -2,6 +2,7 @@ import { Queue } from "bullmq";
 import { redis } from "../../common/config/redis.js";
 import Simulation from "./simulation.model.js";
 import SurgicalCase from "./surgicalCase.model.js";
+import { compilePrompt } from "./promptCompiler.service.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -415,8 +416,16 @@ export async function createSimulation(
   const cas = await SurgicalCase.findOne({ _id: caseId, surgeonId });
   if (!cas) throw new Error("Кейс не найден");
 
-  const prompt =
-    customPrompt || pickPrompt(cas.procedure, Number(promptIdx) || 0);
+  // Свободный текст врача компилируем, пресет каталога — нет: он уже
+  // написан как надо, и лишний вызов модели дал бы только новый способ
+  // его испортить.
+  const raw = (customPrompt || "").trim();
+  const { prompt, compiled } = raw
+    ? await compilePrompt(raw, cas.procedure)
+    : {
+        prompt: pickPrompt(cas.procedure, Number(promptIdx) || 0),
+        compiled: false,
+      };
 
   const simulation = await Simulation.create({
     caseId,
@@ -425,6 +434,8 @@ export async function createSimulation(
     maskFilename,
     procedure: cas.procedure,
     prompt,
+    promptRaw: raw || null,
+    promptCompiled: compiled,
     negativePrompt: NEGATIVE_PROMPT,
     numOutputs: 4,
     disclaimerAccepted,

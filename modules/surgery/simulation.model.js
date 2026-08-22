@@ -18,7 +18,16 @@ const SimulationSchema = new Schema(
 
     // Параметры генерации
     procedure: { type: String },
+    // prompt — то, что реально ушло в модель изображений (по-английски,
+    // как описание желаемого вида). promptRaw — то, что написал врач.
+    //
+    // Хранить оба обязательно. Без исходника невозможно понять, почему
+    // результат не тот: виноват запрос врача или его перевод. А врачу
+    // нужно видеть, что именно от его имени попросили у модели, — иначе
+    // компилятор превращается в чёрный ящик, который «делает наоборот».
     prompt: { type: String },
+    promptRaw: { type: String },
+    promptCompiled: { type: Boolean, default: false },
     negativePrompt: { type: String },
     guidanceScale: { type: Number, default: 7.5 },
     steps: { type: Number, default: 25 },
