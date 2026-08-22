@@ -41,6 +41,8 @@ import { scheduleSubscriptionReminders } from "./jobs/checkSubscriptionReminders
 import { scheduleNotificationDigest } from "./jobs/notificationDigest.job.js";
 import { scheduleWeeklyCaseNotification } from "./jobs/radiologyWeeklyCase.job.js";
 import { scheduleDailyCaseGeneration } from "./jobs/radiologyDailyCases.job.js";
+import { scheduleIndexNowSubmit } from "./jobs/indexnowSubmit.job.js";
+import { scheduleSocialBroadcast } from "./jobs/socialBroadcast.job.js";
 import User, { decrypt as decryptUser } from "./common/models/Auth/users.js";
 import NewPatientPolyclinic from "./common/models/PatientProfile/patientProfile.js";
 import "./common/models/Comments/CommentDocpats.js";
@@ -543,6 +545,12 @@ async function bootstrap(startPort = PORT) {
     // Ночная автогенерация учебных кейсов лучевой станции (по одному на
     // модальность). Выключается через RADIOLOGY_AUTOGEN=off.
     scheduleDailyCaseGeneration();
+    // Уведомление поисковиков о новых страницах (Bing/Yandex/Seznam).
+    // Молча не регистрируется, если нет INDEXNOW_KEY.
+    scheduleIndexNowSubmit();
+    // Публикация свежих материалов в собственный Telegram-канал.
+    // Молча не регистрируется без TELEGRAM_BOT_TOKEN / TELEGRAM_CHANNEL_ID.
+    scheduleSocialBroadcast();
     app.set("io", io);
     setSimulationIo(io);
     server.listen(startPort, () =>

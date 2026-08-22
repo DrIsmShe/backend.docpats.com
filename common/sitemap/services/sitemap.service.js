@@ -69,21 +69,26 @@ function collectionOf(modelName, fallback) {
   return mongoose.models[modelName]?.collection?.collectionName || fallback;
 }
 
-// Одна запись с hreflang — для страниц где язык НЕ в URL (localStorage/cookie)
-// Все языки указывают на один и тот же URL
-function urlWithHreflang({ loc, lastmod, changefreq, priority }) {
-  const hreflangTags = LANGS.map(
-    (lang) =>
-      `    <xhtml:link rel="alternate" hreflang="${lang}" href="${escapeXml(loc)}"/>`,
-  ).join("\n");
-
+// Одна запись БЕЗ hreflang — для страниц, у которых языкового адреса не
+// существует: язык там выбирается на клиенте (localStorage/cookie), и все
+// пять версий живут по одному URL.
+//
+// Раньше здесь выписывались пять <xhtml:link hreflang="xx">, и все пять
+// вели на ОДИН И ТОТ ЖЕ адрес. Это не языковая разметка, а её видимость:
+// hreflang связывает РАЗНЫЕ адреса разных языковых версий, а ссылка
+// страницы на саму себя пять раз не сообщает поисковику ничего — он не
+// может проиндексировать пять версий одного URL. Пятикратно раздутый
+// sitemap при этом был вполне настоящим.
+//
+// Где языковые адреса есть на самом деле — синтез-статьи (/articles/:id/:lang)
+// и новости (?locale=xx) — разметка выписывается отдельными функциями ниже
+// и указывает на разные URL, как и положено.
+export function urlEntry({ loc, lastmod, changefreq, priority }) {
   return `  <url>
     <loc>${escapeXml(loc)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
-    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(loc)}"/>
-${hreflangTags}
   </url>`;
 }
 
@@ -132,10 +137,48 @@ ${langHreflang}
   return entries.join("\n");
 }
 
+// 5 записей на новость: голый адрес + ?locale= для четырёх остальных
+// языков. Язык у новостей передаётся query-параметром, и страница его
+// теперь читает (client/src/pages/NewsAI/NewsArticle.jsx) — до этого
+// параметр только записывался при переключении, а при заходе по ссылке
+// игнорировался.
+//
+// Английского ?locale=en НЕТ намеренно: английская версия живёт на голом
+// адресе, и второй адрес с тем же содержимым был бы дублем, который
+// поисковику пришлось бы склеивать самому.
+const NEWS_DEFAULT_LANG = "en";
+
+function newsLocaleUrl(baseUrl, lang) {
+  return lang === NEWS_DEFAULT_LANG ? baseUrl : `${baseUrl}?locale=${lang}`;
+}
+
+export function urlEntriesForLocalizedNews({ baseUrl, lastmod }) {
+  // Блок hreflang одинаков для всех версий — так и требует протокол:
+  // каждая языковая версия перечисляет ВСЕ, включая саму себя.
+  const hreflang = [
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(baseUrl)}"/>`,
+    ...LANGS.map(
+      (l) =>
+        `    <xhtml:link rel="alternate" hreflang="${l}" href="${escapeXml(newsLocaleUrl(baseUrl, l))}"/>`,
+    ),
+  ].join("\n");
+
+  return LANGS.map((lang) => {
+    const loc = newsLocaleUrl(baseUrl, lang);
+    return `  <url>
+    <loc>${escapeXml(loc)}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>${lang === NEWS_DEFAULT_LANG ? "0.7" : "0.65"}</priority>
+${hreflang}
+  </url>`;
+  }).join("\n");
+}
+
 // ─── FETCHERS ────────────────────────────────────────────────────────
 
 // /public/doctor-profile/doctor-details/:id
-// Язык через localStorage — один URL + hreflang
+// Язык выбирается на клиенте — языкового адреса нет, hreflang не пишем.
 async function fetchDoctors() {
   try {
     const db = mongoose.connection.db;
@@ -148,7 +191,7 @@ async function fetchDoctors() {
       .toArray();
 
     return doctors.map((d) =>
-      urlWithHreflang({
+      urlEntry({
         loc: `${FRONTEND_URL}/public/doctor-profile/doctor-details/${d._id}`,
         lastmod: toW3cDate(d.updatedAt),
         changefreq: "weekly",
@@ -161,9 +204,8 @@ async function fetchDoctors() {
   }
 }
 
-// /news/:slug
-// Язык через ?locale= query param — НЕ в path
-// Один URL + hreflang (все языки на один URL)
+// /news/:slug  +  /news/:slug?locale=ru|az|tr|ar
+// Язык ЕСТЬ в адресе (query-параметром) — генерируем 5 записей на новость.
 async function fetchNews() {
   try {
     const db = mongoose.connection.getClient().db(NEWS_DB_NAME);
@@ -176,11 +218,9 @@ async function fetchNews() {
       .toArray();
 
     return items.map((n) =>
-      urlWithHreflang({
-        loc: `${FRONTEND_URL}/news/${encodeURIComponent(n.slug)}`,
+      urlEntriesForLocalizedNews({
+        baseUrl: `${FRONTEND_URL}/news/${encodeURIComponent(n.slug)}`,
         lastmod: toW3cDate(n.updatedAt || n.publishedAt),
-        changefreq: "weekly",
-        priority: "0.7",
       }),
     );
   } catch (err) {
@@ -229,7 +269,7 @@ async function fetchDoctorArticles() {
       .toArray();
 
     return articles.map((a) =>
-      urlWithHreflang({
+      urlEntry({
         loc: `${FRONTEND_URL}/public/doctor-profile/article-detail-for-all/${a._id}`,
         lastmod: toW3cDate(a.updatedAt),
         changefreq: "monthly",
@@ -253,7 +293,7 @@ async function fetchScientificArticles() {
       .toArray();
 
     return articles.map((a) =>
-      urlWithHreflang({
+      urlEntry({
         loc: `${FRONTEND_URL}/public/doctor/article-scientific-detail-for-all/${a._id}`,
         lastmod: toW3cDate(a.updatedAt),
         changefreq: "monthly",
@@ -282,7 +322,7 @@ async function fetchDocsSections() {
     return sections
       .filter((s) => s?.name)
       .map((s) =>
-        urlWithHreflang({
+        urlEntry({
           loc: `${FRONTEND_URL}/docs/${encodeURIComponent(s.name)}`,
           lastmod: toW3cDate(data.generatedAt),
           changefreq: "monthly",
@@ -364,7 +404,7 @@ async function fetchClinicUrls() {
       : [];
 
     const clinicEntries = clinics.map((c) =>
-      urlWithHreflang({
+      urlEntry({
         loc: `${FRONTEND_URL}/clinics/${encodeURIComponent(c.slug)}`,
         lastmod: toW3cDate(c.updatedAt),
         changefreq: "weekly",
@@ -375,7 +415,7 @@ async function fetchClinicUrls() {
     const pageEntries = pages
       .filter((p) => clinicSlugById.has(String(p.clinicId)))
       .map((p) =>
-        urlWithHreflang({
+        urlEntry({
           loc: `${FRONTEND_URL}/clinics/${encodeURIComponent(
             clinicSlugById.get(String(p.clinicId)),
           )}/dp/${encodeURIComponent(p.slug)}`,
@@ -389,7 +429,7 @@ async function fetchClinicUrls() {
       .map((a) => ({ a, page: pageById.get(String(a.pageId)) }))
       .filter(({ page }) => page?.clinicSlug && page?.slug)
       .map(({ a, page }) =>
-        urlWithHreflang({
+        urlEntry({
           loc: `${FRONTEND_URL}/clinics/${encodeURIComponent(
             page.clinicSlug,
           )}/dp/${encodeURIComponent(page.slug)}/articles/${encodeURIComponent(
@@ -413,7 +453,11 @@ async function fetchClinicUrls() {
 }
 
 // ─── BUILD ────────────────────────────────────────────────────────────
-async function buildSitemapXml() {
+// Экспортируется ради IndexNow-job: тот берёт список URL отсюда, а не
+// строит свой. Иначе появился бы второй источник правды о том, какие
+// страницы у нас публичные, и он бы разошёлся с sitemap при первом же
+// новом разделе.
+export async function buildSitemapXml() {
   const [
     doctors,
     news,
@@ -433,7 +477,7 @@ async function buildSitemapXml() {
   ]);
 
   const staticEntries = STATIC_PAGES.map((p) =>
-    urlWithHreflang({
+    urlEntry({
       loc: `${FRONTEND_URL}${p.path}`,
       lastmod: toW3cDate(new Date()),
       changefreq: p.changefreq,
@@ -459,7 +503,7 @@ async function buildSitemapXml() {
     `[sitemap] Built: ${allEntries.length} entries` +
       ` | docs: ${docs.length}` +
       ` | doctors: ${doctors.length}` +
-      ` | news: ${news.length}` +
+      ` | news: ${news.length} (×5 langs)` +
       ` | synthesis: ${synthesis.length} (×6 langs)` +
       ` | doctor-articles: ${doctorArticles.length}` +
       ` | scientific: ${scientificArticles.length}` +
@@ -468,16 +512,33 @@ async function buildSitemapXml() {
       ` | clinic-articles: ${clinicUrls.articles.length}`,
   );
 
-  // Синтез даёт 6 записей на статью, так что общий счётчик растёт быстрее
-  // числа материалов. Перебор лимита — не «чуть хуже индексация», а отказ
-  // разбирать файл целиком, поэтому режем сами и пишем об этом в лог.
-  if (allEntries.length > MAX_URLS) {
+  // Считаем НАСТОЯЩИЕ <url>, а не элементы массива: у синтез-статьи в одном
+  // элементе шесть записей, у новости — пять. Прежний счётчик мерил элементы
+  // и потому занижал объём в разы — предохранитель сработал бы сильно позже
+  // того, как файл перестанет разбираться. Перебор лимита — не «чуть хуже
+  // индексация», а отказ разбирать файл целиком.
+  const countUrls = (entry) => (entry.match(/<url>/g) || []).length;
+  const totalUrls = allEntries.reduce((sum, e) => sum + countUrls(e), 0);
+
+  if (totalUrls > MAX_URLS) {
+    // Режем по границе элемента: половина языковых версий без остальных —
+    // это битая hreflang-разметка, она хуже, чем их отсутствие.
+    const kept = [];
+    let running = 0;
+    for (const entry of allEntries) {
+      const n = countUrls(entry);
+      if (running + n > MAX_URLS) break;
+      kept.push(entry);
+      running += n;
+    }
     console.error(
-      `[sitemap] ВНИМАНИЕ: ${allEntries.length} URL при лимите ${MAX_URLS} —` +
-        ` хвост (${allEntries.length - MAX_URLS}) обрезан. Пора разбивать` +
+      `[sitemap] ВНИМАНИЕ: ${totalUrls} URL при лимите ${MAX_URLS} —` +
+        ` хвост (${totalUrls - running}) обрезан. Пора разбивать` +
         ` sitemap на несколько файлов с индексом.`,
     );
-    allEntries = allEntries.slice(0, MAX_URLS);
+    allEntries = kept;
+  } else {
+    console.log(`[sitemap] URL в файле: ${totalUrls} (лимит ${MAX_URLS})`);
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -542,6 +603,8 @@ Disallow: /resetpasswordchange
 Disallow: /otpresetpasswordchange
 
 Sitemap: ${FRONTEND_URL}/sitemap.xml
+# Отдельный файл для Google News: там своё окно в 48 часов и свой формат.
+Sitemap: ${FRONTEND_URL}/news-sitemap.xml
 `;
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=86400");
