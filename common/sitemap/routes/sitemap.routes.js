@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   generateSitemap,
+  generateSitemapFile,
   generateRobots,
   invalidateSitemapCache,
 } from "../services/sitemap.service.js";
@@ -13,7 +14,15 @@ import { runIndexNowSubmit } from "../../../jobs/indexnowSubmit.job.js";
 
 const router = Router();
 
+// /sitemap.xml теперь ИНДЕКС, а не список URL: одним файлом он весил
+// 48 МБ при пределе Google в 50 МБ. Дочерние файлы — /sitemap-<секция>.xml.
 router.get("/sitemap.xml", generateSitemap);
+
+// Регулярка, а не "/sitemap-:name.xml": точка в шаблоне path-to-regexp
+// разбирается неочевидно, и имя секции с дефисом (doctor-articles) в такой
+// записи легко режется не там. Здесь границы заданы явно.
+router.get(/^\/sitemap-([a-z0-9-]+)\.xml$/, generateSitemapFile);
+
 router.get("/robots.txt", generateRobots);
 
 // Каналы распространения. Отдаются с корня домена, потому что и

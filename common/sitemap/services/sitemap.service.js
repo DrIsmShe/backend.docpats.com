@@ -20,12 +20,15 @@ const NEWS_DB_NAME = process.env.NEWS_DB_NAME || "DOCPATS_AI_NEWS";
 
 const LANGS = ["ru", "en", "az", "tr", "ar"];
 
-// Лимит протокола sitemap — 50 000 URL на файл. Упрёмся — понадобится
-// sitemap index; до тех пор громко пишем в лог, а не молча теряем хвост.
-const MAX_URLS = 50000;
+// Пределы протокола: 50 000 URL И 50 МБ на файл. Уперлись мы во ВТОРОЙ,
+// а сторожили первый — подробности у buildSitemapSet ниже. Границы здесь
+// с запасом: лишний файл в индексе не стоит ничего, а перебор означает,
+// что Google отказывается разбирать файл целиком.
+const MAX_URLS_PER_FILE = 10000;
+const MAX_BYTES_PER_FILE = 8 * 1024 * 1024;
 
-// Кэш 1 час
-let cache = { xml: null, builtAt: 0 };
+// Кэш 1 час. Держим весь набор: индекс + дочерние файлы по именам.
+let cache = { index: null, files: null, builtAt: 0 };
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 // ─── Статические страницы ─────────────────────────────────────────────
@@ -453,11 +456,75 @@ async function fetchClinicUrls() {
 }
 
 // ─── BUILD ────────────────────────────────────────────────────────────
-// Экспортируется ради IndexNow-job: тот берёт список URL отсюда, а не
-// строит свой. Иначе появился бы второй источник правды о том, какие
-// страницы у нас публичные, и он бы разошёлся с sitemap при первом же
-// новом разделе.
-export async function buildSitemapXml() {
+//
+// Sitemap разбит на несколько файлов с индексом, и это не «на вырост».
+// Одним файлом он весил 48 МБ при жёстком пределе Google в 50 МБ: записи
+// с hreflang тяжёлые (в среднем 1,6 КБ на URL), а новостной движок даёт
+// около полусотни материалов в сутки, то есть по пять записей на каждый.
+// Запаса оставалось на несколько дней, после чего Google отказался бы
+// разбирать файл ЦЕЛИКОМ — потерялся бы не прирост, а вся индексация
+// через sitemap.
+//
+// Прежний предохранитель сторожил не ту величину: считал количество URL
+// (лимит 50 000 при фактических 30 627) и про вес не знал ничего. По
+// числу записей до предела было далеко, по весу — четыре дня.
+
+const URLSET_HEAD = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="
+    http://www.sitemaps.org/schemas/sitemap/0.9
+    http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+`;
+const URLSET_TAIL = `
+</urlset>`;
+
+function countUrls(entry) {
+  return (entry.match(/<url>/g) || []).length;
+}
+
+function urlsetXml(entries) {
+  return URLSET_HEAD + entries.join("\n") + URLSET_TAIL;
+}
+
+// Разложить записи секции по файлам. Элемент НЕ делим: у новости внутри
+// пять языковых версий, у синтез-статьи шесть, и половина набора без
+// остальных — это битая hreflang-разметка, хуже, чем её отсутствие.
+export function chunkEntries(entries) {
+  const overhead =
+    Buffer.byteLength(URLSET_HEAD, "utf8") + Buffer.byteLength(URLSET_TAIL, "utf8");
+  const chunks = [];
+  let cur = [];
+  let curUrls = 0;
+  let curBytes = overhead;
+
+  for (const entry of entries) {
+    const urls = countUrls(entry);
+    const bytes = Buffer.byteLength(entry, "utf8") + 1; // +1 на перевод строки
+
+    if (cur.length && (curUrls + urls > MAX_URLS_PER_FILE || curBytes + bytes > MAX_BYTES_PER_FILE)) {
+      chunks.push(cur);
+      cur = [];
+      curUrls = 0;
+      curBytes = overhead;
+    }
+
+    cur.push(entry);
+    curUrls += urls;
+    curBytes += bytes;
+  }
+
+  if (cur.length) chunks.push(cur);
+  return chunks;
+}
+
+// Секции — по источникам. Разделение не косметическое: новости растут
+// быстрее всего, и держать их отдельно значит, что при их разбухании
+// перестраиваются только их файлы, а адреса врачей и клиник остаются
+// прежними — Google не перечитывает то, что не менялось.
+async function collectSections() {
   const [
     doctors,
     news,
@@ -485,94 +552,154 @@ export async function buildSitemapXml() {
     }),
   );
 
-  // synthesis уже возвращает строки с XML
-  let allEntries = [
-    ...staticEntries,
-    ...docs,
-    ...doctors,
-    ...news,
-    ...synthesis,
-    ...doctorArticles,
-    ...scientificArticles,
-    ...clinicUrls.clinics,
-    ...clinicUrls.pages,
-    ...clinicUrls.articles,
+  return [
+    { name: "static", entries: staticEntries },
+    { name: "docs", entries: docs },
+    { name: "doctors", entries: doctors },
+    { name: "news", entries: news },
+    { name: "articles", entries: synthesis },
+    { name: "doctor-articles", entries: doctorArticles },
+    { name: "scientific", entries: scientificArticles },
+    {
+      name: "clinics",
+      entries: [
+        ...clinicUrls.clinics,
+        ...clinicUrls.pages,
+        ...clinicUrls.articles,
+      ],
+    },
   ];
+}
 
-  console.log(
-    `[sitemap] Built: ${allEntries.length} entries` +
-      ` | docs: ${docs.length}` +
-      ` | doctors: ${doctors.length}` +
-      ` | news: ${news.length} (×5 langs)` +
-      ` | synthesis: ${synthesis.length} (×6 langs)` +
-      ` | doctor-articles: ${doctorArticles.length}` +
-      ` | scientific: ${scientificArticles.length}` +
-      ` | clinics: ${clinicUrls.clinics.length}` +
-      ` | clinic-pages: ${clinicUrls.pages.length}` +
-      ` | clinic-articles: ${clinicUrls.articles.length}`,
-  );
+/**
+ * Собрать индекс и все дочерние файлы.
+ * @returns {Promise<{index: string, files: Map<string, string>}>}
+ */
+export async function buildSitemapSet() {
+  const sections = await collectSections();
+  const files = new Map();
+  const lastmod = toW3cDate(new Date());
+  let totalUrls = 0;
 
-  // Считаем НАСТОЯЩИЕ <url>, а не элементы массива: у синтез-статьи в одном
-  // элементе шесть записей, у новости — пять. Прежний счётчик мерил элементы
-  // и потому занижал объём в разы — предохранитель сработал бы сильно позже
-  // того, как файл перестанет разбираться. Перебор лимита — не «чуть хуже
-  // индексация», а отказ разбирать файл целиком.
-  const countUrls = (entry) => (entry.match(/<url>/g) || []).length;
-  const totalUrls = allEntries.reduce((sum, e) => sum + countUrls(e), 0);
+  for (const section of sections) {
+    // Пустую секцию в индекс не пишем: ссылка на файл с нулём URL — это
+    // ошибка в Search Console, а не «пока пусто».
+    if (!section.entries.length) continue;
 
-  if (totalUrls > MAX_URLS) {
-    // Режем по границе элемента: половина языковых версий без остальных —
-    // это битая hreflang-разметка, она хуже, чем их отсутствие.
-    const kept = [];
-    let running = 0;
-    for (const entry of allEntries) {
-      const n = countUrls(entry);
-      if (running + n > MAX_URLS) break;
-      kept.push(entry);
-      running += n;
-    }
-    console.error(
-      `[sitemap] ВНИМАНИЕ: ${totalUrls} URL при лимите ${MAX_URLS} —` +
-        ` хвост (${totalUrls - running}) обрезан. Пора разбивать` +
-        ` sitemap на несколько файлов с индексом.`,
-    );
-    allEntries = kept;
-  } else {
-    console.log(`[sitemap] URL в файле: ${totalUrls} (лимит ${MAX_URLS})`);
+    const chunks = chunkEntries(section.entries);
+    chunks.forEach((chunk, i) => {
+      const name =
+        chunks.length === 1 ? section.name : `${section.name}-${i + 1}`;
+      files.set(name, urlsetXml(chunk));
+      totalUrls += chunk.reduce((sum, e) => sum + countUrls(e), 0);
+    });
   }
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset
-  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-  xmlns:xhtml="http://www.w3.org/1999/xhtml"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="
-    http://www.sitemaps.org/schemas/sitemap/0.9
-    http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-${allEntries.join("\n")}
-</urlset>`;
+  const index = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${[...files.keys()]
+  .map(
+    (n) => `  <sitemap>
+    <loc>${escapeXml(`${FRONTEND_URL}/sitemap-${n}.xml`)}</loc>
+    <lastmod>${lastmod}</lastmod>
+  </sitemap>`,
+  )
+  .join("\n")}
+</sitemapindex>`;
+
+  const sizes = [...files.values()].map((x) => Buffer.byteLength(x, "utf8"));
+  const biggest = sizes.length ? Math.max(...sizes) : 0;
+  console.log(
+    `[sitemap] индекс: ${files.size} файлов, ${totalUrls} URL,` +
+      ` самый большой ${(biggest / 1048576).toFixed(2)} МБ` +
+      ` (предел файла ${(MAX_BYTES_PER_FILE / 1048576).toFixed(0)} МБ / ${MAX_URLS_PER_FILE} URL)`,
+  );
+
+  return { index, files };
+}
+
+/** Набор из кэша; собирает заново, если кэш протух. */
+async function getSitemapSet() {
+  const now = Date.now();
+  if (cache.index && now - cache.builtAt < CACHE_TTL_MS) {
+    return { set: cache, hit: true };
+  }
+  const built = await buildSitemapSet();
+  cache = { index: built.index, files: built.files, builtAt: now };
+  return { set: cache, hit: false };
+}
+
+/**
+ * Все публичные URL парами {loc, lastmod} — для IndexNow-job.
+ *
+ * Разбор живёт здесь, а не в job: формат XML знает этот модуль, и
+ * второй разборщик в другом файле разошёлся бы с ним при первой же
+ * правке разметки.
+ */
+export async function collectAllUrlPairs() {
+  const { set } = await getSitemapSet();
+  const pairs = [];
+
+  for (const xml of set.files.values()) {
+    // Поблочно: в одном <url> ровно один <loc>, а вот <xhtml:link href=...>
+    // внутри тоже содержит адреса — их брать нельзя, иначе один URL уедет
+    // в отправку по шесть раз.
+    const blocks = xml.match(/<url>[\s\S]*?<\/url>/g) || [];
+    for (const block of blocks) {
+      const loc = block.match(/<loc>([^<]+)<\/loc>/)?.[1];
+      if (!loc) continue;
+      const lastmod = block.match(/<lastmod>([^<]+)<\/lastmod>/)?.[1] || "";
+      pairs.push({ loc: unescapeXml(loc), lastmod });
+    }
+  }
+
+  return pairs;
+}
+
+function unescapeXml(s) {
+  return String(s)
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&"); // последним: иначе &amp;lt; развернётся дважды
 }
 
 // ─── CONTROLLERS ─────────────────────────────────────────────────────
+
+/** GET /sitemap.xml — теперь ИНДЕКС, а не список URL. */
 export async function generateSitemap(req, res) {
   try {
-    const now = Date.now();
-    if (cache.xml && now - cache.builtAt < CACHE_TTL_MS) {
-      res.setHeader("Content-Type", "application/xml; charset=utf-8");
-      res.setHeader("X-Sitemap-Cache", "HIT");
-      return res.send(cache.xml);
-    }
+    const { set, hit } = await getSitemapSet();
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.setHeader("X-Sitemap-Cache", hit ? "HIT" : "MISS");
+    return res.send(set.index);
+  } catch (err) {
+    console.error("[sitemap] error:", err);
+    return res.status(500).json({ error: "Sitemap generation failed" });
+  }
+}
 
-    const xml = await buildSitemapXml();
-    cache = { xml, builtAt: now };
+/** GET /sitemap-<секция>.xml — дочерний файл индекса. */
+export async function generateSitemapFile(req, res) {
+  try {
+    const name = req.params.name || req.params[0];
+    const { set, hit } = await getSitemapSet();
+    const xml = set.files.get(name);
+
+    // 404, а не пустой urlset: пустой файл Search Console показывает как
+    // успешно обработанный с нулём страниц, и опечатку в имени невозможно
+    // заметить.
+    if (!xml) return res.status(404).json({ error: "Unknown sitemap section" });
 
     res.setHeader("Content-Type", "application/xml; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=3600");
-    res.setHeader("X-Sitemap-Cache", "MISS");
+    res.setHeader("X-Sitemap-Cache", hit ? "HIT" : "MISS");
     return res.send(xml);
   } catch (err) {
-    console.error("[sitemap] error:", err);
-    res.status(500).json({ error: "Sitemap generation failed" });
+    console.error("[sitemap] file error:", err);
+    return res.status(500).json({ error: "Sitemap generation failed" });
   }
 }
 
@@ -612,6 +739,6 @@ Sitemap: ${FRONTEND_URL}/news-sitemap.xml
 }
 
 export function invalidateSitemapCache() {
-  cache = { xml: null, builtAt: 0 };
+  cache = { index: null, files: null, builtAt: 0 };
   console.log("[sitemap] Cache invalidated");
 }

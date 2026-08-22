@@ -11,14 +11,16 @@
 //   сравнивает полный список публичных URL с уже отправленными и потому
 //   ловит любой источник, включая те, которых ещё нет.
 //
-//   Источник URL — тот же buildSitemapXml(), что отдаёт /sitemap.xml.
-//   Второй список публичных страниц завёл бы вторую правду.
+//   Источник URL — тот же набор, что отдаёт /sitemap.xml (теперь это
+//   индекс из нескольких файлов). Второй список публичных страниц завёл
+//   бы вторую правду; разбор XML живёт в самом sitemap-сервисе, который
+//   этот формат и порождает.
 //
 //   Без INDEXNOW_KEY job не регистрируется вовсе.
 // ─────────────────────────────────────────────────────────────────────
 
 import cron from "node-cron";
-import { buildSitemapXml } from "../common/sitemap/services/sitemap.service.js";
+import { collectAllUrlPairs } from "../common/sitemap/services/sitemap.service.js";
 import SeoSubmission from "../common/models/Seo/seoSubmission.js";
 import {
   submitUrls,
@@ -37,36 +39,10 @@ const MAX_PER_RUN = 2000;
 
 const CRON = process.env.INDEXNOW_CRON || "20 * * * *";
 
-/** Вытащить пары {loc, lastmod} из sitemap-XML. */
-function parseSitemap(xml) {
-  const out = [];
-  // Разбираем поблочно: в одном <url> ровно один <loc> и один <lastmod>,
-  // а вот <xhtml:link href=...> внутри тоже содержит адреса — их брать
-  // нельзя, иначе один URL уедет в отправку по шесть раз.
-  const blocks = xml.match(/<url>[\s\S]*?<\/url>/g) || [];
-  for (const block of blocks) {
-    const loc = block.match(/<loc>([^<]+)<\/loc>/)?.[1];
-    if (!loc) continue;
-    const lastmod = block.match(/<lastmod>([^<]+)<\/lastmod>/)?.[1] || "";
-    out.push({ loc: decodeXml(loc), lastmod });
-  }
-  return out;
-}
-
-function decodeXml(s) {
-  return String(s)
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
-}
-
 export async function runIndexNowSubmit() {
   if (!indexNowEnabled()) return { skipped: "no-key" };
 
-  const xml = await buildSitemapXml();
-  const entries = parseSitemap(xml);
+  const entries = await collectAllUrlPairs();
   if (entries.length === 0) return { candidates: 0, sent: 0 };
 
   // Одним запросом достаём всё, что уже отправляли: по URL, а не по
