@@ -17,8 +17,8 @@ export const addDoctorToMyDoctors = async (req, res) => {
     }
 
     const doctorId = profile.userId; // Берём userId через профиль
-    const patient = await User.findById(patientId);
-    const doctor = await User.findById(doctorId);
+    const patient = await User.findById(patientId).select("_id").lean();
+    const doctor = await User.findById(doctorId).select("_id role").lean();
 
     if (!patient || !doctor || doctor.role !== "doctor") {
       return res
@@ -26,18 +26,45 @@ export const addDoctorToMyDoctors = async (req, res) => {
         .json({ success: false, message: "Пациент или доктор не найден." });
     }
 
-    if (!Array.isArray(patient.myDoctors)) {
-      patient.myDoctors = [];
-    }
+    // Добавляем ОДНИМ атомарным обновлением, а не load-modify-save.
+    //
+    // Здесь было два дефекта, и оба лечатся этой заменой.
+    //
+    // 1. patient.save() запускает валидацию ВСЕГО документа пользователя, а в
+    //    схеме обязательны emailHash, firstNameHash, lastNameHash и password.
+    //    У аккаунта, заведённого до появления любого из них, сохранение падало
+    //    на валидации — и падало на добавлении врача, к которому эти поля
+    //    отношения не имеют. Наружу это выглядело как «Ошибка сервера при
+    //    добавлении доктора»: общая ветка catch.
+    //
+    // 2. myDoctors.includes(doctor._id) сравнивает ObjectId ПО ССЫЛКЕ, а не по
+    //    значению, поэтому «уже добавлен» не срабатывало никогда и список
+    //    молча копил дубликаты. $addToSet сравнивает по значению.
+    // Проверка «уже добавлен» — ЗАПРОСОМ, а не по результату обновления.
+    // modifiedCount для этого не годится: схема с timestamps обновляет
+    // updatedAt при каждом updateOne, и «изменено: 1» приходит даже когда
+    // множество не поменялось.
+    const already = await User.exists({
+      _id: patientId,
+      myDoctors: doctor._id,
+    });
 
-    if (patient.myDoctors.includes(doctor._id)) {
+    if (already) {
       return res
         .status(400)
         .json({ success: false, message: "Доктор уже добавлен." });
     }
 
-    patient.myDoctors.push(doctor._id);
-    await patient.save();
+    const result = await User.updateOne(
+      { _id: patientId },
+      { $addToSet: { myDoctors: doctor._id } },
+    );
+
+    if (result.matchedCount === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Пациент или доктор не найден." });
+    }
 
     return res.status(200).json({
       success: true,
