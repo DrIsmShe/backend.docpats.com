@@ -100,6 +100,27 @@ export async function listLeads({ clinicId, status, limit, skip } = {}) {
     Lead.countDocuments(filter),
   ]);
 
+  // Заявки на запись ссылаются на врача идентификатором. Менеджеру нужен не
+  // идентификатор, а имя: без него карточка «просились к 69d7b8f1…» нечитаема,
+  // и по ней нельзя ни перезвонить, ни оформить приём.
+  //
+  // Имена берём тем же сборщиком, что и витрина, и только если в выборке
+  // вообще есть заявки на запись — у клиники без витрины лишнего запроса не
+  // будет.
+  const bookings = leads.filter((l) => l.desiredDoctorId);
+  if (bookings.length) {
+    const { buildDoctorList } = await import(
+      "../../clinic-public/clinic-public.service.js"
+    );
+    const doctors = await buildDoctorList(clinicId);
+    const nameById = new Map(
+      doctors.filter((d) => d.id).map((d) => [String(d.id), d.name]),
+    );
+    for (const lead of bookings) {
+      lead.desiredDoctorName = nameById.get(String(lead.desiredDoctorId)) || "";
+    }
+  }
+
   return { leads, total };
 }
 

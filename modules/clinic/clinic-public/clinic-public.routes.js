@@ -3,6 +3,8 @@ import {
   getPublicClinicController,
   getPublicClinicDoctorController,
   getPublicClinicPublicationController,
+  getPublicDoctorSlotsController,
+  createPublicBookingController,
 } from "./clinic-public.controller.js";
 import { getThemePresets } from "./theme-presets.controller.js";
 import { getPublicCustomPageHandler } from "./clinic-public-pages.controller.js";
@@ -13,7 +15,10 @@ import {
 } from "./clinic-public-articles.controller.js";
 import { listCategoryGalleryHandler } from "./clinic-public-gallery.controller.js";
 import { submitLead } from "../clinic-leads/controllers/lead.controller.js";
-import { publicLeadLimiter } from "../../../common/middlewares/rateLimiter.js";
+import {
+  publicLeadLimiter,
+  publicBookingLimiter,
+} from "../../../common/middlewares/rateLimiter.js";
 const router = express.Router();
 // GET /api/v1/public/theme-presets вЂ” СЃР»РѕРІР°СЂРё С‚РµРј РІРёС‚СЂРёРЅС‹ (СЃС‚Р°С‚РёС‡РЅС‹Рµ, РєРµС€РёСЂСѓРµРјС‹Рµ)
 router.get("/theme-presets", getThemePresets);
@@ -23,6 +28,16 @@ router.get("/clinics/:slug", getPublicClinicController);
 // платформы, но по адресу клиники и с проверкой принадлежности ей.
 router.get("/clinics/:slug/doctors/:doctorId", getPublicClinicDoctorController);
 router.get("/clinics/:slug/publications/:id", getPublicClinicPublicationController);
+// Запись с витрины: свободное время врача и заявка на приём.
+router.get(
+  "/clinics/:slug/doctors/:doctorId/slots",
+  getPublicDoctorSlotsController,
+);
+router.post(
+  "/clinics/:slug/doctors/:doctorId/booking",
+  publicBookingLimiter,
+  createPublicBookingController,
+);
 router.get("/clinics/:slug/pages/:pageSlug", getPublicCustomPageHandler);
 // в†’ GET /api/v1/public/clinics/:slug/pages/:pageSlug
 router.get("/clinics/:slug/dp/:pageSlug/articles", listCategoryArticlesHandler);

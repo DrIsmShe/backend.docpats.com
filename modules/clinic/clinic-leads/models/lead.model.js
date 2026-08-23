@@ -21,7 +21,11 @@
 
 import mongoose from "mongoose";
 
-const LEAD_TYPES = ["callback", "message"];
+// "booking" — заявка на запись с витрины: к имени и телефону добавляются
+// желаемые врач и время. НЕ приём: анонимный посетитель не занимает календарь
+// врача, иначе любой скрипт мог бы забить расписание клиники. Клиника видит
+// пожелание в том же входящем списке и оформляет приём сама.
+const LEAD_TYPES = ["callback", "message", "booking"];
 const LEAD_STATUSES = ["new", "in_progress", "closed"];
 const LEAD_SOURCES = ["vitrina"];
 
@@ -41,6 +45,18 @@ const leadSchema = new mongoose.Schema(
     name: { type: String, trim: true, required: true, maxlength: NAME_MAX },
     phone: { type: String, trim: true, required: true, maxlength: PHONE_MAX },
     message: { type: String, trim: true, default: "", maxlength: MESSAGE_MAX },
+
+    // ── Пожелание по записи (только для type: "booking") ──
+    // Врач хранится как DoctorProfile._id — тем же идентификатором, что и на
+    // публичной странице врача, чтобы менеджер видел, к кому именно просились.
+    desiredDoctorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DoctorProfile",
+      default: null,
+    },
+    // Время в UTC. Слот проверяется на свободность в момент подачи заявки, но
+    // к моменту обработки может быть занят — это пожелание, а не бронь.
+    desiredStartUTC: { type: Date, default: null },
 
     type: {
       type: String,

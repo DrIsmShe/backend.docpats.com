@@ -9,6 +9,10 @@
 import { getPublicClinicBySlug } from "./clinic-public.service.js";
 import { getPublicClinicDoctor } from "./clinic-public-doctor.service.js";
 import { getPublicClinicPublication } from "./clinic-public-publication.service.js";
+import {
+  getPublicDoctorSlots,
+  createPublicBooking,
+} from "./clinic-public-booking.service.js";
 
 /**
  * GET /api/v1/public/clinics/:slug
@@ -113,6 +117,84 @@ export async function getPublicClinicPublicationController(req, res) {
       "[clinic-public] getPublicClinicPublication error:",
       err?.message,
     );
+    return res.status(500).json({
+      error: "Internal server error",
+      code: "INTERNAL_ERROR",
+    });
+  }
+}
+
+/**
+ * GET /api/v1/public/clinics/:slug/doctors/:doctorId/slots?from=&to=
+ *
+ * Свободное время врача для витрины. Без авторизации: расписание приёма — не
+ * секрет, ради него страницу врача и открывают.
+ */
+export async function getPublicDoctorSlotsController(req, res) {
+  try {
+    const { slug, doctorId } = req.params;
+    const { from, to } = req.query;
+
+    const slots = await getPublicDoctorSlots(slug, doctorId, { from, to });
+
+    if (!slots) {
+      return res.status(404).json({
+        error: "Doctor not found",
+        code: "CLINIC_DOCTOR_NOT_FOUND",
+      });
+    }
+
+    // Свободное время меняется чаще, чем профиль: минута кэша здесь была бы
+    // обещанием, которое расписание не держит.
+    res.set("Cache-Control", "no-store");
+    return res.status(200).json(slots);
+  } catch (err) {
+    // Ошибки валидации диапазона дат приходят отсюда же — это 400, не 500.
+    if (err?.name === "ValidationError") {
+      return res.status(400).json({ error: err.message, code: "BAD_REQUEST" });
+    }
+    console.error("[clinic-public] getPublicDoctorSlots error:", err?.message);
+    return res.status(500).json({
+      error: "Internal server error",
+      code: "INTERNAL_ERROR",
+    });
+  }
+}
+
+/**
+ * POST /api/v1/public/clinics/:slug/doctors/:doctorId/booking
+ *
+ * Заявка на запись. НЕ приём: анонимный посетитель не занимает календарь
+ * врача — подробности в clinic-public-booking.service.js.
+ */
+export async function createPublicBookingController(req, res) {
+  try {
+    const { slug, doctorId } = req.params;
+
+    const booking = await createPublicBooking(slug, doctorId, req.body || {});
+
+    if (!booking) {
+      return res.status(404).json({
+        error: "Doctor not found",
+        code: "CLINIC_DOCTOR_NOT_FOUND",
+      });
+    }
+
+    return res.status(201).json({ ok: true, ...booking });
+  } catch (err) {
+    if (err?.name === "ValidationError") {
+      return res.status(400).json({ error: err.message, code: "BAD_REQUEST" });
+    }
+    // Слот заняли, пока посетитель заполнял форму — это нормальный ход
+    // событий, а не сбой: отвечаем отдельным кодом, чтобы страница могла
+    // предложить обновить список.
+    if (err?.name === "NotFoundError") {
+      return res.status(409).json({
+        error: "Slot is no longer available",
+        code: "SLOT_TAKEN",
+      });
+    }
+    console.error("[clinic-public] createPublicBooking error:", err?.message);
     return res.status(500).json({
       error: "Internal server error",
       code: "INTERNAL_ERROR",

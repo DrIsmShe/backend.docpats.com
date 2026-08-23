@@ -81,4 +81,23 @@ export const publicLeadLimiter = rateLimit({
   },
 });
 
+/**
+ * Тормоз для ПУБЛИЧНОЙ записи с витрины.
+ *
+ * Заявка на запись — тот же анонимный вход в базу, что и форма обращения, и
+ * так же рассылает уведомления клинике. Порог чуть выше: посетитель может
+ * записаться к двум врачам подряд или переиграть время.
+ */
+export const publicBookingLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipInTests,
+  message: {
+    error: "Too many booking requests. Please try again later.",
+    code: "RATE_LIMITED",
+  },
+});
+
 export default emailLimiter;
