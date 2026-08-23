@@ -159,6 +159,22 @@ export async function updateClinic(clinicId, updates) {
     delete safe.theme;
   }
 
+  // Переводы: пустое значение означает «стереть перевод», а не «сохранить
+  // пустую строку». Иначе язык числился бы заполненным, попадал в hreflang и
+  // показывал посетителю пустое описание вместо оригинала.
+  for (const field of ["descriptionI18n", "sloganI18n"]) {
+    const dict = safe[field];
+    if (!dict || typeof dict !== "object" || Array.isArray(dict)) continue;
+    const cleaned = {};
+    for (const [lang, value] of Object.entries(dict)) {
+      const text = typeof value === "string" ? value.trim() : "";
+      if (text) cleaned[lang] = text;
+    }
+    // Пустой словарь — снимаем поле целиком, а не храним {}.
+    safe[field] = Object.keys(cleaned).length ? cleaned : undefined;
+    if (safe[field] === undefined) delete safe[field];
+  }
+
   // If slug is being changed, ensure uniqueness
   if (safe.slug) {
     const exists = await Clinic.findOne({

@@ -15,11 +15,29 @@ import { getPublicClinicPublication } from "./clinic-public-publication.service.
  * Публичный профиль клиники. Без авторизации.
  * 200 → publicClinicDTO | 404 → не найдено / не опубликовано.
  */
+// Язык запроса: сначала явный ?locale=, потом заголовок интерфейса.
+//
+// Порядок важен из-за КЭША. Ответ кэшируется на минуту, а CDN различает
+// запросы по адресу, не по заголовкам — значит язык, взятый из заголовка,
+// может «прилипнуть» к адресу и приехать чужому посетителю. Поэтому явный
+// параметр главнее, а когда язык пришёл заголовком, отвечаем Vary.
+function resolveLocale(req) {
+  const allowed = ["ru", "en", "az", "tr", "ar"];
+  const fromQuery = String(req.query?.locale || "").trim().toLowerCase();
+  if (allowed.includes(fromQuery)) return { locale: fromQuery, fromHeader: false };
+
+  const fromHeader = String(req.get("X-Language") || "").slice(0, 2).toLowerCase();
+  if (allowed.includes(fromHeader)) return { locale: fromHeader, fromHeader: true };
+
+  return { locale: null, fromHeader: false };
+}
+
 export async function getPublicClinicController(req, res) {
   try {
     const { slug } = req.params;
+    const { locale, fromHeader } = resolveLocale(req);
 
-    const dto = await getPublicClinicBySlug(slug);
+    const dto = await getPublicClinicBySlug(slug, { locale });
 
     if (!dto) {
       return res.status(404).json({
@@ -30,6 +48,7 @@ export async function getPublicClinicController(req, res) {
 
     // Публичная страница — можно кэшировать ненадолго на CDN/браузере
     res.set("Cache-Control", "public, max-age=60");
+    if (fromHeader) res.set("Vary", "X-Language");
     return res.status(200).json(dto);
   } catch (err) {
     // Никакого PHI в публичном эндпоинте — лог безопасен

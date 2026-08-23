@@ -384,6 +384,54 @@ function toPublicLayout(layout) {
   return { blocks };
 }
 
+// Языки, на которых витрина вообще может говорить. Совпадает с локалями
+// интерфейса; расширять здесь и в enum originalLanguage модели.
+export const CLINIC_LANGS = ["ru", "en", "az", "tr", "ar"];
+
+/**
+ * Значение поля на нужном языке.
+ *
+ * Перевода нет — отдаём язык оригинала, а не пустоту: клиника, заполнившая
+ * только русское описание, должна выглядеть одинаково на всех языках, а не
+ * пустой страницей на четырёх из пяти.
+ *
+ * @param {string} base   значение на языке оригинала
+ * @param {Object|Map} i18n словарь переводов (lean отдаёт Map объектом)
+ * @param {string} locale запрошенный язык
+ * @returns {string}
+ */
+export function pickLocalized(base, i18n, locale) {
+  if (!locale) return base || "";
+  const dict =
+    i18n instanceof Map ? Object.fromEntries(i18n) : i18n && typeof i18n === "object" ? i18n : null;
+  const value = dict ? dict[locale] : null;
+  return typeof value === "string" && value.trim() ? value : base || "";
+}
+
+/**
+ * Языки, на которых у клиники ЕСТЬ собственный текст.
+ *
+ * Нужен для hreflang: связывать между собой имеет смысл только реально разные
+ * версии. Перечислять все пять, когда четыре из них показывают один и тот же
+ * русский текст, — это не языковая разметка, а её видимость (та же ошибка, что
+ * когда-то была в карте сайта).
+ */
+export function clinicLanguages(clinic) {
+  const original = clinic?.originalLanguage || "ru";
+  const out = new Set([original]);
+  for (const field of ["descriptionI18n", "sloganI18n"]) {
+    const raw = clinic?.[field];
+    const dict = raw instanceof Map ? Object.fromEntries(raw) : raw;
+    if (!dict || typeof dict !== "object") continue;
+    for (const [lang, value] of Object.entries(dict)) {
+      if (CLINIC_LANGS.includes(lang) && typeof value === "string" && value.trim()) {
+        out.add(lang);
+      }
+    }
+  }
+  return CLINIC_LANGS.filter((l) => out.has(l));
+}
+
 /**
  * Публичный DTO клиники для гостевой страницы /clinic/:slug.
  * Whitelist вручную. Врачи/отзывы/публикации передаются уже собранными.
@@ -405,8 +453,18 @@ export function toPublicClinicDTO(
   departments = [],
   customPages = [],
   services = [],
+  // Опции последним аргументом: позиционных параметров тут и без того семь,
+  // и восьмой по счёту читался бы только по документации.
+  { locale = null } = {},
 ) {
   if (!clinic) return null;
+
+  const languages = clinicLanguages(clinic);
+  // Просят язык, которого у клиники нет → показываем оригинал и честно об
+  // этом сообщаем в language: страница и edge-функция строят по нему canonical.
+  const resolved = locale && languages.includes(locale)
+    ? locale
+    : clinic.originalLanguage || "ru";
 
   return {
     // identity
@@ -416,14 +474,18 @@ export function toPublicClinicDTO(
 
     // brand
     logo: clinic.logo || null, // этап B: резолв R2-ключ → CDN
-    description: clinic.description || "",
+    description: pickLocalized(clinic.description, clinic.descriptionI18n, resolved),
+    // Язык, на котором реально отдан текст, и языки, у которых есть свой
+    // перевод — по ним строятся hreflang и переключатель на витрине.
+    language: resolved,
+    availableLanguages: languages,
     gallery: toPublicGallery(clinic.gallery),
 
     // ВИТРИНА 2.0 (V4.1) — brand-поля уровня клиники.
     // Приоритет «клиника > config блока» применяется на фронте (в блоках).
     coverImage: clinic.coverImage || null, // этап загрузки: R2-ключ → CDN
     pageBackground: clinic.pageBackground || null, // фон всей страницы (pageBgStyle:photo)
-    slogan: clinic.slogan || "",
+    slogan: pickLocalized(clinic.slogan, clinic.sloganI18n, resolved),
     callCenterPhone: clinic.callCenterPhone || null,
     callCenterHours: clinic.callCenterHours || "",
     faq: toPublicFaq(clinic.faq),

@@ -153,6 +153,20 @@ export const createClinicSchema = z.object({
   coverImage: z.string().trim().max(1000).nullable().optional(),
   pageBackground: z.string().trim().max(1000).nullable().optional(),
   slogan: z.string().trim().max(200).optional(),
+
+  // ── Переводы витрины ──
+  // Ключи ограничены списком языков: словарь приходит с клиента, и без
+  // проверки ключа туда попало бы что угодно, включая служебные имена.
+  // Пустые значения допускаем и отсеиваем в сервисе — так владелец может
+  // стереть перевод, отправив пустую строку.
+  descriptionI18n: z
+    .record(z.enum(["ru", "en", "az", "tr", "ar"]), z.string().trim().max(5000))
+    .optional(),
+  sloganI18n: z
+    .record(z.enum(["ru", "en", "az", "tr", "ar"]), z.string().trim().max(200))
+    .optional(),
+  originalLanguage: z.enum(["ru", "en", "az", "tr", "ar"]).optional(),
+
   callCenterPhone: z.string().trim().max(40).optional(),
   callCenterHours: z.string().trim().max(120).optional(),
   faq: z

@@ -130,7 +130,10 @@ router.get(
 
     const clinic = await Clinic.findById(clinicId)
       .select(
-        "name slug tier timezone defaultCurrency defaultLanguage supportedLanguages isVerified description isPublished logo gallery theme layout coverImage slogan callCenterPhone callCenterHours faq pageBackground",
+        // descriptionI18n/sloganI18n/originalLanguage — переводы витрины: без них
+        // редактор языков в кабинете открывался бы пустым и стирал бы уже
+        // введённые переводы при первом же сохранении.
+        "name slug tier timezone defaultCurrency defaultLanguage supportedLanguages isVerified description descriptionI18n sloganI18n originalLanguage isPublished logo gallery theme layout coverImage slogan callCenterPhone callCenterHours faq pageBackground",
       )
       .lean();
 

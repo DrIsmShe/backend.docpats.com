@@ -311,7 +311,7 @@ export async function findPublishedClinicBySlug(slug) {
  * @param {string} slug
  * @returns {Promise<Object|null>} publicClinicDTO или null (не найдено/не опубликовано)
  */
-export async function getPublicClinicBySlug(slug) {
+export async function getPublicClinicBySlug(slug, { locale = null } = {}) {
   if (!slug || typeof slug !== "string") return null;
   const normalized = slug.trim().toLowerCase();
   if (!normalized) return null;
@@ -349,6 +349,7 @@ export async function getPublicClinicBySlug(slug) {
     departments,
     customPages,
     services,
+    { locale }
   );
 }
 
