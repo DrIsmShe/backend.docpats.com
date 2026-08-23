@@ -1,6 +1,5 @@
 import Comment from "../../../common/models/Comments/CommentDocpats.js";
 import Article from "../../../common/models/Articles/articles.js";
-import Notification from ".././../../common/models/Notification/notification.js";
 import User from "../../../common/models/Auth/users.js";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { eventBus } from "../../notifications/events/eventBus.js";
@@ -83,25 +82,15 @@ const addCommentDoctor = async (req, res) => {
       }
     }
 
-    // 🔹 Создаём уведомление врачу
+    // 🔹 Уведомление врачу — ОДНО, через eventBus.
+    //
+    // Здесь же раньше создавалась вторая запись напрямую: на один комментарий
+    // врач получал два уведомления. У прямой записи не было ссылки (а поле
+    // relatedArticleId в схеме Notification вообще отсутствует, то есть
+    // молча терялось), зато был текст «комментарий к вашему профилю» — хотя
+    // комментируют СТАТЬЮ. Оставляем один путь: обработчик события и пишет
+    // запись, и выбирает адрес, и формулирует текст по типу цели.
     if (doctorUserId && doctorUserId !== userId.toString()) {
-      const notificationText = `Пациент ${patient?.lastName || ""} ${
-        patient?.firstName || ""
-      } оставил комментарий к вашему профилю.`;
-
-      const newNotification = new Notification({
-        userId: doctorUserId,
-        senderId: userId,
-        type: "doctorProfile.commented",
-        title: "Новый комментарий к вашему профилю",
-        message: notificationText,
-        relatedArticleId: articleId,
-        isRead: false,
-      });
-
-      await newNotification.save();
-
-      // 🔹 Отправляем уведомление через eventBus (в реальном времени)
       eventBus.emit("doctorProfile.commented", {
         doctorUserId,
         doctorName: doctorFullName,

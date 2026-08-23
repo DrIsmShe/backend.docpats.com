@@ -94,6 +94,7 @@ class EventBus extends EventEmitter {
         doctorName,
         commentId,
         articleId,
+        articleTitle,
         doctorProfileId,
       }) => {
         try {
@@ -122,12 +123,25 @@ class EventBus extends EventEmitter {
               : null;
           }
 
+          // Текст по типу цели. Событие приходит и с комментарием к профилю
+          // врача, и с комментарием к его статье; раньше во втором случае
+          // человеку всё равно сообщали «комментарий к вашему профилю», и
+          // найти этот комментарий по такому описанию было негде.
+          const title = articleId
+            ? "Новый комментарий к вашей статье"
+            : "Новый комментарий к вашему профилю";
+          const message = articleId
+            ? `${patientName} оставил комментарий к статье${
+                articleTitle ? ` «${articleTitle}»` : ""
+              }.`
+            : `${patientName} оставил комментарий к вашему профилю.`;
+
           const n = await Notification.create({
             userId: doctorUserId,
             senderId: patientId,
             type: "doctorProfile.commented",
-            title: "Новый комментарий к вашему профилю",
-            message: `${patientName} оставил комментарий к вашему профилю.`,
+            title,
+            message,
             // Без адреса уведомление остаётся некликабельным — это лучше, чем
             // ссылка в 404: NotificationBell переходит только при наличии link.
             link,
