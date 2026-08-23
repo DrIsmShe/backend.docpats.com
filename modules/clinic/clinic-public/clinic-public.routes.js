@@ -1,5 +1,9 @@
 import express from "express";
-import { getPublicClinicController } from "./clinic-public.controller.js";
+import {
+  getPublicClinicController,
+  getPublicClinicDoctorController,
+  getPublicClinicPublicationController,
+} from "./clinic-public.controller.js";
 import { getThemePresets } from "./theme-presets.controller.js";
 import { getPublicCustomPageHandler } from "./clinic-public-pages.controller.js";
 import {
@@ -14,6 +18,10 @@ const router = express.Router();
 router.get("/theme-presets", getThemePresets);
 // GET /api/v1/public/clinics/:slug
 router.get("/clinics/:slug", getPublicClinicController);
+// Врач и публикация ВНУТРИ витрины: те же данные, что на страницах
+// платформы, но по адресу клиники и с проверкой принадлежности ей.
+router.get("/clinics/:slug/doctors/:doctorId", getPublicClinicDoctorController);
+router.get("/clinics/:slug/publications/:id", getPublicClinicPublicationController);
 router.get("/clinics/:slug/pages/:pageSlug", getPublicCustomPageHandler);
 // в†’ GET /api/v1/public/clinics/:slug/pages/:pageSlug
 router.get("/clinics/:slug/dp/:pageSlug/articles", listCategoryArticlesHandler);

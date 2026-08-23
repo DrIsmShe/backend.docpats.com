@@ -17,7 +17,9 @@
 
 import Article from "../../../common/models/Articles/articles.js";
 import ArticleScine from "../../../common/models/Articles/articles-scince.js";
+import mongoose from "mongoose";
 import User from "../../../common/models/Auth/users.js";
+import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 
 // Публичные детейл-роуты статей врача (как в NewsList.getItemLink, гость):
 //   мнение   → /public/doctor-profile/article-detail-for-all/:id
@@ -120,4 +122,75 @@ export async function getClinicPublicationsByDoctorIds(
       url: a._kind === "scientific" ? scientificUrl(id) : opinionUrl(id),
     };
   });
+}
+
+/**
+ * Детейл одной публикации врача клиники.
+ *
+ * Ищем в ОБЕИХ коллекциях: адрес витрины (/<slug>/publications/<id>) типа не
+ * несёт, а идентификаторы у мнений и научных статей из разных коллекций и
+ * пересечься не могут. Тип возвращаем в DTO — по нему страница показывает
+ * ярлык и выбирает разметку.
+ *
+ * Гейт по авторству обязателен: без него любая клиника могла бы показать у
+ * себя чужую статью, выдав её за публикацию своего врача.
+ *
+ * @param {Array<string|import("mongoose").Types.ObjectId>} doctorUserIds
+ *        userId врачей клиники (из buildDoctorList)
+ * @param {string} publicationId
+ * @returns {Promise<Object|null>} DTO публикации или null
+ */
+export async function getClinicPublicationDetail(doctorUserIds, publicationId) {
+  if (!publicationId || !mongoose.isValidObjectId(publicationId)) return null;
+
+  const ids = Array.isArray(doctorUserIds) ? doctorUserIds.filter(Boolean) : [];
+  if (!ids.length) return null;
+
+  const where = { _id: publicationId, authorId: { $in: ids }, isPublished: true };
+
+  const [opinion, scientific] = await Promise.all([
+    Article.findOne(where).lean(),
+    ArticleScine.findOne(where).lean(),
+  ]);
+
+  const doc = opinion || scientific;
+  if (!doc) return null;
+
+  const kind = opinion ? "opinion" : "scientific";
+
+  // Автор: имя — как в списке, плюс DoctorProfile._id, чтобы со страницы
+  // публикации можно было вернуться к врачу ВНУТРИ витрины, а не на платформу.
+  const [authorDoc, authorProfile] = await Promise.all([
+    doc.authorId ? User.findById(doc.authorId) : null,
+    doc.authorId
+      ? DoctorProfile.findOne({ userId: doc.authorId }).select("_id").lean()
+      : null,
+  ]);
+
+  return {
+    id: String(doc._id),
+    kind,
+    title: doc.title || "",
+    abstract: doc.abstract || "",
+    // Тело статьи. Санитизация — на клиенте перед вставкой (sanitizeHtml),
+    // как и на остальных страницах со статьями.
+    content: doc.content || "",
+    imageUrl: doc.imageUrl || null,
+    tags: Array.isArray(doc.tags) ? doc.tags : [],
+    // В Article metaDescription объявлен массивом строк, в других местах
+    // приходит строкой — приводим к строке здесь, чтобы страница не гадала.
+    metaDescription: Array.isArray(doc.metaDescription)
+      ? doc.metaDescription.filter(Boolean).join(" ")
+      : doc.metaDescription || "",
+    authors: doc.authors || "",
+    references: doc.references || "",
+    readTime: typeof doc.readTime === "number" ? doc.readTime : 0,
+    views: typeof doc.views === "number" ? doc.views : 0,
+    createdAt: doc.createdAt || null,
+    updatedAt: doc.updatedAt || doc.createdAt || null,
+    author: {
+      name: authorDoc ? publicAuthorName(authorDoc) : "",
+      doctorId: authorProfile?._id ? String(authorProfile._id) : null,
+    },
+  };
 }

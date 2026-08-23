@@ -86,6 +86,11 @@ export function toPublicDoctorDTO(parts = {}) {
         ? experienceYears
         : null,
     role,
+    // id — это DoctorProfile._id. По нему витрина строит собственный адрес
+    // врача (/<slug>/doctors/<id>), чтобы посетитель оставался на сайте
+    // клиники. profileUrl ниже ведёт на страницу ПЛАТФОРМЫ и сохранён для
+    // старых потребителей DTO.
+    id: doctorProfileId ? String(doctorProfileId) : null,
     // ВАЖНО: публичный профиль ищется по doctorProfileId (DoctorProfile._id),
     // НЕ по userId. Эндпоинт /doctor-profile/doctor-detail/:id принимает
     // именно doctorProfileId — иначе "Doctor not found".
@@ -237,6 +242,9 @@ function toPublicPublications(publications) {
     .filter((p) => p && p.id && p.title)
     .map((p) => ({
       id: String(p.id),
+      // Без kind блок витрины помечал ЛЮБУЮ публикацию как «Мнение»: метка и
+      // класс выбираются по этому полю, а страховочный проход его отбрасывал.
+      kind: p.kind === "scientific" ? "scientific" : "opinion",
       title: p.title || "",
       abstract: p.abstract || "",
       imageUrl: p.imageUrl || null,

@@ -120,7 +120,7 @@ function computeExperienceYears(profile) {
  * @param {import("mongoose").Types.ObjectId|string} clinicId
  * @returns {Promise<Array>} массив publicDoctorDTO
  */
-async function buildDoctorList(clinicId) {
+export async function buildDoctorList(clinicId) {
   const publicR2 = process.env.R2_PUBLIC_URL;
 
   // 1. Актуальные членства нужных ролей, только actorType=user
@@ -279,6 +279,31 @@ async function buildCustomPagesList(clinicId) {
     .select("slug title order parentId")
     .sort({ order: 1, createdAt: 1 })
     .lean();
+}
+
+/**
+ * Найти опубликованную клинику по слагу.
+ *
+ * Условия публичности («опубликована И активна И не удалена») повторяются в
+ * каждом гостевом сценарии, и разъехаться им нельзя: любое послабление здесь
+ * открывает наружу скрытую клинику. Новые сервисы витрины идут через этот
+ * хелпер; функции ниже сложились раньше и держат ту же тройку условий у себя —
+ * их можно перевести сюда же отдельной правкой.
+ *
+ * @param {string} slug
+ * @returns {Promise<Object|null>} lean-документ клиники или null
+ */
+export async function findPublishedClinicBySlug(slug) {
+  if (!slug || typeof slug !== "string") return null;
+  const normalized = slug.trim().toLowerCase();
+  if (!normalized) return null;
+
+  // softDelete-плагин сам отфильтрует удалённые клиники
+  return Clinic.findOne({
+    slug: normalized,
+    isPublished: true,
+    isActive: true,
+  }).lean();
 }
 
 /**
