@@ -45,6 +45,10 @@ export const getSingleArticle = async (req, res) => {
         select:
           "username role avatar firstNameEncrypted lastNameEncrypted firstName lastName",
       })
+      // Та же причина, что и в научной статье: без populate категория
+      // уходит клиенту сырым ObjectId и печатается в шапке вместо названия,
+      // а на публичной странице попадает ещё и в og:article:section.
+      .populate({ path: "category", select: "name slug" })
       .exec();
 
     if (!articleDoc) {
