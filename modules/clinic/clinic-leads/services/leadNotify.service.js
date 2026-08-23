@@ -59,7 +59,12 @@ async function sendInAppNotifications(clinicId, lead) {
     type: "clinic_lead",
     title: "Новая заявка с сайта",
     message: `${lead.name} — ${leadTypeLabel(lead.type)}`,
-    link: "/clinic/employee/leads",
+    // Зона ВЛАДЕЛЬЦА, не сотрудника. Получатели этого уведомления отбираются
+    // выше по actorType: "user" — это пользователи DocPats (owner/manager), у
+    // них нет сессии сотрудника. Адрес /clinic/employee/* рендерится layout-ом
+    // в employeeMode, где getEmployeeMe отвечает 401, и авторизованного
+    // человека выбрасывало на форму входа сотрудника.
+    link: "/clinic/leads",
     icon: "bell",
     priority: "normal",
     meta: { leadId: String(lead._id), clinicId: String(clinicId) },
