@@ -343,6 +343,13 @@ async function fetchDocsSections() {
 //   /:slug                                     — сама витрина
 //   /:slug/dp/:pageSlug                        — раздел витрины
 //   /:slug/dp/:pageSlug/articles/:articleSlug  — статья раздела
+//   /:slug/doctors/:doctorProfileId            — врач клиники
+//   /:slug/publications/:articleId             — публикация врача
+//
+// Врач и публикация раньше находились только по ссылкам с витрины. Именно они
+// отвечают на запрос «фамилия врача + город», поэтому заявляем их явно.
+// Врач, работающий в двух опубликованных клиниках, попадёт в карту дважды —
+// это разные страницы разных клиник, у каждой свой canonical на себя.
 //
 // Адреса КОРНЕВЫЕ, без префикса /clinics. Именно корневой адрес кабинет
 // выдаёт директору и объявляет каноническим edge-функция витрины
@@ -354,8 +361,20 @@ async function fetchDocsSections() {
 // Собираем одной функцией: слаг родителя нужен, чтобы построить URL потомка,
 // поэтому идём сверху вниз и переиспользуем уже загруженные карты. Клиника
 // скрыта → её разделы и статьи в sitemap не идут, даже если сами опубликованы.
+// Роли, чьи участники попадают в публичный список врачей клиники. Значение
+// продублировано из clinic-public.service.js намеренно: карта сайта не должна
+// тянуть за собой весь публичный сервис ради одной константы, а разойтись они
+// могут только вместе с самим понятием «врач клиники».
+const PUBLIC_DOCTOR_ROLES = ["doctor", "owner", "admin"];
+
 async function fetchClinicUrls() {
-  const empty = { clinics: [], pages: [], articles: [] };
+  const empty = {
+    clinics: [],
+    pages: [],
+    articles: [],
+    doctors: [],
+    publications: [],
+  };
   try {
     const db = mongoose.connection.db;
 
@@ -451,10 +470,108 @@ async function fetchClinicUrls() {
         }),
       );
 
+    // ─── Врачи клиник и их публикации ───────────────────────────────
+    // Гейт тот же, что у публичного списка витрины: активное членство
+    // подходящей роли, actorType "user" и наличие DoctorProfile. Кого нет в
+    // публичном списке клиники, у того нет и страницы от её имени — значит и
+    // в карте сайта ему делать нечего.
+    const memberships = await db
+      .collection(collectionOf("ClinicMembership", "clinic_memberships"))
+      .find(
+        {
+          clinicId: { $in: clinics.map((c) => c._id) },
+          role: { $in: PUBLIC_DOCTOR_ROLES },
+          actorType: "user",
+          isActive: true,
+          leftAt: null,
+        },
+        { projection: { clinicId: 1, userId: 1 } },
+      )
+      .toArray();
+
+    // userId → слаги клиник, где он состоит (врач может работать в нескольких)
+    const clinicSlugsByUser = new Map();
+    for (const m of memberships) {
+      const slug = clinicSlugById.get(String(m.clinicId));
+      if (!slug || !m.userId) continue;
+      const key = String(m.userId);
+      if (!clinicSlugsByUser.has(key)) clinicSlugsByUser.set(key, new Set());
+      clinicSlugsByUser.get(key).add(slug);
+    }
+
+    const doctorUserIds = [...clinicSlugsByUser.keys()].map(
+      (id) => new mongoose.Types.ObjectId(id),
+    );
+
+    const profiles = doctorUserIds.length
+      ? await db
+          .collection(collectionOf("DoctorProfile", "doctorprofiles"))
+          .find(
+            { userId: { $in: doctorUserIds } },
+            { projection: { _id: 1, userId: 1, updatedAt: 1 } },
+          )
+          .toArray()
+      : [];
+
+    const doctorEntries = [];
+    for (const p of profiles) {
+      const slugs = clinicSlugsByUser.get(String(p.userId));
+      if (!slugs) continue;
+      for (const slug of slugs) {
+        doctorEntries.push(
+          urlEntry({
+            loc: `${FRONTEND_URL}/${encodeURIComponent(slug)}/doctors/${p._id}`,
+            lastmod: toW3cDate(p.updatedAt),
+            changefreq: "monthly",
+            priority: "0.7",
+          }),
+        );
+      }
+    }
+
+    // Публикации: опубликованные статьи этих врачей, оба типа. Тип в адресе
+    // не участвует — страница витрины ищет статью сразу в обеих коллекциях.
+    const [opinions, scientific] = doctorUserIds.length
+      ? await Promise.all([
+          db
+            .collection(collectionOf("Article", "articles"))
+            .find(
+              { authorId: { $in: doctorUserIds }, isPublished: true },
+              { projection: { _id: 1, authorId: 1, updatedAt: 1 } },
+            )
+            .toArray(),
+          db
+            .collection(collectionOf("ArticleScine", "articlescines"))
+            .find(
+              { authorId: { $in: doctorUserIds }, isPublished: true },
+              { projection: { _id: 1, authorId: 1, updatedAt: 1 } },
+            )
+            .toArray(),
+        ])
+      : [[], []];
+
+    const publicationEntries = [];
+    for (const a of [...opinions, ...scientific]) {
+      const slugs = clinicSlugsByUser.get(String(a.authorId));
+      if (!slugs) continue;
+      for (const slug of slugs) {
+        publicationEntries.push(
+          urlEntry({
+            loc: `${FRONTEND_URL}/${encodeURIComponent(slug)}/publications/${a._id}`,
+            lastmod: toW3cDate(a.updatedAt),
+            changefreq: "monthly",
+            priority: "0.65",
+          }),
+        );
+      }
+    }
+
     return {
       clinics: clinicEntries,
       pages: pageEntries,
       articles: articleEntries,
+      doctors: doctorEntries,
+      publications: publicationEntries,
     };
   } catch (err) {
     console.error("[sitemap] fetchClinicUrls:", err.message);
@@ -573,6 +690,8 @@ async function collectSections() {
         ...clinicUrls.clinics,
         ...clinicUrls.pages,
         ...clinicUrls.articles,
+        ...clinicUrls.doctors,
+        ...clinicUrls.publications,
       ],
     },
   ];

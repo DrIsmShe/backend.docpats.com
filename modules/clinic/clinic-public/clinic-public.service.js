@@ -373,7 +373,10 @@ export async function getPublicCustomPage(slug, pageSlug) {
     isPublished: true,
     isActive: true,
   })
-    .select("_id")
+    // name/slug клиники нужны наружу: edge-функция подставляет название
+    // клиники в title и издателя в разметку, и второй запрос за той же
+    // клиникой ей делать незачем.
+    .select("_id name slug")
     .lean();
   if (!clinic) return null;
 
@@ -386,7 +389,10 @@ export async function getPublicCustomPage(slug, pageSlug) {
   }).lean();
   if (!page) return null;
 
-  return toPublicCustomPageDTO(page);
+  return {
+    ...toPublicCustomPageDTO(page),
+    clinic: { name: clinic.name || "", slug: clinic.slug || "" },
+  };
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -407,7 +413,10 @@ async function resolveClinicAndPage(slug, pageSlug) {
     isPublished: true,
     isActive: true,
   })
-    .select("_id")
+    // name/slug клиники нужны наружу: edge-функция подставляет название
+    // клиники в title и издателя в разметку, и второй запрос за той же
+    // клиникой ей делать незачем.
+    .select("_id name slug")
     .lean();
   if (!clinic) return null;
 
@@ -526,7 +535,10 @@ export async function getPublicArticleDetail(slug, pageSlug, articleSlug) {
   }).lean();
   if (!article) return null;
 
-  return toPublicArticleDetail(article, ctx.page);
+  return {
+    ...toPublicArticleDetail(article, ctx.page),
+    clinic: { name: ctx.clinic.name || "", slug: ctx.clinic.slug || "" },
+  };
 }
 
 /**
