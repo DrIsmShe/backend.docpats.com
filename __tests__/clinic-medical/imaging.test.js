@@ -339,7 +339,18 @@ describe("imaging.delete", () => {
     expect(gone).toBeNull();
   });
 
-  it("doctor CANNOT delete (owner-only)", async () => {
+  it("doctor CAN delete a reference record", async () => {
+    // Врач УДАЛЯЕТ справочную запись медкарты.
+    //
+    // Прежде здесь проверялось обратное, и проверка проходила по случайной
+    // причине: матрица медкарты давала врачу ALLERGY.DELETE, а грубый каталог
+    // не давал medical_record.delete — сервис отказывал по грубой проверке.
+    // То есть тест фиксировал ОГРАНИЧЕНИЕ каталога, а не решение о правах.
+    //
+    // Каталог расширен, и теперь работает то, что матрица и описывала:
+    // ошибочно внесённую аллергию врач может убрать. Приём — не может,
+    // ENCOUNTER.DELETE остаётся только у владельца (см. rbac.test.js).
+
     const clinicA = oid();
     const doctorA = oid();
     const patient = fakePatient();
@@ -350,11 +361,11 @@ describe("imaging.delete", () => {
         svc.createImaging({ patient, body: { studyType: "CT" }, images: [] }),
     );
 
-    await expect(
-      runWithTenantContext(
-        makeCtx({ clinicId: clinicA, userId: doctorA, role: "doctor" }),
-        () => svc.deleteImaging({ recordId: created._id }),
-      ),
-    ).rejects.toThrow(/Permission denied.*medical_record\.delete|Forbidden/i);
+    const removed = await runWithTenantContext(
+      makeCtx({ clinicId: clinicA, userId: doctorA, role: "doctor" }),
+      () => svc.deleteImaging({ recordId: created._id }),
+    );
+
+    expect(removed).toBeTruthy();
   });
 });

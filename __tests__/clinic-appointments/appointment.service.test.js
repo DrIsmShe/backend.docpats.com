@@ -296,12 +296,18 @@ describe("createAppointment — happy paths", () => {
 });
 
 describe("createAppointment — role gate", () => {
-  it("doctor cannot create an appointment (ForbiddenError)", async () => {
-    await expect(
-      actAs("doctor", () => createAppointment(validCreatePayload()), {
-        userId: doctorId,
-      }),
-    ).rejects.toBeInstanceOf(ForbiddenError);
+  // Врач ЗАПИСЫВАЕТ. Прежде здесь проверялось обратное: в сервисе лежал свой
+  // набор WRITE_ROLES без врача, хотя каталог прав давал ему appointment RW.
+  // Расхождение сняли в пользу каталога — он единственный источник истины.
+  it("doctor can create an appointment", async () => {
+    const created = await actAs(
+      "doctor",
+      () => createAppointment(validCreatePayload()),
+      { userId: doctorId },
+    );
+
+    expect(created.id).toBeTruthy();
+    expect(created.status).toBe("scheduled");
   });
 
   it("nurse cannot create an appointment", async () => {
@@ -726,21 +732,25 @@ describe("rescheduleAppointment", () => {
     ).rejects.toBeInstanceOf(ConflictError);
   });
 
-  it("doctor cannot reschedule", async () => {
+  // Врач ЗАПИСЫВАЕТ. Прежде здесь проверялось обратное: в сервисе лежал свой
+  // набор WRITE_ROLES без врача, хотя каталог прав давал ему appointment RW.
+  // Расхождение сняли в пользу каталога — он единственный источник истины.
+  it("doctor can reschedule", async () => {
     const created = await actAs("owner", () =>
       createAppointment(validCreatePayload()),
     );
-    await expect(
-      actAs(
-        "doctor",
-        () =>
-          rescheduleAppointment(created.id, {
-            startUTC: isoAt(FAR_FUTURE_DATE, 14, 0),
-            endUTC: isoAt(FAR_FUTURE_DATE, 14, 30),
-          }),
-        { userId: doctorId },
-      ),
-    ).rejects.toBeInstanceOf(ForbiddenError);
+
+    const moved = await actAs(
+      "doctor",
+      () =>
+        rescheduleAppointment(created.id, {
+          startUTC: isoAt(FAR_FUTURE_DATE, 14, 0),
+          endUTC: isoAt(FAR_FUTURE_DATE, 14, 30),
+        }),
+      { userId: doctorId },
+    );
+
+    expect(moved.id).toBe(created.id);
   });
 });
 
@@ -788,23 +798,55 @@ describe("updateAppointmentReason", () => {
     expect(updated.reason).toBeNull();
   });
 
-  it("doctor cannot update reason", async () => {
+  // Врач ЗАПИСЫВАЕТ. Прежде здесь проверялось обратное: в сервисе лежал свой
+  // набор WRITE_ROLES без врача, хотя каталог прав давал ему appointment RW.
+  // Расхождение сняли в пользу каталога — он единственный источник истины.
+  it("doctor can update reason", async () => {
     const created = await actAs("owner", () =>
       createAppointment(validCreatePayload()),
     );
-    await expect(
-      actAs(
-        "doctor",
-        () => updateAppointmentReason(created.id, { reason: "x" }),
-        { userId: doctorId },
-      ),
-    ).rejects.toBeInstanceOf(ForbiddenError);
+
+    const updated = await actAs(
+      "doctor",
+      () => updateAppointmentReason(created.id, { reason: "x" }),
+      { userId: doctorId },
+    );
+
+    expect(updated.reason).toBe("x");
   });
 });
 
 // ════════════════════════════════════════════════════════════════
 //  changeAppointmentStatus — FSM matrix
 // ════════════════════════════════════════════════════════════════
+
+describe("changeAppointmentStatus — врач и чужой приём", () => {
+  // Право записи и право менять статус — разные вещи, и появление первого у
+  // врача не должно было дать ему второе. Административным считается тот, у
+  // кого есть УДАЛЕНИЕ приёма: владелец, администратор, управляющий,
+  // регистратор. Врач к ним не относится.
+  it("врач не меняет статус приёма, который ведёт не он", async () => {
+    const created = await actAs("owner", () =>
+      createAppointment(validCreatePayload()),
+    );
+    const otherDoctorId = new mongoose.Types.ObjectId();
+    await ClinicMembership.create({
+      userId: otherDoctorId,
+      clinicId,
+      role: "doctor",
+      actorType: "user",
+      isActive: true,
+    });
+
+    await expect(
+      actAs(
+        "doctor",
+        () => changeAppointmentStatus(created.id, { status: "checked_in" }),
+        { userId: otherDoctorId },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+});
 
 describe("changeAppointmentStatus — legal transitions", () => {
   it("scheduled → checked_in sets checkedInAt", async () => {

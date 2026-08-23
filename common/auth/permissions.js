@@ -149,9 +149,15 @@ const _basePermissions = {
     [RESOURCES.SERVICE]: FULL,
     [RESOURCES.ANNOUNCEMENT]: FULL,
     [RESOURCES.PATIENT]: FULL,
-    [RESOURCES.MEDICAL_RECORD]: RW,
+    // delete — для справочных записей медкарты (аллергии, хроника,
+    // операции, анамнез, прививки, снимки). Приём этим НЕ удаляется:
+    // маршрут удаления приёма закрыт зернистым гейтом на владельца.
+    [RESOURCES.MEDICAL_RECORD]: FULL,
     [RESOURCES.EXAMINATION_TEMPLATE]: FULL,
-    [RESOURCES.PRESCRIPTION]: RO,
+    // Администратор выписывает, отменяет и закрывает рецепты — так это
+    // описано в матрице медкарты, но права в каталоге не было, и функция
+    // не работала: сервис отказывал по грубой проверке.
+    [RESOURCES.PRESCRIPTION]: RW,
     [RESOURCES.SCHEDULE]: FULL,
     [RESOURCES.APPOINTMENT]: FULL,
     [RESOURCES.QUEUE]: FULL,
@@ -191,6 +197,9 @@ const _basePermissions = {
     [RESOURCES.SERVICE]: RW,
     [RESOURCES.ANNOUNCEMENT]: RW,
     [RESOURCES.PATIENT]: RO,
+    // Чтение медицинских записей. Решение владельца продукта: управляющий
+    // ведёт клинику и должен видеть приёмы. Правка и удаление — нет.
+    [RESOURCES.MEDICAL_RECORD]: RO,
     [RESOURCES.SCHEDULE]: FULL,
     [RESOURCES.APPOINTMENT]: FULL,
     [RESOURCES.QUEUE]: FULL,
@@ -214,7 +223,9 @@ const _basePermissions = {
     [RESOURCES.CONSILIUM]: RW,
     [RESOURCES.TELEMED]: RW,
     [RESOURCES.PATIENT]: RO,
-    [RESOURCES.MEDICAL_RECORD]: RW,
+    // delete — только справочные записи медкарты; приём удаляет владелец
+    // (зернистый гейт ENCOUNTER.DELETE).
+    [RESOURCES.MEDICAL_RECORD]: FULL,
     [RESOURCES.EXAMINATION_TEMPLATE]: RW,
     [RESOURCES.PRESCRIPTION]: RW,
     [RESOURCES.APPOINTMENT]: RW,
@@ -233,6 +244,8 @@ const _basePermissions = {
     [RESOURCES.TELEMED]: RO,
     [RESOURCES.PATIENT]: RO,
     [RESOURCES.MEDICAL_RECORD]: { read: true, write: true, delete: false },
+    // Медсестра видит назначения пациента, но не выписывает их.
+    [RESOURCES.PRESCRIPTION]: RO,
     [RESOURCES.EXAMINATION_TEMPLATE]: RO,
     [RESOURCES.APPOINTMENT]: RO,
     [RESOURCES.QUEUE]: RW,
@@ -249,6 +262,9 @@ const _basePermissions = {
     [RESOURCES.KNOWLEDGE]: RO,
     [RESOURCES.TELEMED]: RW,
     [RESOURCES.PATIENT]: RW,
+    // Список приёмов нужен регистратуре для работы с потоком пациентов.
+    // Только чтение.
+    [RESOURCES.MEDICAL_RECORD]: RO,
     [RESOURCES.APPOINTMENT]: FULL,
     [RESOURCES.SCHEDULE]: RO,
     [RESOURCES.QUEUE]: FULL,
@@ -273,6 +289,9 @@ const _basePermissions = {
   [ROLES.PHARMACIST]: {
     [RESOURCES.PHARMACY]: FULL,
     [RESOURCES.INVENTORY]: { read: true, write: true, delete: false },
+    // Аллергии, хроника, приёмы и анализы — фармацевту они нужны для
+    // проверки взаимодействий и дозировок. Только чтение.
+    [RESOURCES.MEDICAL_RECORD]: RO,
     [RESOURCES.PRESCRIPTION]: { read: true, write: true, delete: false },
     [RESOURCES.SUPPLIER]: RW,
     [RESOURCES.REQUISITION]: { read: true, write: true, delete: false }, // NEW — исполняет заявки

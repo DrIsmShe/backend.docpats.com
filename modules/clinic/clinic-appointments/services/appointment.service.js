@@ -40,6 +40,12 @@ import Clinic from "../../clinic-core/models/clinic.model.js";
 
 import { eventBus, EVENTS } from "../../../../common/events/eventBus.js";
 import {
+  require as requirePerm,
+  can,
+  ACTIONS,
+} from "../../../../common/auth/can.js";
+import { RESOURCES } from "../../../../common/auth/permissions.js";
+import {
   NotFoundError,
   ForbiddenError,
   ConflictError,
@@ -59,23 +65,22 @@ const log = logger.child({ module: "clinic-appointments/service" });
 
 // в”Ђв”Ђв”Ђ Constants в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
-// Roles that can create / reschedule / cancel appointments. Doctors are
-// NOT in this list вЂ” they can only flip status on their own appointments
-// (see STATUS_TRANSITIONS_BY_ROLE below).
-const WRITE_ROLES = new Set(["owner", "admin", "manager", "receptionist"]);
-
-// Roles that can read appointments вЂ” every clinic role.
-const READ_ROLES = new Set([
-  "owner",
-  "admin",
-  "manager",
-  "doctor",
-  "receptionist",
-  "nurse",
-  "accountant",
-  "pharmacist",
-  "marketer",
-]);
+// Права на приёмы берутся из ОБЩЕГО каталога (common/auth/permissions.js),
+// а не из наборов ролей в этом файле.
+//
+// Здесь раньше лежали свои WRITE_ROLES и READ_ROLES, и они РАСХОДИЛИСЬ с
+// каталогом: врачу каталог давал appointment RW, а набор его не включал;
+// бухгалтеру и маркетологу каталог не даёт на приёмы ничего, а набор давал
+// чтение. Два источника истины на один вопрос — и оба уверенно отвечали
+// по-разному.
+//
+// Соответствие каталога прежним наборам:
+//   read   — owner, admin, manager, receptionist, doctor, nurse
+//   write  — те же минус nurse, ПЛЮС doctor (решение владельца продукта)
+//   delete — owner, admin, manager, receptionist = прежний WRITE_ROLES
+//
+// Последнее важно для смены статуса ниже: «административные» роли, которым
+// позволен любой законный переход, — это ровно те, у кого есть delete.
 
 // Status FSM вЂ” directed graph of legal transitions.
 // "scheduled" is reachable only on create (the default); explicit
@@ -113,19 +118,15 @@ function requireActor() {
 }
 
 function requireReadAccess() {
-  const { role } = requireActor();
-  if (!READ_ROLES.has(role)) {
-    throw new ForbiddenError(`Role "${role}" cannot read appointments`);
-  }
+  // requireActor остаётся: он проверяет, что актор вообще есть в контексте.
+  // Право же спрашиваем у каталога — единственного места, где оно записано.
+  requireActor();
+  requirePerm(RESOURCES.APPOINTMENT, ACTIONS.READ);
 }
 
 function requireWriteAccess() {
-  const { role } = requireActor();
-  if (!WRITE_ROLES.has(role)) {
-    throw new ForbiddenError(
-      `Role "${role}" cannot create or modify appointments — write access is limited to ${[...WRITE_ROLES].join("/")}`,
-    );
-  }
+  requireActor();
+  requirePerm(RESOURCES.APPOINTMENT, ACTIONS.WRITE);
 }
 
 // в”Ђв”Ђв”Ђ Membership / participant validation в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
@@ -747,8 +748,12 @@ export async function changeAppointmentStatus(id, input) {
   const isOwnAppointment = String(existing.doctorId) === String(userId);
   const doctorAllowed = new Set(["checked_in", "completed", "no_show"]);
 
-  if (WRITE_ROLES.has(role)) {
-    // owner/admin/receptionist вЂ” anything legal goes
+  // Административные роли — те, у кого есть право удаления приёма: владелец,
+  // администратор, управляющий, регистратор. Врач сюда не попадает даже теперь,
+  // когда у него появилось право записи: создавать и переносить приёмы он
+  // может, а произвольно менять статус чужого — нет.
+  if (can(RESOURCES.APPOINTMENT, ACTIONS.DELETE)) {
+    // owner/admin/manager/receptionist — anything legal goes
   } else if (role === "doctor" && isOwnAppointment) {
     if (!doctorAllowed.has(input.status)) {
       throw new ForbiddenError(
@@ -843,6 +848,22 @@ export async function changeAppointmentStatus(id, input) {
  */
 export async function getBookableSlots(rangeInput) {
   requireReadAccess();
+  return computeBookableSlots(rangeInput);
+}
+
+/**
+ * То же самое БЕЗ проверки прав.
+ *
+ * Нужна публичной записи с витрины: посетитель не имеет ни сессии, ни роли,
+ * и спрашивать у каталога «можно ли ему читать приёмы» бессмысленно — нельзя.
+ * Свободное время врача при этом не секрет: его показывает любой сервис
+ * записи, и именно ради него страница врача и открывается.
+ *
+ * Тенант-контекст (clinicId) всё равно обязателен — по нему скоупятся запросы.
+ * Вызывающий обязан сам проверить, что клиника опубликована, а врач в ней
+ * действительно работает: здесь этих проверок нет.
+ */
+export async function computeBookableSlots(rangeInput) {
   const clinicId = requireClinicId();
   const { computeSlots } = await import("./slot.service.js");
 
