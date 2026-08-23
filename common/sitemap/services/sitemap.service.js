@@ -340,9 +340,16 @@ async function fetchDocsSections() {
 
 // ─── Витрины клиник ──────────────────────────────────────────────────
 // Три уровня публичного контента клиники:
-//   /clinics/:slug                                     — сама витрина
-//   /clinics/:slug/dp/:pageSlug                        — раздел витрины
-//   /clinics/:slug/dp/:pageSlug/articles/:articleSlug  — статья раздела
+//   /:slug                                     — сама витрина
+//   /:slug/dp/:pageSlug                        — раздел витрины
+//   /:slug/dp/:pageSlug/articles/:articleSlug  — статья раздела
+//
+// Адреса КОРНЕВЫЕ, без префикса /clinics. Именно корневой адрес кабинет
+// выдаёт директору и объявляет каноническим edge-функция витрины
+// (client/netlify/edge-functions/seo.js). Старый /clinics/:slug продолжает
+// работать и отдаёт разметку, но canonical с него ведёт на корневой — звать
+// бота картой сайта на неканонический адрес значило бы тратить обход на
+// страницу, которую он всё равно отбросит в пользу другой.
 //
 // Собираем одной функцией: слаг родителя нужен, чтобы построить URL потомка,
 // поэтому идём сверху вниз и переиспользуем уже загруженные карты. Клиника
@@ -408,7 +415,7 @@ async function fetchClinicUrls() {
 
     const clinicEntries = clinics.map((c) =>
       urlEntry({
-        loc: `${FRONTEND_URL}/clinics/${encodeURIComponent(c.slug)}`,
+        loc: `${FRONTEND_URL}/${encodeURIComponent(c.slug)}`,
         lastmod: toW3cDate(c.updatedAt),
         changefreq: "weekly",
         priority: "0.8",
@@ -419,7 +426,7 @@ async function fetchClinicUrls() {
       .filter((p) => clinicSlugById.has(String(p.clinicId)))
       .map((p) =>
         urlEntry({
-          loc: `${FRONTEND_URL}/clinics/${encodeURIComponent(
+          loc: `${FRONTEND_URL}/${encodeURIComponent(
             clinicSlugById.get(String(p.clinicId)),
           )}/dp/${encodeURIComponent(p.slug)}`,
           lastmod: toW3cDate(p.updatedAt),
@@ -433,7 +440,7 @@ async function fetchClinicUrls() {
       .filter(({ page }) => page?.clinicSlug && page?.slug)
       .map(({ a, page }) =>
         urlEntry({
-          loc: `${FRONTEND_URL}/clinics/${encodeURIComponent(
+          loc: `${FRONTEND_URL}/${encodeURIComponent(
             page.clinicSlug,
           )}/dp/${encodeURIComponent(page.slug)}/articles/${encodeURIComponent(
             a.slug,
