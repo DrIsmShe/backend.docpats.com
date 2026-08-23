@@ -13,6 +13,7 @@ import {
 } from "./clinic-public-articles.controller.js";
 import { listCategoryGalleryHandler } from "./clinic-public-gallery.controller.js";
 import { submitLead } from "../clinic-leads/controllers/lead.controller.js";
+import { publicLeadLimiter } from "../../../common/middlewares/rateLimiter.js";
 const router = express.Router();
 // GET /api/v1/public/theme-presets вЂ” СЃР»РѕРІР°СЂРё С‚РµРј РІРёС‚СЂРёРЅС‹ (СЃС‚Р°С‚РёС‡РЅС‹Рµ, РєРµС€РёСЂСѓРµРјС‹Рµ)
 router.get("/theme-presets", getThemePresets);
@@ -36,6 +37,8 @@ router.get(
 );
 router.get("/clinics/:slug/dp/:pageSlug/gallery", listCategoryGalleryHandler);
 // POST /api/v1/public/clinics/:slug/leads — visitor contact form
-router.post("/clinics/:slug/leads", submitLead);
+// Единственный публичный маршрут, который ПИШЕТ в базу, и каждая запись
+// рассылает письмо и уведомления. Лимитер здесь обязателен.
+router.post("/clinics/:slug/leads", publicLeadLimiter, submitLead);
 
 export default router;

@@ -57,4 +57,28 @@ export const commentLimiter = rateLimit({
   message: { error: "Too many actions. Please slow down." },
 });
 
+/**
+ * Тормоз для ПУБЛИЧНОЙ формы заявок с витрины клиники.
+ *
+ * Единственная точка, где аноним пишет в базу. Поля валидируются и обрезаются
+ * в lead.service.js, но каждая принятая заявка порождает письмо на почту
+ * клиники и уведомления владельцу с управляющим — то есть без лимита это не
+ * просто мусор в списке, а усилитель: один скрипт заваливает почту клиники.
+ *
+ * Окно шире, а порог ниже, чем у комментариев: живой посетитель оставляет
+ * заявку один раз, повторно — если ошибся в телефоне. Пять за десять минут
+ * покрывает это с запасом.
+ */
+export const publicLeadLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipInTests,
+  message: {
+    error: "Too many requests. Please try again later.",
+    code: "RATE_LIMITED",
+  },
+});
+
 export default emailLimiter;
