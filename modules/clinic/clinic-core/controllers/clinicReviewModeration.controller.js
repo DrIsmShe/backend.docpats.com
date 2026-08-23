@@ -1,4 +1,5 @@
 import reviewService from "../../clinic-reviews/services/review.service.js";
+import { getClinicPublicFeedback } from "../../clinic-reviews/services/publicFeedback.service.js";
 import { ForbiddenError } from "../../../../common/utils/errors.js";
 import {
   getCurrentClinicId,
@@ -51,4 +52,35 @@ export async function moderateReview(req, res, next) {
   }
 }
 
-export default { listReviews, moderateReview };
+/**
+ * GET /api/v1/clinic/clinics/:id/public-feedback
+ *
+ * Отзывы врачам и комментарии, которые видны на публичных страницах клиники.
+ * Только чтение: сущности принадлежат врачу и общему обсуждению, а не клинике
+ * (подробности — в publicFeedback.service.js). Поэтому и право требуется на
+ * чтение, а не на запись, в отличие от модерации отзывов о клинике.
+ */
+export async function listPublicFeedback(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    if (String(getCurrentClinicId()) !== String(id)) {
+      throw new ForbiddenError("Cannot read another clinic's feedback");
+    }
+    if (!can("review", "read")) {
+      throw new ForbiddenError("review.read permission required");
+    }
+
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : 100;
+    const result = await getClinicPublicFeedback({
+      clinicId: id,
+      limit: Number.isFinite(limit) ? Math.min(limit, 200) : 100,
+    });
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export default { listReviews, moderateReview, listPublicFeedback };
