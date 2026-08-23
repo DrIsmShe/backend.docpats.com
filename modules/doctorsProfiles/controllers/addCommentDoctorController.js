@@ -111,6 +111,9 @@ const addCommentDoctor = async (req, res) => {
         }`.trim(),
         articleTitle: article.title,
         commentId: newComment._id,
+        // Комментарий оставлен к СТАТЬЕ — пусть уведомление и ведёт к ней,
+        // а не на профиль врача: обработчик выбирает адрес по этому полю.
+        articleId,
       });
     }
 

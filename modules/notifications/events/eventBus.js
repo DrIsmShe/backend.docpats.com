@@ -1,6 +1,7 @@
 import EventEmitter from "events";
 import Notification from "../../../common/models/Notification/notification.js";
 import { emitNotification } from "../../../common/realtime/userChannel.js";
+import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 
 // Все обработчики ниже раньше слали realtime через `if (global.io)`. Эта
 // переменная нигде не присваивалась, поэтому ни одно из этих уведомлений в
@@ -92,15 +93,44 @@ class EventBus extends EventEmitter {
         patientName,
         doctorName,
         commentId,
+        articleId,
+        doctorProfileId,
       }) => {
         try {
+          // Прежний адрес /doctor/profile/comments/:id не соответствовал ни
+          // одному маршруту — переход по уведомлению давал 404.
+          //
+          // Ведём туда, где комментарий действительно виден: к статье, если
+          // комментировали её, иначе на публичную страницу врача. Профиль
+          // ищем по userId, только когда его не передали: событие приходит из
+          // двух мест, и не в каждом он под рукой.
+          let link = null;
+          if (articleId) {
+            link = `/public/doctor-profile/article-detail-for-all/${articleId}`;
+          } else {
+            let profileId = doctorProfileId || null;
+            if (!profileId) {
+              const profile = await ProfileDoctor.findOne({
+                userId: doctorUserId,
+              })
+                .select("_id")
+                .lean();
+              profileId = profile?._id ? String(profile._id) : null;
+            }
+            link = profileId
+              ? `/public/doctor-profile/doctor-details/${profileId}`
+              : null;
+          }
+
           const n = await Notification.create({
             userId: doctorUserId,
             senderId: patientId,
             type: "doctorProfile.commented",
             title: "Новый комментарий к вашему профилю",
             message: `${patientName} оставил комментарий к вашему профилю.`,
-            link: `/doctor/profile/comments/${commentId}`,
+            // Без адреса уведомление остаётся некликабельным — это лучше, чем
+            // ссылка в 404: NotificationBell переходит только при наличии link.
+            link,
           });
 
           emitNotification(doctorUserId, n);

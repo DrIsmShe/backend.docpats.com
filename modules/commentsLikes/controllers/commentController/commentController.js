@@ -209,7 +209,10 @@ export const createComment = async (req, res) => {
             message: `${
               decrypted.role === "doctor" ? "Доктор" : "Пациент"
             } ${commenterName} оставил комментарий к вашему профилю.`,
-            link: `/doctor/profile/comments/${comment._id}`,
+            // Публичная страница врача — там комментарий и виден. Прежний
+            // адрес /doctor/profile/comments/:id не соответствует ни одному
+            // маршруту приложения: переход по уведомлению давал 404.
+            link: `/public/doctor-profile/doctor-details/${targetId}`,
             icon: "chat-left-text",
             priority: "normal",
             isRead: false,
@@ -246,7 +249,9 @@ export const createComment = async (req, res) => {
           type: "doctorProfile.commentSent",
           title: "Комментарий отправлен",
           message: `Вы оставили комментарий к профилю доктора ${doctorName}.`,
-          link: `/doctor/profile/${targetId}`,
+          // Тот же публичный адрес врача. Прежний /doctor/profile/:id
+          // маршрута не имеет — уведомление вело в 404.
+          link: `/public/doctor-profile/doctor-details/${targetId}`,
           icon: "send",
           priority: "low",
           isRead: false,
