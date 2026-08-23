@@ -242,6 +242,12 @@ export const SPECIALIZATIONS = [
     category: "Therapeutic Specialties",
     subcategories: [],
   },
+
+  // Аптека. Фармацевт не ведёт приём, но заводит аккаунт на платформе:
+  // аптечный модуль клиники (каталог, выдача, заявки) работает под его
+  // правами. Категория отдельная — к лечебным специальностям он не
+  // относится, а список на регистрации всё равно плоский.
+  { name: "Pharmacist", category: "Pharmacy", subcategories: [] },
   {
     name: "Internal Medicine Doctor",
     category: "Therapeutic Specialties",
