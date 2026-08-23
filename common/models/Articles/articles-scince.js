@@ -97,6 +97,12 @@ articleScineSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
+// Статьи врача. Этот запрос выполняется на КАЖДОЙ загрузке витрины
+// клиники, на странице врача, на странице публикации, в кабинете и при
+// сборке карты сайта: find({ authorId: { $in: [...] }, isPublished: true }).
+// Без индекса это скан всей коллекции, а она растёт вместе с новостным
+// движком. Текстовый индекс ниже такому запросу не помогает.
+articleScineSchema.index({ authorId: 1, isPublished: 1 });
 articleScineSchema.index({ title: "text", content: "text", tags: "text" });
 // Создаем модель только один раз: если уже существует — используем существующую, иначе создаем новую.
 const ArticleScine =
