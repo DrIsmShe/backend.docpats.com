@@ -36,6 +36,11 @@ export function computeRank(xp) {
     index: i,
     minXp: current.minXp,
     nextTitle: next?.title ?? null,
+    // Ключ следующего ранга — чтобы клиент показал его название на своём
+    // языке. title остаётся в ответе как запасной вариант и для тех, кто
+    // читает API напрямую, но подпись в интерфейсе строится по ключу:
+    // сервер не знает, каким языком пользуется читающий.
+    nextKey: next?.key ?? null,
     nextAt: next?.minXp ?? null,
     progress: next ? (xp - current.minXp) / (next.minXp - current.minXp) : 1,
   };
@@ -215,6 +220,7 @@ export async function getLeaderboard({ limit = 20 } = {}) {
     xp: p.xp,
     casesCompleted: p.casesCompleted,
     rank: computeRank(p.xp).title,
+    rankKey: computeRank(p.xp).key,
   }));
 }
 
