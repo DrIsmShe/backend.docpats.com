@@ -20,25 +20,21 @@
 // doctorId берётся ИЗ СЕССИИ и ниоткуда больше: приняв его из тела запроса,
 // мы позволили бы одному врачу занимать расписание другого.
 
-import mongoose from "mongoose";
-import crypto from "crypto";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js";
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import AppointmentAudit from "../../../common/models/Appointment/appointmentAudit.js";
-import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
-import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
-import User, { decrypt } from "../../../common/models/Auth/users.js";
+import { decrypt } from "../../../common/models/Auth/users.js";
+import {
+  resolveBookingPatient,
+  BookingPatientError,
+} from "../../../common/services/bookingPatient.service.js";
 import { notify } from "../../notifications/services/notification.service.js";
 import { recordActionAsync } from "../../audit/services/audit.service.js";
 import {
   buildDaySlots,
   DEFAULT_TZ,
 } from "../../../common/services/daySlots.service.js";
-import {
-  countDoctorPatients,
-  resolvePatientLimit,
-} from "../../../common/middlewares/requireDoctorPatientLimit.js";
 import { DateTime } from "luxon";
 
 const DEFAULT_SLOT_MIN = 20;
@@ -47,22 +43,6 @@ const PAST_GRACE_MS = 5 * 60 * 1000;
 
 function bad(res, message, code = 400, extra = {}) {
   return res.status(code).json({ success: false, message, ...extra });
-}
-
-/** Телефон в цифры: хэш-поиск дублей должен быть устойчив к скобкам и пробелам. */
-function normalizePhone(v) {
-  return String(v || "").replace(/\D/g, "");
-}
-
-/**
- * Blind-index телефона — тот же, что считает сеттер поля phoneEncrypted в
- * модели: нормализованный вид "+<цифры>", sha256 от него в нижнем регистре.
- * Повторён здесь, потому что модель хэш наружу не отдаёт, а искать дубль надо
- * ДО создания документа.
- */
-function phoneHashOf(digits) {
-  if (!digits) return null;
-  return crypto.createHash("sha256").update(`+${digits}`).digest("hex");
 }
 
 export const bookByDoctorController = async (req, res) => {
@@ -165,109 +145,29 @@ export const bookByDoctorController = async (req, res) => {
       return bad(res, "Это время уже занято", 409, { code: "SLOT_TAKEN" });
     }
 
-    // ── Кто пациент ────────────────────────────────────────────────────
+    // ── Кто пациент ──────────────────────────────────────
+    // Три вида пациента сводятся к двум ссылкам — правила общие с
+    // записью на операцию/обследование, поэтому лежат в общем сервисе:
+    // common/services/bookingPatient.service.js.
     let patientId = null;
     let privatePatientId = null;
     let notifyUserId = null; // кому слать уведомление (только аккаунт)
     let patientName = "";
-
-    if (patient.kind === "registered") {
-      if (!mongoose.Types.ObjectId.isValid(patient.id)) {
-        return bad(res, "Не указан пациент");
-      }
-      // В patientId исторически кладут то User._id, то id карты поликлиники —
-      // принимаем оба и запоминаем, кому уходит уведомление.
-      const asUser = await User.findById(patient.id)
-        .select("firstNameEncrypted lastNameEncrypted")
-        .lean();
-      if (asUser) {
-        patientId = asUser._id;
-        notifyUserId = asUser._id;
-        patientName = [
-          decrypt(asUser.firstNameEncrypted),
-          decrypt(asUser.lastNameEncrypted),
-        ]
-          .filter(Boolean)
-          .join(" ");
-      } else {
-        const card = await NewPatientPolyclinic.findById(patient.id)
-          .select("firstNameEncrypted lastNameEncrypted linkedUserId")
-          .lean();
-        if (!card) return bad(res, "Пациент не найден", 404);
-        patientId = card._id;
-        notifyUserId = card.linkedUserId || null;
-        patientName = [
-          decrypt(card.firstNameEncrypted),
-          decrypt(card.lastNameEncrypted),
-        ]
-          .filter(Boolean)
-          .join(" ");
-      }
-    } else if (patient.kind === "private") {
-      if (!mongoose.Types.ObjectId.isValid(patient.id)) {
-        return bad(res, "Не указан пациент");
-      }
-      const card = await DoctorPrivatePatient.findOne({
-        _id: patient.id,
-        doctorProfileId: doctorId,
-      });
-      // Фильтр по doctorProfileId — не украшение: без него врач мог бы
-      // записать чужую карточку и увидеть её имя в своём календаре.
-      if (!card) return bad(res, "Пациент не найден", 404);
-      privatePatientId = card._id;
-      patientName = card.fullName;
-      notifyUserId = card.linkedUserId || null;
-    } else if (patient.kind === "new") {
-      const firstName = String(patient.firstName || "").trim();
-      const lastName = String(patient.lastName || "").trim();
-      if (!firstName || !lastName) {
-        return bad(res, "Укажите имя и фамилию пациента");
-      }
-
-      const phone = normalizePhone(patient.phone);
-
-      // Дубликат по телефону — самая частая ошибка регистратуры: тот же
-      // человек звонит второй раз и заводится заново.
-      if (phone) {
-        const existing = await DoctorPrivatePatient.findOne({
-          doctorProfileId: doctorId,
-          phoneHash: phoneHashOf(phone),
-        });
-        if (existing) {
-          privatePatientId = existing._id;
-          patientName = existing.fullName;
-        }
-      }
-
-      if (!privatePatientId) {
-        const limit = await resolvePatientLimit(userId);
-        if (limit !== -1) {
-          const current = await countDoctorPatients(userId);
-          if (current >= limit) {
-            return bad(
-              res,
-              "Достигнут лимит пациентов по вашему тарифу",
-              403,
-              { code: "PLAN_LIMIT_REACHED", limit, current },
-            );
-          }
-        }
-
-        const card = new DoctorPrivatePatient({
+    try {
+      ({ patientId, privatePatientId, notifyUserId, patientName } =
+        await resolveBookingPatient({
+          patient,
           doctorProfileId: doctorId,
           doctorUserId: userId,
+        }));
+    } catch (err) {
+      if (err instanceof BookingPatientError) {
+        return bad(res, err.message, err.status, {
+          ...(err.code ? { code: err.code } : {}),
+          ...err.extra,
         });
-        // Через виртуалы — они же шифруют и считают blind-index хэши.
-        card.firstName = firstName;
-        card.lastName = lastName;
-        if (phone) card.phoneNumber = phone;
-        await card.save();
-
-        privatePatientId = card._id;
-        patientName = card.fullName;
       }
-    } else {
-      return bad(res, "Не указан тип пациента");
+      throw err;
     }
 
     // ── Создание приёма ────────────────────────────────────────────────
