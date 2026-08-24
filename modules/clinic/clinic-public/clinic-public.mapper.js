@@ -479,6 +479,16 @@ export function toPublicClinicDTO(
     // перевод — по ним строятся hreflang и переключатель на витрине.
     language: resolved,
     availableLanguages: languages,
+    // Язык ОРИГИНАЛА — тот, что отдаётся по голому адресу, без ?locale=.
+    //
+    // Отдаётся наружу потому, что вывести его из availableLanguages нельзя:
+    // clinicLanguages() возвращает языки в фиксированном порядке CLINIC_LANGS
+    // (ru, en, az, tr, ar), а не в порядке значимости. Для клиники с
+    // originalLanguage="az" и переводом на ru первым в списке окажется ru —
+    // и потребитель, берущий languages[0] за оригинал, объявит русской ту
+    // страницу, на которой сервер отдаёт азербайджанский. Именно так и вёл
+    // себя netlify/edge-functions/seo.js, пока это поле не появилось.
+    originalLanguage: clinic.originalLanguage || "ru",
     gallery: toPublicGallery(clinic.gallery),
 
     // ВИТРИНА 2.0 (V4.1) — brand-поля уровня клиники.

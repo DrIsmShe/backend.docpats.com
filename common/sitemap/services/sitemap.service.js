@@ -4,6 +4,10 @@
 
 import mongoose from "mongoose";
 import axios from "axios";
+// Та же функция, что считает языки для публичного DTO и hreflang на самой
+// витрине. Импорт, а не копия: карта сайта, разошедшаяся с разметкой
+// страницы, хуже отсутствия обеих.
+import { clinicLanguages } from "../../../modules/clinic/clinic-public/clinic-public.mapper.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -178,25 +182,191 @@ ${hreflang}
   }).join("\n");
 }
 
+/**
+ * Языковые версии витрины клиники.
+ *
+ * Отличие от новостей — какой адрес считается голым. У новостей это всегда
+ * английская версия, здесь — язык ОРИГИНАЛА конкретной клиники: сервер
+ * отдаёт по адресу без ?locale= именно его (clinic-public.mapper.js,
+ * resolved → clinic.originalLanguage). Захардкодить сюда «ru» значило бы
+ * объявить русской ту страницу, где отдаётся азербайджанский.
+ *
+ * Перечисляются ТОЛЬКО реально переведённые языки: их и возвращает
+ * clinicLanguages(). Пять записей там, где перевода четыре из пяти нет, —
+ * не разметка, а её видимость.
+ */
+export function urlEntriesForLocalizedClinic({
+  base,
+  lastmod,
+  languages,
+  original,
+}) {
+  const urlFor = (lang) =>
+    lang === original ? base : `${base}?locale=${lang}`;
+
+  // Блок hreflang одинаков для всех версий: каждая перечисляет ВСЕ, включая
+  // саму себя. x-default — на оригинал: это то, что получит посетитель,
+  // язык которого нам неизвестен.
+  const hreflang = [
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(base)}"/>`,
+    ...languages.map(
+      (l) =>
+        `    <xhtml:link rel="alternate" hreflang="${l}" href="${escapeXml(urlFor(l))}"/>`,
+    ),
+  ].join("\n");
+
+  return languages
+    .map(
+      (lang) => `  <url>
+    <loc>${escapeXml(urlFor(lang))}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>${lang === original ? "0.8" : "0.75"}</priority>
+${hreflang}
+  </url>`,
+    )
+    .join("\n");
+}
+
+/**
+ * Языки, на которые статья РЕАЛЬНО переведена прямо сейчас.
+ *
+ * Условие взято не с потолка: ровно по нему перевод отдаётся живому
+ * посетителю — modules/translation/translation.repository.js, findTranslation()
+ * ищет с isStale:false и sourceVersion, равной translationVersion статьи.
+ * Перевод устаревший или сделанный с прошлой редакции не отдаётся, значит и
+ * в карте сайта ему не место.
+ *
+ * Почему не «просто все пять языков». Отсутствующий перевод НЕ даёт 404:
+ * translation.service.js ставит задачу в очередь и возвращает оригинал. Пять
+ * адресов подряд означали бы, во-первых, четыре дубля одного текста с
+ * hreflang, который про них врёт, а во-вторых — обход поисковика запускал бы
+ * платный машинный перевод всего корпуса, и расписанием этих трат управлял бы
+ * Google, а не мы.
+ *
+ * @returns {Promise<Map<string, string[]>>} id статьи → языки переводов
+ */
+async function translatedLanguagesByEntity(db, entityType, articles) {
+  const out = new Map();
+  if (!articles.length) return out;
+
+  // Версия у каждой статьи своя, поэтому сверяем пару (id, версия), а не
+  // фильтруем одним значением.
+  const versionById = new Map(
+    articles.map((a) => [String(a._id), a.translationVersion || 0]),
+  );
+
+  const rows = await db
+    .collection(collectionOf("ContentTranslation", "contenttranslations"))
+    .find(
+      {
+        entityType,
+        entityId: { $in: articles.map((a) => a._id) },
+        isStale: false,
+      },
+      { projection: { entityId: 1, language: 1, sourceVersion: 1 } },
+    )
+    .toArray();
+
+  for (const row of rows) {
+    const key = String(row.entityId);
+    if ((row.sourceVersion || 0) !== versionById.get(key)) continue;
+    if (!LANGS.includes(row.language)) continue;
+    if (!out.has(key)) out.set(key, []);
+    out.get(key).push(row.language);
+  }
+
+  return out;
+}
+
+/**
+ * Записи одной статьи: оригинал на голом адресе плюс по адресу на каждый
+ * существующий перевод.
+ *
+ * Параметр — `locale`, как у новостей и витрин. Статьи исторически читали
+ * `lang`, и он остался рабочим (resolveLanguage принимает оба, клиентский
+ * src/lib/language.js — тоже), но в карту сайта пишется одно, каноническое
+ * имя: два адреса одного текста поисковику пришлось бы склеивать самому.
+ */
+function urlEntriesForTranslatedArticle({
+  base,
+  lastmod,
+  original,
+  translated,
+}) {
+  // Оригинал живёт на голом адресе. Перевод на язык оригинала (такое бывает
+  // при смене исходного языка) второго адреса не заводит.
+  const languages = [original, ...translated.filter((l) => l !== original)];
+
+  if (languages.length < 2) {
+    return urlEntry({
+      loc: base,
+      lastmod,
+      changefreq: "monthly",
+      priority: "0.65",
+    });
+  }
+
+  const urlFor = (lang) => (lang === original ? base : `${base}?locale=${lang}`);
+
+  const hreflang = [
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(base)}"/>`,
+    ...languages.map(
+      (l) =>
+        `    <xhtml:link rel="alternate" hreflang="${l}" href="${escapeXml(urlFor(l))}"/>`,
+    ),
+  ].join("\n");
+
+  return languages
+    .map(
+      (lang) => `  <url>
+    <loc>${escapeXml(urlFor(lang))}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>${lang === original ? "0.65" : "0.6"}</priority>
+${hreflang}
+  </url>`,
+    )
+    .join("\n");
+}
+
 // ─── FETCHERS ────────────────────────────────────────────────────────
 
 // /public/doctor-profile/doctor-details/:id
 // Язык выбирается на клиенте — языкового адреса нет, hreflang не пишем.
+//
+// ⚠️ В адресе стоит DoctorProfile._id, а НЕ users._id. Эндпоинт
+// /doctor-profile/doctor-detail/:id делает DoctorProfile.findById(id)
+// (modules/doctorsProfiles/controllers/DoctorDetailController.js), поэтому
+// users._id там даёт 404 «Doctor not found» — то же самое правило уже
+// записано в modules/clinic/clinic-public/clinic-public.mapper.js для витрины.
+// Раньше сюда попадал users._id, и ВСЕ адреса этого файла были битыми.
+// Врач без карточки DoctorProfile в sitemap не попадает: показывать нечего.
 async function fetchDoctors() {
   try {
     const db = mongoose.connection.db;
-    const doctors = await db
-      .collection("users")
+    const doctorUsers = await db
+      .collection(collectionOf("User", "users"))
       .find(
         { isDoctor: true, isBlocked: { $ne: true } },
+        { projection: { _id: 1 } },
+      )
+      .toArray();
+
+    if (!doctorUsers.length) return [];
+
+    const profiles = await db
+      .collection(collectionOf("DoctorProfile", "doctorprofiles"))
+      .find(
+        { userId: { $in: doctorUsers.map((u) => u._id) } },
         { projection: { _id: 1, updatedAt: 1 } },
       )
       .toArray();
 
-    return doctors.map((d) =>
+    return profiles.map((p) =>
       urlEntry({
-        loc: `${FRONTEND_URL}/public/doctor-profile/doctor-details/${d._id}`,
-        lastmod: toW3cDate(d.updatedAt),
+        loc: `${FRONTEND_URL}/public/doctor-profile/doctor-details/${p._id}`,
+        lastmod: toW3cDate(p.updatedAt),
         changefreq: "weekly",
         priority: "0.8",
       }),
@@ -262,21 +432,36 @@ async function fetchSynthesisArticles() {
 }
 
 // /public/doctor-profile/article-detail-for-all/:id
-// Язык через i18n (localStorage) — один URL + hreflang
+//
+// Языковые адреса ЕСТЬ: статья переводится по ?lang=, перевод хранится в
+// ContentTranslation. Раньше здесь стоял один адрес на все языки, и переводы,
+// лежащие в базе, для поиска не существовали.
 async function fetchDoctorArticles() {
   try {
     const db = mongoose.connection.db;
     const articles = await db
       .collection(collectionOf("Article", "articles"))
-      .find({ isPublished: true }, { projection: { _id: 1, updatedAt: 1 } })
+      .find(
+        { isPublished: true },
+        {
+          projection: {
+            _id: 1,
+            updatedAt: 1,
+            originalLanguage: 1,
+            translationVersion: 1,
+          },
+        },
+      )
       .toArray();
 
+    const byId = await translatedLanguagesByEntity(db, "Article", articles);
+
     return articles.map((a) =>
-      urlEntry({
-        loc: `${FRONTEND_URL}/public/doctor-profile/article-detail-for-all/${a._id}`,
+      urlEntriesForTranslatedArticle({
+        base: `${FRONTEND_URL}/public/doctor-profile/article-detail-for-all/${a._id}`,
         lastmod: toW3cDate(a.updatedAt),
-        changefreq: "monthly",
-        priority: "0.65",
+        original: a.originalLanguage || "ru",
+        translated: byId.get(String(a._id)) || [],
       }),
     );
   } catch (err) {
@@ -286,21 +471,33 @@ async function fetchDoctorArticles() {
 }
 
 // /public/doctor/article-scientific-detail-for-all/:id
-// Язык через i18n (localStorage) — один URL + hreflang
+// Переводы — та же механика, что у авторских статей, другой entityType.
 async function fetchScientificArticles() {
   try {
     const db = mongoose.connection.db;
     const articles = await db
       .collection(collectionOf("ArticleScine", "articlescines"))
-      .find({ isPublished: true }, { projection: { _id: 1, updatedAt: 1 } })
+      .find(
+        { isPublished: true },
+        {
+          projection: {
+            _id: 1,
+            updatedAt: 1,
+            originalLanguage: 1,
+            translationVersion: 1,
+          },
+        },
+      )
       .toArray();
 
+    const byId = await translatedLanguagesByEntity(db, "ArticleScine", articles);
+
     return articles.map((a) =>
-      urlEntry({
-        loc: `${FRONTEND_URL}/public/doctor/article-scientific-detail-for-all/${a._id}`,
+      urlEntriesForTranslatedArticle({
+        base: `${FRONTEND_URL}/public/doctor/article-scientific-detail-for-all/${a._id}`,
         lastmod: toW3cDate(a.updatedAt),
-        changefreq: "monthly",
-        priority: "0.65",
+        original: a.originalLanguage || "ru",
+        translated: byId.get(String(a._id)) || [],
       }),
     );
   } catch (err) {
@@ -387,7 +584,19 @@ async function fetchClinicUrls() {
           isDeleted: { $ne: true },
           slug: { $exists: true, $ne: null },
         },
-        { projection: { _id: 1, slug: 1, updatedAt: 1 } },
+        // Поля переводов нужны clinicLanguages(): без них она вернёт один
+        // язык для каждой клиники, и языковых адресов не появится вовсе —
+        // молча и неотличимо от «переводов пока нет».
+        {
+          projection: {
+            _id: 1,
+            slug: 1,
+            updatedAt: 1,
+            originalLanguage: 1,
+            descriptionI18n: 1,
+            sloganI18n: 1,
+          },
+        },
       )
       .toArray();
 
@@ -432,14 +641,39 @@ async function fetchClinicUrls() {
           .toArray()
       : [];
 
-    const clinicEntries = clinics.map((c) =>
-      urlEntry({
-        loc: `${FRONTEND_URL}/${encodeURIComponent(c.slug)}`,
-        lastmod: toW3cDate(c.updatedAt),
-        changefreq: "weekly",
-        priority: "0.8",
-      }),
-    );
+    // Витрина — единственная публичная поверхность с НАСТОЯЩИМИ языковыми
+    // версиями: сервер отдаёт её описание и слоган переведёнными по ?locale=,
+    // а какие языки переведены, знает clinicLanguages() — та же функция, что
+    // питает публичный DTO и hreflang в netlify/edge-functions/seo.js.
+    // Импортируем её, а не повторяем правило: разошедшиеся карта сайта и
+    // разметка страницы хуже, чем отсутствие обеих.
+    //
+    // Клиника с одним языком остаётся одной записью без alternates —
+    // hreflang связывает РАЗНЫЕ тексты, а не один текст с самим собой.
+    const clinicEntries = clinics.flatMap((c) => {
+      const languages = clinicLanguages(c);
+      const base = `${FRONTEND_URL}/${encodeURIComponent(c.slug)}`;
+      const lastmod = toW3cDate(c.updatedAt);
+
+      if (languages.length < 2) {
+        return [
+          urlEntry({
+            loc: base,
+            lastmod,
+            changefreq: "weekly",
+            priority: "0.8",
+          }),
+        ];
+      }
+
+      return urlEntriesForLocalizedClinic({
+        base,
+        lastmod,
+        languages,
+        // Оригинал живёт на голом адресе — ровно так же решает эдж-функция.
+        original: c.originalLanguage || "ru",
+      });
+    });
 
     const pageEntries = pages
       .filter((p) => clinicSlugById.has(String(p.clinicId)))

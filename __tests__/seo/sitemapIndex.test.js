@@ -87,10 +87,20 @@ describe("HTTP: индекс и дочерние файлы", () => {
   beforeEach(async () => {
     invalidateSitemapCache();
     // Врач даёт непустую секцию doctors — иначе индекс пуст и проверять
-    // нечего. Пишем прямо в коллекцию: sitemap читает её так же.
-    await mongoose.connection.db.collection("users").insertOne({
-      isDoctor: true,
-      isBlocked: false,
+    // нечего. Пишем прямо в коллекции: sitemap читает их так же.
+    //
+    // Нужны ОБЕ записи. Адрес врача строится из DoctorProfile._id (по нему
+    // ищет /doctor-profile/doctor-detail/:id), а users отвечает только за
+    // отбор «врач и не заблокирован» — см. __tests__/seo/sitemapDoctors.test.js.
+    const { insertedId: userId } = await mongoose.connection.db
+      .collection("users")
+      .insertOne({
+        isDoctor: true,
+        isBlocked: false,
+        updatedAt: new Date("2026-08-20T00:00:00Z"),
+      });
+    await mongoose.connection.db.collection("doctorprofiles").insertOne({
+      userId,
       updatedAt: new Date("2026-08-20T00:00:00Z"),
     });
   });
