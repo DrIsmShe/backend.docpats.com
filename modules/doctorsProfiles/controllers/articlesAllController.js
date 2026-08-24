@@ -448,7 +448,16 @@ const articlesAllController = async (req, res) => {
                 content: a.content,
                 abstract: "",
                 originalLanguage,
-                translationVersion: 1,
+                // ВЕРСИЯ СТАТЬИ, а не единица.
+                //
+                // Здесь была зашита 1, и из-за этого лента жила в СОБСТВЕННОЙ
+                // ветке переводов: findTranslation ищет по sourceVersion, а
+                // страница статьи и догоняющий перевод передают настоящую
+                // translationVersion (у новой статьи это 0). Переводы, сделанные
+                // для них, лента не видела вовсе и заказывала свой — то есть
+                // каждый материал переводился дважды, и карточка
+                // оставалась на языке оригинала, пока лента не оплатит второй.
+                translationVersion: a.translationVersion || 0,
               },
               entityType: "Article",
               targetLanguage,

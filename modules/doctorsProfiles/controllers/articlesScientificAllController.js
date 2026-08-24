@@ -10,6 +10,21 @@ const DOCTOR_PROFILES = "doctorprofiles";
 const COMMENTS = "commentdocpats";
 const SPECIALIZATIONS = "specializations";
 
+const SUPPORTED_LANGS = ["ru", "en", "tr", "az", "ar"];
+
+/* Язык статьи по самому тексту — на случай, когда в документе нет
+   originalLanguage. Повторяет articlesAllController.js: держать общим
+   модулем было бы чище, но там он живёт внутри контроллера, и вынос его
+   — отдельная правка, которая затронет работающий код ради красоты. */
+const detectArticleLanguage = (titleText, contentText) => {
+  const sample = `${titleText || ""} ${contentText || ""}`.slice(0, 500);
+  if (/[а-яА-ЯёЁ]/.test(sample)) return "ru";
+  if (/[؀-ۿ]/.test(sample)) return "ar";
+  if (/[əƏ]/.test(sample)) return "az";
+  if (/[çşğüöÇŞĞÜÖıİ]/.test(sample)) return "tr";
+  return "en";
+};
+
 const stripHtmlToText = (html) =>
   sanitizeHtml(html || "", { allowedTags: [], allowedAttributes: {} })
     .replace(/\s+/g, " ")
@@ -402,21 +417,42 @@ const articlesScientificAllController = async (req, res) => {
         let preview = makePreview(a.content, previewWords);
 
         try {
-          const localized = await getOrCreateTranslation({
-            entity: {
-              _id: a._id,
-              title: a.title,
-              content: a.content,
-              abstract: "",
-              originalLanguage: "ru",
-              translationVersion: 1,
-            },
-            entityType: "ArticleScine",
-            targetLanguage,
-          });
-          if (localized && !localized.isOriginal) {
-            title = stripHtmlToText(localized.title) || title;
-            preview = makePreview(localized.content, previewWords) || preview;
+          /* Язык оригинала — из документа, иначе по самому тексту.
+             Здесь была зашита "ru", и англоязычная статья считалась
+             русской: переводчику говорили «переведи с русского» текст, который
+             русским не является. В статьях-мнениях это уже исправлено тем же
+             способом (articlesAllController.js). */
+          const originalLanguage =
+            (SUPPORTED_LANGS.includes(a.originalLanguage)
+              ? a.originalLanguage
+              : null) ||
+            detectArticleLanguage(
+              stripHtmlToText(a.title),
+              stripHtmlToText(a.content),
+            );
+
+          /* На свой же язык переводить нечего. Проверки здесь не было вовсе,
+             и каждый показ ленты ставил в очередь перевод русского в русское. */
+          if (originalLanguage !== targetLanguage) {
+            const localized = await getOrCreateTranslation({
+              entity: {
+                _id: a._id,
+                title: a.title,
+                content: a.content,
+                abstract: "",
+                originalLanguage,
+                /* ВЕРСИЯ СТАТЬИ, а не единица — иначе лента ищет переводы
+                   в своей ветке и не видит те, что сделаны для страницы статьи
+                   и догоняющим переводом. */
+                translationVersion: a.translationVersion || 0,
+              },
+              entityType: "ArticleScine",
+              targetLanguage,
+            });
+            if (localized && !localized.isOriginal) {
+              title = stripHtmlToText(localized.title) || title;
+              preview = makePreview(localized.content, previewWords) || preview;
+            }
           }
         } catch {}
 
