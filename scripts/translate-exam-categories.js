@@ -17,14 +17,20 @@
  *
  * ЯЗЫК ОРИГИНАЛА определяем по письменности того же принципа, что и в
  * fix-exam-item-langs.js: по ПРЕОБЛАДАЮЩЕЙ письменности, а не по её наличию.
- * Латиницу без «ə» не трогаем — турецкий и английский так не различить, а
+ * Латиницу без «ə» не различаем — турецкий и английский так не отделить, а
  * ошибка здесь означает перевод «с турецкого» текста, который на самом деле
- * английский. Такие рубрики оставляем админу: --lang= задаёт язык вручную.
+ * английский.
+ *
+ * --lang= — ЗАПАСНОЙ язык для нераспознанных, а не переопределение для всех.
+ * Разница существенная: на боевой базе четыре азербайджанские рубрики не
+ * распознались («Psixoloqiya», «Kardioloqlar üçün sertifikasiya…» — буквы «ə»
+ * в них просто нет), и рядом лежали «Психология» с «Научные». Глобальное
+ * --lang=az объявило бы азербайджанскими и их тоже.
  *
  * Использование (из папки server/):
  *   node scripts/translate-exam-categories.js              # сухой прогон
- *   node scripts/translate-exam-categories.js --apply      # перевести
- *   node scripts/translate-exam-categories.js --apply --lang=az   # считать все az
+ *   node scripts/translate-exam-categories.js --apply      # перевести распознанные
+ *   node scripts/translate-exam-categories.js --apply --lang=az   # + нераспознанные считать az
  *   node scripts/translate-exam-categories.js --apply --force     # и уже переведённые
  *
  * Идемпотентен: рубрика с полным набором переводов пропускается, если не --force.
@@ -81,10 +87,10 @@ const run = async () => {
 
   for (const c of categories) {
     const have = new Set((c.translations ?? []).map((t) => t.lang));
+    // Письменность — первое слово; --lang вступает, только когда она молчит.
     const source =
-      FORCED_LANG && EXAM_LANGUAGES.includes(FORCED_LANG)
-        ? FORCED_LANG
-        : detectLang(c.name) ?? null;
+      detectLang(c.name) ??
+      (EXAM_LANGUAGES.includes(FORCED_LANG) ? FORCED_LANG : null);
 
     if (!source) {
       skipped.push({ c, why: "язык не определён по письменности" });
@@ -100,7 +106,8 @@ const run = async () => {
 
   console.log(`К переводу: ${plan.length}`);
   for (const p of plan) {
-    console.log(`   [${p.source}] ${p.c.name}  →  ${p.targets.join(", ")}`);
+    const how = detectLang(p.c.name) ? "" : "  (язык задан флагом)";
+    console.log(`   [${p.source}] ${p.c.name}  →  ${p.targets.join(", ")}${how}`);
   }
   console.log(`\nПропущено: ${skipped.length}`);
   for (const s of skipped) {
