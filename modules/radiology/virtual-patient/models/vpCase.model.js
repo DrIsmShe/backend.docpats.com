@@ -11,6 +11,7 @@
 
 import mongoose from "mongoose";
 import { aiReviewField, aiRevisionField } from "../../ai/aiReviewFields.js";
+import { agentRunField } from "../../ai/agentRunFields.js";
 import { DIFFICULTIES, CASE_STATUSES, SOURCE_KINDS } from "../../constants.js";
 
 const { Schema } = mongoose;
@@ -129,6 +130,9 @@ const vpCaseSchema = new Schema(
     // След цикла «правка → перепроверка» (ai/autoFix.js): что машина
     // исправила по замечаниям рецензента и с чем не согласилась.
     ...aiRevisionField(),
+
+    // Состояние фонового прогона агента (ai/agentRunFields.js).
+    ...agentRunField(),
 
     stats: {
       attempts: { type: Number, default: 0 }, // все сдачи, включая тренировки

@@ -14,7 +14,7 @@ import { findCaseImageSources } from "../../ai/imageSourceFinder.js";
 import { verifyRadiologyCase } from "../../ai/caseVerifier.js";
 import { reviseRadiologyCase } from "../../ai/caseReviser.js";
 import { runAutoFix, runTargetedFix } from "../../ai/autoFix.js";
-import { runRadiologyCaseAgent } from "../../ai/caseAgent.js";
+import { startRadiologyCaseAgent } from "../../ai/caseAgent.js";
 import { MODEL } from "../../ai/aiRunner.js";
 import { generateBaselineAnswer } from "../../ai/baselineAnswer.js";
 import { saveAiReview, setAiReviewDismissed } from "../../ai/aiReviewStore.js";
@@ -197,13 +197,17 @@ export const aiAutofixController = asyncHandler(async (req, res) => {
 export const aiRunAgentController = asyncHandler(async (req, res) => {
   const parsed = aiRunAgentSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);
-  const report = await runRadiologyCaseAgent({
+  // СТАВИМ задачу и отвечаем сразу. Прогон делает до пятнадцати вызовов
+  // Opus подряд и в запрос не влезает: nginx рвёт соединение на 240 с, а
+  // узел досчитывает и публикует кейс, о котором автору уже сказали
+  // «Network Error». Состояние и отчёт автор читает из самого кейса.
+  const started = await startRadiologyCaseAgent({
     caseId: req.params.id,
     actorId: req.radiologyActor.userId,
     actorRole: req.radiologyActor.role,
     ...parsed.data,
   });
-  res.json(report);
+  res.json(started);
 });
 
 // Отметки «разобрано» на замечаниях сохранённой рецензии.

@@ -18,6 +18,7 @@
 
 import mongoose from "mongoose";
 import { aiReviewField, aiRevisionField } from "../../ai/aiReviewFields.js";
+import { agentRunField } from "../../ai/agentRunFields.js";
 import {
   MODALITIES,
   FINDING_SHAPES,
@@ -244,6 +245,9 @@ const radiologyCaseSchema = new Schema(
     // След цикла «правка → перепроверка» (ai/autoFix.js). Для лучевого кейса
     // он касается только текстовой части: разметку на кадре машина не трогает.
     ...aiRevisionField(),
+
+    // Состояние фонового прогона агента (ai/agentRunFields.js).
+    ...agentRunField(),
 
     stats: {
       attempts: { type: Number, default: 0 }, // все сдачи, включая тренировки

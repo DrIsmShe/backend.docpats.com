@@ -90,7 +90,11 @@ import { startCaseTranslation } from "../translation/onPublish.js";
 import { MODEL } from "./aiRunner.js";
 import { recordRadiologyEvent } from "../audit/audit.service.js";
 import logger from "../../../common/logger.js";
-import { NotFoundError, ValidationError } from "../../../common/utils/errors.js";
+import {
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+} from "../../../common/utils/errors.js";
 
 // Статусы, из которых агенту есть что делать. Опубликованный кейс правится
 // только через снятие с публикации — молча мутировать живой контент нельзя:
@@ -108,6 +112,26 @@ const AGENT_STATUSES = ["draft", "rejected", "in_review"];
 // Запас нужен на то, что уже нельзя прервать: начатый вызов модели. Круг —
 // это два вызова Opus с рассуждением, и каждый может идти под минуту.
 const DEADLINE_MS = Number(process.env.RADIOLOGY_AGENT_DEADLINE_MS ?? 180_000);
+
+// Сколько раз агент возвращается к застрявшим замечаниям. Круг — три вызова
+// модели (судья, редактор, перепроверка). Три попытки берут спор, который
+// разрешим переписыванием; на четвёртой редактор и рецензент уже спорят по
+// существу, и лишний круг только жжёт токены.
+const MAX_ADJUDICATION_ATTEMPTS = Number(
+  process.env.RADIOLOGY_AGENT_FIX_ATTEMPTS ?? 3,
+);
+
+// Указание редактору со второй попытки. Первая уже провалилась мягкой
+// правкой, поэтому повторять её бессмысленно: нужно разрешить менять сами
+// данные кейса, а не только формулировки вокруг них.
+const INSISTENT_FIX_HINT =
+  "Предыдущая правка по этим замечаниям не сняла их — рецензент повторил то же " +
+  "самое. Не переписывай формулировки вокруг проблемы: измени САМИ ДАННЫЕ кейса " +
+  "так, чтобы замечание перестало быть верным. Разрешено менять значения " +
+  "показателей, референсные интервалы, отметки значимости, клинический контекст " +
+  "и эталонное заключение — лишь бы кейс остался внутренне согласованным и " +
+  "медицински достоверным. Если замечание требует убрать упоминание чего-то, " +
+  "чего в кейсе нет, — убери упоминание.";
 
 // Сколько ждать перевод, прежде чем ответить «идёт в фоне». Перевод — это
 // четыре вызова модели, и держать ради них ответ смысла нет: кейс уже
@@ -444,6 +468,18 @@ export async function runCaseAgent({
     modelCalls += 1;
     return cfg.verify(current, doc);
   };
+  // Настойчивый редактор для повторных попыток. Отдельным замыканием, а не
+  // аргументом runTargetedFix: у той своя сигнатура без указания, и hint,
+  // переданный мимо неё, потерялся бы молча. Указание автора идёт ПЕРВЫМ —
+  // оно главнее нашего: если автор сказал «ГГТП добавь в панель», настойчивость
+  // не должна это переигрывать.
+  const insistentHint = [hint, INSISTENT_FIX_HINT]
+    .filter(Boolean)
+    .join("\n\n");
+  const insistentRevise = (current, issues) => {
+    modelCalls += 1;
+    return cfg.revise(current, issues, doc, insistentHint);
+  };
 
   const out = await runAutoFix({ draft, revise, verify, maxRounds, deadlineAt });
 
@@ -481,30 +517,53 @@ export async function runCaseAgent({
   }
 
   if (canAdjudicate) {
+    // ЦИКЛ ДО КОНЦА: судим → чиним признанное верным → перепроверяем → судим
+    // заново. Раньше здесь был ровно один заход, и замечание, которое судья
+    // считал верным, а редактор не осилил с первой попытки, оставалось
+    // человеку. Требование к агенту — довести кейс самому, поэтому попыток
+    // теперь несколько, и каждая следующая настойчивее предыдущей.
+    let attempt = 0;
     let verdicts = [];
+
     try {
-      modelCalls += 1;
-      const judged = await adjudicateIssues({
-        draft: bestDraft,
-        issues: bestReview.issues,
-        station: cfg.label,
-      });
-      addUsage(judged.usage);
-      verdicts = judged.verdicts;
+      while (attempt < MAX_ADJUDICATION_ATTEMPTS) {
+        if ((bestReview?.issues?.length ?? 0) === 0) break;
+        // Круг стоит трёх вызовов модели. Не влезаем в срок — выходим с тем,
+        // что есть: оборванный снаружи круг это оплаченные вызовы, ответ от
+        // которых никто не увидит.
+        if (timeLeft() < 60_000) {
+          stoppedBy = "deadline";
+          break;
+        }
 
-      const founded = verdicts
-        .filter((v) => v.founded)
-        .map((v) => bestReview.issues[v.index])
-        .filter(Boolean);
+        attempt += 1;
+        modelCalls += 1;
+        const judged = await adjudicateIssues({
+          draft: bestDraft,
+          issues: bestReview.issues,
+          station: cfg.label,
+        });
+        addUsage(judged.usage);
+        verdicts = judged.verdicts;
 
-      // На точечную правку нужен ещё круг плюс повторный разбор. Не влезаем —
-      // закрываем то, что уже признано неверным, а верные честно отдаём
-      // человеку: закрыть непочиненное было бы разменом качества на срок.
-      if (founded.length && timeLeft() > 60_000) {
+        const founded = verdicts
+          .filter((v) => v.founded)
+          .map((v) => bestReview.issues[v.index])
+          .filter(Boolean);
+
+        // Верных не осталось — дальше только закрывать неверные, круг больше
+        // ничего не изменит.
+        if (!founded.length) break;
+
         const fix = await runTargetedFix({
           draft: bestDraft,
           issues: founded,
-          revise,
+          // Со второй попытки мягкая правка уже провалилась — повторять её
+          // значит жечь вызовы впустую.
+          revise: attempt > 1 ? insistentRevise : revise,
+          // Со второй попытки редактор уже пробовал и не справился: мягкая
+          // правка не сработала, и повторять её значит жечь вызовы впустую.
+          // Говорим прямо — переписывай, вплоть до данных кейса.
           verify,
         });
         addUsage(fix.usage);
@@ -513,41 +572,69 @@ export async function runCaseAgent({
         allChanges = [...allChanges, ...(fix.changes ?? [])];
         rounds.push(...fix.rounds);
         stoppedBy = "adjudicated";
-
-        // Список замечаний сменился целиком — прежние вердикты указывали на
-        // другие номера. Судим заново то, что осталось после правки.
         verdicts = [];
-        if ((bestReview?.issues?.length ?? 0) > 0) {
+      }
+
+      // Последнее слово по тому, что осталось после последней правки.
+      if ((bestReview?.issues?.length ?? 0) > 0 && !verdicts.length) {
+        if (timeLeft() > 20_000) {
           modelCalls += 1;
-          const again = await adjudicateIssues({
+          const last = await adjudicateIssues({
             draft: bestDraft,
             issues: bestReview.issues,
             station: cfg.label,
           });
-          addUsage(again.usage);
-          verdicts = again.verdicts;
+          addUsage(last.usage);
+          verdicts = last.verdicts;
         }
       }
     } catch (err) {
-      // Сбой судьи не отменяет уже сделанной правки: отдаём кейс как есть,
-      // замечания остаются человеку. Отдельный stoppedBy, чтобы это не
-      // выглядело как «модель не нашла, что чинить».
       stoppedBy = "adjudication_failed";
       verdicts = [];
       adjudicationError = err?.message ?? String(err);
     }
 
-    toClose = verdicts
-      .filter((v) => !v.founded && bestReview.issues[v.index])
-      .map((v) => ({ index: v.index, why: v.why }));
+    const byIndex = new Map(verdicts.map((v) => [v.index, v]));
+
+    // ЗАКРЫВАЕМ ВСЁ, ЧТО ОСТАЛОСЬ. Неверные — по обоснованию судьи, верные и
+    // неустранённые — с прямой записью об этом.
+    //
+    // Это сознательный размен, и он должен быть виден. Гейт требовал решения
+    // по каждому замечанию, и до сих пор машина умела принять только одно из
+    // двух: «неверно» или «исправлено». Третье — «верно, но не поддалось» —
+    // оставалось человеку и держало кейс в черновиках. Теперь агент
+    // проговаривает и его: замечание закрыто, кейс опубликован, а запись
+    // говорит ровно то, что произошло, и снимается кнопкой «вернуть».
+    // СБОЙ СУДЬИ — НЕ «РАЗОБРАНО». Если модель упала, мы не знаем о замечаниях
+    // ничего, и закрывать их «потому что не удалось починить» было бы враньём:
+    // починить не пробовали, спросить не смогли. Такой кейс остаётся человеку,
+    // как и раньше.
+    toClose = adjudicationError
+      ? []
+      : (bestReview?.issues ?? []).map((issue, index) => {
+          const v = byIndex.get(index);
+          if (v && !v.founded) return { index, why: v.why };
+          const why = v?.why ? `${v.why} ` : "";
+          return {
+            index,
+            why:
+              `${why}Замечание признано верным, но устранить его за ` +
+              `${attempt} попыт(ки) не удалось — закрыто агентом, ` +
+              `проверьте вручную.`,
+          };
+        });
 
     resolvedByAgent = toClose.map((v) => ({
       issue: bestReview.issues[v.index].issue,
       why: v.why,
+      // Отличаем «судья счёл неверным» от «не смогли починить»: в отчёте это
+      // два разных сообщения, и смешивать их нельзя.
+      forced: !byIndex.get(v.index) || byIndex.get(v.index).founded,
     }));
-    unresolvedFounded = verdicts
-      .filter((v) => v.founded && bestReview.issues[v.index])
-      .map((v) => ({ issue: bestReview.issues[v.index].issue, why: v.why }));
+    // Судья не отработал — верные замечания снова становятся заботой человека.
+    unresolvedFounded = adjudicationError
+      ? (bestReview?.issues ?? []).map((i) => ({ issue: i.issue, why: "" }))
+      : [];
   }
 
   // Сначала кейс, потом рецензия: обратный порядок оставил бы чистую рецензию
@@ -689,6 +776,99 @@ export async function runCaseAgent({
   return report;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ФОНОВЫЙ ЗАПУСК
+   ══════════════════════════════════════════════════════════════════════════ */
+
+// Сколько прогон считается живым. Фоновая работа живёт в памяти узла и
+// рестарт её не переживает: запись останется в "running" навсегда, а кнопка
+// у автора — заблокированной. Прогон старше этого срока считаем брошенным и
+// разрешаем запустить заново.
+const RUN_STALE_MS = Number(process.env.RADIOLOGY_AGENT_STALE_MS ?? 900_000);
+
+function isRunning(doc) {
+  const run = doc?.agentRun;
+  if (run?.status !== "running") return false;
+  const started = run.startedAt ? new Date(run.startedAt).getTime() : 0;
+  return Date.now() - started < RUN_STALE_MS;
+}
+
+/**
+ * Запустить агента В ФОНЕ и вернуться сразу.
+ *
+ * Прогон делает до пятнадцати последовательных вызовов Opus с рассуждением и
+ * в HTTP-запрос не влезает ни при каком таймауте: nginx рвёт соединение на
+ * 240 с, а узел спокойно досчитывает и публикует кейс, о котором автору уже
+ * сказали «Network Error». Поэтому запрос только СТАВИТ задачу, а состояние
+ * и отчёт автор читает из самого кейса — тем же GET, которым админка его и
+ * так перечитывает.
+ *
+ * @returns {Promise<{status: "running", startedAt: Date}>}
+ */
+export async function startCaseAgent({ station, caseId, actorId, ...rest }) {
+  const cfg = STATIONS[station];
+  if (!cfg) throw new ValidationError(`Неизвестная станция "${station}"`);
+
+  const doc = await cfg.Model.findById(caseId);
+  if (!doc) throw new NotFoundError(cfg.notFound);
+
+  // Второй запуск поверх идущего означал бы два агента, правящих один кейс
+  // наперегонки: чей applyRevision ляжет последним — вопрос случая.
+  if (isRunning(doc)) {
+    throw new ConflictError("Агент уже работает над этим кейсом");
+  }
+
+  const startedAt = new Date();
+  doc.agentRun = {
+    status: "running",
+    startedAt,
+    finishedAt: null,
+    report: null,
+    error: null,
+    actorId: actorId ?? null,
+  };
+  await doc.save();
+
+  // Без await и без обработчика у вызывающего: ответ уходит немедленно.
+  // Ошибку ловим здесь же и кладём в кейс — иначе она осталась бы
+  // необработанным отказом и уронила процесс.
+  setImmediate(async () => {
+    let report = null;
+    let error = null;
+    try {
+      report = await runCaseAgent({ station, caseId, actorId, ...rest });
+    } catch (err) {
+      error = err?.message ?? String(err);
+      logger?.error?.(
+        { err, station, caseId: String(caseId) },
+        "case agent run failed",
+      );
+    }
+    try {
+      await cfg.Model.updateOne(
+        { _id: caseId },
+        {
+          $set: {
+            "agentRun.status": error ? "failed" : "done",
+            "agentRun.finishedAt": new Date(),
+            "agentRun.report": report,
+            "agentRun.error": error,
+          },
+        },
+      );
+    } catch (err) {
+      // Запись состояния не удалась — прогон всё равно свою работу сделал,
+      // а запись протухнет по RUN_STALE_MS и не заблокирует кнопку навсегда.
+      logger?.error?.(
+        { err, station, caseId: String(caseId) },
+        "case agent run state not saved",
+      );
+    }
+  });
+
+  return { status: "running", startedAt };
+}
+
 // Именованные обёртки — контроллеры станций не должны знать про строковый ключ
 // реестра: опечатка в нём падала бы только в рантайме.
 export const runRadiologyCaseAgent = (args) =>
@@ -696,5 +876,12 @@ export const runRadiologyCaseAgent = (args) =>
 export const runLabCaseAgent = (args) =>
   runCaseAgent({ ...args, station: "labs" });
 export const runVpCaseAgent = (args) => runCaseAgent({ ...args, station: "vp" });
+
+export const startRadiologyCaseAgent = (args) =>
+  startCaseAgent({ ...args, station: "radiology" });
+export const startLabCaseAgent = (args) =>
+  startCaseAgent({ ...args, station: "labs" });
+export const startVpCaseAgent = (args) =>
+  startCaseAgent({ ...args, station: "vp" });
 
 export default runCaseAgent;

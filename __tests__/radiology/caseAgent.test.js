@@ -11,10 +11,12 @@
 //   1. галочку деидентификации агент не ставит и без неё не публикует;
 //   2. координаты находок и кадры он не трогает — это эталон, по которому
 //      потом оценивают врачей;
-//   3. замечание, которое агент НЕ разобрал, блокирует публикацию. Разобрать
-//      он теперь может — судьёй (ai/issueAdjudicator.js), — но только с
-//      письменным обоснованием на каждое закрытое замечание, и замечание,
-//      признанное верным, публикацию по-прежнему держит.
+//   3. агент доводит кейс до конца сам: судит замечания, чинит признанные
+//      верными, перепроверяет и повторяет — до трёх попыток, со второй
+//      настойчиво, вплоть до правки самих данных. Что не поддалось —
+//      закрывает с прямой записью «не удалось устранить», и кейс уходит в
+//      публикацию. Единственное исключение — СБОЙ судьи: тогда мы не знаем о
+//      замечаниях ничего, и кейс остаётся человеку.
 //
 // Плюс предусловия: пока снимка нет, модель не вызывается вовсе — каждый круг
 // цикла стоит двух вызовов Opus с рассуждением.
@@ -64,9 +66,12 @@ vi.mock("../../modules/radiology/translation/caseTranslator.js", () => ({
   })),
 }));
 
-const { runRadiologyCaseAgent, runLabCaseAgent, runVpCaseAgent } = await import(
-  "../../modules/radiology/ai/caseAgent.js"
-);
+const {
+  runRadiologyCaseAgent,
+  runLabCaseAgent,
+  runVpCaseAgent,
+  startLabCaseAgent,
+} = await import("../../modules/radiology/ai/caseAgent.js");
 const { default: RadiologyCase } = await import(
   "../../modules/radiology/radiology-cases/models/radiologyCase.model.js"
 );
@@ -266,24 +271,38 @@ describe("Публикация", () => {
     expect(fresh.status).toBe("draft");
   });
 
-  it("замечание, признанное судьёй ВЕРНЫМ, блокирует публикацию", async () => {
-    // Рецензент упирается: замечание остаётся после каждого круга, и судья с
-    // ним согласен. Это ровно тот случай, ради которого гейт и стоит.
+  it("неустранимое замечание закрывается с прямой записью, и кейс публикуется", async () => {
+    // Рецензент упирается, судья с ним согласен, редактор не справляется даже
+    // настойчивой правкой. Агент обязан довести кейс до конца сам, поэтому
+    // такое замечание он закрывает — но записью, которая говорит ровно что
+    // произошло, а не «рецензент был неправ».
     verifyMock.mockResolvedValue(dirtyReview());
     const doc = await makeCase();
 
     const r = await runRadiologyCaseAgent({ caseId: doc._id, maxRounds: 2, ...AS });
 
-    expect(r.published).toBe(false);
-    expect(r.review.issues).toHaveLength(1);
-    expect(r.blockers.join(" ")).toMatch(/замечани/i);
-    expect(r.unresolvedFounded).toHaveLength(1);
-    expect(r.resolvedByAgent).toHaveLength(0);
+    expect(r.published).toBe(true);
+    expect(r.resolvedByAgent).toHaveLength(1);
+    expect(r.resolvedByAgent[0].forced).toBe(true);
+    expect(r.resolvedByAgent[0].why).toMatch(/не удалось/i);
+    expect(r.unresolvedFounded).toHaveLength(0);
 
     const fresh = await RadiologyCase.findById(doc._id).lean();
-    expect(fresh.status).toBe("draft");
-    // Верное замечание «разобранным» не становится ни при каких условиях.
-    expect(fresh.aiReview?.dismissed ?? []).toHaveLength(0);
+    expect(fresh.status).toBe("published");
+    expect(fresh.aiReview.agentResolved).toHaveLength(1);
+  });
+
+  it("настойчивая правка идёт со ВТОРОЙ попытки, а не с первой", async () => {
+    verifyMock.mockResolvedValue(dirtyReview());
+    const doc = await makeCase();
+
+    await runRadiologyCaseAgent({ caseId: doc._id, maxRounds: 1, ...AS });
+
+    // Указание про правку самих данных не должно уходить в первый заход:
+    // сначала пробуем мягко, иначе агент переписывает кейс на ровном месте.
+    const hints = reviseMock.mock.calls.map((c) => c[0]?.hint ?? "");
+    expect(hints[0] ?? "").not.toMatch(/САМИ ДАННЫЕ/);
+    expect(hints.some((h) => /САМИ ДАННЫЕ/.test(h))).toBe(true);
   });
 
   it("замечание, признанное НЕВЕРНЫМ, закрывается с обоснованием и кейс уходит в публикацию", async () => {
@@ -341,7 +360,10 @@ describe("Публикация", () => {
     expect(r.blockers.join(" ")).toMatch(/замечани/i);
   });
 
-  it("сбой судьи не публикует кейс и виден в отчёте", async () => {
+  it("сбой судьи не публикует кейс: молчание модели — не «разобрано»", async () => {
+    // Единственный случай, когда замечания остаются человеку. Закрыть их
+    // «потому что не удалось починить» было бы враньём: починить не пробовали,
+    // спросить не смогли.
     verifyMock.mockResolvedValue(dirtyReview());
     adjudicateMock.mockRejectedValue(new Error("модель недоступна"));
     const doc = await makeCase();
@@ -351,6 +373,11 @@ describe("Публикация", () => {
     expect(r.published).toBe(false);
     expect(r.stoppedBy).toBe("adjudication_failed");
     expect(r.adjudicationError).toMatch(/недоступна/);
+    expect(r.resolvedByAgent).toHaveLength(0);
+
+    const fresh = await RadiologyCase.findById(doc._id).lean();
+    expect(fresh.aiReview?.dismissed ?? []).toHaveLength(0);
+    expect(fresh.status).toBe("draft");
   });
 
   it("publish=false чинит текст, но публикацию оставляет человеку", async () => {
@@ -512,14 +539,14 @@ describe("Анализы", () => {
     expect(fresh.status).toBe("draft");
   });
 
-  it("замечание, признанное судьёй верным, блокирует публикацию", async () => {
+  it("неустранимое замечание не держит кейс в черновиках", async () => {
     verifyMock.mockResolvedValue(dirtyReview());
     const doc = await makeLabCase();
 
     const r = await runLabCaseAgent({ caseId: doc._id, maxRounds: 2, ...AS });
 
-    expect(r.published).toBe(false);
-    expect(r.blockers.join(" ")).toMatch(/замечани/i);
+    expect(r.published).toBe(true);
+    expect(r.resolvedByAgent[0].forced).toBe(true);
   });
 
   it("неверное замечание закрывается, кейс публикуется и уходит в перевод", async () => {
@@ -615,5 +642,77 @@ describe("Виртуальный пациент", () => {
     expect(r.published).toBe(false);
     const fresh = await VirtualPatientCase.findById(doc._id).lean();
     expect(fresh.status).toBe("draft");
+  });
+});
+
+describe("фоновый запуск", () => {
+  // Прогон делает до пятнадцати вызовов Opus подряд и в HTTP-запрос не
+  // влезает: nginx рвёт соединение на 240 с, а сервер досчитывает и
+  // публикует кейс, о котором автору уже сказали «Network Error». Запрос
+  // теперь только ставит задачу.
+  // Ждём КОНЦА прогона, а не фиксированную паузу: фиксированная зависит от
+  // скорости машины и однажды падает в CI, ничего не говоря о коде.
+  async function waitDone(id, ms = 5000) {
+    const until = Date.now() + ms;
+    for (;;) {
+      const doc = await LabCase.findById(id).lean();
+      if (doc?.agentRun?.status !== "running") return doc;
+      if (Date.now() > until) return doc;
+      await new Promise((r) => setTimeout(r, 25));
+    }
+  }
+
+  it("возвращается сразу и помечает кейс работающим", async () => {
+    verifyMock.mockImplementation(
+      () => new Promise((r) => setTimeout(() => r(cleanReview()), 200)),
+    );
+    const doc = await makeLabCase();
+
+    const started = await startLabCaseAgent({ caseId: doc._id, ...AS });
+
+    expect(started.status).toBe("running");
+    // Ответ пришёл ДО того, как модель успела ответить.
+    const mid = await LabCase.findById(doc._id).lean();
+    expect(mid.agentRun.status).toBe("running");
+    expect(mid.status).toBe("draft");
+  });
+
+  it("отчёт и результат ложатся в кейс, когда прогон закончился", async () => {
+    verifyMock.mockResolvedValue(cleanReview());
+    const doc = await makeLabCase();
+
+    await startLabCaseAgent({ caseId: doc._id, ...AS });
+    const fresh = await waitDone(doc._id);
+
+    expect(fresh.agentRun.status).toBe("done");
+    expect(fresh.agentRun.report.published).toBe(true);
+    expect(fresh.agentRun.finishedAt).toBeTruthy();
+    expect(fresh.status).toBe("published");
+  });
+
+  it("второй запуск поверх идущего отклоняется", async () => {
+    verifyMock.mockImplementation(
+      () => new Promise((r) => setTimeout(() => r(cleanReview()), 300)),
+    );
+    const doc = await makeLabCase();
+
+    await startLabCaseAgent({ caseId: doc._id, ...AS });
+
+    // Два агента на одном кейсе означали бы, что чей applyRevision ляжет
+    // последним — вопрос случая.
+    await expect(
+      startLabCaseAgent({ caseId: doc._id, ...AS }),
+    ).rejects.toThrow(/уже работает/i);
+  });
+
+  it("сбой прогона попадает в кейс, а не теряется", async () => {
+    verifyMock.mockRejectedValue(new Error("модель недоступна"));
+    const doc = await makeLabCase();
+
+    await startLabCaseAgent({ caseId: doc._id, ...AS });
+    const fresh = await waitDone(doc._id);
+
+    expect(fresh.agentRun.status).toBe("failed");
+    expect(fresh.agentRun.error).toMatch(/недоступна/);
   });
 });
