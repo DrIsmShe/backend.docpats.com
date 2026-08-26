@@ -6,6 +6,8 @@
 
 import mongoose from "mongoose";
 import ExamCategory from "../models/examCategory.model.js";
+import { translateCategoryContent } from "./categoryTranslator.js";
+import { EXAM_LANGUAGES } from "../../constants.js";
 import {
   ValidationError,
   NotFoundError,
@@ -54,11 +56,59 @@ async function uniqueSlug(name, excludeId = null) {
   }
 }
 
+// ─── Имя рубрики на языке врача ───────────────────────────────────────
+// Перевода нет — отдаём оригинал. Это осознанный откат, а не заглушка: имя
+// на чужом языке читается, пустое место — нет. Так же ведут себя переводы
+// кейсов арены и вопросов банка.
+function localize(category, lang) {
+  if (!lang || lang === category.lang) return category;
+  const tr = (category.translations ?? []).find((t) => t.lang === lang);
+  if (!tr?.name) return category;
+  return {
+    ...category,
+    name: tr.name,
+    description: tr.description || category.description,
+  };
+}
+
+// Перевод рубрики на остальные языки. БЕЗ await у вызывающего: админ не
+// должен ждать модель, чтобы создать рубрику, и недоступность модели не
+// повод не дать её создать. Ошибку гасим в лог — как перевод кейса при
+// публикации (radiology/translation/onPublish.js).
+function scheduleCategoryTranslation(categoryId) {
+  setImmediate(async () => {
+    try {
+      const doc = await ExamCategory.findById(categoryId);
+      if (!doc) return;
+      const targets = EXAM_LANGUAGES.filter((l) => l !== doc.lang);
+      const translations = await translateCategoryContent({
+        name: doc.name,
+        description: doc.description ?? "",
+        sourceLang: doc.lang,
+        targetLangs: targets,
+      });
+      if (!translations.length) return;
+      doc.translations = translations;
+      await doc.save();
+      logger?.info?.(
+        { categoryId: String(categoryId), langs: translations.map((t) => t.lang) },
+        "exam category translated",
+      );
+    } catch (err) {
+      logger?.error?.(
+        { err, categoryId: String(categoryId) },
+        "exam category translation failed",
+      );
+    }
+  });
+}
+
 // ─── Дерево категорий с числом тестов ─────────────────────────────────
 // countScope:
 //   "public" — считаем только опубликованные публичные тесты (для витрины);
 //   "all"    — считаем все тесты категории (для админки).
-export async function listCategoriesTree({ countScope = "public" } = {}) {
+// lang: язык врача — имена рубрик отдаются на нём, если перевод есть.
+export async function listCategoriesTree({ countScope = "public", lang = null } = {}) {
   const [categories, counts] = await Promise.all([
     ExamCategory.find({}).sort({ order: 1, name: 1 }).lean(),
     countProgramsByCategory(countScope),
@@ -68,7 +118,7 @@ export async function listCategoriesTree({ countScope = "public" } = {}) {
     categories.map((c) => [
       String(c._id),
       {
-        ...c,
+        ...localize(c, lang),
         id: String(c._id),
         parentId: c.parentId ? String(c.parentId) : null,
         // Тесты, привязанные напрямую к этому узлу.
@@ -171,8 +221,12 @@ export async function createCategory(input) {
       order: input.order ?? 0,
       icon: input.icon ?? "",
       isActive: input.isActive ?? true,
+      // Язык, на котором админ набрал имя. Приходит из интерфейса; без него
+      // считаем русским — так вело себя всё до появления языка у рубрик.
+      lang: EXAM_LANGUAGES.includes(input.lang) ? input.lang : "ru",
       createdBy: input.actorId ?? null,
     });
+    scheduleCategoryTranslation(doc._id);
     return doc.toObject();
   } catch (err) {
     // Дубликат имени в пределах родителя ловим по коду Mongo, чтобы отдать
@@ -190,14 +244,24 @@ export async function updateCategory(id, input) {
   if (!existing) throw new NotFoundError("Категория");
 
   const update = {};
+  // Текст изменился — значит прежние переводы относятся к другому названию.
+  let textChanged = false;
   if (input.name !== undefined) {
     const name = String(input.name).trim();
     if (!name) throw new ValidationError("Имя категории обязательно");
+    if (name !== existing.name) textChanged = true;
     update.name = name;
     // Пересобираем slug только при смене имени.
     update.slug = await uniqueSlug(name, existing._id);
   }
-  if (input.description !== undefined) update.description = input.description;
+  if (input.description !== undefined) {
+    if (input.description !== existing.description) textChanged = true;
+    update.description = input.description;
+  }
+  if (input.lang !== undefined && EXAM_LANGUAGES.includes(input.lang)) {
+    if (input.lang !== existing.lang) textChanged = true;
+    update.lang = input.lang;
+  }
   if (input.order !== undefined) update.order = input.order;
   if (input.icon !== undefined) update.icon = input.icon;
   if (input.isActive !== undefined) update.isActive = input.isActive;
@@ -211,11 +275,19 @@ export async function updateCategory(id, input) {
   if (input.actorId !== undefined) update.updatedBy = input.actorId;
 
   try {
+    if (textChanged) {
+      // Старые переводы стираем СРАЗУ, не дожидаясь новых: рубрика,
+      // переименованная в «Кардиология», не должна ни секунды показываться
+      // азербайджанскому врачу как «Nevrologiya». Оригинал в этот промежуток
+      // читается, устаревший перевод — вводит в заблуждение.
+      update.translations = [];
+    }
     const doc = await ExamCategory.findByIdAndUpdate(
       id,
       { $set: update },
       { new: true, runValidators: true },
     ).lean();
+    if (textChanged) scheduleCategoryTranslation(id);
     return doc;
   } catch (err) {
     if (err?.code === 11000) {

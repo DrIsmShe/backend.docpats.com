@@ -3,6 +3,7 @@
 // HTTP-слой рубрикатора. Тонкий: разбор запроса → сервис → ответ.
 
 import { asyncHandler } from "../../../../common/middlewares/errorHandler.js";
+import { langOf } from "../../../../common/utils/requestLang.js";
 import { ValidationError } from "../../../../common/utils/errors.js";
 import {
   listCategoriesTree,
@@ -37,7 +38,10 @@ export const listCategoriesController = asyncHandler(async (req, res) => {
     countScope = "public";
   }
 
-  const categories = await listCategoriesTree({ countScope });
+  // Имена рубрик — на языке врача. Разбор языка общий на весь проект
+  // (common/utils/requestLang.js): арена, гид и каталог читают одни и те же
+  // заголовки, и вторая копия разбора разошлась бы молча.
+  const categories = await listCategoriesTree({ countScope, lang: langOf(req) });
   res.json({ categories, count: categories.length });
 });
 
