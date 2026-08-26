@@ -57,6 +57,9 @@ export const createProgramSchema = z.object({
   authority: z.string().trim().max(200).nullish(),
   specialty: z.string().trim().max(120).nullish(),
   languages: z.array(z.enum(EXAM_LANGUAGES)).min(1).max(5).optional(),
+  // Основной язык теста — к нему тест относят в каталоге. null снимает
+  // привязку и возвращает откат к languages[0].
+  primaryLang: z.enum(EXAM_LANGUAGES).nullish(),
   categoryId: objectIdField.nullish(),
   blockSize: z.number().int().min(1).max(500).nullish(),
   blueprint: z.array(blueprintSectionSchema).max(200).optional(),
@@ -83,6 +86,9 @@ export const updateProgramSchema = z
     authority: z.string().trim().max(200).nullish(),
     specialty: z.string().trim().max(120).nullish(),
     languages: z.array(z.enum(EXAM_LANGUAGES)).min(1).max(5).optional(),
+  // Основной язык теста — к нему тест относят в каталоге. null снимает
+  // привязку и возвращает откат к languages[0].
+  primaryLang: z.enum(EXAM_LANGUAGES).nullish(),
     categoryId: objectIdField.nullish(),
     blockSize: z.number().int().min(1).max(500).nullish(),
     blueprint: z.array(blueprintSectionSchema).max(200).optional(),

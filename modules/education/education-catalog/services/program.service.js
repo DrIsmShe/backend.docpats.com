@@ -80,6 +80,7 @@ export async function createProgram(input) {
     authority: input.authority ?? null,
     specialty: input.specialty ?? null,
     languages: input.languages ?? undefined,
+    primaryLang: input.primaryLang ?? null,
     categoryId: input.categoryId ?? null,
     blockSize: input.blockSize ?? null,
     blueprint: input.blueprint ?? [],
@@ -125,7 +126,20 @@ export async function listPrograms(filters = {}) {
   if (filters.examType) query.examType = filters.examType;
   if (filters.categoryId) query.categoryId = filters.categoryId;
   if (filters.specialty) query.specialty = filters.specialty;
-  if (filters.language) query.languages = filters.language;
+  // ФИЛЬТР ПО ЯЗЫКУ — по основному языку теста, а не по наличию вопросов.
+  // languages у переведённого теста содержит все пять, и раньше врач,
+  // выбравший English, получал в выдаче русскоязычные карточки: тест
+  // действительно доступен на английском, но каталог отвечает на вопрос
+  // «что здесь есть на моём языке», а не «что я технически могу открыть».
+  //
+  // Откат к languages нужен для тестов, которым админ ещё не проставил
+  // основной язык: без него они исчезли бы из каталога совсем.
+  if (filters.language) {
+    query.$or = [
+      { primaryLang: filters.language },
+      { primaryLang: null, languages: filters.language },
+    ];
+  }
   if (filters.isFree !== undefined) query.isFree = filters.isFree;
 
   if (filters.q && filters.q.trim()) {
@@ -207,6 +221,7 @@ export async function updateProgram(id, input) {
     "authority",
     "specialty",
     "languages",
+    "primaryLang",
     "categoryId",
     "blockSize",
     "defaultQuestionCount",
