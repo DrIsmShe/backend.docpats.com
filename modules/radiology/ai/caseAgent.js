@@ -89,6 +89,7 @@ import { adjudicateIssues } from "./issueAdjudicator.js";
 import { startCaseTranslation } from "../translation/onPublish.js";
 import { MODEL } from "./aiRunner.js";
 import { recordRadiologyEvent } from "../audit/audit.service.js";
+import logger from "../../../common/logger.js";
 import { NotFoundError, ValidationError } from "../../../common/utils/errors.js";
 
 // Статусы, из которых агенту есть что делать. Опубликованный кейс правится
@@ -383,8 +384,16 @@ export async function runCaseAgent({
   const cfg = STATIONS[station];
   if (!cfg) throw new ValidationError(`Неизвестная станция "${station}"`);
 
-  const deadlineAt = Date.now() + DEADLINE_MS;
+  const startedAt = Date.now();
+  const deadlineAt = startedAt + DEADLINE_MS;
   const timeLeft = () => deadlineAt - Date.now();
+  const elapsed = () => Date.now() - startedAt;
+
+  // Счётчик вызовов модели: он и длительность — единственное, по чему потом
+  // можно судить, почему прогон не уложился в срок. Без них разбор обрыва
+  // сводился к арифметике на бумаге: сам агент молчал, а nginx рвал
+  // соединение и не оставлял следа ни в одном логе.
+  let modelCalls = 0;
 
   const doc = await cfg.Model.findById(caseId);
   if (!doc) throw new NotFoundError(cfg.notFound);
@@ -427,8 +436,14 @@ export async function runCaseAgent({
 
   // ─── Цикл правки ────────────────────────────────────────────────────────
   const draft = cfg.buildDraft(doc);
-  const revise = (current, issues) => cfg.revise(current, issues, doc, hint);
-  const verify = (current) => cfg.verify(current, doc);
+  const revise = (current, issues) => {
+    modelCalls += 1;
+    return cfg.revise(current, issues, doc, hint);
+  };
+  const verify = (current) => {
+    modelCalls += 1;
+    return cfg.verify(current, doc);
+  };
 
   const out = await runAutoFix({ draft, revise, verify, maxRounds, deadlineAt });
 
@@ -468,6 +483,7 @@ export async function runCaseAgent({
   if (canAdjudicate) {
     let verdicts = [];
     try {
+      modelCalls += 1;
       const judged = await adjudicateIssues({
         draft: bestDraft,
         issues: bestReview.issues,
@@ -502,6 +518,7 @@ export async function runCaseAgent({
         // другие номера. Судим заново то, что осталось после правки.
         verdicts = [];
         if ((bestReview?.issues?.length ?? 0) > 0) {
+          modelCalls += 1;
           const again = await adjudicateIssues({
             draft: bestDraft,
             issues: bestReview.issues,
@@ -573,12 +590,32 @@ export async function runCaseAgent({
     ...cfg.reportExtras(applied),
   };
 
+  // Длительность и число вызовов — в лог И в аудит. Прогон живёт внутри
+  // HTTP-запроса, который nginx рвёт на 240 с; когда обрыв случается, ответа
+  // нет ни у кого, и без этой записи не ответить даже на вопрос «мы не
+  // уложились или соединение упало раньше срока».
+  logger?.info?.(
+    {
+      station,
+      caseId: String(doc._id),
+      ms: elapsed(),
+      modelCalls,
+      rounds: rounds.length,
+      stoppedBy,
+      issuesLeft: bestReview?.issues?.length ?? 0,
+      closedByAgent: resolvedByAgent.length,
+    },
+    "case agent finished fixing",
+  );
+
   recordRadiologyEvent({
     action: cfg.auditAction,
     actorId,
     actorRole,
     caseId: doc._id,
     metadata: {
+      ms: elapsed(),
+      modelCalls,
       rounds: rounds.length,
       stoppedBy,
       issuesLeft: bestReview?.issues?.length ?? 0,
@@ -636,6 +673,18 @@ export async function runCaseAgent({
   });
   report.translation = await Promise.race([translating, waited]);
   clearTimeout(timer);
+
+  logger?.info?.(
+    {
+      station,
+      caseId: String(doc._id),
+      ms: elapsed(),
+      modelCalls,
+      published: true,
+      translation: report.translation,
+    },
+    "case agent finished",
+  );
 
   return report;
 }
