@@ -25,18 +25,31 @@ const { verifyMock, reviseMock } = vi.hoisted(() => ({
   reviseMock: vi.fn(),
 }));
 
+// Мок отдаёт ВСЕ экспорты модуля, а не только лучевой: агент импортирует
+// рецензентов и редакторов всех трёх станций, а vitest подменяет модуль
+// целиком и на недостающий экспорт бросает при первом обращении.
 vi.mock("../../modules/radiology/ai/caseVerifier.js", () => ({
   verifyRadiologyCase: verifyMock,
+  verifyLabCase: verifyMock,
+  verifyVpCase: verifyMock,
 }));
 vi.mock("../../modules/radiology/ai/caseReviser.js", () => ({
   reviseRadiologyCase: reviseMock,
+  reviseLabCase: reviseMock,
+  reviseVpCase: reviseMock,
 }));
 
-const { runRadiologyCaseAgent } = await import(
+const { runRadiologyCaseAgent, runLabCaseAgent, runVpCaseAgent } = await import(
   "../../modules/radiology/ai/caseAgent.js"
 );
 const { default: RadiologyCase } = await import(
   "../../modules/radiology/radiology-cases/models/radiologyCase.model.js"
+);
+const { default: LabCase } = await import(
+  "../../modules/radiology/labs-station/models/labCase.model.js"
+);
+const { default: VirtualPatientCase } = await import(
+  "../../modules/radiology/virtual-patient/models/vpCase.model.js"
 );
 
 const ACTOR = new mongoose.Types.ObjectId();
@@ -281,5 +294,187 @@ describe("Неприкосновенное", () => {
     const fresh = await RadiologyCase.findById(doc._id).lean();
     expect(fresh.aiRevision?.revisedAt).toBeTruthy();
     expect(String(fresh.aiRevision?.actorId)).toBe(String(ACTOR));
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   АНАЛИЗЫ И ВИРТУАЛЬНЫЙ ПАЦИЕНТ
+   ══════════════════════════════════════════════════════════════════════════ */
+
+// У этих станций весь кейс — текст, поэтому агент доводит их до публикации
+// целиком. Проверяется то же, что у лучевой: гейт не обходится, а ключи строк
+// не сдвигаются. Ключ здесь важнее всего — на него завязаны эталон, числовые
+// варианты и разборы уже сданных попыток, и «переименовать» показатель молча
+// значит получить кейс, который выглядит целым, но оценивает неверно.
+
+async function makeLabCase(extra = {}) {
+  return LabCase.create({
+    title: "Железодефицитная анемия",
+    clinicalContext: "Женщина 34 лет, слабость",
+    panel: [
+      { key: "p1", name: "Гемоглобин", value: "92", unit: "г/л", refRange: "120–150" },
+      { key: "p2", name: "Ферритин", value: "6", unit: "нг/мл", refRange: "15–150" },
+    ],
+    significantAbnormal: ["p1", "p2"],
+    impression: { correctText: "ЖДА", diagnosisKeys: ["железодефицитная анемия"] },
+    source: { kind: "ai_generated" },
+    status: "draft",
+    ...extra,
+  });
+}
+
+async function makeVpCase(extra = {}) {
+  return VirtualPatientCase.create({
+    title: "Острый аппендицит",
+    presentation: "Мужчина 22 лет, боль в правой подвздошной области",
+    investigations: [
+      { key: "i1", name: "Общий анализ крови", category: "Лаборатория", necessary: true },
+      { key: "i2", name: "УЗИ брюшной полости", category: "Лучевая", necessary: true },
+    ],
+    diagnosis: { correctText: "Острый аппендицит", diagnosisKeys: ["аппендицит"] },
+    source: { kind: "ai_generated" },
+    status: "draft",
+    ...extra,
+  });
+}
+
+describe("Анализы", () => {
+  it("чистая рецензия — кейс публикуется", async () => {
+    verifyMock.mockResolvedValue(cleanReview());
+    const doc = await makeLabCase();
+
+    const r = await runLabCaseAgent({ caseId: doc._id, ...AS });
+
+    expect(r.station).toBe("labs");
+    expect(r.published).toBe(true);
+    const fresh = await LabCase.findById(doc._id).lean();
+    expect(fresh.status).toBe("published");
+    expect(fresh.publishedAt).toBeTruthy();
+  });
+
+  it("ключи показателей переживают правку — на них держится эталон", async () => {
+    verifyMock.mockResolvedValueOnce(dirtyReview()).mockResolvedValue(cleanReview());
+    // Редактор правит референс, ключей он не видит и не возвращает.
+    reviseMock.mockImplementation(({ draft }) => ({
+      draft: {
+        ...draft,
+        panel: draft.panel.map((p) =>
+          p.name === "Ферритин" ? { ...p, refRange: "10–120" } : p,
+        ),
+      },
+      changes: [{ target: "Ферритин", change: "15–150 → 10–120", why: "по замечанию" }],
+      disputed: [],
+      usage: { inputTokens: 5, outputTokens: 5 },
+    }));
+
+    const doc = await makeLabCase();
+    await runLabCaseAgent({ caseId: doc._id, ...AS });
+
+    const fresh = await LabCase.findById(doc._id).lean();
+    expect(fresh.panel.map((p) => p.key)).toEqual(["p1", "p2"]);
+    expect(fresh.panel.find((p) => p.name === "Ферритин").refRange).toBe("10–120");
+    expect(fresh.significantAbnormal).toEqual(["p1", "p2"]);
+  });
+
+  it("гейт не обходится: без принятого диагноза публикации нет", async () => {
+    verifyMock.mockResolvedValue(cleanReview());
+    const doc = await makeLabCase({
+      impression: { correctText: "ЖДА", diagnosisKeys: [] },
+    });
+
+    const r = await runLabCaseAgent({ caseId: doc._id, ...AS });
+
+    expect(r.fixed).toBe(true);
+    expect(r.published).toBe(false);
+    expect(r.blockers.join(" ")).toMatch(/диагноз/i);
+    const fresh = await LabCase.findById(doc._id).lean();
+    expect(fresh.status).toBe("draft");
+  });
+
+  it("оставшееся замечание блокирует публикацию", async () => {
+    verifyMock.mockResolvedValue(dirtyReview());
+    const doc = await makeLabCase();
+
+    const r = await runLabCaseAgent({ caseId: doc._id, maxRounds: 2, ...AS });
+
+    expect(r.published).toBe(false);
+    expect(r.blockers.join(" ")).toMatch(/замечани/i);
+  });
+
+  it("пустая панель — модель не вызывается", async () => {
+    const doc = await makeLabCase({ panel: [], significantAbnormal: [] });
+
+    const r = await runLabCaseAgent({ caseId: doc._id, ...AS });
+
+    expect(verifyMock).not.toHaveBeenCalled();
+    expect(r.stoppedBy).toBe("prerequisites");
+  });
+});
+
+describe("Виртуальный пациент", () => {
+  it("чистая рецензия — сценарий публикуется", async () => {
+    verifyMock.mockResolvedValue(cleanReview());
+    const doc = await makeVpCase();
+
+    const r = await runVpCaseAgent({ caseId: doc._id, ...AS });
+
+    expect(r.station).toBe("vp");
+    expect(r.published).toBe(true);
+    const fresh = await VirtualPatientCase.findById(doc._id).lean();
+    expect(fresh.status).toBe("published");
+  });
+
+  it("ключи обследований переживают правку", async () => {
+    verifyMock.mockResolvedValueOnce(dirtyReview()).mockResolvedValue(cleanReview());
+    reviseMock.mockImplementation(({ draft }) => ({
+      draft: {
+        ...draft,
+        investigations: draft.investigations.map((i) =>
+          i.name === "УЗИ брюшной полости"
+            ? { ...i, resultText: "Аппендикс 9 мм, несжимаемый" }
+            : i,
+        ),
+      },
+      changes: [{ target: "УЗИ", change: "добавлен результат", why: "по замечанию" }],
+      disputed: [],
+      usage: { inputTokens: 5, outputTokens: 5 },
+    }));
+
+    const doc = await makeVpCase();
+    await runVpCaseAgent({ caseId: doc._id, ...AS });
+
+    const fresh = await VirtualPatientCase.findById(doc._id).lean();
+    expect(fresh.investigations.map((i) => i.key)).toEqual(["i1", "i2"]);
+    expect(fresh.investigations.find((i) => i.name === "УЗИ брюшной полости").resultText)
+      .toBe("Аппендикс 9 мм, несжимаемый");
+    // Эталон «нужное обследование» не должен потеряться при правке.
+    expect(fresh.investigations.filter((i) => i.necessary)).toHaveLength(2);
+  });
+
+  it("гейт не обходится: без отмеченного нужного обследования публикации нет", async () => {
+    verifyMock.mockResolvedValue(cleanReview());
+    const doc = await makeVpCase({
+      investigations: [
+        { key: "i1", name: "Общий анализ крови", category: "Лаборатория", necessary: false },
+        { key: "i2", name: "УЗИ брюшной полости", category: "Лучевая", necessary: false },
+      ],
+    });
+
+    const r = await runVpCaseAgent({ caseId: doc._id, ...AS });
+
+    expect(r.published).toBe(false);
+    expect(r.blockers.join(" ")).toMatch(/нужное обследование/i);
+  });
+
+  it("publish=false правит, но публикацию оставляет человеку", async () => {
+    verifyMock.mockResolvedValue(cleanReview());
+    const doc = await makeVpCase();
+
+    const r = await runVpCaseAgent({ caseId: doc._id, publish: false, ...AS });
+
+    expect(r.fixed).toBe(true);
+    expect(r.published).toBe(false);
+    const fresh = await VirtualPatientCase.findById(doc._id).lean();
+    expect(fresh.status).toBe("draft");
   });
 });

@@ -24,6 +24,7 @@ import { generateVpCase } from "../ai/caseGenerator.js";
 import { verifyVpCase } from "../ai/caseVerifier.js";
 import { reviseVpCase } from "../ai/caseReviser.js";
 import { runAutoFix, runTargetedFix } from "../ai/autoFix.js";
+import { runVpCaseAgent } from "../ai/caseAgent.js";
 import { MODEL } from "../ai/aiRunner.js";
 import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
 import { generateVpVariants } from "../ai/caseVariants.js";
@@ -39,6 +40,7 @@ import {
   aiGenerateVpSchema,
   aiVerifyVpSchema,
   aiAutofixVpSchema,
+  aiRunAgentVpSchema,
   dismissAiIssuesSchema,
   aiVariantsSchema,
   startVpSchema,
@@ -106,6 +108,27 @@ export const aiVerifyVpController = asyncHandler(async (req, res) => {
 // пока рецензия не станет чистой (ai/autoFix.js). Гейт публикации не
 // обходится: он считает неразобранные замечания, а после чистой рецензии
 // считать нечего. Подробности — в одноимённом контроллере станции «Анализы».
+// АГЕНТ-ДОВОДЧИК: «доделай и опубликуй».
+//
+// Отличие от /ai/autofix, который рядом: тот правит ЧЕРНОВИК ИЗ ФОРМЫ и
+// возвращает результат в форму, оставляя публикацию человеку. Этот работает с
+// сохранённым кейсом целиком — правит текст, перепроверяет себя и сам проходит
+// гейт публикации, если после правки блокеров не осталось.
+//
+// Права те же, что у ручной смены статуса на этой станции (requireAuthor):
+// агент публикует ровно то, что автор и так вправе опубликовать кнопкой.
+export const aiRunAgentVpController = asyncHandler(async (req, res) => {
+  const parsed = aiRunAgentVpSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const report = await runVpCaseAgent({
+    caseId: req.params.id,
+    actorId: req.radiologyActor.userId,
+    actorRole: req.radiologyActor.role,
+    ...parsed.data,
+  });
+  res.json(report);
+});
+
 export const aiAutofixVpController = asyncHandler(async (req, res) => {
   const parsed = aiAutofixVpSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);

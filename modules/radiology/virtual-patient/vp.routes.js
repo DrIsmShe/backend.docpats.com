@@ -15,6 +15,9 @@ router.post("/vp/ai/verify", requireAuthor, ctrl.aiVerifyVpController);
 // Цикл «правка → перепроверка»: машина исправляет сценарий по замечаниям
 // рецензента, пока рецензия не станет чистой. Минуты работы модели.
 router.post("/vp/ai/autofix", requireAuthor, ctrl.aiAutofixVpController);
+// Агент-доводчик: правит текст, перепроверяет себя и публикует,
+// если гейт чист. Права те же, что у ручной смены статуса.
+router.post("/vp/cases/:id/ai/agent", requireAuthor, ctrl.aiRunAgentVpController);
 
 router.get("/vp/cases", ctrl.listVpController);
 router.post("/vp/cases", requireAuthor, ctrl.createVpController);

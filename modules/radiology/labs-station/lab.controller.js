@@ -22,6 +22,7 @@ import { generateLabCase } from "../ai/caseGenerator.js";
 import { verifyLabCase } from "../ai/caseVerifier.js";
 import { reviseLabCase } from "../ai/caseReviser.js";
 import { runAutoFix, runTargetedFix } from "../ai/autoFix.js";
+import { runLabCaseAgent } from "../ai/caseAgent.js";
 import { MODEL } from "../ai/aiRunner.js";
 import { generateBaselineAnswer } from "../ai/baselineAnswer.js";
 import { generateLabVariants } from "../ai/caseVariants.js";
@@ -35,6 +36,7 @@ import {
   aiGenerateLabSchema,
   aiVerifyLabSchema,
   aiAutofixLabSchema,
+  aiRunAgentLabSchema,
   dismissAiIssuesSchema,
   aiVariantsSchema,
   startLabSchema,
@@ -109,6 +111,27 @@ export const aiVerifyLabCaseController = asyncHandler(async (req, res) => {
 // Стартовую рецензию считаем ЗАНОВО, а не берём сохранённую: сохранённая
 // относится к сохранённому кейсу, а править надо то, что сейчас в форме.
 // Лишний вызов модели дешевле, чем правки по замечаниям к другой версии.
+// АГЕНТ-ДОВОДЧИК: «доделай и опубликуй».
+//
+// Отличие от /ai/autofix, который рядом: тот правит ЧЕРНОВИК ИЗ ФОРМЫ и
+// возвращает результат в форму, оставляя публикацию человеку. Этот работает с
+// сохранённым кейсом целиком — правит текст, перепроверяет себя и сам проходит
+// гейт публикации, если после правки блокеров не осталось.
+//
+// Права те же, что у ручной смены статуса на этой станции (requireAuthor):
+// агент публикует ровно то, что автор и так вправе опубликовать кнопкой.
+export const aiRunAgentLabController = asyncHandler(async (req, res) => {
+  const parsed = aiRunAgentLabSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const report = await runLabCaseAgent({
+    caseId: req.params.id,
+    actorId: req.radiologyActor.userId,
+    actorRole: req.radiologyActor.role,
+    ...parsed.data,
+  });
+  res.json(report);
+});
+
 export const aiAutofixLabCaseController = asyncHandler(async (req, res) => {
   const parsed = aiAutofixLabSchema.safeParse(req.body ?? {});
   if (!parsed.success) throwZod(parsed);

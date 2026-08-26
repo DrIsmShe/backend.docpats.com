@@ -1,62 +1,85 @@
 // server/modules/radiology/ai/caseAgent.js
 //
-// АГЕНТ-ДОВОДЧИК ЛУЧЕВОГО КЕЙСА: «снимок загружен — доведи до публикации».
+// АГЕНТ-ДОВОДЧИК КЕЙСА: «доделай и опубликуй».
 //
-// Разделение труда со станциями «Анализы» и «Виртуальный пациент» здесь не
-// прихоть, а следствие того, что у лучевого кейса есть часть, которой машина
-// не владеет. Там ночной прогон публикует сам: весь кейс — текст, и чистой
-// рецензии достаточно. Здесь кейс без настоящего кадра не существует, кадр
-// приносит человек, и до его прихода публиковать нечего.
+// Одна и та же работа для трёх станций арены: взять СОХРАНЁННЫЙ кейс, довести
+// его текст до чистой рецензии циклом «правка → перепроверка» (ai/autoFix.js) и
+// опубликовать — через тот же гейт, которым пользуется человек.
 //
-// Отсюда форма: не «ещё один автопубликатор», а кнопка, которую админ жмёт
-// ПОСЛЕ загрузки снимка. Агент делает ровно то, что машине можно:
+// Почему станции живут в одном файле, а не тремя копиями. Отличий между ними
+// ровно четыре: форма черновика, кто рецензирует, кто применяет правку и что
+// именно блокирует публикацию. Всё остальное — порядок шагов, работа с гейтом,
+// аудит, форма отчёта — совпадает буквально, и три копии этого кода разошлись
+// бы на первой же правке. Различия вынесены в STATIONS ниже.
 //
-//   1. проверяет предусловия, ничего не тратя на модель, если работать рано;
-//   2. гоняет цикл «правка → перепроверка» (ai/autoFix.js) по ТЕКСТУ кейса,
-//      причём перепроверка идёт СО СНИМКОМ — именно ради этого агент и
-//      запускается после загрузки: до неё рецензент проверял текст вслепую;
-//   3. публикует — но только через тот же гейт, что и человек.
+// ЧЕМ ЭТО ОТЛИЧАЕТСЯ ОТ /ai/autofix. Тот правит черновик ИЗ ФОРМЫ и возвращает
+// его в форму, оставляя публикацию человеку. Агент работает с тем, что лежит в
+// базе, и доводит кейс до конца. Для лучевой станции это к тому же
+// единственный способ проверить текст ПО СНИМКУ: перепроверка получает кадр,
+// которого в момент ночной генерации не существовало.
 //
-// ЧЕГО АГЕНТ НЕ ДЕЛАЕТ И НЕ БУДЕТ ДЕЛАТЬ:
+// ЧЕГО АГЕНТ НЕ ДЕЛАЕТ НИ НА ОДНОЙ СТАНЦИИ:
 //
-//   — не ставит галочку «снимок деидентифицирован». Это утверждение о
-//     реальном изображении, и подписывает его тот, кто на изображение
-//     смотрел. Машина, поставившая её за человека, превращает гейт
-//     приватности в декорацию;
-//   — не двигает и не создаёт точки находок на кадре. Координаты — это
-//     эталон, по которому потом оценивают врачей;
 //   — не отмечает замечания рецензента «разобранными». Гейт считает именно
 //     неразобранные; проставить их машиной значило бы соврать гейту вместо
-//     того, чтобы починить кейс. Поэтому агент публикует только тогда, когда
-//     замечаний НЕ ОСТАЛОСЬ по существу.
-//
-// Все остановки агент возвращает списком blockers — тем же, что показывает
-// гейт публикации. Врач видит не «не получилось», а что именно доделать.
+//     того, чтобы починить кейс. Поэтому публикация возможна только тогда,
+//     когда замечаний не осталось ПО СУЩЕСТВУ;
+//   — не подтверждает деидентификацию снимка и не двигает точки находок на
+//     кадре (лучевая станция). И то и другое — утверждение о реальном
+//     изображении, подписывает его тот, кто изображение видел;
+//   — не обходит гейт публикации. Все препятствия возвращаются списком
+//     blockers — человек видит не «не получилось», а что именно доделать.
 
 import RadiologyCase from "../radiology-cases/models/radiologyCase.model.js";
+import LabCase from "../labs-station/models/labCase.model.js";
+import VirtualPatientCase from "../virtual-patient/models/vpCase.model.js";
+
 import {
   collectPublishBlockers,
   submitForReview,
   reviewCase,
   applyRadiologyAiRevision,
 } from "../radiology-cases/services/case.service.js";
-import { verifyRadiologyCase } from "./caseVerifier.js";
-import { reviseRadiologyCase } from "./caseReviser.js";
+import {
+  collectLabBlockers,
+  applyLabAiRevision,
+  setLabStatus,
+} from "../labs-station/lab.service.js";
+import {
+  collectVpBlockers,
+  applyVpAiRevision,
+  setVpStatus,
+} from "../virtual-patient/vp.service.js";
+
+import {
+  verifyRadiologyCase,
+  verifyLabCase,
+  verifyVpCase,
+} from "./caseVerifier.js";
+import {
+  reviseRadiologyCase,
+  reviseLabCase,
+  reviseVpCase,
+} from "./caseReviser.js";
 import { runAutoFix } from "./autoFix.js";
 import { saveAiReview } from "./aiReviewStore.js";
 import { MODEL } from "./aiRunner.js";
 import { recordRadiologyEvent } from "../audit/audit.service.js";
-import { NotFoundError } from "../../../common/utils/errors.js";
+import { NotFoundError, ValidationError } from "../../../common/utils/errors.js";
 
 // Статусы, из которых агенту есть что делать. Опубликованный кейс правится
 // только через снятие с публикации — молча мутировать живой контент нельзя:
 // это рассинхронизирует попытки, переводы и статистику.
 const AGENT_STATUSES = ["draft", "rejected", "in_review"];
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ЛУЧЕВАЯ СТАНЦИЯ
+   ══════════════════════════════════════════════════════════════════════════ */
+
 /**
- * Кадр для перепроверки. Берём первый по порядку — тот же, который автор
- * видит открытым в редакторе; при нескольких проекциях рецензенту важнее
- * получить хоть один настоящий снимок, чем ни одного.
+ * Кадр для перепроверки. Берём первый по порядку — тот же, который автор видит
+ * открытым в редакторе; при нескольких проекциях рецензенту важнее получить
+ * хоть один настоящий снимок, чем ни одного.
  */
 function primaryImageUrl(doc) {
   const images = [...(doc.images ?? [])].sort(
@@ -66,30 +89,28 @@ function primaryImageUrl(doc) {
 }
 
 /**
- * Черновик для рецензента и редактора — ровно в той форме, в какой его
- * отправляет админка: план находок и уже размеченные идут ОДНИМ списком.
- * Рецензенту важна медицинская суть, а не то, на каком поле находка лежит;
- * обратно по двум полям их разводит applyRadiologyAiRevision.
+ * Черновик лучевого кейса — ровно в той форме, в какой его отправляет админка:
+ * план находок и уже размеченные идут ОДНИМ списком. Рецензенту важна
+ * медицинская суть, а не то, на каком поле находка лежит; обратно по двум полям
+ * их разводит applyRadiologyAiRevision.
  */
-function buildDraft(doc) {
-  const plannedFindings = [
-    ...(doc.plannedFindings ?? []).map((p) => ({
-      label: p.label,
-      significance: p.significance ?? "major",
-      location: p.location || undefined,
-      explanation: p.explanation || undefined,
-    })),
-    ...(doc.findings ?? []).map((f) => ({
-      label: f.label,
-      significance: f.significance ?? "major",
-      explanation: f.explanation?.trim() || undefined,
-    })),
-  ];
-
+function buildRadiologyDraft(doc) {
   return {
     title: doc.title?.trim() || undefined,
     clinicalContext: doc.clinicalContext?.trim() || undefined,
-    plannedFindings,
+    plannedFindings: [
+      ...(doc.plannedFindings ?? []).map((p) => ({
+        label: p.label,
+        significance: p.significance ?? "major",
+        location: p.location || undefined,
+        explanation: p.explanation || undefined,
+      })),
+      ...(doc.findings ?? []).map((f) => ({
+        label: f.label,
+        significance: f.significance ?? "major",
+        explanation: f.explanation?.trim() || undefined,
+      })),
+    ],
     impression: {
       correctText: doc.impression?.correctText?.trim() || undefined,
       diagnosisKeys: doc.impression?.diagnosisKeys ?? [],
@@ -99,37 +120,34 @@ function buildDraft(doc) {
 }
 
 /**
- * Условие, без которого НЕЧЕГО ДЕЛАТЬ: нет кадра.
+ * Условие, без которого лучевому агенту НЕЧЕГО ДЕЛАТЬ: нет кадра.
  *
- * Смысл агента в том, что рецензент смотрит на снимок; без снимка он проверял
+ * Смысл запуска в том, что рецензент смотрит на снимок; без снимка он проверял
  * бы текст вслепую — то же самое, что уже сделал ночной прогон. Плюс каждый
- * круг цикла стоит двух вызовов Opus с рассуждением, и тратить их на повтор
- * ночной работы незачем.
+ * круг цикла стоит двух вызовов модели с рассуждением.
  */
-function fixPrerequisites(doc) {
+function radiologyFixPrerequisites(doc) {
   return doc.images?.length
     ? []
     : ["загрузите снимок — агент запускается после кадра"];
 }
 
 /**
- * Условие, без которого нельзя ПУБЛИКОВАТЬ, но правке оно не мешает.
+ * Условие, без которого нельзя ПУБЛИКОВАТЬ лучевой кейс, но правке оно не
+ * мешает.
  *
- * Разделение важнее, чем кажется. Первая версия агента считала неразмеченный
- * план предусловием и отказывалась работать: кейс с четырьмя находками в плане,
- * нулём точек на кадре и шестью замечаниями рецензента не получал ничего —
- * агент выходил, не вызвав модель, и человек видел «изменений нет».
- *
- * Между тем именно такому кейсу правка нужнее всего: половина замечаний
- * рецензента звучит как «этой находки на срезе не видно — уберите её из плана и
- * из заключения», и это ровно та текстовая работа, которую машине делать можно.
- * Разметка нужна для публикации, а не для того, чтобы привести текст в
- * соответствие со снимком.
+ * Разделение важнее, чем кажется, и стоило разбора на проде. Первая версия
+ * считала неразмеченный план предусловием и выходила, не вызвав модель: кейс с
+ * четырьмя находками в плане, нулём точек на кадре и шестью замечаниями
+ * рецензента не получал ничего, а человек видел «изменений нет». Между тем
+ * именно такому кейсу правка нужнее всего — половина замечаний там звучит как
+ * «этой находки на срезе не видно, уберите её из плана и заключения», и это
+ * ровно та текстовая работа, которую машине делать можно.
  *
  * Пустой план при пустой разметке блокером НЕ считается: это кейс «норма», где
  * находок нет по замыслу автора.
  */
-function markupBlockers(doc) {
+function radiologyMarkupBlockers(doc) {
   if ((doc.plannedFindings?.length ?? 0) > 0 && (doc.findings?.length ?? 0) === 0) {
     return [
       `перенесите находки из плана на снимок (${doc.plannedFindings.length}) — координаты ставит человек`,
@@ -138,19 +156,176 @@ function markupBlockers(doc) {
   return [];
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   АНАЛИЗЫ
+   ══════════════════════════════════════════════════════════════════════════ */
+
 /**
- * Довести лучевой кейс до публикации.
+ * Черновик кейса «Анализы». Панель уходит модели БЕЗ ключей — она их не видит и
+ * видеть не должна: на ключ завязаны эталон, числовые варианты и разборы уже
+ * сданных попыток. Обратно ключи восстанавливает applyLabAiRevision,
+ * сопоставляя показатели по названию.
  *
- * @param {object} args
- * @param {string} args.caseId
- * @param {string} args.actorId
- * @param {string} args.actorRole
- * @param {number} [args.maxRounds]  кругов правки, по умолчанию 3
- * @param {string} [args.hint]       указание автора редактору — главнее замечаний
- * @param {boolean} [args.publish]   false — только починить, не публиковать
+ * Признак significant модель получает флагом на строке, а не отдельным списком
+ * ключей: списка ключей ей не с чем сопоставить.
+ */
+function buildLabDraft(doc) {
+  const significant = new Set(doc.significantAbnormal ?? []);
+  return {
+    title: doc.title?.trim() || undefined,
+    clinicalContext: doc.clinicalContext?.trim() || undefined,
+    panel: (doc.panel ?? []).map((p) => ({
+      name: p.name,
+      value: p.value,
+      unit: p.unit || undefined,
+      refRange: p.refRange || undefined,
+      significant: significant.has(p.key),
+    })),
+    impression: {
+      correctText: doc.impression?.correctText?.trim() || undefined,
+      diagnosisKeys: doc.impression?.diagnosisKeys ?? [],
+      diagnosisSynonyms: doc.impression?.diagnosisSynonyms ?? [],
+    },
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ВИРТУАЛЬНЫЙ ПАЦИЕНТ
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Черновик сценария. Как и у «Анализов», обследования уходят без ключей и
+ * возвращаются по названию (applyVpAiRevision). imageUrl редактору не
+ * показывается вовсе — он с изображениями не работает, а applyVpAiRevision
+ * переносит ссылку в исправленную версию сам.
+ */
+function buildVpDraft(doc) {
+  return {
+    title: doc.title?.trim() || undefined,
+    presentation: doc.presentation?.trim() || undefined,
+    investigations: (doc.investigations ?? []).map((i) => ({
+      name: i.name,
+      category: i.category || undefined,
+      resultText: i.resultText || undefined,
+      necessary: Boolean(i.necessary),
+    })),
+    diagnosis: {
+      correctText: doc.diagnosis?.correctText?.trim() || undefined,
+      diagnosisKeys: doc.diagnosis?.diagnosisKeys ?? [],
+      diagnosisSynonyms: doc.diagnosis?.diagnosisSynonyms ?? [],
+    },
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   РЕЕСТР СТАНЦИЙ
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const STATIONS = {
+  radiology: {
+    label: "снимки",
+    Model: RadiologyCase,
+    notFound: "Radiology case",
+    auditAction: "case.agent.run",
+    fixPrerequisites: radiologyFixPrerequisites,
+    buildDraft: buildRadiologyDraft,
+    // Перепроверка идёт СО СНИМКОМ: рецензент должен смотреть на тот же кадр,
+    // что и учащийся, иначе исправленный текст будет проверен слабее исходного.
+    verify: (draft, doc) =>
+      verifyRadiologyCase({
+        draft,
+        modality: doc.modality,
+        imageUrl: primaryImageUrl(doc),
+      }),
+    revise: (draft, issues, doc, hint) =>
+      reviseRadiologyCase({ draft, issues, modality: doc.modality, hint }),
+    applyRevision: applyRadiologyAiRevision,
+    // К гейту добавляем требование разметки: сам гейт её не проверяет (кейс
+    // «норма» публикуется без находок), но кейс с непереносённым планом — это
+    // незаконченная работа, и публиковать его агенту нельзя.
+    publishBlockers: (doc) => [
+      ...collectPublishBlockers(doc),
+      ...radiologyMarkupBlockers(doc),
+    ],
+    // Публикуем ТЕМ ЖЕ путём, что и человек: submit → approve. Свой короткий
+    // путь означал бы вторую копию гейта, которая однажды разойдётся с первой.
+    async publish(caseId, doc, actorId, actorRole) {
+      if (doc.status === "draft" || doc.status === "rejected") {
+        await submitForReview(caseId, actorId, actorRole);
+      }
+      return reviewCase(caseId, { decision: "approve" }, actorId, actorRole);
+    },
+    // Находки уже размечены на кадре, а план правился — их могло развести в
+    // стороны. Свести обратно может только человек у холста.
+    reportExtras: (applied) => ({ markupPresent: applied.markupPresent }),
+  },
+
+  labs: {
+    label: "анализы",
+    Model: LabCase,
+    notFound: "Lab case",
+    auditAction: "lab.agent.run",
+    // Панель — это весь кейс; рецензировать пустую бессмысленно, а гейт всё
+    // равно потребует минимум два показателя.
+    fixPrerequisites: (doc) =>
+      (doc.panel?.length ?? 0) > 0
+        ? []
+        : ["добавьте показатели в панель — править нечего"],
+    buildDraft: buildLabDraft,
+    verify: (draft) => verifyLabCase({ draft }),
+    revise: (draft, issues, doc, hint) => reviseLabCase({ draft, issues, hint }),
+    applyRevision: applyLabAiRevision,
+    publishBlockers: collectLabBlockers,
+    // setLabStatus сам проверяет гейт и сам ставит перевод на все языки в
+    // очередь — второй проверки здесь не нужно.
+    publish: (caseId, doc, actorId, actorRole) =>
+      setLabStatus(caseId, "published", actorId, actorRole),
+    // Числовые варианты кейса привязаны к ключам панели: если редактор менял
+    // значения, варианты могли устареть, и об этом должен знать человек.
+    reportExtras: (applied) => ({ variantsStale: applied.variantsStale }),
+  },
+
+  vp: {
+    label: "виртуальный пациент",
+    Model: VirtualPatientCase,
+    notFound: "VP case",
+    auditAction: "vp.agent.run",
+    fixPrerequisites: (doc) =>
+      (doc.investigations?.length ?? 0) > 0
+        ? []
+        : ["добавьте обследования — править нечего"],
+    buildDraft: buildVpDraft,
+    verify: (draft) => verifyVpCase({ draft }),
+    revise: (draft, issues, doc, hint) => reviseVpCase({ draft, issues, hint }),
+    applyRevision: applyVpAiRevision,
+    publishBlockers: collectVpBlockers,
+    publish: (caseId, doc, actorId, actorRole) =>
+      setVpStatus(caseId, "published", actorId, actorRole),
+    reportExtras: (applied) => ({ variantsStale: applied.variantsStale }),
+  },
+};
+
+export const AGENT_STATIONS = Object.keys(STATIONS);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ПРОГОН
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Довести кейс до публикации.
+ *
+ * @param {object}  args
+ * @param {"radiology"|"labs"|"vp"} args.station
+ * @param {string}  args.caseId
+ * @param {string}  args.actorId
+ * @param {string}  args.actorRole
+ * @param {number}  [args.maxRounds]  кругов правки, по умолчанию 3
+ * @param {string}  [args.hint]       указание автора редактору — главнее замечаний
+ * @param {boolean} [args.publish]    false — только починить, не публиковать
  * @returns {Promise<object>} отчёт о прогоне
  */
-export async function runRadiologyCaseAgent({
+export async function runCaseAgent({
+  station,
   caseId,
   actorId,
   actorRole,
@@ -158,10 +333,14 @@ export async function runRadiologyCaseAgent({
   hint,
   publish = true,
 }) {
-  const doc = await RadiologyCase.findById(caseId);
-  if (!doc) throw new NotFoundError("Radiology case");
+  const cfg = STATIONS[station];
+  if (!cfg) throw new ValidationError(`Неизвестная станция "${station}"`);
+
+  const doc = await cfg.Model.findById(caseId);
+  if (!doc) throw new NotFoundError(cfg.notFound);
 
   const base = {
+    station,
     caseId: String(doc._id),
     status: doc.status,
     published: false,
@@ -172,7 +351,6 @@ export async function runRadiologyCaseAgent({
     disputed: [],
     blockers: [],
     review: null,
-    markupPresent: (doc.findings?.length ?? 0) > 0,
     usage: { inputTokens: 0, outputTokens: 0 },
   };
 
@@ -187,26 +365,22 @@ export async function runRadiologyCaseAgent({
     };
   }
 
-  const pre = fixPrerequisites(doc);
+  const pre = cfg.fixPrerequisites(doc);
   if (pre.length) {
     return { ...base, stoppedBy: "prerequisites", blockers: pre };
   }
 
   // ─── Цикл правки ────────────────────────────────────────────────────────
-  const modality = doc.modality;
-  const imageUrl = primaryImageUrl(doc);
-  const draft = buildDraft(doc);
-
-  const revise = (current, issues) =>
-    reviseRadiologyCase({ draft: current, issues, modality, hint });
-  const verify = (current) =>
-    verifyRadiologyCase({ draft: current, modality, imageUrl });
+  const draft = cfg.buildDraft(doc);
+  const revise = (current, issues) => cfg.revise(current, issues, doc, hint);
+  const verify = (current) => cfg.verify(current, doc);
 
   const out = await runAutoFix({ draft, revise, verify, maxRounds });
 
   // Сначала кейс, потом рецензия: обратный порядок оставил бы чистую рецензию
-  // на неисправленной версии.
-  const applied = await applyRadiologyAiRevision(caseId, out.draft, {
+  // на неисправленной версии, то есть открыл бы гейт тому, чего рецензент не
+  // видел.
+  const applied = await cfg.applyRevision(caseId, out.draft, {
     rounds: out.rounds.length,
     stoppedBy: out.stoppedBy,
     converged: out.converged,
@@ -215,7 +389,7 @@ export async function runRadiologyCaseAgent({
     model: MODEL,
     actorId,
   });
-  await saveAiReview({ CaseModel: RadiologyCase, caseId, review: out.review });
+  await saveAiReview({ CaseModel: cfg.Model, caseId, review: out.review });
 
   const report = {
     ...base,
@@ -226,12 +400,12 @@ export async function runRadiologyCaseAgent({
     changes: out.changes ?? [],
     disputed: out.disputed ?? [],
     review: out.review,
-    markupPresent: applied.markupPresent,
     usage: out.usage,
+    ...cfg.reportExtras(applied),
   };
 
   recordRadiologyEvent({
-    action: "case.agent.run",
+    action: cfg.auditAction,
     actorId,
     actorRole,
     caseId: doc._id,
@@ -239,38 +413,31 @@ export async function runRadiologyCaseAgent({
       rounds: out.rounds.length,
       stoppedBy: out.stoppedBy,
       issuesLeft: out.review?.issues?.length ?? 0,
-      withImage: Boolean(imageUrl),
     },
   });
 
   // ─── Публикация ─────────────────────────────────────────────────────────
-  // Перечитываем документ: applyRadiologyAiRevision его изменил, а гейт должен
-  // смотреть на то, что реально лежит в базе, а не на версию до правки.
-  const fresh = await RadiologyCase.findById(caseId);
-  // К гейту добавляем требование разметки: сам гейт её не проверяет (кейс
-  // «норма» публикуется без находок), но кейс с непереносённым планом — это
-  // незаконченная работа, и публиковать его агенту нельзя.
-  const blockers = [...collectPublishBlockers(fresh), ...markupBlockers(fresh)];
+  // Перечитываем документ: applyRevision его изменил, а гейт должен смотреть на
+  // то, что реально лежит в базе, а не на версию до правки.
+  const fresh = await cfg.Model.findById(caseId);
+  const blockers = cfg.publishBlockers(fresh);
   report.status = fresh.status;
   report.blockers = blockers;
 
   if (!publish || blockers.length) return report;
 
-  // Публикуем ТЕМ ЖЕ путём, что и человек: submit → approve. Свой короткий
-  // путь означал бы вторую копию гейта, которая однажды разойдётся с первой.
-  if (fresh.status === "draft" || fresh.status === "rejected") {
-    await submitForReview(caseId, actorId, actorRole);
-  }
-  const publishedDoc = await reviewCase(
-    caseId,
-    { decision: "approve" },
-    actorId,
-    actorRole,
-  );
-
+  const publishedDoc = await cfg.publish(caseId, fresh, actorId, actorRole);
   report.published = true;
   report.status = publishedDoc.status;
   return report;
 }
 
-export default runRadiologyCaseAgent;
+// Именованные обёртки — контроллеры станций не должны знать про строковый ключ
+// реестра: опечатка в нём падала бы только в рантайме.
+export const runRadiologyCaseAgent = (args) =>
+  runCaseAgent({ ...args, station: "radiology" });
+export const runLabCaseAgent = (args) =>
+  runCaseAgent({ ...args, station: "labs" });
+export const runVpCaseAgent = (args) => runCaseAgent({ ...args, station: "vp" });
+
+export default runCaseAgent;

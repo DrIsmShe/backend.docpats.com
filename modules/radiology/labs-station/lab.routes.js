@@ -17,6 +17,9 @@ router.post("/labs/ai/verify", requireAuthor, ctrl.aiVerifyLabCaseController);
 // рецензента, пока рецензия не станет чистой. Минуты работы и несколько
 // вызовов модели — поэтому только автору и только по кнопке.
 router.post("/labs/ai/autofix", requireAuthor, ctrl.aiAutofixLabCaseController);
+// Агент-доводчик: правит текст, перепроверяет себя и публикует,
+// если гейт чист. Права те же, что у ручной смены статуса.
+router.post("/labs/cases/:id/ai/agent", requireAuthor, ctrl.aiRunAgentLabController);
 
 router.get("/labs/cases", ctrl.listLabCasesController);
 router.post("/labs/cases", requireAuthor, ctrl.createLabCaseController);
