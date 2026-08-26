@@ -117,7 +117,15 @@ describe("Предусловия — до обращения к модели", (
     expect(r.blockers.join(" ")).toMatch(/загрузите снимок/i);
   });
 
-  it("план находок есть, а на кадре ничего не размечено — работать рано", async () => {
+  // Неразмеченный план мешает ПУБЛИКАЦИИ, но не правке — и это разделение
+  // стоило отдельного разбора на проде. Первая версия считала его предусловием
+  // и выходила, не вызвав модель: кейс с четырьмя находками в плане, нулём
+  // точек и шестью замечаниями рецензента не получал ничего, а человек видел
+  // «изменений нет». Между тем половина замечаний там звучит как «этой находки
+  // на срезе не видно, уберите её из плана и заключения» — ровно та текстовая
+  // работа, которую машине делать можно и нужно.
+  it("неразмеченный план не мешает правке, но не пускает в публикацию", async () => {
+    verifyMock.mockResolvedValue(cleanReview());
     const doc = await makeCase({
       findings: [],
       plannedFindings: [
@@ -127,8 +135,13 @@ describe("Предусловия — до обращения к модели", (
 
     const r = await runRadiologyCaseAgent({ caseId: doc._id, ...AS });
 
-    expect(verifyMock).not.toHaveBeenCalled();
+    expect(verifyMock).toHaveBeenCalled();
+    expect(r.fixed).toBe(true);
+    expect(r.published).toBe(false);
     expect(r.blockers.join(" ")).toMatch(/перенесите находки из плана/i);
+
+    const fresh = await RadiologyCase.findById(doc._id).lean();
+    expect(fresh.status).toBe("draft");
   });
 
   it("кейс «норма» — ни плана, ни разметки — предусловиям не противоречит", async () => {
