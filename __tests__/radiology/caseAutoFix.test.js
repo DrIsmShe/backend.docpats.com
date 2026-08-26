@@ -80,6 +80,45 @@ describe("цикл правка → перепроверка", () => {
     expect(revise.calls()).toBe(1);
   });
 
+  // СРОК. Цикл живёт внутри HTTP-запроса, а nginx рвёт соединение на 240 с.
+  // Когда цикл этого не знал, работа продолжалась после обрыва и молча
+  // доводилась до конца: кейс публиковался и переводился, а врач видел
+  // «Network Error» и делал ровно обратный вывод.
+  it("не начинает новый круг после срока", async () => {
+    const verify = verifierOf([3, 2, 1, 0]);
+    const revise = reviserOf();
+
+    const out = await runAutoFix({
+      draft: BASE_DRAFT,
+      revise,
+      verify,
+      maxRounds: 3,
+      deadlineAt: Date.now() - 1,
+    });
+
+    expect(out.stoppedBy).toBe("deadline");
+    expect(out.rounds).toHaveLength(0);
+    // Ни одного вызова редактора: срок проверяется ДО того, как платить.
+    expect(revise.calls()).toBe(0);
+    // Стартовая рецензия при этом отдана — за неё уже заплачено.
+    expect(out.review.issues).toHaveLength(3);
+  });
+
+  it("срок в будущем циклу не мешает", async () => {
+    const verify = verifierOf([2, 0]);
+    const revise = reviserOf();
+
+    const out = await runAutoFix({
+      draft: BASE_DRAFT,
+      revise,
+      verify,
+      deadlineAt: Date.now() + 60_000,
+    });
+
+    expect(out.stoppedBy).toBe("clean");
+    expect(out.converged).toBe(true);
+  });
+
   it("не тратит вызов на рецензию, если она уже посчитана", async () => {
     const verify = verifierOf([0]);
     const revise = reviserOf();

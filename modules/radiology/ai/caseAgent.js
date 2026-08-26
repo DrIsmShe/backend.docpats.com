@@ -96,6 +96,26 @@ import { NotFoundError, ValidationError } from "../../../common/utils/errors.js"
 // это рассинхронизирует попытки, переводы и статистику.
 const AGENT_STATUSES = ["draft", "rejected", "in_review"];
 
+// СРОК ПРОГОНА. Агент живёт внутри HTTP-запроса, а nginx перед ним рвёт
+// соединение на 240 с (proxy_read_timeout). Работа при этом НЕ прекращается:
+// узел досчитывает круги, публикует кейс и переводит его — просто ответа уже
+// никто не ждёт. Ровно это и случилось на бою: кейс станции «Анализы» был
+// опубликован и переведён на четыре языка, а врач увидел «Network Error» и
+// решил, что ничего не произошло. Успешная работа под видом сбоя хуже
+// честного отказа, поэтому агент обязан вернуться САМ и с запасом.
+//
+// Запас нужен на то, что уже нельзя прервать: начатый вызов модели. Круг —
+// это два вызова Opus с рассуждением, и каждый может идти под минуту.
+const DEADLINE_MS = Number(process.env.RADIOLOGY_AGENT_DEADLINE_MS ?? 180_000);
+
+// Сколько ждать перевод, прежде чем ответить «идёт в фоне». Перевод — это
+// четыре вызова модели, и держать ради них ответ смысла нет: кейс уже
+// опубликован, врачи видят его на языке оригинала, а языки догоняются сами.
+// Ждём лишь столько, чтобы обычный быстрый случай успел попасть в отчёт.
+const TRANSLATION_WAIT_MS = Number(
+  process.env.RADIOLOGY_AGENT_TRANSLATION_WAIT_MS ?? 25_000,
+);
+
 /* ══════════════════════════════════════════════════════════════════════════
    ЛУЧЕВАЯ СТАНЦИЯ
    ══════════════════════════════════════════════════════════════════════════ */
@@ -363,6 +383,9 @@ export async function runCaseAgent({
   const cfg = STATIONS[station];
   if (!cfg) throw new ValidationError(`Неизвестная станция "${station}"`);
 
+  const deadlineAt = Date.now() + DEADLINE_MS;
+  const timeLeft = () => deadlineAt - Date.now();
+
   const doc = await cfg.Model.findById(caseId);
   if (!doc) throw new NotFoundError(cfg.notFound);
 
@@ -407,7 +430,7 @@ export async function runCaseAgent({
   const revise = (current, issues) => cfg.revise(current, issues, doc, hint);
   const verify = (current) => cfg.verify(current, doc);
 
-  const out = await runAutoFix({ draft, revise, verify, maxRounds });
+  const out = await runAutoFix({ draft, revise, verify, maxRounds, deadlineAt });
 
   const usage = { ...out.usage };
   const addUsage = (u) => {
@@ -432,7 +455,17 @@ export async function runCaseAgent({
   // Что именно закрывать: индексы в ИТОГОВОМ списке замечаний (bestReview).
   let toClose = [];
 
-  if (resolveIssues && (bestReview?.issues?.length ?? 0) > 0) {
+  // Разбор — это ещё до четырёх вызовов модели. Начинаем, только если на них
+  // остаётся время: оборванный снаружи разбор — это оплаченные вызовы, ответ
+  // от которых никто не увидит.
+  const canAdjudicate =
+    resolveIssues && (bestReview?.issues?.length ?? 0) > 0 && timeLeft() > 45_000;
+
+  if (resolveIssues && !canAdjudicate && (bestReview?.issues?.length ?? 0) > 0) {
+    stoppedBy = "deadline";
+  }
+
+  if (canAdjudicate) {
     let verdicts = [];
     try {
       const judged = await adjudicateIssues({
@@ -448,7 +481,10 @@ export async function runCaseAgent({
         .map((v) => bestReview.issues[v.index])
         .filter(Boolean);
 
-      if (founded.length) {
+      // На точечную правку нужен ещё круг плюс повторный разбор. Не влезаем —
+      // закрываем то, что уже признано неверным, а верные честно отдаём
+      // человеку: закрыть непочиненное было бы разменом качества на срок.
+      if (founded.length && timeLeft() > 60_000) {
         const fix = await runTargetedFix({
           draft: bestDraft,
           issues: founded,
@@ -576,17 +612,30 @@ export async function runCaseAgent({
   // сами». Сбой перевода публикацию не отменяет: кейс уже виден врачам на
   // языке оригинала, а недостающие языки догоняются кнопкой «перевести
   // недостающее» и лениво при первом открытии.
-  try {
-    const tr = await startCaseTranslation(station, caseId, { actorId });
-    report.translation = {
+  //
+  // Ждём его ОГРАНИЧЕННО. Перевод — четыре вызова модели; дожидаться их всех
+  // означало держать HTTP-ответ дольше, чем живёт соединение через nginx, и
+  // отдавать врачу «Network Error» на кейсе, который на самом деле
+  // опубликован и переведён. Не успели — отвечаем «идёт в фоне»: обещание
+  // продолжает работать, повторный вход присоединится к нему, а языки в любом
+  // случае догоняются лениво при первом открытии кейса врачом.
+  const translating = startCaseTranslation(station, caseId, { actorId })
+    .then((tr) => ({
       created: (tr?.created ?? []).map((r) => r.lang),
       updated: (tr?.updated ?? []).map((r) => r.lang),
       skipped: (tr?.skipped ?? []).map((r) => r.lang),
       failed: (tr?.failed ?? []).map((r) => r.lang),
-    };
-  } catch (err) {
-    report.translation = { error: err?.message ?? String(err) };
-  }
+    }))
+    // Ловим здесь, а не в race: иначе проигравшая гонку ошибка всплыла бы
+    // необработанным отказом уже после ответа и уронила бы процесс.
+    .catch((err) => ({ error: err?.message ?? String(err) }));
+
+  let timer;
+  const waited = new Promise((resolve) => {
+    timer = setTimeout(() => resolve({ pending: true }), TRANSLATION_WAIT_MS);
+  });
+  report.translation = await Promise.race([translating, waited]);
+  clearTimeout(timer);
 
   return report;
 }

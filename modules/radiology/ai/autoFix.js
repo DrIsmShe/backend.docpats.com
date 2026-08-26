@@ -23,6 +23,13 @@
 //   нет прогресса  — замечаний не стало меньше. Значит редактор и рецензент
 //                    разошлись во мнениях, и следующий круг будет топтанием:
 //                    один правит обратно, другой снова возражает.
+//   срок вышел      — deadlineAt. Круг стоит двух вызовов Opus с рассуждением,
+//                    и цикл висит внутри HTTP-запроса: nginx рвёт соединение
+//                    на 240 с (proxy_read_timeout), а работа при этом идёт
+//                    дальше и молча доводится до конца. Пользователь видит
+//                    «Network Error» на успешно опубликованном кейсе — худший
+//                    из возможных сигналов. Поэтому цикл обязан успеть
+//                    вернуться сам, а не быть оборванным снаружи.
 //
 // ВОЗВРАЩАЕТСЯ ЛУЧШИЙ ИЗ ВИДЕННЫХ вариантов, а не последний. Круг может
 // ухудшить кейс (правка по спорному замечанию ломает то, что было верным), и
@@ -96,6 +103,9 @@ export async function runTargetedFix({ draft, issues, revise, verify }) {
  * @param {(draft: object) => Promise<object>} args.verify
  *        рецензия черновика: возвращает { verdict, issues, errorCount, summary }
  * @param {number}   [args.maxRounds]
+ * @param {number}   [args.deadlineAt] Date.now()-метка, после которой новый
+ *        круг не начинается. Уже начатый круг доводится до конца: бросать его
+ *        значило бы заплатить за вызов модели и выкинуть ответ.
  * @returns {Promise<{
  *   draft: object, review: object, rounds: object[], converged: boolean,
  *   stoppedBy: "clean"|"max_rounds"|"no_progress"|"error",
@@ -108,6 +118,7 @@ export async function runAutoFix({
   revise,
   verify,
   maxRounds = DEFAULT_MAX_ROUNDS,
+  deadlineAt = null,
 }) {
   const usage = { inputTokens: 0, outputTokens: 0 };
   const addUsage = (u) => {
@@ -139,6 +150,10 @@ export async function runAutoFix({
   for (let round = 1; round <= maxRounds; round += 1) {
     if (issueCount(currentReview) === 0) {
       stoppedBy = "clean";
+      break;
+    }
+    if (deadlineAt && Date.now() >= deadlineAt) {
+      stoppedBy = "deadline";
       break;
     }
 
