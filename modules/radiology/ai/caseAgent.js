@@ -18,12 +18,34 @@
 // единственный способ проверить текст ПО СНИМКУ: перепроверка получает кадр,
 // которого в момент ночной генерации не существовало.
 //
+// ЗАСТРЯВШИЕ ЗАМЕЧАНИЯ. Цикл правки останавливается, когда замечаний
+// перестаёт становиться меньше, — дальше редактор и рецензент топчутся. Гейт
+// при этом считает ЛЮБОЕ неразобранное замечание, и агент, которому раньше
+// было запрещено их закрывать, не мог опубликовать ничего, где рецензент
+// упёрся хоть в одну строку: почти каждый прогон заканчивался словами
+// «осталось сделать вам», кейс оставался черновиком, а переводы — которые
+// запускаются публикацией — не появлялись вовсе.
+//
+// Поэтому у агента есть последний шаг: РАЗБОР (ai/issueAdjudicator.js).
+// Отдельный вызов судит каждое застрявшее замечание — верное оно или нет.
+// Верные уходят на точечную правку, неверные закрываются с письменным
+// обоснованием, и обоснование остаётся в кейсе (aiReview.agentResolved).
+// Гейт не ослаблен: он по-прежнему требует решения по каждому замечанию —
+// просто теперь машина умеет его принять и за него отчитаться. Замечания,
+// которые судья счёл верными и которые не удалось исправить, остаются
+// открытыми и держат публикацию, как раньше.
+//
+// ЧЕГО ЭТО НЕ ЧИНИТ. Судья — та же модель, что писала кейс и рецензировала
+// его. Спор между её ролями она разрешает хорошо, общее для всех трёх
+// заблуждение — правдоподобный неверный референс — переживает и этот шаг.
+// «Агент закрыл замечания» значит «противоречий не осталось», а не «кейс
+// верен», и отчёт агента говорит это прямо.
+//
 // ЧЕГО АГЕНТ НЕ ДЕЛАЕТ НИ НА ОДНОЙ СТАНЦИИ:
 //
-//   — не отмечает замечания рецензента «разобранными». Гейт считает именно
-//     неразобранные; проставить их машиной значило бы соврать гейту вместо
-//     того, чтобы починить кейс. Поэтому публикация возможна только тогда,
-//     когда замечаний не осталось ПО СУЩЕСТВУ;
+//   — не закрывает замечание молча. Каждое закрытое машиной замечание несёт
+//     обоснование, показывается человеку отдельным списком и снимается
+//     обратно одним кликом. Закрытие без обоснования отбрасывается;
 //   — не подтверждает деидентификацию снимка и не двигает точки находок на
 //     кадре (лучевая станция). И то и другое — утверждение о реальном
 //     изображении, подписывает его тот, кто изображение видел;
@@ -61,8 +83,10 @@ import {
   reviseLabCase,
   reviseVpCase,
 } from "./caseReviser.js";
-import { runAutoFix } from "./autoFix.js";
-import { saveAiReview } from "./aiReviewStore.js";
+import { runAutoFix, runTargetedFix } from "./autoFix.js";
+import { saveAiReview, resolveAiIssuesByAgent } from "./aiReviewStore.js";
+import { adjudicateIssues } from "./issueAdjudicator.js";
+import { startCaseTranslation } from "../translation/onPublish.js";
 import { MODEL } from "./aiRunner.js";
 import { recordRadiologyEvent } from "../audit/audit.service.js";
 import { NotFoundError, ValidationError } from "../../../common/utils/errors.js";
@@ -322,6 +346,8 @@ export const AGENT_STATIONS = Object.keys(STATIONS);
  * @param {number}  [args.maxRounds]  кругов правки, по умолчанию 3
  * @param {string}  [args.hint]       указание автора редактору — главнее замечаний
  * @param {boolean} [args.publish]    false — только починить, не публиковать
+ * @param {boolean} [args.resolveIssues] false — не разбирать застрявшие
+ *        замечания судьёй и оставить их человеку (поведение до разбора)
  * @returns {Promise<object>} отчёт о прогоне
  */
 export async function runCaseAgent({
@@ -332,6 +358,7 @@ export async function runCaseAgent({
   maxRounds = 3,
   hint,
   publish = true,
+  resolveIssues = true,
 }) {
   const cfg = STATIONS[station];
   if (!cfg) throw new ValidationError(`Неизвестная станция "${station}"`);
@@ -351,6 +378,11 @@ export async function runCaseAgent({
     disputed: [],
     blockers: [],
     review: null,
+    // Замечания, закрытые судьёй, и те, которые он счёл верными, но
+    // исправить не вышло. Второй список — то, ради чего человека зовут.
+    resolvedByAgent: [],
+    unresolvedFounded: [],
+    translation: null,
     usage: { inputTokens: 0, outputTokens: 0 },
   };
 
@@ -377,30 +409,131 @@ export async function runCaseAgent({
 
   const out = await runAutoFix({ draft, revise, verify, maxRounds });
 
+  const usage = { ...out.usage };
+  const addUsage = (u) => {
+    usage.inputTokens += u?.inputTokens ?? 0;
+    usage.outputTokens += u?.outputTokens ?? 0;
+  };
+
+  let bestDraft = out.draft;
+  let bestReview = out.review;
+  let allChanges = [...(out.changes ?? [])];
+  const rounds = [...out.rounds];
+  let stoppedBy = out.stoppedBy;
+
+  // ─── Разбор застрявших замечаний ────────────────────────────────────────
+  // Судья высказывается по каждому оставшемуся; верные уходят на точечную
+  // правку ровно по ним, и только после неё что-то закрывается. Порядок
+  // именно такой: закрыть замечание, не попытавшись его исправить, значит
+  // разменять качество кейса на зелёный гейт.
+  let resolvedByAgent = [];
+  let unresolvedFounded = [];
+  let adjudicationError = null;
+  // Что именно закрывать: индексы в ИТОГОВОМ списке замечаний (bestReview).
+  let toClose = [];
+
+  if (resolveIssues && (bestReview?.issues?.length ?? 0) > 0) {
+    let verdicts = [];
+    try {
+      const judged = await adjudicateIssues({
+        draft: bestDraft,
+        issues: bestReview.issues,
+        station: cfg.label,
+      });
+      addUsage(judged.usage);
+      verdicts = judged.verdicts;
+
+      const founded = verdicts
+        .filter((v) => v.founded)
+        .map((v) => bestReview.issues[v.index])
+        .filter(Boolean);
+
+      if (founded.length) {
+        const fix = await runTargetedFix({
+          draft: bestDraft,
+          issues: founded,
+          revise,
+          verify,
+        });
+        addUsage(fix.usage);
+        bestDraft = fix.draft;
+        bestReview = fix.review;
+        allChanges = [...allChanges, ...(fix.changes ?? [])];
+        rounds.push(...fix.rounds);
+        stoppedBy = "adjudicated";
+
+        // Список замечаний сменился целиком — прежние вердикты указывали на
+        // другие номера. Судим заново то, что осталось после правки.
+        verdicts = [];
+        if ((bestReview?.issues?.length ?? 0) > 0) {
+          const again = await adjudicateIssues({
+            draft: bestDraft,
+            issues: bestReview.issues,
+            station: cfg.label,
+          });
+          addUsage(again.usage);
+          verdicts = again.verdicts;
+        }
+      }
+    } catch (err) {
+      // Сбой судьи не отменяет уже сделанной правки: отдаём кейс как есть,
+      // замечания остаются человеку. Отдельный stoppedBy, чтобы это не
+      // выглядело как «модель не нашла, что чинить».
+      stoppedBy = "adjudication_failed";
+      verdicts = [];
+      adjudicationError = err?.message ?? String(err);
+    }
+
+    toClose = verdicts
+      .filter((v) => !v.founded && bestReview.issues[v.index])
+      .map((v) => ({ index: v.index, why: v.why }));
+
+    resolvedByAgent = toClose.map((v) => ({
+      issue: bestReview.issues[v.index].issue,
+      why: v.why,
+    }));
+    unresolvedFounded = verdicts
+      .filter((v) => v.founded && bestReview.issues[v.index])
+      .map((v) => ({ issue: bestReview.issues[v.index].issue, why: v.why }));
+  }
+
   // Сначала кейс, потом рецензия: обратный порядок оставил бы чистую рецензию
   // на неисправленной версии, то есть открыл бы гейт тому, чего рецензент не
   // видел.
-  const applied = await cfg.applyRevision(caseId, out.draft, {
-    rounds: out.rounds.length,
-    stoppedBy: out.stoppedBy,
-    converged: out.converged,
-    changes: out.changes,
+  const applied = await cfg.applyRevision(caseId, bestDraft, {
+    rounds: rounds.length,
+    stoppedBy,
+    converged: (bestReview?.issues?.length ?? 0) === 0,
+    changes: allChanges,
     disputed: out.disputed,
     model: MODEL,
     actorId,
   });
-  await saveAiReview({ CaseModel: cfg.Model, caseId, review: out.review });
+  await saveAiReview({ CaseModel: cfg.Model, caseId, review: bestReview });
+
+  // Отметки судьи ставятся ПОСЛЕ сохранения рецензии: saveAiReview сбрасывает
+  // dismissed (новая рецензия — новые номера), и обратный порядок стёр бы их.
+  if (toClose.length) {
+    await resolveAiIssuesByAgent({
+      CaseModel: cfg.Model,
+      caseId,
+      resolved: toClose,
+    });
+  }
 
   const report = {
     ...base,
     fixed: true,
-    converged: out.converged,
-    stoppedBy: out.stoppedBy,
-    rounds: out.rounds,
-    changes: out.changes ?? [],
+    converged: (bestReview?.issues?.length ?? 0) === 0,
+    stoppedBy,
+    rounds,
+    changes: allChanges,
     disputed: out.disputed ?? [],
-    review: out.review,
-    usage: out.usage,
+    review: bestReview,
+    resolvedByAgent,
+    unresolvedFounded,
+    adjudicationError,
+    usage,
     ...cfg.reportExtras(applied),
   };
 
@@ -410,9 +543,14 @@ export async function runCaseAgent({
     actorRole,
     caseId: doc._id,
     metadata: {
-      rounds: out.rounds.length,
-      stoppedBy: out.stoppedBy,
-      issuesLeft: out.review?.issues?.length ?? 0,
+      rounds: rounds.length,
+      stoppedBy,
+      issuesLeft: bestReview?.issues?.length ?? 0,
+      // Что именно машина закрыла своим решением — это главное, что аудит
+      // обязан помнить об агенте: по нему потом отвечают на вопрос
+      // «кто пропустил эту ошибку в опубликованный кейс».
+      closedByAgent: resolvedByAgent.map((r) => ({ issue: r.issue, why: r.why })),
+      foundedLeft: unresolvedFounded.length,
     },
   });
 
@@ -429,6 +567,27 @@ export async function runCaseAgent({
   const publishedDoc = await cfg.publish(caseId, fresh, actorId, actorRole);
   report.published = true;
   report.status = publishedDoc.status;
+
+  // ─── Перевод ────────────────────────────────────────────────────────────
+  // Публикация уже поставила перевод (scheduleCaseTranslation в сервисе
+  // статуса). Агент ЖДЁТ ту же самую работу — startCaseTranslation отдаёт
+  // идущее обещание, а не запускает второе, — чтобы в отчёте стояло, на
+  // каких языках кейс теперь есть, а не «поставлено в очередь, проверьте
+  // сами». Сбой перевода публикацию не отменяет: кейс уже виден врачам на
+  // языке оригинала, а недостающие языки догоняются кнопкой «перевести
+  // недостающее» и лениво при первом открытии.
+  try {
+    const tr = await startCaseTranslation(station, caseId, { actorId });
+    report.translation = {
+      created: (tr?.created ?? []).map((r) => r.lang),
+      updated: (tr?.updated ?? []).map((r) => r.lang),
+      skipped: (tr?.skipped ?? []).map((r) => r.lang),
+      failed: (tr?.failed ?? []).map((r) => r.lang),
+    };
+  } catch (err) {
+    report.translation = { error: err?.message ?? String(err) };
+  }
+
   return report;
 }
 

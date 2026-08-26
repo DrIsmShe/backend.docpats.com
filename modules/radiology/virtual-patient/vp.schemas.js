@@ -146,6 +146,9 @@ export const aiRunAgentVpSchema = z.object({
   hint: z.string().trim().max(1000).optional(),
   // false — только починить текст, публикацию оставить человеку.
   publish: z.boolean().optional(),
+  // false — не звать судью по застрявшим замечаниям, оставить их человеку
+  // (поведение до появления ai/issueAdjudicator.js).
+  resolveIssues: z.boolean().optional(),
 });
 
 // Запрос на цикл «правка → перепроверка» (ai/autoFix.js): та же форма, что у

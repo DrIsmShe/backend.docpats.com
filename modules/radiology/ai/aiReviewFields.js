@@ -33,6 +33,18 @@ const issueSchema = new Schema(
   { _id: false },
 );
 
+// Замечание, закрытое АГЕНТОМ, а не человеком (ai/issueAdjudicator.js).
+// Хранится отдельно от dismissed и не вместо него: гейт по-прежнему смотрит
+// только на dismissed, а этот список отвечает на другой вопрос — КТО закрыл
+// и ПОЧЕМУ. Без обоснования запись не создаётся, см. adjudicateIssues.
+const agentResolvedSchema = new Schema(
+  {
+    index: { type: Number, required: true },
+    why: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
 export function aiReviewField() {
   return {
     aiReview: {
@@ -44,6 +56,9 @@ export function aiReviewField() {
       generatedAt: { type: Date, default: null },
       // Индексы разобранных замечаний.
       dismissed: { type: [Number], default: [] },
+      // Из них — закрытые агентом, с обоснованием по каждому. Человек видит
+      // их отдельным списком и может вернуть любое обратно.
+      agentResolved: { type: [agentResolvedSchema], default: [] },
     },
   };
 }

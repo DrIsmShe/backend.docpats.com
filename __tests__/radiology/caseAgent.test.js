@@ -11,8 +11,10 @@
 //   1. галочку деидентификации агент не ставит и без неё не публикует;
 //   2. координаты находок и кадры он не трогает — это эталон, по которому
 //      потом оценивают врачей;
-//   3. неразобранное замечание рецензента блокирует публикацию, и «разобрано»
-//      агент за человека не проставляет.
+//   3. замечание, которое агент НЕ разобрал, блокирует публикацию. Разобрать
+//      он теперь может — судьёй (ai/issueAdjudicator.js), — но только с
+//      письменным обоснованием на каждое закрытое замечание, и замечание,
+//      признанное верным, публикацию по-прежнему держит.
 //
 // Плюс предусловия: пока снимка нет, модель не вызывается вовсе — каждый круг
 // цикла стоит двух вызовов Opus с рассуждением.
@@ -20,9 +22,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import mongoose from "mongoose";
 
-const { verifyMock, reviseMock } = vi.hoisted(() => ({
+const { verifyMock, reviseMock, adjudicateMock } = vi.hoisted(() => ({
   verifyMock: vi.fn(),
   reviseMock: vi.fn(),
+  adjudicateMock: vi.fn(),
 }));
 
 // Мок отдаёт ВСЕ экспорты модуля, а не только лучевой: агент импортирует
@@ -37,6 +40,28 @@ vi.mock("../../modules/radiology/ai/caseReviser.js", () => ({
   reviseRadiologyCase: reviseMock,
   reviseLabCase: reviseMock,
   reviseVpCase: reviseMock,
+}));
+// Судья мокается обязательно: __tests__/setup.js тянет dotenv, и в .env лежит
+// НАСТОЯЩИЙ ANTHROPIC_API_KEY. Незамоканный судья ходил бы в платный API на
+// каждом прогоне тестов — и уже сходил, пока этого мока не было.
+vi.mock("../../modules/radiology/ai/issueAdjudicator.js", () => ({
+  adjudicateIssues: adjudicateMock,
+}));
+// Переводчик — по той же причине: публикация ставит перевод на четыре языка,
+// а агент его теперь ДОЖИДАЕТСЯ, то есть без мока это четыре реальных вызова
+// модели на каждый тест с публикацией.
+vi.mock("../../modules/radiology/translation/caseTranslator.js", () => ({
+  PROMPT_VERSION: "test",
+  MODEL: "test-model",
+  translateCaseContent: vi.fn(async ({ fields }) => ({
+    fields: Object.fromEntries(
+      Object.entries(fields ?? {}).map(([path, text]) => [path, `[tr] ${text}`]),
+    ),
+    diagnosisKeys: [],
+    diagnosisSynonyms: [],
+    model: "test-model",
+    promptVersion: "test",
+  })),
 }));
 
 const { runRadiologyCaseAgent, runLabCaseAgent, runVpCaseAgent } = await import(
@@ -111,10 +136,36 @@ async function makeCase(extra = {}) {
   });
 }
 
+/** Судья, который признаёт ВСЕ замечания верными: публикация остаётся закрытой. */
+const allFounded = ({ issues }) => ({
+  verdicts: issues.map((_, index) => ({
+    index,
+    founded: true,
+    why: "Настоящая ошибка",
+  })),
+  usage: { inputTokens: 5, outputTokens: 5 },
+  model: "test",
+});
+
+/** Судья, который отвергает ВСЕ замечания: публикация открывается. */
+const allUnfounded = ({ issues }) => ({
+  verdicts: issues.map((_, index) => ({
+    index,
+    founded: false,
+    why: "Рецензент требует данных, которых учебный кейс не обязан содержать",
+  })),
+  usage: { inputTokens: 5, outputTokens: 5 },
+  model: "test",
+});
+
 beforeEach(() => {
   verifyMock.mockReset();
   reviseMock.mockReset();
+  adjudicateMock.mockReset();
   reviseMock.mockImplementation(passthroughReviser);
+  // По умолчанию — строгий судья. Тест, который проверяет закрытие замечаний,
+  // подменяет его явно: так «опубликовалось» не может случиться по недосмотру.
+  adjudicateMock.mockImplementation(allFounded);
 });
 
 describe("Предусловия — до обращения к модели", () => {
@@ -215,8 +266,9 @@ describe("Публикация", () => {
     expect(fresh.status).toBe("draft");
   });
 
-  it("оставшееся замечание блокирует публикацию и «разобранным» не становится", async () => {
-    // Рецензент упирается: замечание остаётся после каждого круга.
+  it("замечание, признанное судьёй ВЕРНЫМ, блокирует публикацию", async () => {
+    // Рецензент упирается: замечание остаётся после каждого круга, и судья с
+    // ним согласен. Это ровно тот случай, ради которого гейт и стоит.
     verifyMock.mockResolvedValue(dirtyReview());
     const doc = await makeCase();
 
@@ -225,11 +277,80 @@ describe("Публикация", () => {
     expect(r.published).toBe(false);
     expect(r.review.issues).toHaveLength(1);
     expect(r.blockers.join(" ")).toMatch(/замечани/i);
+    expect(r.unresolvedFounded).toHaveLength(1);
+    expect(r.resolvedByAgent).toHaveLength(0);
 
     const fresh = await RadiologyCase.findById(doc._id).lean();
     expect(fresh.status).toBe("draft");
-    // Отметок «разобрано» машина не проставляет — их ставит человек.
+    // Верное замечание «разобранным» не становится ни при каких условиях.
     expect(fresh.aiReview?.dismissed ?? []).toHaveLength(0);
+  });
+
+  it("замечание, признанное НЕВЕРНЫМ, закрывается с обоснованием и кейс уходит в публикацию", async () => {
+    verifyMock.mockResolvedValue(dirtyReview());
+    adjudicateMock.mockImplementation(allUnfounded);
+    const doc = await makeCase();
+
+    const r = await runRadiologyCaseAgent({ caseId: doc._id, maxRounds: 2, ...AS });
+
+    expect(r.published).toBe(true);
+    expect(r.resolvedByAgent).toHaveLength(1);
+    expect(r.resolvedByAgent[0].why).toMatch(/учебный кейс/i);
+
+    const fresh = await RadiologyCase.findById(doc._id).lean();
+    expect(fresh.status).toBe("published");
+    // Обоснование обязано остаться в кейсе: по нему человек проверяет машину.
+    expect(fresh.aiReview.agentResolved).toHaveLength(1);
+    expect(fresh.aiReview.agentResolved[0].why).toBeTruthy();
+    expect(fresh.aiReview.dismissed).toEqual([0]);
+  });
+
+  it("закрытие без обоснования не принимается — замечание остаётся открытым", async () => {
+    verifyMock.mockResolvedValue(dirtyReview());
+    // Судья отверг замечание, но обосновать не смог. Молчаливое «пропустить»
+    // и есть то, чем закрытие замечаний машиной могло бы выродиться.
+    adjudicateMock.mockImplementation(({ issues }) => ({
+      verdicts: issues.map((_, index) => ({ index, founded: false, why: "" })),
+      usage: { inputTokens: 1, outputTokens: 1 },
+      model: "test",
+    }));
+    const doc = await makeCase();
+
+    const r = await runRadiologyCaseAgent({ caseId: doc._id, maxRounds: 2, ...AS });
+
+    expect(r.published).toBe(false);
+    const fresh = await RadiologyCase.findById(doc._id).lean();
+    expect(fresh.aiReview?.dismissed ?? []).toHaveLength(0);
+    expect(fresh.status).toBe("draft");
+  });
+
+  it("resolveIssues=false — судья не зовётся, замечания остаются человеку", async () => {
+    verifyMock.mockResolvedValue(dirtyReview());
+    adjudicateMock.mockImplementation(allUnfounded);
+    const doc = await makeCase();
+
+    const r = await runRadiologyCaseAgent({
+      caseId: doc._id,
+      maxRounds: 2,
+      resolveIssues: false,
+      ...AS,
+    });
+
+    expect(adjudicateMock).not.toHaveBeenCalled();
+    expect(r.published).toBe(false);
+    expect(r.blockers.join(" ")).toMatch(/замечани/i);
+  });
+
+  it("сбой судьи не публикует кейс и виден в отчёте", async () => {
+    verifyMock.mockResolvedValue(dirtyReview());
+    adjudicateMock.mockRejectedValue(new Error("модель недоступна"));
+    const doc = await makeCase();
+
+    const r = await runRadiologyCaseAgent({ caseId: doc._id, maxRounds: 2, ...AS });
+
+    expect(r.published).toBe(false);
+    expect(r.stoppedBy).toBe("adjudication_failed");
+    expect(r.adjudicationError).toMatch(/недоступна/);
   });
 
   it("publish=false чинит текст, но публикацию оставляет человеку", async () => {
@@ -391,7 +512,7 @@ describe("Анализы", () => {
     expect(fresh.status).toBe("draft");
   });
 
-  it("оставшееся замечание блокирует публикацию", async () => {
+  it("замечание, признанное судьёй верным, блокирует публикацию", async () => {
     verifyMock.mockResolvedValue(dirtyReview());
     const doc = await makeLabCase();
 
@@ -399,6 +520,24 @@ describe("Анализы", () => {
 
     expect(r.published).toBe(false);
     expect(r.blockers.join(" ")).toMatch(/замечани/i);
+  });
+
+  it("неверное замечание закрывается, кейс публикуется и уходит в перевод", async () => {
+    verifyMock.mockResolvedValue(dirtyReview());
+    adjudicateMock.mockImplementation(allUnfounded);
+    const doc = await makeLabCase();
+
+    const r = await runLabCaseAgent({ caseId: doc._id, maxRounds: 2, ...AS });
+
+    expect(r.published).toBe(true);
+    expect(r.resolvedByAgent).toHaveLength(1);
+    // Перевод агент ДОЖИДАЕТСЯ и отчитывается о нём: молча провалившийся
+    // перевод и оставлял кейсы без языков.
+    expect(r.translation).toBeTruthy();
+
+    const fresh = await LabCase.findById(doc._id).lean();
+    expect(fresh.status).toBe("published");
+    expect(fresh.aiReview.agentResolved[0].why).toBeTruthy();
   });
 
   it("пустая панель — модель не вызывается", async () => {
