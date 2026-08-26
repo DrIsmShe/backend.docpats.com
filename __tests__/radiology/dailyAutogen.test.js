@@ -69,6 +69,11 @@ const reviseResult = vi.fn(async ({ draft }) => ({
   disputed: [],
 }));
 vi.mock("../../modules/radiology/ai/caseReviser.js", () => ({
+  // reviseRadiologyCase обязателен в моке, даже если тест его не дёргает:
+  // vitest отдаёт мок через Proxy и на отсутствующий экспорт бросает при
+  // ПЕРВОМ обращении. Пропустив его здесь, мы получили бы падение не там, где
+  // ошибка, а там, где у лучевого автокейса впервые оказались замечания.
+  reviseRadiologyCase: (...args) => reviseResult(...args),
   reviseLabCase: (...args) => reviseResult(...args),
   reviseVpCase: (...args) => reviseResult(...args),
 }));
@@ -408,6 +413,43 @@ describe("станции без снимков: полный цикл до пу�
     expect(lab.aiRevision.converged).toBe(true);
     expect(lab.aiRevision.rounds).toBe(1);
     expect(lab.aiRevision.changes[0].change).toBe("15–150 → 10–120");
+  });
+
+  // ЛУЧЕВАЯ СТАНЦИЯ ТОЖЕ ПОЛУЧАЕТ ТРЕТИЙ ПРОХОД.
+  //
+  // Публиковать её кейсы машина по-прежнему не может — снимка не существует, а
+  // гейт требует настоящий кадр. Но это никогда не было причиной оставлять
+  // текст неисправленным: автор должен получать черновик с разобранными
+  // противоречиями, а не кейс плюс список замечаний к нему.
+  //
+  // Тест держит обе половины утверждения сразу: правка ПРОШЛА и публикации НЕ
+  // случилось. Ослабнуть может любая из них, и вторая опаснее.
+  it("лучевой автокейс правится третьим проходом, но публикацию всё равно ждёт от человека", async () => {
+    let call = 0;
+    verifyResult.mockImplementation(async () => {
+      call += 1;
+      return call === 1
+        ? ISSUE_REVIEW
+        : { verdict: "clean", issues: [], errorCount: 0, summary: "Согласовано" };
+    });
+    reviseResult.mockImplementation(async ({ draft }) => ({
+      draft: { ...draft, clinicalContext: "Уточнённый анамнез" },
+      changes: [{ target: "Контекст", change: "уточнён", why: "по замечанию" }],
+      disputed: [],
+    }));
+
+    const res = await runDailyCaseGeneration(radiologyOnly(["cxr"]));
+
+    expect(reviseResult).toHaveBeenCalled();
+    expect(res.created[0].published).toBe(false);
+
+    const doc = await RadiologyCase.findOne().lean();
+    expect(doc.status).toBe("draft");
+    expect(doc.clinicalContext).toBe("Уточнённый анамнез");
+    expect(doc.aiReview.issues).toHaveLength(0);
+    expect(doc.aiRevision.converged).toBe(true);
+    // Галочку деидентификации ночной прогон не ставит и поставить не может.
+    expect(doc.deidentified).toBe(false);
   });
 
   it("при RADIOLOGY_AUTOGEN_AUTOFIX=off правка не запускается", async () => {

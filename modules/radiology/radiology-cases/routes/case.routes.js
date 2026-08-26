@@ -29,6 +29,10 @@ router.post("/ai/autofix", requireAuthor, ctrl.aiAutofixController);
 // скачивание и проверку делает человек.
 router.post("/ai/find-images", requireAuthor, ctrl.aiFindImagesController);
 
+// Агент-доводчик: правит текст со взглядом на загруженный кадр и сам
+// публикует, если гейт чист. Право публикации — у рецензента.
+router.post("/cases/:id/ai/agent", requireReviewer, ctrl.aiRunAgentController);
+
 // Образец «типового ответа чат-бота» для сигналов добросовестности — автору.
 router.post("/cases/:id/ai/baseline", requireAuthor, ctrl.aiBaselineController);
 // Отметки «разобрано» на замечаниях сохранённой ИИ-рецензии — автору.

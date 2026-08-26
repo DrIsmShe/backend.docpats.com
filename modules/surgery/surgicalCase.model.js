@@ -286,6 +286,15 @@ const SurgicalCaseSchema = new Schema(
 
     operationDate: { type: Date, index: true },
 
+    // ─── Плановая дата контроля ─────────────────────────────────────────────
+    //
+    // followUps[] — это уже состоявшиеся осмотры, запись о прошлом. Ни один из
+    // них не отвечает на вопрос "кого я должен посмотреть на этой неделе", а
+    // именно он превращает журнал из архива в рабочий список. Поэтому дата
+    // следующего контроля лежит отдельным полем и индексируется: по нему
+    // строится счётчик просроченных наблюдений.
+    nextFollowUpAt: { type: Date, default: null, index: true },
+
     // ─── Операционный план (шифруется) ──────────────────────────────────────
     planEncrypted: { type: String },
 
@@ -333,6 +342,10 @@ SurgicalCaseSchema.index({ isPublic: 1, procedure: 1 });
 SurgicalCaseSchema.index({ deletedAt: 1 });
 SurgicalCaseSchema.index({ surgeonId: 1, registeredPatientId: 1 });
 SurgicalCaseSchema.index({ surgeonId: 1, privatePatientId: 1 });
+// Рабочий список: "кого я оперирую сегодня / на этой неделе" и "у кого просрочен
+// контроль" — оба запроса идут по хирургу + дате, поэтому составные индексы.
+SurgicalCaseSchema.index({ surgeonId: 1, operationDate: 1 });
+SurgicalCaseSchema.index({ surgeonId: 1, nextFollowUpAt: 1 });
 
 SurgicalCaseSchema.virtual("photoCount").get(function () {
   return this.photos?.length ?? 0;

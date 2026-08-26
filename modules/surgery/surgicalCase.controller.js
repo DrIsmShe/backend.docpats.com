@@ -17,10 +17,15 @@ export async function createCase(req, res) {
 export async function listCases(req, res) {
   try {
     const surgeonId = req.session.userId;
-    const { status, procedure, page, limit } = req.query;
+    const { status, procedure, patientType, bucket, q, sort, page, limit } =
+      req.query;
     const result = await caseService.listCases(surgeonId, {
       status,
       procedure,
+      patientType,
+      bucket,
+      q,
+      sort,
       page,
       limit,
     });
@@ -124,7 +129,7 @@ export async function removePhoto(req, res) {
 export async function addFollowUp(req, res) {
   try {
     const surgeonId = req.session.userId;
-    const { date, notes, complications, addedBy } = req.body;
+    const { date, notes, complications, addedBy, nextFollowUpAt } = req.body;
     if (!date)
       return res
         .status(400)
@@ -135,6 +140,7 @@ export async function addFollowUp(req, res) {
       notes,
       complications,
       addedBy,
+      nextFollowUpAt,
     });
     if (!fu)
       return res.status(404).json({ success: false, error: "Case not found" });
@@ -196,6 +202,20 @@ export async function getStats(req, res) {
     res.json({ success: true, stats });
   } catch (err) {
     console.error("[surgery] getStats error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+// ─── GET /api/surgery/worklist ────────────────────────────────────────────
+// Счётчики долгов для шапки журнала: сегодня, на неделе, нет протокола,
+// просроченный контроль, зависшие в плане, без даты.
+export async function getWorklist(req, res) {
+  try {
+    const surgeonId = req.session.userId;
+    const worklist = await caseService.getWorklist(surgeonId);
+    res.json({ success: true, worklist });
+  } catch (err) {
+    console.error("[surgery] getWorklist error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 }

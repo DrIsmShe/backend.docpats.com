@@ -14,6 +14,7 @@ import { findCaseImageSources } from "../../ai/imageSourceFinder.js";
 import { verifyRadiologyCase } from "../../ai/caseVerifier.js";
 import { reviseRadiologyCase } from "../../ai/caseReviser.js";
 import { runAutoFix, runTargetedFix } from "../../ai/autoFix.js";
+import { runRadiologyCaseAgent } from "../../ai/caseAgent.js";
 import { MODEL } from "../../ai/aiRunner.js";
 import { generateBaselineAnswer } from "../../ai/baselineAnswer.js";
 import { saveAiReview, setAiReviewDismissed } from "../../ai/aiReviewStore.js";
@@ -43,6 +44,7 @@ import {
   aiGenerateCaseSchema,
   aiVerifyCaseSchema,
   aiAutofixCaseSchema,
+  aiRunAgentSchema,
   dismissAiIssuesSchema,
 } from "../validators/case.schemas.js";
 
@@ -181,6 +183,27 @@ export const aiAutofixController = asyncHandler(async (req, res) => {
     aiReview: stored,
     saved: true,
   });
+});
+
+// АГЕНТ-ДОВОДЧИК: «снимок загружен — доведи кейс до публикации».
+//
+// Отличие от /ai/autofix, который рядом: тот правит ЧЕРНОВИК ИЗ ФОРМЫ и
+// возвращает результат в форму, оставляя публикацию человеку. Этот работает с
+// сохранённым кейсом целиком — правит текст, перепроверяет уже СО СНИМКОМ и
+// сам проходит гейт публикации, если после правки блокеров не осталось.
+//
+// requireReviewer, а не requireAuthor: агент публикует, а публикация — право
+// рецензента. Автор без этого права по-прежнему пользуется /ai/autofix.
+export const aiRunAgentController = asyncHandler(async (req, res) => {
+  const parsed = aiRunAgentSchema.safeParse(req.body ?? {});
+  if (!parsed.success) throwZod(parsed);
+  const report = await runRadiologyCaseAgent({
+    caseId: req.params.id,
+    actorId: req.radiologyActor.userId,
+    actorRole: req.radiologyActor.role,
+    ...parsed.data,
+  });
+  res.json(report);
 });
 
 // Отметки «разобрано» на замечаниях сохранённой рецензии.

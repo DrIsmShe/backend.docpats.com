@@ -81,9 +81,14 @@ import {
   verifyLabCase,
   verifyVpCase,
 } from "../modules/radiology/ai/caseVerifier.js";
-import { reviseLabCase, reviseVpCase } from "../modules/radiology/ai/caseReviser.js";
+import {
+  reviseRadiologyCase,
+  reviseLabCase,
+  reviseVpCase,
+} from "../modules/radiology/ai/caseReviser.js";
 import { runAutoFix } from "../modules/radiology/ai/autoFix.js";
 import { MODEL } from "../modules/radiology/ai/aiRunner.js";
+import { applyRadiologyAiRevision } from "../modules/radiology/radiology-cases/services/case.service.js";
 import { applyLabAiRevision } from "../modules/radiology/labs-station/lab.service.js";
 import { applyVpAiRevision } from "../modules/radiology/virtual-patient/vp.service.js";
 import { saveAiReview } from "../modules/radiology/ai/aiReviewStore.js";
@@ -240,6 +245,24 @@ const STATIONS = {
     },
     verify: (draft, { modality }) =>
       verifyRadiologyCase({ modality, draft: { ...draft, plannedFindings: draft.plannedFindings ?? [] } }),
+    // ТРЕТИЙ ПРОХОД и у лучевой станции. Публиковать её кейсы машина
+    // по-прежнему не может (canAutoPublish: false — кадра не существует), но
+    // это не причина оставлять текст неисправленным: к автору черновик должен
+    // приезжать с разобранными противоречиями, а не с двумя абзацами замечаний
+    // поверх кейса, которые ему предстоит вычитывать вручную.
+    //
+    // Правится только текст: applyRadiologyAiRevision не трогает координаты
+    // находок, кадры и галочку деидентификации. Ночью размеченных находок и
+    // нет — кейс состоит из плана и заключения, ровно того, что редактор
+    // править вправе.
+    //
+    // Перепроверка здесь идёт БЕЗ снимка: его ещё не существует. Взгляд на
+    // кадр добавится позже, когда автор загрузит его и нажмёт «Запустить
+    // агента» (ai/caseAgent.js) — там рецензент сверит текст с изображением.
+    revise: (draft, issues, { modality }) =>
+      reviseRadiologyCase({ draft, issues, modality }),
+    applyRevision: (caseId, draft, meta) =>
+      applyRadiologyAiRevision(caseId, draft, meta),
     detail: (draft) => ({ plannedFindings: draft.plannedFindings?.length ?? 0 }),
   },
 
