@@ -32,7 +32,7 @@ const { default: ExamImportJob } = await import(
 const oid = () => new mongoose.Types.ObjectId();
 
 // Батч из n валидных вопросов; suggestedProgram отдаём только на первом.
-function batch(n, { withProgram = false, prefix = "Q" } = {}) {
+function batch(n, { withProgram = false, prefix = "Q", lang = "ru" } = {}) {
   const items = Array.from({ length: n }, (_, i) => ({
     stem: `${prefix}-${i}: что верно про клетку?`,
     options: [
@@ -54,7 +54,7 @@ function batch(n, { withProgram = false, prefix = "Q" } = {}) {
     suggestedProgram: withProgram
       ? {
           title: "Биология клетки: базовый уровень",
-          lang: "ru",
+          lang,
           topics: [{ code: "cyto", title: "Цитология", weightPercent: 100 }],
         }
       : null,
@@ -119,6 +119,46 @@ describe("runGeneration", () => {
     const fresh = await ExamProgram.findById(program._id).lean();
     expect(fresh.title).toBe("Биология клетки: базовый уровень");
     expect(fresh.blueprint.map((b) => b.code)).toContain("cyto");
+  });
+
+  // ЯЗЫК ПО СОДЕРЖИМОМУ, А НЕ ПО ФОРМЕ. Селектор языка в админке долго стоял
+  // на "ru" по умолчанию, и азербайджанский тест заказывали русским, не
+  // заметив его. Ярлык вопроса шёл из формы, а languages теста собирается из
+  // ярлыков (program.service → recountPublishedItems) — тест попадал в
+  // каталог не под тем языком, и фильтр по языку его не находил.
+  it("язык задания исправляется по тому, на чём модель реально написала", async () => {
+    const program = await makeEmptyProgram();
+    const job = await makeGenJob(program, 20); // заказан "ru"
+    generateMock.mockResolvedValue(batch(20, { withProgram: true, lang: "az" }));
+
+    await runGeneration(job._id);
+
+    const fresh = await ExamImportJob.findById(job._id).lean();
+    expect(fresh.defaults.lang).toBe("az");
+  });
+
+  it("совпадающий язык ничего не трогает", async () => {
+    const program = await makeEmptyProgram();
+    const job = await makeGenJob(program, 20);
+    generateMock.mockResolvedValue(batch(20, { withProgram: true, lang: "ru" }));
+
+    await runGeneration(job._id);
+
+    const fresh = await ExamImportJob.findById(job._id).lean();
+    expect(fresh.defaults.lang).toBe("ru");
+  });
+
+  it("мусор вместо языка игнорируется — заказ остаётся как был", async () => {
+    const program = await makeEmptyProgram();
+    const job = await makeGenJob(program, 20);
+    generateMock.mockResolvedValue(
+      batch(20, { withProgram: true, lang: "klingon" }),
+    );
+
+    await runGeneration(job._id);
+
+    const fresh = await ExamImportJob.findById(job._id).lean();
+    expect(fresh.defaults.lang).toBe("ru");
   });
 
   it("передаёт язык заказа и уже созданные вопросы в анти-дубли", async () => {

@@ -1,3 +1,25 @@
+// server/modules/translation/translateWithAI.js
+//
+// Перевод статьи моделью. Не путать с переводом кейсов арены
+// (modules/radiology/translation/caseTranslator.js) — там свой конвейер на
+// Claude, здесь OpenAI, и общего у них ничего нет.
+//
+// ФОРМАТ ОТВЕТА ГАРАНТИРОВАН СХЕМОЙ, а не просьбой в промпте. Раньше модель
+// просили «Return ONLY valid JSON» словами, ответ чистили от ```-заборов,
+// парсили, а при провале — латали регуляркой, экранирующей переносы строк
+// внутри строковых значений. На длинной медицинской статье это регулярно
+// разваливалось: в логах жило «❌ Chunk translation failed: Translation JSON
+// parse error». Structured outputs снимают весь класс: невалидного JSON
+// модель физически не вернёт, и чинить нечего.
+//
+// СБОЙ БОЛЬШЕ НЕ ВЫГЛЯДИТ УСПЕХОМ. Прежний catch возвращал ИСХОДНЫЙ текст —
+// то есть воркер получал «перевод», сохранял его как готовый, и статья
+// оставалась на языке оригинала без единой пометки. Узнать об этом можно было
+// только глазами или из логов; очередь считала работу сделанной и не
+// повторяла её. Теперь ошибка идёт наверх: у задания attempts: 3 с
+// экспоненциальной паузой (translation.service.js), а окончательно упавшее
+// остаётся в failed-очереди (removeOnFail: false) — видимым.
+
 import OpenAI from "openai";
 import { splitTextIntoChunks } from "../../common/utils/chunkText.js";
 
@@ -5,27 +27,41 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// -------- utils --------
+const MODEL = process.env.TRANSLATION_MODEL || "gpt-4o-mini";
 
-const parseJSON = (text) => {
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    try {
-      const fixed = text.replace(/:\s*"([\s\S]*?)"/g, (match, p1) => {
-        const cleaned = p1
-          .replace(/\n/g, "\\n")
-          .replace(/\r/g, "\\r")
-          .replace(/\t/g, "\\t");
-        return `: "${cleaned}"`;
-      });
-      return JSON.parse(fixed);
-    } catch (e2) {
-      console.error("❌ JSON parse error:", text.slice(0, 200));
-      throw new Error("Translation JSON parse error");
-    }
-  }
+// Потолок ответа. Ставим явно: перевод должен целиком поместиться в ответ, а
+// обрыв по длине — это невалидный JSON, а не «немного короче».
+const MAX_TOKENS = 16000;
+
+// Размер куска исходника. Меньше потолка ответа с запасом: перевод обычно
+// длиннее оригинала, особенно на азербайджанском и турецком.
+const CHUNK_CHARS = 4000;
+
+// Схема ответа. strict: true заставляет модель вернуть ровно эти три поля
+// строками — ни объекта в abstract (модель любила складывать туда
+// background/objective/methods), ни лишних ключей.
+const RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "translation",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["title", "abstract", "content"],
+      properties: {
+        title: { type: "string", description: "Переведённый заголовок." },
+        abstract: {
+          type: "string",
+          description: "Переведённая аннотация одной строкой, без структуры.",
+        },
+        content: { type: "string", description: "Переведённый текст целиком." },
+      },
+    },
+  },
 };
+
+// -------- utils --------
 
 const normalizeField = (value) => {
   if (!value) return "";
@@ -34,17 +70,6 @@ const normalizeField = (value) => {
     return Object.values(value).filter(Boolean).join(" ");
   }
   return String(value);
-};
-
-const cleanResponse = (text) => {
-  text = text
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1) throw new Error("No JSON found in response");
-  return text.slice(start, end + 1);
 };
 
 // -------- ONE CHUNK --------
@@ -56,21 +81,22 @@ const translateSingle = async ({
   fromLanguage,
   toLanguage,
 }) => {
-  const prompt = `
-Translate the following medical content from ${fromLanguage} to ${toLanguage}.
-
-Rules:
-- Keep medical terminology precise
-- Do NOT shorten
-- Return ONLY valid JSON with EXACTLY these three string fields: title, abstract, content
-- abstract MUST be a single plain string, NOT an object with background/objective/methods/etc
-- Do NOT add extra fields
-
-{
-  "title": "...",
-  "abstract": "...",
-  "content": "..."
-}
+  const response = await client.chat.completions.create({
+    model: MODEL,
+    max_tokens: MAX_TOKENS,
+    temperature: 0.2,
+    response_format: RESPONSE_FORMAT,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You translate medical content. Keep terminology precise, do not shorten, " +
+          "do not summarize, do not add commentary. Translate every field you are given; " +
+          "leave a field empty only if it was empty in the source.",
+      },
+      {
+        role: "user",
+        content: `Translate from ${fromLanguage} to ${toLanguage}.
 
 TITLE:
 ${title}
@@ -79,31 +105,37 @@ ABSTRACT:
 ${abstract}
 
 CONTENT:
-${content}
-`;
-
-  const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: "Return ONLY valid JSON.",
-      },
-      {
-        role: "user",
-        content: prompt,
+${content}`,
       },
     ],
-    temperature: 0.2,
   });
 
-  let text = response.choices?.[0]?.message?.content?.trim() || "";
+  const choice = response.choices?.[0];
 
-  if (!text) throw new Error("Empty response");
+  // Обрыв по длине даёт синтаксически битый ответ даже при strict-схеме.
+  // Отличаем его от прочих сбоев: лечится он не повтором, а меньшим куском.
+  if (choice?.finish_reason === "length") {
+    throw new Error(
+      `Ответ модели оборвался на пределе длины (${MAX_TOKENS} токенов) — уменьшите CHUNK_CHARS`,
+    );
+  }
+  if (choice?.message?.refusal) {
+    throw new Error(`Модель отклонила перевод: ${choice.message.refusal}`);
+  }
 
-  text = cleanResponse(text);
+  const text = choice?.message?.content?.trim() || "";
+  if (!text) throw new Error("Модель вернула пустой ответ");
 
-  return parseJSON(text);
+  try {
+    return JSON.parse(text);
+  } catch {
+    // При strict-схеме сюда попасть почти нельзя, но если попали — печатаем
+    // достаточно, чтобы понять причину. Прежние 200 символов обрывались
+    // раньше места поломки, и разобрать по логу было нечего.
+    throw new Error(
+      `Модель вернула невалидный JSON вопреки схеме: ${text.slice(0, 2000)}`,
+    );
+  }
 };
 
 // -------- CHUNKS (parallel) --------
@@ -133,48 +165,41 @@ export const translateWithAI = async ({
   fromLanguage,
   toLanguage,
 }) => {
-  try {
-    const chunks = splitTextIntoChunks(content, 4000);
+  const chunks = splitTextIntoChunks(content, CHUNK_CHARS);
 
-    if (chunks.length === 1) {
-      const result = await translateSingle({
-        title,
-        content,
-        abstract,
-        fromLanguage,
-        toLanguage,
-      });
-
-      return {
-        title: normalizeField(result.title),
-        abstract: normalizeField(result.abstract),
-        content: normalizeField(result.content),
-      };
-    }
-
-    const [translatedContent, meta] = await Promise.all([
-      translateChunks({ chunks, fromLanguage, toLanguage }),
-      translateSingle({
-        title,
-        abstract,
-        content: chunks[0].slice(0, 500),
-        fromLanguage,
-        toLanguage,
-      }),
-    ]);
-
-    return {
-      title: normalizeField(meta.title),
-      abstract: normalizeField(meta.abstract),
-      content: translatedContent,
-    };
-  } catch (error) {
-    console.error("❌ Chunk translation failed:", error.message);
-
-    return {
+  if (chunks.length === 1) {
+    const result = await translateSingle({
       title,
-      abstract,
       content,
+      abstract,
+      fromLanguage,
+      toLanguage,
+    });
+
+    return {
+      title: normalizeField(result.title),
+      abstract: normalizeField(result.abstract),
+      content: normalizeField(result.content),
     };
   }
+
+  // Заголовок и аннотация переводятся отдельным коротким вызовом: гнать ради
+  // них весь текст статьи ещё раз — лишние токены, а склеивать их из первого
+  // куска нельзя, куски переводятся без заголовка намеренно.
+  const [translatedContent, meta] = await Promise.all([
+    translateChunks({ chunks, fromLanguage, toLanguage }),
+    translateSingle({
+      title,
+      abstract,
+      content: chunks[0].slice(0, 500),
+      fromLanguage,
+      toLanguage,
+    }),
+  ]);
+
+  return {
+    title: normalizeField(meta.title),
+    abstract: normalizeField(meta.abstract),
+    content: translatedContent,
+  };
 };

@@ -98,6 +98,10 @@ const sentText = () => {
 beforeEach(() => {
   finalMessage.mockReset();
   streamArgs.mockReset();
+  // Клиент здесь замокан целиком, но aiRunner.isConfigured() смотрит на env
+  // раньше вызова. Заглушку объявляем сами — как соседние caseVerifier и
+  // caseGenerator: боевой ключ из .env в тесты не доезжает (см. setup.js).
+  process.env.ANTHROPIC_API_KEY = "sk-ant-test";
 });
 
 describe("третий проход: что уходит в модель", () => {

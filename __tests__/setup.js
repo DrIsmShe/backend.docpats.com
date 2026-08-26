@@ -15,6 +15,26 @@ if (!process.env.ENCRYPTION_KEY) {
   process.env.ENCRYPTION_KEY = "test_encryption_key_padded_to_32_chars";
 }
 
+// КЛЮЧИ МОДЕЛЕЙ ГАСИМ. dotenv выше подтягивает боевой .env, а в нём живые
+// ANTHROPIC_API_KEY и OPENAI_API_KEY. Без этого забытый мок не падает, а
+// молча уходит в платный API: тест остаётся ЗЕЛЁНЫМ (модель ведь ответила),
+// прогон растягивается с секунд до минут, и счёт растёт. Именно так и
+// случилось, когда в агента-доводчика добавили разбор замечаний и забыли
+// замокать судью — caseAgent.test.js шёл 292 с вместо 10 и звонил в Anthropic
+// на каждом прогоне.
+//
+// Пустой ключ ломает такой тест сразу и понятно: isConfigured() возвращает
+// false, вызов падает с «ИИ не настроен». Это ровно тот сигнал, который
+// нужен — забыли мок, а не «тесты медленные».
+//
+// Осознанный обход — ALLOW_REAL_AI_IN_TESTS=1 — на случай, когда кто-то
+// намеренно проверяет живую интеграцию.
+if (!process.env.ALLOW_REAL_AI_IN_TESTS) {
+  process.env.ANTHROPIC_API_KEY = "";
+  process.env.ANTHROPIC_AUTH_TOKEN = "";
+  process.env.OPENAI_API_KEY = "";
+}
+
 beforeAll(async () => {
   mongoServer = await MongoMemoryReplSet.create({
     replSet: { count: 1 },

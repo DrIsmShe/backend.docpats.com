@@ -622,9 +622,38 @@ export async function runGeneration(jobId, { alreadyStarted = false } = {}) {
     let lastBatchError = null;
 
     // На первом успешном батче строим структуру теста из предложения модели,
-    // как и импорт. Язык здесь известен заранее (его выбрал оператор), но
-    // название и разделы всё равно берём из suggestedProgram.
+    // как и импорт.
+    //
+    // ЯЗЫК БЕРЁМ ПО СОДЕРЖИМОМУ, а не по форме. Раньше здесь стояло «язык
+    // известен заранее, его выбрал оператор» — и это неверно дважды. Форма
+    // подставляла "ru" по умолчанию, так что азербайджанскую тему заказывали
+    // русской, не заметив селектора. А когда тема на одном языке, а заказан
+    // другой, модель ещё и тянет в сторону темы и может написать не на том,
+    // на чём просили. В обоих случаях вопросы получали ярлык из формы, а
+    // languages теста собирается из ярлыков (program.service →
+    // recountPublishedItems) — тест попадал в каталог не под тем языком, и
+    // фильтр по языку его не находил.
+    //
+    // Модель сама сообщает, на чём написала (suggestedProgram.lang). Ей и
+    // верим — ровно как импорту из файла (applyFirstChunkStructure выше).
+    let langApplied = false;
     const applyFirstBatchStructure = async (suggestedProgram) => {
+      if (!langApplied) {
+        const detectedLang = String(suggestedProgram?.lang ?? "").trim();
+        if (
+          EXAM_LANGUAGES.includes(detectedLang) &&
+          detectedLang !== job.defaults.lang
+        ) {
+          logger?.info?.(
+            { jobId: String(job._id), from: job.defaults.lang, to: detectedLang },
+            "generation language corrected by content detection",
+          );
+          job.defaults.lang = detectedLang;
+          await job.save();
+        }
+        langApplied = true;
+      }
+
       if ((effectiveProgram.blueprint?.length ?? 0) === 0) {
         const blueprint = buildBlueprintFromSuggestion(suggestedProgram);
         const patch = {};
