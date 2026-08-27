@@ -33,6 +33,7 @@ import {
   submitAttempt,
 } from "../education-attempts/services/attempt.service.js";
 import { getExamQuota } from "../services/quota.service.js";
+import { langOf } from "../../../common/utils/requestLang.js";
 import { resolveExamModes } from "../../../common/config/aiPlanLimits.js";
 import {
   asyncHandler,
@@ -74,7 +75,9 @@ router.get(
   asyncHandler(async (req, res) => {
     // scope=public по умолчанию отсекает черновики и приватные
     // клинические программы — этого достаточно.
-    const items = await listPrograms({});
+    // Заголовки — на языке гостя: сессии и настроек у него нет, но язык
+    // интерфейса он уже выбрал, и X-Language уходит с каждым запросом.
+    const items = await listPrograms({ lang: langOf(req) });
     res.json({ items });
   }),
 );
@@ -83,7 +86,7 @@ router.get(
   "/programs/:id",
   asyncHandler(async (req, res) => {
     // getProgramById бросает 404, если теста нет вовсе.
-    const program = await getProgramById(req.params.id);
+    const program = await getProgramById(req.params.id, { lang: langOf(req) });
     // Черновики и приватные клинические тесты гостю не показываем.
     if (program.status !== "published" || program.ownerClinicId) {
       throw new NotFoundError("Exam program");
@@ -113,6 +116,9 @@ router.post(
       mode: "tutor",
       questionCount: GUEST_ATTEMPT_QUESTIONS,
       lang: req.body?.lang,
+      // Как в авторизованном контуре: язык интерфейса — предпочтение, а не
+      // требование. Нет вопросов на нём — соберём на языке оригинала.
+      requestLang: langOf(req),
     });
     // Как и в авторизованном контуре: наружу уходит безопасная проекция,
     // а не сырой документ — в нём состав попытки с ключами ответов.

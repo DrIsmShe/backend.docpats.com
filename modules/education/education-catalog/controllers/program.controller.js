@@ -3,6 +3,7 @@
 // HTTP-слой каталога программ. Тонкий: разбор запроса → сервис → ответ.
 
 import { asyncHandler } from "../../../../common/middlewares/errorHandler.js";
+import { langOf } from "../../../../common/utils/requestLang.js";
 import { ValidationError } from "../../../../common/utils/errors.js";
 import {
   createProgram,
@@ -55,7 +56,11 @@ export const listProgramsController = asyncHandler(async (req, res) => {
     }
   }
 
-  const items = await listPrograms(filters);
+  // Заголовки — на языке врача. Разбор языка общий на весь проект
+  // (common/utils/requestLang.js). Локализуется только витрина: в админке
+  // (scope=all) сервис вернёт оригинал, иначе переименование сохранило бы
+  // перевод поверх исходного названия.
+  const items = await listPrograms({ ...filters, lang: langOf(req) });
   res.json({ items, count: items.length });
 });
 
@@ -65,13 +70,18 @@ export const listCountriesController = asyncHandler(async (req, res) => {
   res.json({ countries, count: countries.length });
 });
 
+// Страница теста у врача (client/pages/education/ExamProgramPage) — заголовок
+// и описание на его языке. Админка сюда не ходит: она правит тест из списка
+// со scope=all, где сервис отдаёт оригинал.
 export const getProgramController = asyncHandler(async (req, res) => {
-  const program = await getProgramById(req.params.id);
+  const program = await getProgramById(req.params.id, { lang: langOf(req) });
   res.json({ program });
 });
 
 export const getProgramByCodeController = asyncHandler(async (req, res) => {
-  const program = await getProgramByCode(req.params.code);
+  const program = await getProgramByCode(req.params.code, {
+    lang: langOf(req),
+  });
   res.json({ program });
 });
 
@@ -104,7 +114,9 @@ export const deleteProgramController = asyncHandler(async (req, res) => {
 // Блоки теста (деление большого экзамена по blockSize вопросов).
 export const getProgramBlocksController = asyncHandler(async (req, res) => {
   const result = await getProgramBlocks(req.params.id, {
-    lang: req.query.lang,
+    // Явный ?lang= главнее, иначе — язык интерфейса врача: экран блоков и
+    // сборка попытки обязаны говорить об одном и том же наборе вопросов.
+    lang: req.query.lang || langOf(req),
   });
   res.json(result);
 });

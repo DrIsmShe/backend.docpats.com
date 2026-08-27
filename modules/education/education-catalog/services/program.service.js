@@ -9,7 +9,8 @@
 //     принимает уже авторизованный вызов и следит только за целостностью.
 
 import ExamProgram from "../models/examProgram.model.js";
-import { EXAM_LANGUAGES } from "../../constants.js";
+import { translateProgramContent } from "./programTranslator.js";
+import { EXAM_LANGUAGES, DEFAULT_EXAM_LANGUAGE } from "../../constants.js";
 import {
   ValidationError,
   NotFoundError,
@@ -54,6 +55,70 @@ export function assertValidBlueprint(blueprint) {
       `Blueprint top-level weights sum to ${topLevelWeight}%, must not exceed 100%`,
     );
   }
+}
+
+// ─── Название теста на языке врача ────────────────────────────────────
+//
+// Перевода нет — отдаём оригинал. Это осознанный откат, а не заглушка: имя
+// на чужом языке читается, пустое место — нет. Так же ведут себя рубрики
+// каталога, кейсы арены и вопросы банка.
+//
+// Язык оригинала берём из primaryLang (что проставил админ), а без него — из
+// первого языка, на котором есть вопросы. Совпал с языком врача — переводить
+// нечего.
+export function programSourceLang(program) {
+  return (
+    program?.primaryLang ||
+    program?.languages?.[0] ||
+    DEFAULT_EXAM_LANGUAGE
+  );
+}
+
+export function localizeProgram(program, lang) {
+  if (!program || !lang || lang === programSourceLang(program)) return program;
+  const tr = (program.translations ?? []).find((t) => t.lang === lang);
+  if (!tr?.title) return program;
+  return {
+    ...program,
+    title: tr.title,
+    description: tr.description || program.description,
+  };
+}
+
+// Перевод названия и описания на остальные языки. БЕЗ await у вызывающего:
+// редактор не должен ждать модель, чтобы опубликовать тест, а недоступность
+// модели не повод не публиковать. Ошибку гасим в лог — ровно как перевод
+// рубрики при создании и перевод вопроса при публикации.
+export function scheduleProgramTranslation(programId) {
+  setImmediate(async () => {
+    try {
+      const doc = await ExamProgram.findById(programId);
+      if (!doc) return;
+      const sourceLang = programSourceLang(doc);
+      const targets = EXAM_LANGUAGES.filter((l) => l !== sourceLang);
+      const translations = await translateProgramContent({
+        title: doc.title,
+        description: doc.description ?? "",
+        sourceLang,
+        targetLangs: targets,
+      });
+      if (!translations.length) return;
+      doc.translations = translations;
+      await doc.save();
+      logger?.info?.(
+        {
+          programId: String(programId),
+          langs: translations.map((t) => t.lang),
+        },
+        "exam program translated",
+      );
+    } catch (err) {
+      logger?.error?.(
+        { err, programId: String(programId) },
+        "exam program translation failed",
+      );
+    }
+  });
 }
 
 // ─── createProgram ────────────────────────────────────────────────────
@@ -126,19 +191,23 @@ export async function listPrograms(filters = {}) {
   if (filters.examType) query.examType = filters.examType;
   if (filters.categoryId) query.categoryId = filters.categoryId;
   if (filters.specialty) query.specialty = filters.specialty;
-  // ФИЛЬТР ПО ЯЗЫКУ — по основному языку теста, а не по наличию вопросов.
-  // languages у переведённого теста содержит все пять, и раньше врач,
-  // выбравший English, получал в выдаче русскоязычные карточки: тест
-  // действительно доступен на английском, но каталог отвечает на вопрос
-  // «что здесь есть на моём языке», а не «что я технически могу открыть».
+  // ФИЛЬТР ПО ЯЗЫКУ — по наличию вопросов на этом языке.
   //
-  // Откат к languages нужен для тестов, которым админ ещё не проставил
-  // основной язык: без него они исчезли бы из каталога совсем.
+  // Здесь стоял отбор по ОДНОМУ основному языку (primaryLang), и это был
+  // обходной путь: у теста не было переведённого названия, поэтому врач,
+  // выбравший English, получал карточку «Типология личности по Карлу Юнгу»
+  // с русским заголовком — вопросы на английском есть, а список нечитаем.
+  //
+  // Теперь название и описание переводятся вместе с вопросами
+  // (programTranslator + localizeProgram ниже), и обходной путь только мешал:
+  // переведённый тест по-прежнему показывался ровно на одном языке. Один
+  // тест — одна карточка, читаемая на языке врача, и видна везде, где у
+  // теста есть вопросы.
+  //
+  // primaryLang остаётся языком ОРИГИНАЛА: от него считается, что переводить
+  // и к чему откатываться, когда перевода нет.
   if (filters.language) {
-    query.$or = [
-      { primaryLang: filters.language },
-      { primaryLang: null, languages: filters.language },
-    ];
+    query.languages = filters.language;
   }
   if (filters.isFree !== undefined) query.isFree = filters.isFree;
 
@@ -148,10 +217,16 @@ export async function listPrograms(filters = {}) {
     query.$or = [{ title: rx }, { code: rx }, { authority: rx }];
   }
 
-  return ExamProgram.find(query)
+  const items = await ExamProgram.find(query)
     .sort({ country: 1, title: 1 })
     .limit(Math.min(filters.limit ?? 200, 500))
     .lean();
+
+  // Локализуем ТОЛЬКО витрину. В админке (scope=all/clinic) заголовок обязан
+  // остаться оригинальным: там его переименовывают, и подставленный перевод
+  // сохранился бы поверх оригинала при первой же правке.
+  if (!filters.lang || scope !== "public") return items;
+  return items.map((p) => localizeProgram(p, filters.lang));
 }
 
 // ─── listCountries ────────────────────────────────────────────────────
@@ -190,19 +265,22 @@ export async function listCountries() {
 }
 
 // ─── getProgramById ───────────────────────────────────────────────────
-export async function getProgramById(id) {
+// lang задан — отдаём заголовок и описание на нём (страница теста у врача).
+// Без lang возвращается оригинал: так ходит админка, и подставленный перевод
+// она сохранила бы поверх оригинала при первой же правке.
+export async function getProgramById(id, { lang = null } = {}) {
   const doc = await ExamProgram.findById(id).lean();
   if (!doc) throw new NotFoundError("Exam program");
-  return doc;
+  return lang ? localizeProgram(doc, lang) : doc;
 }
 
 // ─── getProgramByCode ─────────────────────────────────────────────────
-export async function getProgramByCode(code) {
+export async function getProgramByCode(code, { lang = null } = {}) {
   const doc = await ExamProgram.findOne({
     code: String(code).toLowerCase(),
   }).lean();
   if (!doc) throw new NotFoundError("Exam program");
-  return doc;
+  return lang ? localizeProgram(doc, lang) : doc;
 }
 
 // ─── updateProgram ────────────────────────────────────────────────────
@@ -263,6 +341,11 @@ export async function updateProgram(id, input) {
     update.blueprint = input.blueprint;
   }
 
+  const becomesPublished =
+    input.status !== undefined &&
+    input.status !== existing.status &&
+    input.status === "published";
+
   if (input.status !== undefined && input.status !== existing.status) {
     update.status = input.status;
     if (input.status === "published" && !existing.publishedAt) {
@@ -272,11 +355,36 @@ export async function updateProgram(id, input) {
 
   if (input.actorId !== undefined) update.updatedBy = input.actorId;
 
+  // ─── Перевод названия и описания ───
+  //
+  // Текст изменился — прежние переводы относятся к другому названию. Стираем
+  // их СРАЗУ, не дожидаясь новых: тест, переименованный в «Кардиологию», не
+  // должен ни секунды показываться азербайджанскому врачу как «Nevrologiya».
+  // Оригинал в этот промежуток читается, устаревший перевод — врёт.
+  const textChanged =
+    (update.title !== undefined && update.title !== existing.title) ||
+    (update.description !== undefined &&
+      update.description !== existing.description);
+  // Переводы, присланные явно (импорт, ручная правка), стирать не за что.
+  if (textChanged && input.translations === undefined) update.translations = [];
+
   const doc = await ExamProgram.findByIdAndUpdate(
     id,
     { $set: update },
     { new: true, runValidators: true },
   ).lean();
+
+  // Переводим ПРИ ПУБЛИКАЦИИ, а не при каждой правке черновика: черновик
+  // переименовывают по нескольку раз (в том числе автоматически — модель
+  // предлагает название по содержимому), и каждый такой раз стоил бы вызова
+  // модели впустую. У опубликованного теста наоборот: он уже на витрине, и
+  // переводы обязаны оставаться свежими.
+  const needsTranslation =
+    becomesPublished || (textChanged && doc.status === "published");
+  if (needsTranslation && String(doc.title ?? "").trim()) {
+    scheduleProgramTranslation(doc._id);
+  }
+
   return doc;
 }
 
@@ -347,9 +455,18 @@ export async function deleteProgram(id, { force = false } = {}) {
 // сортировка используется при сборке попытки (attempt.service), поэтому
 // «Блок 2» здесь и «Блок 2» там — один и тот же набор вопросов.
 //
-// Считаем по основному языку теста: у одноязычных программ это все вопросы,
-// у многоязычных блоки строятся по первому языку, чтобы нумерация была
-// стабильной. lang можно переопределить параметром.
+// СЧИТАЕМ НА ЯЗЫКЕ ВРАЧА, если тест на нём есть, иначе на языке оригинала.
+// Это должно совпадать с правилом сборки попытки (attempt.service →
+// effectiveLang): экран блоков показывает «Блок 2 · 50 вопросов», а попытку
+// по этому блоку собирает другой код. Разойдись они в языке — и человек
+// получил бы не тот срез, который выбирал.
+//
+// Нумерация стабильна внутри языка, а не поперёк языков: перевод — отдельный
+// документ со своим createdAt, и сортировка (createdAt, _id) на разных языках
+// может нарезать границы по-разному. Для врача это незаметно (он всегда в
+// одном языке), а требовать общий срез значило бы собирать блок по
+// оригиналам и подменять каждый вопрос переводом при выдаче — отдельная
+// работа, к переводу каталога отношения не имеющая.
 export async function getProgramBlocks(programId, { lang } = {}) {
   const program = await ExamProgram.findById(programId)
     .select("blockSize languages status title")
@@ -357,7 +474,9 @@ export async function getProgramBlocks(programId, { lang } = {}) {
   if (!program) throw new NotFoundError("Exam program");
 
   const blockSize = program.blockSize ?? 0;
-  const effectiveLang = lang ?? program.languages?.[0] ?? "ru";
+  const available = program.languages ?? [];
+  const effectiveLang =
+    (lang && available.includes(lang) && lang) || available[0] || "ru";
 
   if (!blockSize || blockSize < 1) {
     return { blockSize: null, lang: effectiveLang, totalCount: 0, blocks: [] };

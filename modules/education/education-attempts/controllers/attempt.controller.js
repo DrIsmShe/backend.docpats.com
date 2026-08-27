@@ -4,6 +4,7 @@
 // иначе чужую попытку можно было бы открыть, подставив id.
 
 import { asyncHandler } from "../../../../common/middlewares/errorHandler.js";
+import { langOf } from "../../../../common/utils/requestLang.js";
 import { ValidationError } from "../../../../common/utils/errors.js";
 import {
   startAttempt,
@@ -35,6 +36,11 @@ export const startAttemptController = asyncHandler(async (req, res) => {
   const attempt = await startAttempt({
     ...parsed.data,
     userId: req.educationActor.userId,
+    // Язык интерфейса врача: если тест на нём есть, сессия соберётся из
+    // переводов. Клиент язык в теле не шлёт, а вопросы уже переведены —
+    // без этого врач открывал бы азербайджанский тест и получал русские
+    // вопросы (см. effectiveLang в attempt.service).
+    requestLang: langOf(req),
     // Если учащийся проходит назначенный клиникой курс — сессия несёт clinicId.
     clinicId: req.session?.clinicId ?? null,
   });

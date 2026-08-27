@@ -171,6 +171,9 @@ export async function startAttempt({
   questionCount,
   durationMinutes,
   lang,
+  // Язык интерфейса врача (X-Language). Отличается от lang тем, что это не
+  // требование, а предпочтение: если вопросов на нём нет, берётся оригинал.
+  requestLang = null,
   topicCodes,
   blockIndex,
   clinicId = null,
@@ -219,7 +222,21 @@ export async function startAttempt({
     );
   }
 
-  const effectiveLang = lang ?? program.languages?.[0] ?? "ru";
+  // ЯЗЫК ПОПЫТКИ — язык врача, если тест на нём существует.
+  //
+  // Раньше здесь безусловно стоял languages[0], а порядок в languages задаёт
+  // EXAM_LANGUAGES (ru первым). Как только у теста появлялся русский перевод,
+  // азербайджанский врач, открыв азербайджанский тест, получал русские
+  // вопросы: перевод в базе есть, а сборка сессии его не спрашивала.
+  //
+  // Порядок предпочтений: явный параметр запроса → язык врача → язык
+  // оригинала. Языка, которого у теста нет, не подставляем: пустая попытка
+  // хуже попытки на чужом языке.
+  const available = program.languages ?? [];
+  const preferred = [lang, requestLang].find(
+    (l) => l && available.includes(l),
+  );
+  const effectiveLang = preferred ?? available[0] ?? "ru";
   const requested = Math.min(
     questionCount ?? program.defaultQuestionCount ?? 60,
     200,

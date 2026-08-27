@@ -31,7 +31,10 @@ import {
   NotFoundError,
   ConflictError,
 } from "../../../../common/utils/errors.js";
-import { EXAM_LANGUAGES } from "../../constants.js";
+import {
+  EXAM_LANGUAGES,
+  isProvisionalProgramTitle,
+} from "../../constants.js";
 import logger from "../../../../common/logger.js";
 
 // Черновики ниже этого порога уверенности помечаются в отчёте как
@@ -311,11 +314,13 @@ export async function runExtraction(
         const patch = {};
         if (blueprint) patch.blueprint = blueprint;
 
+        // Техническое название мастера заменяем осмысленным, введённое
+        // человеком — не трогаем. Признак «техническое» опознаём на всех
+        // пяти языках интерфейса (constants → isProvisionalProgramTitle):
+        // русскоязычная регулярка, стоявшая здесь, пропускала всё, что
+        // завели из нерусской админки.
         const suggestedTitle = String(suggestedProgram?.title ?? "").trim();
-        if (
-          suggestedTitle &&
-          /^(черновик импорта|импорт)/i.test(effectiveProgram.title)
-        ) {
+        if (suggestedTitle && isProvisionalProgramTitle(effectiveProgram.title)) {
           patch.title = suggestedTitle.slice(0, 300);
         }
 
@@ -658,13 +663,10 @@ export async function runGeneration(jobId, { alreadyStarted = false } = {}) {
         const blueprint = buildBlueprintFromSuggestion(suggestedProgram);
         const patch = {};
         if (blueprint) patch.blueprint = blueprint;
+        // См. импорт выше: техническое название узнаём по всем пяти
+        // языкам интерфейса, а не по русским словам.
         const suggestedTitle = String(suggestedProgram?.title ?? "").trim();
-        if (
-          suggestedTitle &&
-          /^(черновик генерации|генерация|черновик импорта)/i.test(
-            effectiveProgram.title,
-          )
-        ) {
+        if (suggestedTitle && isProvisionalProgramTitle(effectiveProgram.title)) {
           patch.title = suggestedTitle.slice(0, 300);
         }
         if (Object.keys(patch).length > 0) {
