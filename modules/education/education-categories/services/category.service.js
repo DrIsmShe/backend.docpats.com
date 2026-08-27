@@ -7,7 +7,7 @@
 import mongoose from "mongoose";
 import ExamCategory from "../models/examCategory.model.js";
 import { translateCategoryContent } from "./categoryTranslator.js";
-import { EXAM_LANGUAGES } from "../../constants.js";
+import { EXAM_LANGUAGES, isAutoTranslateEnabled } from "../../constants.js";
 import {
   ValidationError,
   NotFoundError,
@@ -60,7 +60,14 @@ async function uniqueSlug(name, excludeId = null) {
 // Перевода нет — отдаём оригинал. Это осознанный откат, а не заглушка: имя
 // на чужом языке читается, пустое место — нет. Так же ведут себя переводы
 // кейсов арены и вопросов банка.
+//
+// ПРИ ВЫКЛЮЧЕННОМ АВТОПЕРЕВОДЕ имя не подменяется вовсе — даже если перевод
+// в базе лежит с прошлых времён. Рубрики теперь заводят по одной на язык
+// («Азербайджанский», «Türkçe», …), и их имена — часть решения админа, а не
+// материал для машины: подменять их значило бы спорить с тем, кто их
+// придумал. Переводы не стираем: включат обратно — заработают как были.
 function localize(category, lang) {
+  if (!isAutoTranslateEnabled()) return category;
   if (!lang || lang === category.lang) return category;
   const tr = (category.translations ?? []).find((t) => t.lang === lang);
   if (!tr?.name) return category;
@@ -76,6 +83,10 @@ function localize(category, lang) {
 // повод не дать её создать. Ошибку гасим в лог — как перевод кейса при
 // публикации (radiology/translation/onPublish.js).
 function scheduleCategoryTranslation(categoryId) {
+  // Автоперевод выключен по умолчанию: язык рубрики — выбор админа, а не
+  // задача для модели (constants → isAutoTranslateEnabled).
+  if (!isAutoTranslateEnabled()) return;
+
   setImmediate(async () => {
     try {
       const doc = await ExamCategory.findById(categoryId);

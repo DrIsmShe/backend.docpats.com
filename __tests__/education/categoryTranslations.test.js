@@ -33,11 +33,32 @@ const settle = () => new Promise((r) => setTimeout(r, 30));
 const find = (tree, name) => tree.find((c) => c.name === name);
 
 beforeEach(() => {
+  // Автоперевод выключен по умолчанию: имена рубрик — решение админа. Здесь
+  // проверяется именно включённый режим (EDUCATION_AUTO_TRANSLATE=on).
+  process.env.EDUCATION_AUTO_TRANSLATE = "on";
   translateMock.mockReset();
   translateMock.mockResolvedValue([
     { lang: "az", name: "Psixologiya", description: "" },
     { lang: "en", name: "Psychology", description: "" },
   ]);
+});
+
+describe("выключенный автоперевод", () => {
+  it("не заказывает перевод и не подменяет имя готовым", async () => {
+    // Рубрику заводим при включённом режиме, чтобы перевод в базе появился.
+    await createCategory({ name: "Психология", lang: "ru" });
+    await settle();
+
+    process.env.EDUCATION_AUTO_TRANSLATE = "off";
+    translateMock.mockClear();
+
+    const tree = await listCategoriesTree({ lang: "az" });
+    expect(tree.map((c) => c.name)).toContain("Психология");
+
+    await createCategory({ name: "Научные", lang: "ru" });
+    await settle();
+    expect(translateMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("перевод рубрики", () => {
