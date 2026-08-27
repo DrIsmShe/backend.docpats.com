@@ -10,7 +10,11 @@
 
 import ExamProgram from "../models/examProgram.model.js";
 import { translateProgramContent } from "./programTranslator.js";
-import { EXAM_LANGUAGES, DEFAULT_EXAM_LANGUAGE } from "../../constants.js";
+import {
+  EXAM_LANGUAGES,
+  DEFAULT_EXAM_LANGUAGE,
+  isAutoTranslateEnabled,
+} from "../../constants.js";
 import {
   ValidationError,
   NotFoundError,
@@ -186,6 +190,10 @@ const translationAttempted = new Set();
 const LAZY_TRANSLATION_PER_REQUEST = 3;
 
 function scheduleMissingTranslations(items) {
+  // Автоперевод выключен по умолчанию: язык на витрине — обычная рубрика, и
+  // в каждую кладётся свой тест. Догонять нечего.
+  if (!isAutoTranslateEnabled()) return;
+
   let started = 0;
   for (const p of items) {
     if (started >= LAZY_TRANSLATION_PER_REQUEST) break;
@@ -470,7 +478,8 @@ export async function updateProgram(id, input) {
   // модели впустую. У опубликованного теста наоборот: он уже на витрине, и
   // переводы обязаны оставаться свежими.
   const needsTranslation =
-    becomesPublished || (textChanged && doc.status === "published");
+    isAutoTranslateEnabled() &&
+    (becomesPublished || (textChanged && doc.status === "published"));
   if (needsTranslation && String(doc.title ?? "").trim()) {
     scheduleProgramTranslation(doc._id);
   }

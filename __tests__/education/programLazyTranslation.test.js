@@ -53,6 +53,9 @@ async function flush(expectCall = true) {
 }
 
 beforeEach(async () => {
+  // Автоперевод выключен по умолчанию — язык на витрине это рубрика каталога,
+  // и переводить нечего. Здесь проверяется именно включённый режим.
+  process.env.EDUCATION_AUTO_TRANSLATE = "on";
   vi.clearAllMocks();
   await ExamProgram.deleteMany({});
   translateProgramContent.mockResolvedValue([
@@ -61,6 +64,16 @@ beforeEach(async () => {
 });
 
 describe("догоняющий перевод", () => {
+  it("при выключенном автопереводе не заказывается вовсе", async () => {
+    process.env.EDUCATION_AUTO_TRANSLATE = "off";
+    await makeProgram();
+
+    await listPrograms({ lang: "az" });
+    await flush(false);
+
+    expect(translateProgramContent).not.toHaveBeenCalled();
+  });
+
   it("тест без переводов переводится при открытии каталога", async () => {
     const p = await makeProgram({ title: "Прионные болезни" });
 

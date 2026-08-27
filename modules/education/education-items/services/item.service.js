@@ -17,7 +17,10 @@ import ExamItem from "../models/examItem.model.js";
 import ExamProgram from "../../education-catalog/models/examProgram.model.js";
 import { recountPublishedItems } from "../../education-catalog/services/program.service.js";
 import { enqueueItemTranslation } from "../../education-translation/translation.queue.js";
-import { SOURCE_KINDS_REQUIRING_REVIEW } from "../../constants.js";
+import {
+  SOURCE_KINDS_REQUIRING_REVIEW,
+  isAutoTranslateEnabled,
+} from "../../constants.js";
 import {
   ValidationError,
   NotFoundError,
@@ -417,7 +420,11 @@ export async function reviewItem(id, { decision, reason = null, reviewerId }) {
   //
   // Переводится только оригинал. У вопроса-перевода translationOf заполнен, и
   // повторный проход по нему создал бы перевод перевода.
-  if (!existing.translationOf) {
+  //
+  // Автоперевод выключен по умолчанию (constants → isAutoTranslateEnabled):
+  // язык на витрине — обычная рубрика каталога, и в каждую кладётся свой тест,
+  // написанный сразу на нужном языке. Ручной перевод из админки остаётся.
+  if (!existing.translationOf && isAutoTranslateEnabled()) {
     enqueueItemTranslation({
       itemId: existing._id,
       version: existing.version,
