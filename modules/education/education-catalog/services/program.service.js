@@ -159,6 +159,48 @@ export function scheduleProgramTranslation(programId) {
   });
 }
 
+// ─── Ленивый перевод недостающего ─────────────────────────────────────
+//
+// ЗАЧЕМ. Перевод названия запускается при публикации теста — но только у
+// тестов, опубликованных ПОСЛЕ появления этой возможности. Всё, что уже лежало
+// в базе, приходилось догонять скриптом руками, и ровно этот ручной шаг
+// оказался тем местом, где всё ломалось: врач видел русский заголовок в
+// азербайджанском интерфейсе, а причина была не в коде, а в невыполненной
+// команде. Скрипт остаётся (им удобно перевести всё разом и увидеть отчёт),
+// но каталог больше от него не зависит.
+//
+// ПОЧЕМУ БЕЗ ОЖИДАНИЯ. Перевод — это вызов модели, полсекунды-секунда. Витрина
+// обязана открываться мгновенно, поэтому текущий запрос отдаёт оригинал, а
+// перевод приезжает к следующему открытию. Так же устроена арена
+// (translation/translatedCase.js) и перевод рубрик при создании.
+//
+// ПОЧЕМУ С ПАМЯТЬЮ ПОПЫТОК. Без неё каждое открытие каталога заново заказывало
+// бы перевод теста, который модель отказалась переводить, — по вызову на
+// открытие, и так вечно. Множество процессное: перезапуск обнуляет его, и это
+// правильно — после починки причины попытка повторится сама.
+const translationAttempted = new Set();
+
+// Сколько тестов переводим за одно открытие каталога. Ограничение против
+// первого запуска на большой базе: тридцать тестов дали бы тридцать
+// одновременных вызовов модели. Остальные догонят на следующих открытиях.
+const LAZY_TRANSLATION_PER_REQUEST = 3;
+
+function scheduleMissingTranslations(items) {
+  let started = 0;
+  for (const p of items) {
+    if (started >= LAZY_TRANSLATION_PER_REQUEST) break;
+    if (p.status !== "published") continue;
+    if ((p.translations ?? []).length > 0) continue;
+    if (!String(p.title ?? "").trim()) continue;
+
+    const key = String(p._id);
+    if (translationAttempted.has(key)) continue;
+    translationAttempted.add(key);
+    scheduleProgramTranslation(p._id);
+    started += 1;
+  }
+}
+
 // ─── createProgram ────────────────────────────────────────────────────
 export async function createProgram(input) {
   assertValidBlueprint(input.blueprint);
@@ -264,6 +306,12 @@ export async function listPrograms(filters = {}) {
   // остаться оригинальным: там его переименовывают, и подставленный перевод
   // сохранился бы поверх оригинала при первой же правке.
   if (!filters.lang || scope !== "public") return items;
+
+  // Догоняем то, что не перевелось при публикации: тесты, опубликованные до
+  // появления переводов, и те, у кого перевод не удался. Не ждём — текущий
+  // запрос отдаёт что есть.
+  scheduleMissingTranslations(items);
+
   return items.map((p) => localizeProgram(p, filters.lang));
 }
 
@@ -309,7 +357,11 @@ export async function listCountries() {
 export async function getProgramById(id, { lang = null } = {}) {
   const doc = await ExamProgram.findById(id).lean();
   if (!doc) throw new NotFoundError("Exam program");
-  return lang ? localizeProgram(doc, lang) : doc;
+  if (!lang) return doc;
+  // Прямая ссылка на тест — тот же догоняющий перевод, что и в каталоге:
+  // на страницу теста можно прийти, ни разу не открыв список.
+  scheduleMissingTranslations([doc]);
+  return localizeProgram(doc, lang);
 }
 
 // ─── getProgramByCode ─────────────────────────────────────────────────
