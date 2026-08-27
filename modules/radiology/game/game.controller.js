@@ -1,6 +1,7 @@
 // server/modules/radiology/game/game.controller.js
 
 import { asyncHandler } from "../../../common/middlewares/errorHandler.js";
+import { langOf } from "../translation/requestLang.js";
 import {
   getProfile,
   getLeaderboard,
@@ -17,10 +18,13 @@ export const leaderboardController = asyncHandler(async (req, res) => {
   res.json({ items });
 });
 
+// «Кейс дня» и «кейс недели» — на языке врача, как и витрина станции. Без
+// этого карточка сверху оставалась русской, а тот же кейс в сетке ниже
+// приходил переведённым.
 export const dailyController = asyncHandler(async (req, res) => {
-  res.json({ daily: await getDailyCase() });
+  res.json({ daily: await getDailyCase(langOf(req)) });
 });
 
 export const weeklyController = asyncHandler(async (req, res) => {
-  res.json({ weekly: await getWeeklyCase() });
+  res.json({ weekly: await getWeeklyCase(langOf(req)) });
 });

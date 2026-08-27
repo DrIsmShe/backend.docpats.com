@@ -10,6 +10,7 @@
 import RadiologyPlayer from "./radiologyPlayer.model.js";
 import { xpFactorFor } from "../radiology-attempts/services/attemptPolicy.js";
 import RadiologyCase from "../radiology-cases/models/radiologyCase.model.js";
+import { translateCaseList } from "../translation/translatedCase.js";
 import User from "../../../common/models/Auth/users.js";
 
 // Ранги по накопленному XP. Пороги растут нелинейно — «Профессором»
@@ -224,23 +225,31 @@ export async function getLeaderboard({ limit = 20 } = {}) {
   }));
 }
 
-export async function getDailyCase() {
-  return pickFeaturedCase(Math.floor(Date.now() / 86400000));
+export async function getDailyCase(lang = null) {
+  return pickFeaturedCase(Math.floor(Date.now() / 86400000), lang);
 }
 
 // «Кейс недели» — тот же детерминированный выбор, но по номеру недели: один
 // на 7 дней. По нему идёт еженедельная рассылка (jobs/radiologyWeeklyCase).
-export async function getWeeklyCase() {
-  return pickFeaturedCase(Math.floor(Date.now() / (7 * 86400000)));
+export async function getWeeklyCase(lang = null) {
+  return pickFeaturedCase(Math.floor(Date.now() / (7 * 86400000)), lang);
 }
 
-async function pickFeaturedCase(seed) {
+// lang — язык врача. Витрина станции уже отдаёт кейсы переведёнными
+// (case.service → translateCaseList), а «кейс дня» и «кейс недели» шли мимо
+// этого слоя и брали title прямо из документа: в азербайджанском интерфейсе
+// карточка сверху была русской, а тот же кейс в сетке ниже — переведённым.
+//
+// Проекция включает lang не для красоты: translateCaseList пропускает кейсы,
+// уже написанные на нужном языке, а без поля они все считались бы русскими.
+async function pickFeaturedCase(seed, lang = null) {
   const published = await RadiologyCase.find({ status: "published" })
-    .select("_id title modality difficulty images")
+    .select("_id title modality difficulty images lang")
     .sort({ createdAt: 1 })
     .lean();
   if (published.length === 0) return null;
-  const c = published[seed % published.length];
+  const picked = published[seed % published.length];
+  const [c] = await translateCaseList("radiology", [picked], lang);
   return {
     _id: c._id,
     title: c.title,
