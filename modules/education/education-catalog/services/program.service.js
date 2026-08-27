@@ -66,16 +66,49 @@ export function assertValidBlueprint(blueprint) {
 // Язык оригинала берём из primaryLang (что проставил админ), а без него — из
 // первого языка, на котором есть вопросы. Совпал с языком врача — переводить
 // нечего.
-export function programSourceLang(program) {
-  return (
-    program?.primaryLang ||
-    program?.languages?.[0] ||
-    DEFAULT_EXAM_LANGUAGE
+// ЯЗЫК ОРИГИНАЛА — по вопросам, которые НЕ являются переводами.
+//
+// Наивный источник (primaryLang || languages[0]) врёт ровно там, где это
+// больнее всего. languages — производная от банка, и порядок в ней задаёт
+// EXAM_LANGUAGES с "ru" первым: у азербайджанского теста, чьи вопросы уже
+// переведены, languages[0] === "ru". Тест объявлялся русским, хотя написан
+// по-азербайджански, и русскоязычный врач получал азербайджанский заголовок
+// как «оригинал», не увидев готового русского перевода.
+//
+// Правда лежит в банке: у перевода заполнен translationOf, у оригинала — нет.
+// Один язык среди оригиналов — он и есть язык теста. Несколько (так бывает у
+// сборников, куда доливали вопросы руками) — доверяем разметке админа.
+export async function resolveProgramSourceLang(program) {
+  if (program?.primaryLang) return program.primaryLang;
+
+  const { default: ExamItem } = await import(
+    "../../education-items/models/examItem.model.js"
   );
+  const langs = await ExamItem.distinct("lang", {
+    programId: program._id,
+    translationOf: null,
+    status: { $nin: ["archived", "rejected"] },
+  });
+  const known = EXAM_LANGUAGES.filter((l) => langs.includes(l));
+  if (known.length === 1) return known[0];
+
+  return program?.languages?.[0] || DEFAULT_EXAM_LANGUAGE;
 }
 
+// ─── Название теста на языке врача ────────────────────────────────────
+//
+// Есть перевод на нужный язык — отдаём его. Нет — оригинал: имя на чужом
+// языке читается, пустое место — нет. Так же ведут себя рубрики каталога,
+// кейсы арены и вопросы банка.
+//
+// Язык оригинала здесь НЕ спрашиваем намеренно. Раньше стояла проверка
+// «lang совпал с языком оригинала — вернуть как есть», и она зависела от
+// того самого наивного определения: у азербайджанского теста язык оригинала
+// вычислялся как "ru", и русскому врачу возвращался азербайджанский заголовок
+// вместо готового русского перевода. Наличие перевода — признак сам по себе:
+// на язык оригинала перевод не создаётся (см. translateProgramContent).
 export function localizeProgram(program, lang) {
-  if (!program || !lang || lang === programSourceLang(program)) return program;
+  if (!program || !lang) return program;
   const tr = (program.translations ?? []).find((t) => t.lang === lang);
   if (!tr?.title) return program;
   return {
@@ -94,7 +127,7 @@ export function scheduleProgramTranslation(programId) {
     try {
       const doc = await ExamProgram.findById(programId);
       if (!doc) return;
-      const sourceLang = programSourceLang(doc);
+      const sourceLang = await resolveProgramSourceLang(doc);
       const targets = EXAM_LANGUAGES.filter((l) => l !== sourceLang);
       const translations = await translateProgramContent({
         title: doc.title,
@@ -104,10 +137,15 @@ export function scheduleProgramTranslation(programId) {
       });
       if (!translations.length) return;
       doc.translations = translations;
+      // Фиксируем язык оригинала: он посчитан по банку, и незачем считать его
+      // заново при каждом переводе. Заодно админ видит в карточке теста, от
+      // какого языка пляшут переводы.
+      if (!doc.primaryLang) doc.primaryLang = sourceLang;
       await doc.save();
       logger?.info?.(
         {
           programId: String(programId),
+          sourceLang,
           langs: translations.map((t) => t.lang),
         },
         "exam program translated",

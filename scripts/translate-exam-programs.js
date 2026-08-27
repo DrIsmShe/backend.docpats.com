@@ -14,10 +14,14 @@
  * везде, где у него есть вопросы. Скрипт нужен один раз — для тестов, уже
  * лежащих в базе: без него у них останется заголовок на языке оригинала.
  *
- * ЯЗЫК ОРИГИНАЛА берём из primaryLang, а если он не проставлен — из первого
- * языка, на котором есть вопросы (languages[0]). В отличие от рубрик,
- * угадывать по письменности не нужно: у теста язык уже посчитан по банку
- * (recountPublishedItems).
+ * ЯЗЫК ОРИГИНАЛА берём из primaryLang, а если он не проставлен — по вопросам,
+ * которые НЕ являются переводами (resolveProgramSourceLang). Угадывать по
+ * письменности, как у рубрик, не нужно: банк знает это точно.
+ *
+ * Именно поэтому не languages[0]: порядок в languages задаёт EXAM_LANGUAGES с
+ * "ru" первым, и азербайджанский тест с уже переведёнными вопросами объявлялся
+ * бы русским — переводы поехали бы «с русского», а primaryLang записался бы
+ * неверно.
  *
  * Использование (из папки server/):
  *   node scripts/translate-exam-programs.js                 # сухой прогон
@@ -37,7 +41,8 @@ import mongoose from "mongoose";
 
 import ExamProgram from "../modules/education/education-catalog/models/examProgram.model.js";
 import { translateProgramContent } from "../modules/education/education-catalog/services/programTranslator.js";
-import { EXAM_LANGUAGES, DEFAULT_EXAM_LANGUAGE } from "../modules/education/constants.js";
+import { resolveProgramSourceLang } from "../modules/education/education-catalog/services/program.service.js";
+import { EXAM_LANGUAGES } from "../modules/education/constants.js";
 
 const MONGO_URL =
   process.env.MONGO_URL || process.env.MONGODB_URI || process.env.MONGO_URI;
@@ -48,9 +53,6 @@ const has = (name) => process.argv.includes(`--${name}`);
 const APPLY = has("apply");
 const FORCE = has("force");
 const ALL_STATUSES = has("all");
-
-const sourceLangOf = (p) =>
-  p.primaryLang || p.languages?.[0] || DEFAULT_EXAM_LANGUAGE;
 
 const run = async () => {
   await mongoose.connect(MONGO_URL, {
@@ -72,7 +74,7 @@ const run = async () => {
       skipped.push({ p, why: "пустое название" });
       continue;
     }
-    const source = sourceLangOf(p);
+    const source = await resolveProgramSourceLang(p);
     const have = new Set((p.translations ?? []).map((t) => t.lang));
     const missing = EXAM_LANGUAGES.filter((l) => l !== source && !have.has(l));
     if (!missing.length && !FORCE) {

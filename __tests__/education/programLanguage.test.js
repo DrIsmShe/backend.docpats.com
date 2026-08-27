@@ -21,12 +21,20 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 
-const { listPrograms, createProgram, updateProgram, localizeProgram } =
-  await import(
-    "../../modules/education/education-catalog/services/program.service.js"
-  );
+const {
+  listPrograms,
+  createProgram,
+  updateProgram,
+  localizeProgram,
+  resolveProgramSourceLang,
+} = await import(
+  "../../modules/education/education-catalog/services/program.service.js"
+);
 const { default: ExamProgram } = await import(
   "../../modules/education/education-catalog/models/examProgram.model.js"
+);
+const { default: ExamItem } = await import(
+  "../../modules/education/education-items/models/examItem.model.js"
 );
 
 let n = 0;
@@ -138,13 +146,74 @@ describe("заголовок на языке врача", () => {
     expect(titles(admin)).toEqual(["Прионные болезни"]);
   });
 
-  it("localizeProgram не трогает тест на его же языке", async () => {
+  it("перевод на язык врача применяется независимо от языка оригинала", async () => {
+    // Проверка «lang совпал с языком оригинала — вернуть как есть» здесь
+    // стояла и зависела от наивного определения источника. У теста,
+    // написанного по-азербайджански, languages[0] === "ru" (порядок задаёт
+    // EXAM_LANGUAGES), и русский врач получал азербайджанский заголовок,
+    // не увидев готового русского перевода.
     const program = {
-      title: "Прионные болезни",
-      primaryLang: "ru",
+      title: "Prion xəstəlikləri",
+      primaryLang: null,
       languages: ["ru", "az"],
-      translations: [{ lang: "ru", title: "НЕ ДОЛЖНО ПРИМЕНИТЬСЯ" }],
+      translations: [{ lang: "ru", title: "Прионные болезни" }],
     };
     expect(localizeProgram(program, "ru").title).toBe("Прионные болезни");
+  });
+
+  it("на язык, которого нет в переводах, отдаётся оригинал", async () => {
+    const program = {
+      title: "Prion xəstəlikləri",
+      languages: ["ru", "az"],
+      translations: [{ lang: "ru", title: "Прионные болезни" }],
+    };
+    expect(localizeProgram(program, "az").title).toBe("Prion xəstəlikləri");
+  });
+});
+
+describe("язык оригинала теста", () => {
+  async function seedItem(programId, lang, { translationOf = null } = {}) {
+    return ExamItem.create({
+      programId,
+      topicCode: "bio",
+      lang,
+      translationOf,
+      stem: `[${lang}] вопрос`,
+      options: [
+        { key: "A", text: "верный" },
+        { key: "B", text: "неверный" },
+      ],
+      correctKeys: ["A"],
+      source: { kind: "original" },
+      status: "published",
+    });
+  }
+
+  it("берётся по вопросам-оригиналам, а не по порядку в languages", async () => {
+    // Тест написан по-азербайджански, вопросы переведены на русский. В
+    // languages "ru" стоит первым — порядок задаёт EXAM_LANGUAGES, — и
+    // наивное правило объявляло тест русским.
+    const p = await makeProgram({
+      title: "Prion xəstəlikləri",
+      languages: ["ru", "az"],
+      primaryLang: null,
+    });
+    const original = await seedItem(p._id, "az");
+    await seedItem(p._id, "ru", { translationOf: original._id });
+
+    expect(await resolveProgramSourceLang(p)).toBe("az");
+  });
+
+  it("разметка админа главнее банка", async () => {
+    const p = await makeProgram({ languages: ["ru", "az"], primaryLang: "ru" });
+    await seedItem(p._id, "az");
+
+    expect(await resolveProgramSourceLang(p)).toBe("ru");
+  });
+
+  it("оригиналов нет — откатываемся на первый из languages", async () => {
+    const p = await makeProgram({ languages: ["en", "tr"], primaryLang: null });
+
+    expect(await resolveProgramSourceLang(p)).toBe("en");
   });
 });
