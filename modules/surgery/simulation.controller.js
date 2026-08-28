@@ -1,5 +1,6 @@
 import * as service from "./simulation.service.js";
 import { maxPaintedPct, isFaceProcedure } from "./procedureZones.js";
+import { simulationQuotaLeft } from "./simulationQuota.service.js";
 
 // POST /api/surgery/cases/:id/simulate
 export async function startSimulation(req, res) {
@@ -74,6 +75,17 @@ export async function getPrompts(req, res) {
 //
 // Отдельно от /prompts/:procedure: клиенту нужен весь список сразу, чтобы
 // врач мог выбрать зону, не совпадающую с типом операции в кейсе.
+// GET /api/surgery/simulations/quota — остаток симуляций по тарифу
+export async function getQuota(req, res) {
+  try {
+    const quota = await simulationQuotaLeft(req.session.userId);
+    res.json({ success: true, quota });
+  } catch (err) {
+    console.error("[simulation] getQuota error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
 export async function getPromptCatalog(req, res) {
   try {
     res.json({ success: true, catalog: service.getPromptCatalog() });

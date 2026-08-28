@@ -3,6 +3,7 @@ import { redis } from "../../common/config/redis.js";
 import Simulation from "./simulation.model.js";
 import SurgicalCase from "./surgicalCase.model.js";
 import { compilePrompt } from "./promptCompiler.service.js";
+import { assertSimulationAllowed } from "./simulationQuota.service.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -567,6 +568,11 @@ export async function createSimulation(
 
   const cas = await SurgicalCase.findOne({ _id: caseId, surgeonId });
   if (!cas) throw new Error("Кейс не найден");
+
+  // Квота проверяется ДО постановки в очередь: отказ, за который мы уже
+  // заплатили генерацию, — худший вид отказа. Симуляция стоит дороже любой
+  // другой операции платформы, и открытый счёт здесь недопустим.
+  await assertSimulationAllowed(surgeonId);
 
   // ─── Режим правки ───────────────────────────────────────────────────
   //

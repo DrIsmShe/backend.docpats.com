@@ -43,6 +43,10 @@ router.get("/prompts/:procedure", ctrl.getPrompts);
 // Запустить симуляцию
 router.post("/cases/:id/simulate", upload.single("mask"), ctrl.startSimulation);
 
+// Остаток симуляций по тарифу. Отдельно от кейса: квота у врача одна на
+// все кейсы сразу.
+router.get("/simulations/quota", ctrl.getQuota);
+
 // Получить симуляции кейса
 router.get("/cases/:id/simulations", ctrl.getSimulations);
 

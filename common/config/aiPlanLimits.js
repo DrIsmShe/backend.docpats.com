@@ -54,6 +54,24 @@
 // clinic       — Business 249$/мес (15 врачей)
 // clinic_pro   — Enterprise 499$/мес (∞ врачей)
 
+
+// ─── AI-симуляция результата операции (aiSimulations) ────────────────
+//
+// Самая дорогая функция платформы в пересчёте на действие. Один запуск —
+// это n обращений к модели изображений: на gpt-image-2 при quality=high
+// вариант стоит около $0.165, то есть четыре варианта — $0.66. Разбор
+// анализов для сравнения стоит около $0.09.
+//
+// Числа ниже рассчитаны для настроек SIMULATION_VARIANTS=2 и
+// OPENAI_IMAGE_QUALITY=medium (~$0.08 за запуск): на Pro сотня симуляций
+// съедает $8 из $99 подписки. Если оставить high и четыре варианта, тот же
+// лимит обойдётся в $66 — тогда квоты надо делить примерно на восемь либо
+// продавать симуляцию отдельным пакетом.
+//
+// В отличие от прочих фич, ОТСУТСТВИЕ ключа здесь означает запрет, а не
+// безлимит (см. simulationQuota.service.js): для функции такой цены
+// умолчание «можно сколько угодно» — это открытый счёт.
+
 export const PLAN_LIMITS = {
   // ═════════════════════ ПАЦИЕНТЫ ═══════════════════════
   guest: {
@@ -178,6 +196,7 @@ export const PLAN_LIMITS = {
     labExplanations: 30,
     previsitIntakes: 100,
     storedFiles: 1500,
+    aiSimulations: 15,
   },
   // Бесплатный врачебный уровень — то, куда врач попадает, когда НЕ платит:
   // после пробного периода и после окончания оплаченной подписки.
@@ -207,6 +226,7 @@ export const PLAN_LIMITS = {
     labExplanations: 1,
     previsitIntakes: 5,
     storedFiles: 30,
+    aiSimulations: 2,
   },
   // Lite — вход для врачей.
   //
@@ -231,6 +251,7 @@ export const PLAN_LIMITS = {
     labExplanations: 10,
     previsitIntakes: 30,
     storedFiles: 400,
+    aiSimulations: 5,
   },
   doctor_basic: {
     // 1500 при банке примерно в 1011 вопросов — квота заведомо больше банка
@@ -248,6 +269,7 @@ export const PLAN_LIMITS = {
     labExplanations: 30,
     previsitIntakes: 100,
     storedFiles: 1500,
+    aiSimulations: 15,
   },
   doctor_super: {
     examQuestions: -1,
@@ -260,6 +282,7 @@ export const PLAN_LIMITS = {
     labExplanations: 80,
     previsitIntakes: 600,
     storedFiles: 6000,
+    aiSimulations: 40,
   },
   // Pro. Все безлимиты, кроме банка вопросов, заменены потолками.
   //
@@ -281,6 +304,7 @@ export const PLAN_LIMITS = {
     labExplanations: 200,
     previsitIntakes: 2000,
     storedFiles: 20000,
+    aiSimulations: 100,
   },
 
   // ═════════════════════ КЛИНИКИ ═════════════════════════
@@ -299,6 +323,7 @@ export const PLAN_LIMITS = {
     // проекте нет — публичные страницы это витрины по slug. Поднимать было
     // некуда, и поле три тарифа подряд обещало несуществующее.
     analytics: false,
+    aiSimulations: 100,
   },
   // Клинические потолки заданы «на врача, помноженное на штат»: Business —
   // 15 врачей, значит ~27 разборов на врача в месяц. Enterprise штат не
@@ -315,6 +340,7 @@ export const PLAN_LIMITS = {
     previsitIntakes: 2000,
     storedFiles: 20000,
     analytics: true,
+    aiSimulations: 250,
   },
   // Штат перестал быть безлимитным. Пока число врачей не ограничено,
   // расход на инфраструктуру нельзя даже оценить — а значит и проверить,
@@ -332,6 +358,7 @@ export const PLAN_LIMITS = {
     previsitIntakes: 4000,
     storedFiles: 60000,
     analytics: true,
+    aiSimulations: 500,
   },
 };
 
