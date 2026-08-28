@@ -6,8 +6,13 @@ export async function startSimulation(req, res) {
   try {
     const surgeonId = req.session.userId;
     const caseId = req.params.id;
-    const { sourcePhotoFilename, customPrompt, promptIdx, disclaimerAccepted } =
-      req.body;
+    const {
+      sourcePhotoFilename,
+      customPrompt,
+      promptIdx,
+      promptProcedure,
+      disclaimerAccepted,
+    } = req.body;
 
     if (!sourcePhotoFilename) {
       return res
@@ -22,6 +27,7 @@ export async function startSimulation(req, res) {
       maskFilename,
       customPrompt,
       promptIdx: Number(promptIdx) || 0,
+      promptProcedure,
       disclaimerAccepted:
         disclaimerAccepted === true || disclaimerAccepted === "true",
     });

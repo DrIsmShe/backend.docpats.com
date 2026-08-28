@@ -448,6 +448,59 @@ const PROCEDURE_PROMPTS = {
     },
   ],
 
+  breast_lift: [
+    { label: "Мастопексия", text: "breast lift result, restored breast position, no ptosis, natural upper pole, symmetric nipple position, proportional shape, clinical medical photography, photorealistic, tasteful" },
+    { label: "Периареолярная", text: "periareolar mastopexy result, subtle lift, natural breast shape, minimal scarring appearance, symmetric areolae, clinical medical photography, photorealistic, tasteful" },
+    { label: "Подтяжка с имплантом", text: "mastopexy with implant result, lifted breasts with restored upper pole fullness, natural proportions, symmetric, clinical medical photography, photorealistic, tasteful" },
+    { label: "После кормления", text: "breast lift after breastfeeding, restored shape and position, natural volume distribution, symmetric, clinical medical photography, photorealistic, tasteful" },
+  ],
+
+  breast_reconstruction: [
+    { label: "Реконструкция имплантом", text: "breast reconstruction with implant, restored breast mound, symmetric with opposite side, natural contour, clinical medical photography, photorealistic, tasteful" },
+    { label: "Лоскутная реконструкция", text: "autologous flap breast reconstruction result, natural breast shape and softness, symmetric projection, clinical medical photography, photorealistic, tasteful" },
+    { label: "Восстановление симметрии", text: "breast symmetry restoration result, matched volume and position of both breasts, natural contour, clinical medical photography, photorealistic, tasteful" },
+  ],
+
+  bbl: [
+    { label: "Бразильская подтяжка ягодиц", text: "Brazilian butt lift result, enhanced buttock projection and roundness, smooth natural contour, proportional to waist and hips, clinical medical photography, photorealistic, tasteful" },
+    { label: "Натуральный объём", text: "subtle buttock augmentation result, natural rounded shape, smooth transition to thighs, balanced proportions, clinical medical photography, photorealistic, tasteful" },
+    { label: "Контур талия — бёдра", text: "buttock augmentation with waist contouring, hourglass silhouette, smooth hip transition, natural proportions, clinical medical photography, photorealistic, tasteful" },
+  ],
+
+  body_contouring: [
+    { label: "Комплексный контуринг", text: "full body contouring result, smooth even contours, balanced proportions, no skin irregularities, natural silhouette, clinical medical photography, photorealistic, tasteful" },
+    { label: "После похудения", text: "post-weight-loss body contouring result, removed excess skin, smooth toned contour, natural silhouette, clinical medical photography, photorealistic, tasteful" },
+    { label: "Талия и бока", text: "waist and flank contouring result, defined waistline, smooth flanks, balanced torso proportions, clinical medical photography, photorealistic, tasteful" },
+  ],
+
+  arm_lift: [
+    { label: "Брахиопластика", text: "arm lift result, tightened upper arm contour, no sagging skin, smooth natural arm shape, clinical medical photography, photorealistic, tasteful" },
+    { label: "Мини-подтяжка", text: "short-scar arm lift result, firmer upper arm, subtle contour improvement, natural appearance, clinical medical photography, photorealistic, tasteful" },
+    { label: "С липосакцией", text: "arm lift with liposuction result, slimmer firm arm contour, smooth skin, defined shape, clinical medical photography, photorealistic, tasteful" },
+  ],
+
+  thigh_lift: [
+    { label: "Подтяжка бёдер", text: "thigh lift result, tightened inner thigh contour, no sagging skin, smooth natural leg shape, clinical medical photography, photorealistic, tasteful" },
+    { label: "Внутренняя поверхность", text: "medial thigh lift result, firm smooth inner thighs, improved leg contour, natural proportions, clinical medical photography, photorealistic, tasteful" },
+    { label: "С липосакцией", text: "thigh lift with liposuction result, slimmer firm thighs, smooth even contour, natural leg shape, clinical medical photography, photorealistic, tasteful" },
+  ],
+
+  lower_body_lift: [
+    { label: "Круговая подтяжка", text: "lower body lift result, tightened abdomen, flanks and buttocks in one continuous contour, no excess skin, natural silhouette, clinical medical photography, photorealistic, tasteful" },
+    { label: "После бариатрии", text: "post-bariatric lower body lift result, removed excess skin, smooth toned contour, restored proportions, clinical medical photography, photorealistic, tasteful" },
+  ],
+
+  gynecomastia: [
+    { label: "Коррекция гинекомастии", text: "gynecomastia correction result, flat masculine chest contour, defined pectoral shape, no glandular fullness, natural nipple position, clinical medical photography, photorealistic" },
+    { label: "Липосакция груди", text: "chest liposuction result for gynecomastia, flatter chest contour, smooth transition to torso, masculine appearance, clinical medical photography, photorealistic" },
+    { label: "С подтяжкой кожи", text: "gynecomastia correction with skin tightening, flat firm chest, no sagging, defined pectoral border, clinical medical photography, photorealistic" },
+  ],
+
+  ear_reconstruction: [
+    { label: "Реконструкция ушной раковины", text: "ear reconstruction result, restored natural ear shape and contour, symmetric with opposite ear, natural helix and antihelix, clinical medical photography, photorealistic" },
+    { label: "Восстановление после травмы", text: "post-traumatic ear reconstruction result, natural ear outline, symmetric position, smooth skin, clinical medical photography, photorealistic, high detail" },
+  ],
+
   other: [
     {
       label: "Общий косметический результат",
@@ -504,6 +557,7 @@ export async function createSimulation(
     maskFilename,
     customPrompt,
     promptIdx,
+    promptProcedure,
     disclaimerAccepted,
   },
 ) {
@@ -530,11 +584,18 @@ export async function createSimulation(
   // без маски модель нужно ПРОСИТЬ («подними кончик носа»), а с маской —
   // ОПИСЫВАТЬ желаемый вид зоны, потому что содержимого под маской она не
   // видит и «убери» ей бесполезно.
+  // Зона правки может не совпадать с типом операции в кейсе: кейс заведён
+  // на брови, а посмотреть врач хочет нос. Незнакомый ключ игнорируем молча
+  // и возвращаемся к процедуре кейса — подделать каталог через API нельзя.
+  const promptZone = PROCEDURE_PROMPTS[promptProcedure]
+    ? promptProcedure
+    : cas.procedure;
+
   const raw = (customPrompt || "").trim();
   const { prompt, compiled } = raw
     ? await compilePrompt(raw, cas.procedure, mode === "full" ? "edit" : "inpaint")
     : {
-        prompt: presetFor(cas.procedure, Number(promptIdx) || 0, mode),
+        prompt: presetFor(promptZone, Number(promptIdx) || 0, mode),
         compiled: false,
       };
 
@@ -561,6 +622,28 @@ export async function createSimulation(
   );
 
   return simulation;
+}
+
+/**
+ * Весь каталог: какие процедуры вообще умеют подсказать результат.
+ *
+ * Нужен потому, что тип операции в кейсе и зона правки на снимке — разные
+ * вещи. Кейс заведён как «подтяжка бровей», а на снимке врач хочет
+ * посмотреть нос: раньше выбора не было вовсе, список молча ограничивался
+ * процедурой кейса, и всё незнакомое проваливалось в «общий косметический
+ * результат».
+ *
+ * Названия процедур здесь не переводятся: у клиента они уже есть на всех
+ * пяти языках: locales, язык, Surgery.json, ключ procedures.<процедура>.
+ */
+export function getPromptCatalog() {
+  return Object.keys(PROCEDURE_PROMPTS).map((procedure) => ({
+    procedure,
+    prompts: PROCEDURE_PROMPTS[procedure].map((p, idx) => ({
+      idx,
+      label: p.label,
+    })),
+  }));
 }
 
 export function getPromptsForProcedure(procedure) {

@@ -32,6 +32,11 @@ const upload = multer({
 
 router.use(authMiddleware);
 
+// Весь каталог зон правки. Отдельно от /prompts/:procedure: клиенту нужен
+// весь список сразу, чтобы врач мог выбрать зону, не совпадающую с типом
+// операции в кейсе.
+router.get("/prompts", ctrl.getPromptCatalog);
+
 // Получить список промптов для процедуры
 router.get("/prompts/:procedure", ctrl.getPrompts);
 
