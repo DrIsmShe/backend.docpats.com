@@ -2,12 +2,19 @@ import mongoose from "mongoose";
 import User from "../../../common/models/Auth/users.js";
 import { uploadFile } from "../../../common/middlewares/uploadMiddleware.js"; // ← правильно
 
+// Языки, на которых существует интерфейс и шаблоны уведомлений. Список
+// намеренно короче того, на который умеет переводить чат: перевести
+// сообщение можно на любой ISO-код, а прислать напоминание — только на тот,
+// для которого есть текст.
+const UI_LANGUAGES = ["en", "ru", "az", "tr", "ar"];
+
 const updateMainProfileControllerDoctor = async (req, res) => {
   try {
     // 🔒 БЕЗОПАСНОСТЬ: userId берём ТОЛЬКО из сессии (authMiddleware ставит
     // req.userId). Никогда из req.body — иначе можно править чужой профиль.
     const userId = req.userId;
-    const { username, firstName, lastName, dateOfBirth, bio } = req.body;
+    const { username, firstName, lastName, dateOfBirth, bio, preferredLanguage } =
+      req.body;
 
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -68,6 +75,21 @@ const updateMainProfileControllerDoctor = async (req, res) => {
     // которых нет в схеме → strict-mode их отбрасывал и имя не менялось.
     if (firstName?.trim()) sanitizedData.firstNameEncrypted = firstName.trim();
     if (lastName?.trim()) sanitizedData.lastNameEncrypted = lastName.trim();
+
+    // Язык уведомлений и писем. До этого менять его врач не мог НИКАК:
+    // профиль поля не принимал, селектор в шапке закомментирован, а
+    // единственное место, где preferredLanguage вообще записывался, — выбор
+    // языка перевода в чате. Врач, переключивший там арабский ради одного
+    // сообщения, навсегда оставался с арабскими напоминаниями.
+    if (preferredLanguage) {
+      const lang = String(preferredLanguage).toLowerCase();
+      if (!UI_LANGUAGES.includes(lang)) {
+        return res.status(400).json({
+          message: `Unsupported language. Allowed: ${UI_LANGUAGES.join(", ")}`,
+        });
+      }
+      sanitizedData.preferredLanguage = lang;
+    }
 
     const updatedUser = await User.findByIdAndUpdate(userId, sanitizedData, {
       new: true,

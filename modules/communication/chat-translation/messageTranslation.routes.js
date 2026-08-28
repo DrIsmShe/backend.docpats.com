@@ -134,8 +134,14 @@ router.get("/:messageId/all", authMiddleware, async (req, res, next) => {
 });
 
 // ─── PUT /communication/translations/preferences ─────────────────────────────
-// Сохранить предпочитаемый язык пользователя
+// Сохранить язык, на который переводить входящие сообщения в чате.
 // Body: { lang: "ja" } — любой ISO-код
+//
+// Пишем в chatTranslationLang, а НЕ в preferredLanguage. Раньше писали туда,
+// и это связывало две несвязанные вещи: врач переключал перевод на арабский,
+// чтобы прочитать сообщение пациента, — и все его напоминания о приёмах
+// начинали приходить по-арабски, без единого способа это отменить (селектор
+// языка в шапке закомментирован, а профиль врача такого поля не принимает).
 
 router.put("/preferences", authMiddleware, async (req, res, next) => {
   try {
@@ -150,7 +156,7 @@ router.put("/preferences", authMiddleware, async (req, res, next) => {
     }
 
     const User = (await import("../../../common/models/Auth/users.js")).default;
-    await User.findByIdAndUpdate(userId, { $set: { preferredLanguage: lang } });
+    await User.findByIdAndUpdate(userId, { $set: { chatTranslationLang: lang } });
 
     res.json({ success: true, lang });
   } catch (err) {

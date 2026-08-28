@@ -197,16 +197,18 @@ export async function sendMessage({
 
         if (!others.length) return;
 
-        // Берём их preferredLanguage одним запросом
+        // Язык перевода — отдельный от языка человека. Кто его не
+        // выбирал, получает перевод на язык своего интерфейса.
         const users = await User.find({
           _id: { $in: others.map((p) => p.userId) },
-          preferredLanguage: { $exists: true, $ne: null },
-        }).select("_id preferredLanguage");
+        }).select("_id preferredLanguage chatTranslationLang");
 
-        const participantLanguages = users.map((u) => ({
-          userId: String(u._id),
-          lang: u.preferredLanguage,
-        }));
+        const participantLanguages = users
+          .map((u) => ({
+            userId: String(u._id),
+            lang: u.chatTranslationLang || u.preferredLanguage,
+          }))
+          .filter((u) => u.lang);
 
         if (!participantLanguages.length) return;
 
