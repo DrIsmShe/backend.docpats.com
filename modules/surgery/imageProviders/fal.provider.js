@@ -56,7 +56,7 @@ export const falProvider = {
     const body = {
       image_url: toDataUri(imageBuffer, sniffMime(imageBuffer)),
       prompt,
-      num_images: numOutputs || 4,
+      num_images: numOutputs || 1,
       output_format: "jpeg",
       safety_tolerance: "5",
     };

@@ -225,7 +225,9 @@ export const openaiProvider = {
     const modelName = model();
     form.append("model", modelName);
     form.append("prompt", fullPrompt);
-    form.append("n", String(numOutputs || 4));
+    // Запасное значение — единица, а не четвёрка: каждый вариант это
+    // отдельная оплаченная генерация, и умолчание не должно множить счёт.
+    form.append("n", String(numOutputs || 1));
     form.append("size", size.label);
     form.append("quality", quality());
     form.append("image", new Blob([image], { type: "image/png" }), "photo.png");

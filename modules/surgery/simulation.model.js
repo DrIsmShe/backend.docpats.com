@@ -61,7 +61,10 @@ const SimulationSchema = new Schema(
     negativePrompt: { type: String },
     guidanceScale: { type: Number, default: 7.5 },
     steps: { type: Number, default: 25 },
-    numOutputs: { type: Number, default: 4 },
+    // Один вариант по умолчанию: каждый — отдельная оплаченная генерация,
+    // и умолчание в четыре превращало пропущенное поле в четырёхкратный
+    // счёт.
+    numOutputs: { type: Number, default: 1 },
 
     // Результаты
     resultFilenames: [{ type: String }],

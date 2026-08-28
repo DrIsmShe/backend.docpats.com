@@ -290,7 +290,7 @@ const worker = new Worker(
         maskBuffer: modelMask,
         prompt: promptFinal,
         negativePrompt: sim.negativePrompt,
-        numOutputs: sim.numOutputs || 4,
+        numOutputs: sim.numOutputs || 1,
       });
 
       // ─── Сборка кадра ───────────────────────────────────────────────
