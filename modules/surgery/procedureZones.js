@@ -31,7 +31,13 @@ export function maxPaintedPct(procedure) {
   return isFaceProcedure(procedure) ? 30 : 70;
 }
 
-/** Нижняя граница: меньше — маска считается ненарисованной. */
-export const MIN_PAINTED_PCT = 0.3;
+/**
+ * Нижняя граница: меньше — маска считается ненарисованной.
+ *
+ * Полтысячных процента кадра — это след кисти, а не зона операции: на
+ * снимке 452×679 порог отсекает всё тоньше примерно 1500 пикселей. Штрих
+ * по брови, который врач принял за разметку, давал 0.35% и проходил.
+ */
+export const MIN_PAINTED_PCT = 0.5;
 
 export default { FACE_PROCEDURES, isFaceProcedure, maxPaintedPct, MIN_PAINTED_PCT };

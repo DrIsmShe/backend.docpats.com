@@ -370,6 +370,84 @@ const PROCEDURE_PROMPTS = {
     },
   ],
 
+  // Процедуры, которых в каталоге не было вовсе, из-за чего кейс «Подтяжка
+  // бровей» проваливался в other и получал «общий косметический результат»:
+  // модель не знала ни зоны, ни характера правки.
+  brow_lift: [
+    {
+      "label": "Подтяжка бровей",
+      "text": "elevated eyebrow position, smooth open upper eyelid area, reduced forehead heaviness, natural brow arch, rested alert expression, clinical medical photography, natural skin texture, photorealistic",
+    },
+    {
+      "label": "Латеральный лифтинг",
+      "text": "lifted lateral brow tail, opened outer eye area, natural brow arch without surprise look, subtle temporal elevation, clinical medical photography, photorealistic, high detail",
+    },
+    {
+      "label": "Эндоскопический лифтинг лба",
+      "text": "smooth forehead, elevated brows, reduced horizontal forehead lines, natural hairline position, refreshed upper face, clinical medical photography, natural skin texture, photorealistic",
+    },
+    {
+      "label": "Коррекция асимметрии бровей",
+      "text": "symmetric eyebrow height, balanced brow arches, even upper eyelid exposure, natural expression preserved, clinical medical photography, photorealistic, high detail",
+    },
+  ],
+
+  neck_lift: [
+    {
+      "label": "Подтяжка шеи",
+      "text": "defined jawline, smooth neck contour, no submental fullness, natural cervicomental angle, rejuvenated lower face, clinical medical photography, natural skin texture, photorealistic",
+    },
+    {
+      "label": "Платизмопластика",
+      "text": "smooth neck without platysmal bands, tightened neck contour, defined jaw border, natural appearance, clinical medical photography, photorealistic, high detail",
+    },
+    {
+      "label": "Второй подбородок",
+      "text": "eliminated double chin, defined submental area, smooth neck line, natural profile, clinical medical photography, natural skin texture, photorealistic",
+    },
+  ],
+
+  cheek_implant: [
+    {
+      "label": "Скуловые импланты",
+      "text": "defined cheekbones, natural midface projection, smooth cheek contour, balanced facial proportions, no overfilled look, clinical medical photography, photorealistic",
+    },
+    {
+      "label": "Мягкое усиление скул",
+      "text": "subtle cheekbone enhancement, natural midface volume, soft contour transition, age-appropriate result, clinical medical photography, natural skin texture, photorealistic",
+    },
+    {
+      "label": "Коррекция западения щёк",
+      "text": "restored cheek volume, no hollow midface, smooth natural contour, healthy rested appearance, clinical medical photography, photorealistic, high detail",
+    },
+  ],
+
+  lip_lift: [
+    {
+      "label": "Булхорн (укорочение)",
+      "text": "shortened philtrum, more visible upper lip vermilion, natural cupid bow, balanced lip proportions, no scar visible, clinical medical photography, photorealistic",
+    },
+    {
+      "label": "Уголки губ",
+      "text": "lifted mouth corners, neutral relaxed expression, no downturned corners, natural lip line, clinical medical photography, natural skin texture, photorealistic",
+    },
+  ],
+
+  fat_grafting_face: [
+    {
+      "label": "Липофилинг лица",
+      "text": "restored facial volume, smooth natural contours, no hollow areas, healthy rested appearance, natural skin texture preserved, clinical medical photography, photorealistic",
+    },
+    {
+      "label": "Носослёзная борозда",
+      "text": "smooth tear trough, no under-eye hollowing, even lower eyelid contour, rested refreshed eyes, clinical medical photography, natural skin texture, photorealistic",
+    },
+    {
+      "label": "Скуловая область",
+      "text": "restored midface volume, natural cheek fullness, smooth transition to lower eyelid, balanced proportions, clinical medical photography, photorealistic, high detail",
+    },
+  ],
+
   other: [
     {
       label: "Общий косметический результат",

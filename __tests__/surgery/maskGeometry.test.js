@@ -11,6 +11,8 @@ import {
   analyzeMask,
   planCrop,
   compositeByMask,
+  fillEnclosedAreas,
+  strokeSurvival,
 } from "../../modules/surgery/maskGeometry.js";
 
 const W = 400;
@@ -180,5 +182,85 @@ describe("compositeByMask", () => {
     const meta = await sharp(out).metadata();
     expect(meta.width).toBe(W);
     expect(meta.height).toBe(H);
+  });
+});
+
+describe("fillEnclosedAreas", () => {
+  const svg = (inner) =>
+    sharp(
+      Buffer.from(
+        `<svg width="${W}" height="${H}"><rect width="100%" height="100%" fill="black"/>${inner}</svg>`,
+      ),
+    )
+      .png()
+      .toBuffer();
+
+  it("обведённый контур становится залитой зоной", async () => {
+    // Врач обвёл нос по контуру. Для модели это указание перерисовать
+    // линию и НЕ трогать нос внутри неё: запрос остаётся невыполненным, а
+    // на снимке появляется черта по следу кисти.
+    const outline = await svg(
+      `<ellipse cx="200" cy="300" rx="60" ry="90" fill="none" stroke="white" stroke-width="6"/>`,
+    );
+
+    const before = await analyzeMask(outline, W, H);
+    const { mask, filledPct } = await fillEnclosedAreas(outline, W, H);
+    const after = await analyzeMask(mask, W, H);
+
+    expect(filledPct).toBeGreaterThan(1);
+    expect(after.paintedPct).toBeGreaterThan(before.paintedPct * 3);
+
+    // Центр контура теперь входит в зону правки.
+    const { data } = await sharp(mask)
+      .extract({ left: 200, top: 300, width: 1, height: 1 })
+      .greyscale()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    expect(data[0]).toBeGreaterThan(127);
+  });
+
+  it("залитую зону не трогает", async () => {
+    const solid = await svg(`<ellipse cx="200" cy="300" rx="60" ry="90" fill="white"/>`);
+    const before = await analyzeMask(solid, W, H);
+    const { filledPct } = await fillEnclosedAreas(solid, W, H);
+    const after = await analyzeMask(
+      (await fillEnclosedAreas(solid, W, H)).mask,
+      W,
+      H,
+    );
+
+    expect(filledPct).toBe(0);
+    expect(after.paintedPct).toBeCloseTo(before.paintedPct, 1);
+  });
+
+  it("незамкнутый штрих остаётся штрихом — где замкнуть, мы не знаем", async () => {
+    const stroke = await svg(
+      `<path d="M 80 200 Q 200 170 320 200" fill="none" stroke="white" stroke-width="5"/>`,
+    );
+    const { filledPct } = await fillEnclosedAreas(stroke, W, H);
+    expect(filledPct).toBe(0);
+  });
+
+  it("толщина отличает след кисти от зоны операции", async () => {
+    // Тот признак, по которому воркер отклоняет штрих. Габарит для этого не
+    // годился: пологий мазок плотно заполняет свой тонкий bbox и выглядел
+    // полноценной зоной — тест на плотности проходил у обоих.
+    const stroke = await svg(
+      `<path d="M 80 200 Q 200 170 320 200" fill="none" stroke="white" stroke-width="5"/>`,
+    );
+    const zone = await svg(`<ellipse cx="200" cy="300" rx="60" ry="90" fill="white"/>`);
+
+    expect(await strokeSurvival(stroke, W, H)).toBeLessThan(0.2);
+    expect(await strokeSurvival(zone, W, H)).toBeGreaterThan(0.6);
+  });
+
+  it("обводка после заливки перестаёт быть штрихом", async () => {
+    const outline = await svg(
+      `<ellipse cx="200" cy="300" rx="60" ry="90" fill="none" stroke="white" stroke-width="6"/>`,
+    );
+    expect(await strokeSurvival(outline, W, H)).toBeLessThan(0.2);
+
+    const { mask } = await fillEnclosedAreas(outline, W, H);
+    expect(await strokeSurvival(mask, W, H)).toBeGreaterThan(0.6);
   });
 });

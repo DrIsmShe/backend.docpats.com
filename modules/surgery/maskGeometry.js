@@ -24,6 +24,132 @@ const GRID = 16;
 const roundTo = (v, grid = GRID) => Math.max(grid, Math.round(v / grid) * grid);
 
 /**
+ * Заливка замкнутых контуров.
+ *
+ * ЗАЧЕМ. Кисть рисует линию, и врач нередко ОБВОДИТ зону, а не закрашивает
+ * её: так размечают на бумаге и так же ведут руку мышью. Для модели это
+ * означает противоположное — перерисовать надо ровно линию, а нос и
+ * подглазья внутри неё оставить как есть. На выходе врач получает свой
+ * запрос невыполненным и тонкую черту по нарисованному контуру: модель
+ * добросовестно перерисовала единственное, что ей отдали.
+ *
+ * Отличить обводку от заливки нельзя — но можно сделать их равнозначными:
+ * всё, что оказалось ВНУТРИ замкнутого контура, дорисовываем сами. Заливка
+ * ищется от краёв кадра: непокрашенная область, до которой снаружи не
+ * добраться, и есть внутренность.
+ *
+ * Незамкнутый контур останется линией — это честно: додумывать, где врач
+ * хотел замкнуть, мы не вправе.
+ */
+export async function fillEnclosedAreas(maskBuffer, photoWidth, photoHeight) {
+  // Работаем на уменьшенной копии: обход 8 млн пикселей на каждую симуляцию
+  // не нужен, а точность границы всё равно теряется при обратном масштабе.
+  const SCAN = 640;
+  const scale = Math.min(1, SCAN / Math.max(photoWidth, photoHeight));
+  const sw = Math.max(8, Math.round(photoWidth * scale));
+  const sh = Math.max(8, Math.round(photoHeight * scale));
+
+  const small = await sharp(maskBuffer)
+    .resize(sw, sh, { fit: "fill" })
+    .greyscale()
+    .raw()
+    .toBuffer();
+
+  // Разлив снаружи внутрь по непокрашенному. Очередь на типизированном
+  // массиве, а не рекурсия: стек на 400 тысячах пикселей не переживёт.
+  const outside = new Uint8Array(sw * sh);
+  const queue = new Int32Array(sw * sh);
+  let head = 0;
+  let tail = 0;
+
+  const push = (i) => {
+    if (!outside[i] && small[i] <= 127) {
+      outside[i] = 1;
+      queue[tail++] = i;
+    }
+  };
+
+  for (let x = 0; x < sw; x++) {
+    push(x);
+    push((sh - 1) * sw + x);
+  }
+  for (let y = 0; y < sh; y++) {
+    push(y * sw);
+    push(y * sw + sw - 1);
+  }
+
+  while (head < tail) {
+    const i = queue[head++];
+    const x = i % sw;
+    const y = (i / sw) | 0;
+    if (x > 0) push(i - 1);
+    if (x < sw - 1) push(i + 1);
+    if (y > 0) push(i - sw);
+    if (y < sh - 1) push(i + sw);
+  }
+
+  let filled = 0;
+  const result = Buffer.alloc(sw * sh);
+  for (let i = 0; i < result.length; i++) {
+    const isMask = small[i] > 127;
+    const isHole = !isMask && !outside[i];
+    if (isHole) filled++;
+    result[i] = isMask || isHole ? 255 : 0;
+  }
+
+  // Внутренностей нет — контур не замкнут либо зона и так залита. Отдаём
+  // исходную маску, чтобы не терять точность её краёв на пересэмплировании.
+  if (filled === 0) return { mask: maskBuffer, filledPct: 0 };
+
+  const mask = await sharp(result, { raw: { width: sw, height: sh, channels: 1 } })
+    .resize(photoWidth, photoHeight, { fit: "fill" })
+    .threshold(128)
+    .png()
+    .toBuffer();
+
+  return { mask, filledPct: (filled / (sw * sh)) * 100 };
+}
+
+/**
+ * Штрих это или зона: какая доля закрашенного переживает «сжатие» краёв.
+ *
+ * Прямой признак толщины. Линия в несколько пикселей исчезает целиком,
+ * залитая область теряет только кайму. Габарит для этого не годится:
+ * пологий штрих через полкадра плотно заполняет свой тонкий bbox и по
+ * такому признаку неотличим от полоски под нижними веками.
+ *
+ * Сжатие приближаем размытием с высоким порогом — морфологической эрозии
+ * в sharp нет, а результат для нашей задачи тот же: у тонкого следа после
+ * размытия нигде не остаётся яркости выше порога.
+ *
+ * @returns {number} доля выжившего, 0..1
+ */
+export async function strokeSurvival(maskBuffer, photoWidth, photoHeight) {
+  const radius = Math.max(2, Math.min(photoWidth, photoHeight) * 0.01);
+
+  // КАЖДЫЙ ШАГ — ОТДЕЛЬНЫЙ ПРОХОД, и это не перестраховка. В sharp порядок
+  // операций задан библиотекой, а не порядком вызовов: в одной цепочке
+  // threshold применяется РАНЬШЕ blur, то есть сжатия не происходит вовсе.
+  // А stats() и вовсе считается по ВХОДНОМУ изображению и операции
+  // пайплайна игнорирует — цепочка blur().threshold().stats() возвращала
+  // статистику исходной маски, и любой штрих выглядел полноценной зоной.
+  const normalized = await sharp(maskBuffer)
+    .resize(photoWidth, photoHeight, { fit: "fill" })
+    .greyscale()
+    .toBuffer();
+
+  const blurred = await sharp(normalized).blur(radius).toBuffer();
+  const eroded = await sharp(blurred).threshold(200).toBuffer();
+
+  const before = await sharp(normalized).stats();
+  const after = await sharp(eroded).stats();
+
+  const paintedBefore = before.channels[0].mean;
+  if (paintedBefore <= 0) return 0;
+  return after.channels[0].mean / paintedBefore;
+}
+
+/**
  * Доля закрашенного и границы зоны правки.
  *
  * Считается на уменьшенной копии: bbox с точностью до пары пикселей нам

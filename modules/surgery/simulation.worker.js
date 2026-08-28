@@ -10,7 +10,13 @@ import {
   getImageProvider,
   describeImageProvider,
 } from "./imageProviders/index.js";
-import { analyzeMask, planCrop, compositeByMask } from "./maskGeometry.js";
+import {
+  analyzeMask,
+  planCrop,
+  compositeByMask,
+  fillEnclosedAreas,
+  strokeSurvival,
+} from "./maskGeometry.js";
 import { describeSubject } from "./subjectAnalysis.service.js";
 import {
   isFaceProcedure,
@@ -75,8 +81,30 @@ async function prepareInputs(simulation) {
     );
   }
 
+  // ─── Обводка приравнивается к заливке ─────────────────────────────────
+  //
+  // Кисть рисует линию, и врач нередко ОБВОДИТ зону, а не закрашивает её.
+  // Для модели это противоположные указания: перерисовать надо ровно
+  // линию, а нос внутри неё оставить как есть. Врач получает свой запрос
+  // невыполненным и тонкую черту по нарисованному контуру — ровно то, что
+  // у него и просили. Внутренности замкнутых контуров дорисовываем сами.
+  const rawMask = await sharp(maskPath)
+    .resize(width, height, { fit: "fill" })
+    .png()
+    .toBuffer();
+  const { mask: maskBuffer, filledPct } = await fillEnclosedAreas(
+    rawMask,
+    width,
+    height,
+  );
+  if (filledPct > 0) {
+    console.log(
+      `🖌 [simulation.worker] замкнутый контур залит: +${filledPct.toFixed(1)}% кадра`,
+    );
+  }
+
   // ─── Площадь правки ───────────────────────────────────────────────────
-  const { paintedPct, bbox } = await analyzeMask(maskPath, width, height);
+  const { paintedPct, bbox } = await analyzeMask(maskBuffer, width, height);
   console.log(
     `🎭 [simulation.worker] маска ${maskMeta.width}x${maskMeta.height}` +
       ` → ${width}x${height}, закрашено ${paintedPct.toFixed(1)}%`,
@@ -107,12 +135,28 @@ async function prepareInputs(simulation) {
     );
   }
 
-  // Маску приводим к размеру фото один раз: врач рисует поверх превью, и
-  // масштаб там почти никогда не совпадает с оригиналом.
-  const maskBuffer = await sharp(maskPath)
-    .resize(width, height, { fit: "fill" })
-    .png()
-    .toBuffer();
+  // ─── Штрих вместо зоны ────────────────────────────────────────────────
+  //
+  // Незамкнутую линию залить нельзя — додумывать, где врач хотел её
+  // замкнуть, мы не вправе. Но и отдавать её модели бессмысленно: она
+  // перерисует полоску в пару пикселей, оставит запрос невыполненным и
+  // положит на снимок чёткую черту по нарисованному следу. Ровно это врач
+  // и увидел на «подтяжке бровей»: тёмная дуга по линии кисти, нос и
+  // подглазья нетронуты — их в маске не было.
+  //
+  // Признак — толщина: сколько закрашенного переживает сжатие краёв. У
+  // залитой зоны это 70-90%, у следа кисти в несколько пикселей — ноль.
+  // Габарит для этого не годится: пологий штрих плотно заполняет свой
+  // тонкий bbox и по такому признаку неотличим от полоски под веками.
+  const survival = await strokeSurvival(maskBuffer, width, height);
+  if (survival < 0.2) {
+    throw new Error(
+      "Отмечен след кисти, а не зона операции: линия слишком тонкая," +
+        " и модель перерисует только её — запрос останется невыполненным," +
+        " а на снимке появится черта по нарисованному следу." +
+        " Закрасьте зону целиком, а не обводите её контуром.",
+    );
+  }
 
   // ─── Окно генерации ───────────────────────────────────────────────────
   //
