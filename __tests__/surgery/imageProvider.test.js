@@ -16,6 +16,7 @@ import {
 import {
   openaiProvider,
   supportsInputFidelity,
+  explainFailure,
 } from "../../modules/surgery/imageProviders/openai.provider.js";
 import { getImageProvider } from "../../modules/surgery/imageProviders/index.js";
 
@@ -303,5 +304,47 @@ describe("правка без маски — основной режим", () =>
     expect(supportsInputFidelity("gpt-image-1")).toBe(true);
     expect(supportsInputFidelity("gpt-image-2")).toBe(false);
     expect(supportsInputFidelity("gpt-image-2-2026-04-21")).toBe(false);
+  });
+});
+
+describe("ошибки поставщика — на человеческом языке", () => {
+  // Текст ошибки врач видит прямо в карточке симуляции. Сырой JSON вида
+  // «insufficient_quota ... credit_balance_exhausted» читается как поломка
+  // платформы, хотя означает пустой счёт и лечится за минуту.
+  const body = (code, message) =>
+    JSON.stringify({ error: { code, message, type: code } });
+
+  it("пустой счёт объясняется, а не показывается кодом", () => {
+    const out = explainFailure(
+      429,
+      body("insufficient_quota", "You have no credits remaining."),
+    );
+    expect(out).toMatch(/закончились средства/i);
+    expect(out).toMatch(/Billing/);
+    expect(out).not.toMatch(/insufficient_quota/);
+  });
+
+  it("превышение частоты отличается от пустого счёта", () => {
+    const out = explainFailure(429, body("rate_limit_exceeded", "Slow down"));
+    expect(out).toMatch(/Слишком много запросов/i);
+  });
+
+  it("отказ по контент-политике подсказывает, что делать", () => {
+    const out = explainFailure(
+      400,
+      body("moderation_blocked", "Your request was rejected by safety system"),
+    );
+    expect(out).toMatch(/правилам безопасности/i);
+  });
+
+  it("негодный ключ называется негодным ключом", () => {
+    const out = explainFailure(401, body("invalid_api_key", "Incorrect key"));
+    expect(out).toMatch(/Ключ OpenAI не принят/i);
+  });
+
+  it("неизвестную ошибку не выдумывает, а показывает как есть", () => {
+    const out = explainFailure(418, "I am a teapot");
+    expect(out).toMatch(/openai 418/);
+    expect(out).toMatch(/teapot/);
   });
 });

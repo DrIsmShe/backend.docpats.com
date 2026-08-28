@@ -127,6 +127,65 @@ export async function toOpenAiMask(maskBuffer, box, size) {
     .toBuffer();
 }
 
+/**
+ * Ошибку поставщика — на человеческий язык.
+ *
+ * Врач видит текст ошибки прямо в карточке симуляции, и сырой JSON от API
+ * ему ничего не объясняет: «insufficient_quota ... credit_balance_exhausted»
+ * читается как поломка платформы, хотя означает пустой счёт и лечится за
+ * минуту. Техническую строку оставляем в хвосте — она нужна тому, кто будет
+ * разбираться в логах.
+ */
+export function explainFailure(status, body) {
+  let code = "";
+  let message = "";
+  try {
+    const parsed = JSON.parse(body);
+    code = parsed?.error?.code || parsed?.error?.type || "";
+    message = parsed?.error?.message || "";
+  } catch {
+    // Тело не JSON — останемся со статусом и текстом как есть.
+  }
+
+  const tail = (message || body || "").slice(0, 200);
+
+  if (code === "insufficient_quota" || code === "credit_balance_exhausted") {
+    return (
+      "На счёте OpenAI закончились средства — генерация изображений" +
+      " приостановлена. Пополните баланс в личном кабинете OpenAI" +
+      " (platform.openai.com → Billing), и симуляции заработают сразу," +
+      " без перезапуска сервера."
+    );
+  }
+  if (status === 429) {
+    return (
+      "Слишком много запросов к модели за короткое время." +
+      " Подождите минуту и запустите симуляцию снова."
+    );
+  }
+  if (status === 401 || status === 403) {
+    return (
+      "Ключ OpenAI не принят: он недействителен, отозван или у него нет" +
+      ` доступа к модели изображений. ${tail}`
+    );
+  }
+  if (
+    code === "moderation_blocked" ||
+    code === "content_policy_violation" ||
+    /safety|moderation|content policy/i.test(message)
+  ) {
+    return (
+      "Модель отклонила снимок по правилам безопасности. Так бывает с" +
+      " обнажёнными и интимными зонами: попробуйте кадр, где видна только" +
+      ` оперируемая область. ${tail}`
+    );
+  }
+  if (status >= 500) {
+    return `Сбой на стороне OpenAI (${status}). Повторите попытку позже. ${tail}`;
+  }
+  return `openai ${status}: ${tail}`;
+}
+
 export const openaiProvider = {
   name: "openai",
 
@@ -196,10 +255,7 @@ export const openaiProvider = {
 
     const text = await res.text();
     if (!res.ok) {
-      // Отказ по политике контента здесь обычен: лица и медицинская
-      // тематика проверяются строже. Показываем причину как есть, чтобы
-      // врач не гадал, сломалось или запрещено.
-      throw new Error(`openai ${res.status}: ${text.slice(0, 400)}`);
+      throw new Error(explainFailure(res.status, text));
     }
 
     const data = JSON.parse(text);

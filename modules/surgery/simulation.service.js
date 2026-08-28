@@ -610,7 +610,11 @@ export async function createSimulation(
     promptRaw: raw || null,
     promptCompiled: compiled,
     negativePrompt: NEGATIVE_PROMPT,
-    numOutputs: 4,
+    // Сколько вариантов просить у модели. Каждый — отдельная оплаченная
+    // генерация, и на gpt-image-2 с quality=high это самая дорогая часть
+    // симуляции: четыре варианта стоят вчетверо дороже одного, а врач всё
+    // равно выбирает один. Уменьшается без правки кода: SIMULATION_VARIANTS=2.
+    numOutputs: Math.min(4, Math.max(1, Number(process.env.SIMULATION_VARIANTS) || 4)),
     disclaimerAccepted,
     status: "pending",
   });
