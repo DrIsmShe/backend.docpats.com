@@ -43,15 +43,31 @@ async function prepareInputs(simulation) {
   const { width, height } = await sharp(imageBuffer).metadata();
   console.log(`📐 [simulation.worker] фото ${width}x${height}`);
 
+  // ─── Режим без маски ──────────────────────────────────────────────────
+  //
+  // Основной путь. Модель получает снимок целиком и инструкцию — «подними
+  // кончик носа, убери мешки под глазами», — сама находит анатомию и правит
+  // её, сохраняя остальное. Так работает ChatGPT, где никакого выделения
+  // не требуется.
+  //
+  // Мы навязывали маску, да ещё и вырезали зону из кадра: модель получала
+  // кусок кожи без лица вокруг и заполняла его чем придётся — отсюда чужой
+  // подбородок и швы по границе выделения. Сохранность пациента здесь
+  // держится не на композите, а на input_fidelity="high" у модели: она для
+  // того и сделана, чтобы лицо оставалось узнаваемым при редактировании.
   if (!simulation.maskFilename) {
-    // Маски нет вовсе. Прежде здесь подставлялось белое полотно — «перерисуй
-    // всё», — и это было худшее из возможных умолчаний: тихо, дорого и с
-    // результатом, не имеющим отношения к пациенту. Клиент маску требует, так
-    // что сюда попадает только прямой вызов API; ему честно отвечаем отказом.
-    throw new Error(
-      "К симуляции не приложена маска области. Полная перерисовка кадра" +
-        " симуляцией операции не является — отметьте зону вмешательства.",
-    );
+    console.log("🖼 [simulation.worker] режим без маски — правка по инструкции");
+    return {
+      imageBuffer,
+      maskBuffer: null,
+      modelImage: imageBuffer,
+      modelMask: null,
+      width,
+      height,
+      region: null,
+      paintedPct: null,
+      maskMeta: null,
+    };
   }
 
   const maskPath = path.join(UPLOADS_DIR, simulation.maskFilename);
@@ -236,29 +252,36 @@ const worker = new Worker(
         region,
       } = prepared;
 
-      // Кого рисуем. Без этой строки модель заполняет пустое место
-      // статистикой обучающей выборки — для пластической хирургии это
-      // мужчина 50-65 лет, отсюда и смена пола на выходе.
-      const subject = await describeSubject(
-        imageBuffer,
-        sim.sourcePhotoFilename,
-      );
-      const promptFinal = [
-        subject,
-        sim.prompt,
-        "same person, identity and facial features unchanged",
-      ]
-        .filter(Boolean)
-        .join(", ");
+      // Кого рисуем — вопрос только для режима с маской: там модель видит
+      // лишь вырезанную зону и без описания субъекта заполняет пустое место
+      // статистикой обучающей выборки (для пластической хирургии это мужчина
+      // 50-65 лет, отсюда и смена пола на выходе).
+      //
+      // Без маски модель видит лицо целиком, и приметы ей не нужны: они
+      // только сбивают её с правки снимка на рисование портрета по описанию.
+      const subject = maskBuffer
+        ? await describeSubject(imageBuffer, sim.sourcePhotoFilename)
+        : "";
+      const promptFinal = maskBuffer
+        ? [
+            subject,
+            sim.prompt,
+            "same person, identity and facial features unchanged",
+          ]
+            .filter(Boolean)
+            .join(", ")
+        : sim.prompt;
 
       sim.subjectDescription = subject || null;
       sim.promptFinal = promptFinal;
       sim.provider = provider.name;
-      sim.maskStats = {
-        width: prepared.maskMeta.width,
-        height: prepared.maskMeta.height,
-        paintedPct: Number(prepared.paintedPct.toFixed(2)),
-      };
+      sim.maskStats = prepared.maskMeta
+        ? {
+            width: prepared.maskMeta.width,
+            height: prepared.maskMeta.height,
+            paintedPct: Number(prepared.paintedPct.toFixed(2)),
+          }
+        : null;
       sim.cropRegion = region || null;
       await sim.save();
 
@@ -276,11 +299,23 @@ const worker = new Worker(
       // только область маски, остальное — исходные пиксели снимка. Даже
       // если модель нарисовала в окне кого-то другого, за пределы
       // закрашенной зоны это не выйдет физически.
-      const merged = await Promise.all(
-        images.map((buf) =>
-          compositeByMask(imageBuffer, buf, maskBuffer, width, height, region),
-        ),
-      );
+      const merged = maskBuffer
+        ? await Promise.all(
+            images.map((buf) =>
+              compositeByMask(imageBuffer, buf, maskBuffer, width, height, region),
+            ),
+          )
+        : // Без маски собирать нечего: модель правит снимок целиком и
+          // возвращает его же — приводим только к размеру оригинала, чтобы
+          // «до» и «после» можно было сравнивать пиксель в пиксель.
+          await Promise.all(
+            images.map((buf) =>
+              sharp(buf)
+                .resize(width, height, { fit: "fill" })
+                .jpeg({ quality: 95, chromaSubsampling: "4:4:4" })
+                .toBuffer(),
+            ),
+          );
 
       const elapsed = Math.round((Date.now() - startTime) / 1000);
 

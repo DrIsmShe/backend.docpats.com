@@ -466,6 +466,26 @@ function pickPrompt(procedure, promptIdx = 0) {
   return item.text;
 }
 
+// Хвост, который держит пациента собой в режиме без маски. Там кадр не
+// собирается по маске, и единственное, что удерживает личность, — сам
+// запрос плюс input_fidelity у модели.
+const KEEP_IDENTITY =
+  "Keep the same person with the same identity, face shape, bone structure," +
+  " skin texture, hair, lighting, background and framing, change nothing else," +
+  " photorealistic clinical photograph.";
+
+/**
+ * Пресет каталога под нужный режим. Каталог писался для инпейнта — это
+ * ОПИСАНИЕ желаемого вида зоны. Отданное модели без маски, такое описание
+ * читается как «нарисуй новый портрет по этим приметам», поэтому здесь оно
+ * превращается в указание, что сделать со снимком.
+ */
+export function presetFor(procedure, promptIdx = 0, mode = "full") {
+  const text = pickPrompt(procedure, promptIdx);
+  if (mode !== "full") return text;
+  return `Edit this clinical photograph to achieve: ${text}. ${KEEP_IDENTITY}`;
+}
+
 export const simulationQueue = new Queue("surgery-simulation", {
   connection: redis,
   defaultJobOptions: {
@@ -494,14 +514,27 @@ export async function createSimulation(
   const cas = await SurgicalCase.findOne({ _id: caseId, surgeonId });
   if (!cas) throw new Error("Кейс не найден");
 
-  // Свободный текст врача компилируем, пресет каталога — нет: он уже
-  // написан как надо, и лишний вызов модели дал бы только новый способ
-  // его испортить.
+  // ─── Режим правки ───────────────────────────────────────────────────
+  //
+  // Маска необязательна, и без неё — основной путь. Endpoint images/edits
+  // маску не требует: модель сама находит на снимке лицо, нос и веки и
+  // правит то, о чём просят. Ровно так работает ChatGPT, где «убери мешки
+  // под глазами» выполняется без всякого выделения.
+  //
+  // Маска остаётся инструментом ограничения: когда врач хочет, чтобы
+  // правка не вышла за отмеченный участок, — тогда включается прежний
+  // строгий контракт со сборкой кадра по маске.
+  const mode = maskFilename ? "masked" : "full";
+
+  // Свободный текст врача компилируем — под тот режим, в котором он пойдёт:
+  // без маски модель нужно ПРОСИТЬ («подними кончик носа»), а с маской —
+  // ОПИСЫВАТЬ желаемый вид зоны, потому что содержимого под маской она не
+  // видит и «убери» ей бесполезно.
   const raw = (customPrompt || "").trim();
   const { prompt, compiled } = raw
-    ? await compilePrompt(raw, cas.procedure)
+    ? await compilePrompt(raw, cas.procedure, mode === "full" ? "edit" : "inpaint")
     : {
-        prompt: pickPrompt(cas.procedure, Number(promptIdx) || 0),
+        prompt: presetFor(cas.procedure, Number(promptIdx) || 0, mode),
         compiled: false,
       };
 
@@ -510,6 +543,7 @@ export async function createSimulation(
     surgeonId,
     sourcePhotoFilename,
     maskFilename,
+    mode,
     procedure: cas.procedure,
     prompt,
     promptRaw: raw || null,

@@ -16,6 +16,11 @@ const SimulationSchema = new Schema(
     sourcePhotoFilename: { type: String, required: true },
     maskFilename: { type: String },
 
+    // full — правка снимка целиком по инструкции, как в ChatGPT: модель
+    // сама находит анатомию, маска не нужна. masked — правка ограничена
+    // отмеченной зоной, и кадр собирается по маске из оригинала.
+    mode: { type: String, enum: ["full", "masked"], default: "full" },
+
     // Параметры генерации
     procedure: { type: String },
     // prompt — то, что реально ушло в модель изображений (по-английски,

@@ -1,42 +1,41 @@
 // modules/surgery/imageProviders/openai.provider.js
 //
-// Инпейнт через OpenAI, модель gpt-image-1 (endpoint images/edits).
+// Редактирование снимка через OpenAI, endpoint images/edits.
 //
-// Почему он тут вообще. OPENAI_API_KEY у платформы уже есть и оплачен —
-// на нём работает вся остальная AI-начинка. Включение этого провайдера не
-// заводит нового поставщика, нового договора и новой утечки данных туда,
-// где их ещё не было.
+// ДВА РЕЖИМА, И ОСНОВНОЙ — БЕЗ МАСКИ.
+//
+// Маска в этом endpoint необязательна, и ChatGPT её не отправляет: модель
+// сама находит на снимке лицо, нос, веки и правит то, о чём просят,
+// оставляя остальное. Именно поэтому «убери мешки под глазами» в ChatGPT
+// работает, а у нас месяцами не работало — мы навязывали маску, да ещё и
+// вырезали зону из кадра. Модель получала кусок кожи без лица вокруг и
+// честно рисовала в нём что придётся: чужой подбородок, шов по границе.
+//
+// Режим с маской остаётся для случая, когда врач хочет ограничить правку
+// участком, — тогда действует прежний контракт: маска задаёт зону, а кадр
+// потом собирается по ней в воркере.
+//
+// ПРО СОХРАНЕНИЕ ЛИЦА. У gpt-image-1 и gpt-image-1.5 за это отвечает
+// input_fidelity: "high" — «faces are preserved far more accurately than in
+// standard mode». У gpt-image-2 параметра нет вовсе: там высокая точность
+// входа по умолчанию, и передача параметра ломает запрос. Отсюда развилка
+// supportsInputFidelity().
 //
 // ТРИ РАЗЛИЧИЯ С fal, которые нельзя пропустить:
 //
 // 1. МАСКА ИНВЕРТИРОВАНА. У fal белое = «перерисовать». OpenAI правит там,
-//    где маска ПРОЗРАЧНА (alpha = 0), а непрозрачное сохраняет. Отдать ему
-//    нашу маску как есть — значит перерисовать ровно то, что врач хотел
-//    оставить. Поэтому ниже строится RGBA-маска с альфой = 255 − яркость.
-//
-// 2. РАЗМЕР НЕ СОХРАНЯЕТСЯ. Модель отдаёт изображение одного из своих
-//    размеров, а не размер входа. Раньше вход подгонялся под него через
-//    fit: "cover" — то есть кадрировался, — и вернуть результат на место
-//    попиксельно было уже нельзя: часть кадра просто отрезана. Теперь
-//    вход ВПИСЫВАЕТСЯ (contain) с полями, а из ответа вырезается ровно та
-//    же рамка и возвращается в исходном размере. Геометрия входа и
-//    выхода совпадает, и воркер может собрать кадр по маске.
-//
-// 3. НЕТ negative_prompt. У endpoint такого параметра нет вовсе,
-//    поэтому запреты дописываются в конец основного промта обычным
-//    текстом. Действует слабее, чем настоящий негативный промт.
-//
-// И главное про этот провайдер: gpt-image-1 не вклеивает область, а
-// пересобирает кадр целиком, «стараясь» сохранить остальное. Полагаться
-// на это нельзя — сохранность пациента обеспечивает сборка по маске в
-// воркере, а не поведение модели.
+//    где маска ПРОЗРАЧНА (alpha = 0), а непрозрачное сохраняет.
+// 2. РАЗМЕР НЕ СОХРАНЯЕТСЯ. Модель отдаёт свой размер, поэтому вход
+//    вписывается с полями, а из ответа вырезается та же рамка.
+// 3. НЕТ negative_prompt — запреты дописываются в конец промта текстом.
 
 import sharp from "sharp";
 
-const MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
+const MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1.5";
+const QUALITY = process.env.OPENAI_IMAGE_QUALITY || "high";
 const ENDPOINT = "https://api.openai.com/v1/images/edits";
 
-// Размеры, которые модель умеет отдавать.
+// Размеры, которые умеют отдавать модели семейства gpt-image.
 const SIZES = [
   { label: "1024x1024", w: 1024, h: 1024 },
   { label: "1536x1024", w: 1536, h: 1024 },
@@ -45,6 +44,15 @@ const SIZES = [
 
 function key() {
   return (process.env.OPENAI_API_KEY || "").trim();
+}
+
+/**
+ * Принимает ли модель input_fidelity. У gpt-image-2 параметра нет, и запрос
+ * с ним отклоняется — молчаливой деградации тут не будет, поэтому проверка
+ * по имени модели, а не «попробуем и посмотрим».
+ */
+export function supportsInputFidelity(model = MODEL) {
+  return /^gpt-image-1(\.5|-mini)?$/.test(model) || model === "chatgpt-image-latest";
 }
 
 /** Ближайший поддерживаемый размер по соотношению сторон. */
@@ -83,7 +91,6 @@ export function fitBox(width, height, size) {
  * вписанная в размер модели. Поля вокруг кадра делаем НЕПРОЗРАЧНЫМИ:
  * там править нечего, и разрешать модели дорисовывать за краем снимка —
  * значит получить фантазию вместо фона.
- * RGB кладём чёрным: он не используется, значение имеет только альфа.
  */
 export async function toOpenAiMask(maskBuffer, box, size) {
   const alpha = await sharp(maskBuffer)
@@ -129,13 +136,9 @@ export const openaiProvider = {
     const meta = await sharp(imageBuffer).metadata();
     const size = pickSize(meta.width, meta.height);
     const box = fitBox(meta.width, meta.height, size);
-    console.log(
-      `📐 [openai] ${meta.width}x${meta.height} → ${size.label}` +
-        ` (вписано ${box.width}x${box.height} @ ${box.left},${box.top})`,
-    );
 
-    // Endpoint требует совпадения размеров фото и маски, иначе отвечает
-    // 400 без внятного объяснения.
+    // Вход вписываем с полями, а не кадрируем: обрезав часть снимка, вернуть
+    // результат на место попиксельно уже нельзя.
     const image = await sharp(imageBuffer)
       .resize(box.width, box.height, { fit: "fill" })
       .extend({
@@ -147,7 +150,6 @@ export const openaiProvider = {
       })
       .png()
       .toBuffer();
-    const mask = await toOpenAiMask(maskBuffer, box, size);
 
     const fullPrompt = negativePrompt
       ? `${prompt}\n\nAvoid: ${negativePrompt}`
@@ -158,10 +160,25 @@ export const openaiProvider = {
     form.append("prompt", fullPrompt);
     form.append("n", String(numOutputs || 4));
     form.append("size", size.label);
+    form.append("quality", QUALITY);
     form.append("image", new Blob([image], { type: "image/png" }), "photo.png");
-    form.append("mask", new Blob([mask], { type: "image/png" }), "mask.png");
 
-    console.log(`📤 [openai] отправка, модель: ${MODEL}`);
+    // Ради лица и существует этот параметр. Без него модель «пересказывает»
+    // черты по-своему, и пациент перестаёт быть собой.
+    if (supportsInputFidelity(MODEL)) {
+      form.append("input_fidelity", "high");
+    }
+
+    if (maskBuffer) {
+      const mask = await toOpenAiMask(maskBuffer, box, size);
+      form.append("mask", new Blob([mask], { type: "image/png" }), "mask.png");
+    }
+
+    console.log(
+      `📤 [openai] ${MODEL}, ${meta.width}x${meta.height} → ${size.label},` +
+        ` ${maskBuffer ? "с маской" : "без маски (правка по инструкции)"}` +
+        `${supportsInputFidelity(MODEL) ? ", input_fidelity=high" : ""}`,
+    );
 
     const res = await fetch(ENDPOINT, {
       method: "POST",
@@ -186,7 +203,6 @@ export const openaiProvider = {
     const raw = await Promise.all(
       items.map(async (item) => {
         if (item.b64_json) return Buffer.from(item.b64_json, "base64");
-        // Часть моделей отдаёт ссылку вместо base64.
         if (item.url) {
           const r = await fetch(item.url);
           if (!r.ok) throw new Error(`openai скачивание ${r.status}`);
@@ -196,8 +212,7 @@ export const openaiProvider = {
       }),
     );
 
-    // Снимаем поля и возвращаем размер входа: дальше воркер собирает кадр
-    // по маске, и любое расхождение геометрии сдвинуло бы правку.
+    // Снимаем поля и возвращаем размер входа.
     //
     // ДВА ПРОХОДА, А НЕ ОДНА ЦЕПОЧКА. sharp допускает один resize на
     // пайплайн: второй вызов не добавляется, а ЗАМЕНЯЕТ первый, и extract

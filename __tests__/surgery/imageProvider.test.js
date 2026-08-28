@@ -13,7 +13,10 @@ import {
   pickSize,
   fitBox,
 } from "../../modules/surgery/imageProviders/openai.provider.js";
-import { openaiProvider } from "../../modules/surgery/imageProviders/openai.provider.js";
+import {
+  openaiProvider,
+  supportsInputFidelity,
+} from "../../modules/surgery/imageProviders/openai.provider.js";
 import { getImageProvider } from "../../modules/surgery/imageProviders/index.js";
 
 const W = 64;
@@ -216,5 +219,81 @@ describe("ответ OpenAI возвращается в геометрии вх�
     const meta = await sharp(images[0]).metadata();
     expect(meta.width).toBe(448);
     expect(meta.height).toBe(224);
+  });
+});
+
+describe("правка без маски — основной режим", () => {
+  const originalFetch = global.fetch;
+  const originalKey = process.env.OPENAI_API_KEY;
+  const originalModel = process.env.OPENAI_IMAGE_MODEL;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    process.env.OPENAI_API_KEY = originalKey;
+    if (originalModel === undefined) delete process.env.OPENAI_IMAGE_MODEL;
+    else process.env.OPENAI_IMAGE_MODEL = originalModel;
+    vi.restoreAllMocks();
+  });
+
+  async function callWithoutMask() {
+    process.env.OPENAI_API_KEY = "test-key";
+    const input = await sharp({
+      create: { width: 452, height: 679, channels: 3, background: { r: 200, g: 180, b: 170 } },
+    })
+      .png()
+      .toBuffer();
+    const answer = await sharp({
+      create: { width: 1024, height: 1536, channels: 3, background: { r: 20, g: 40, b: 200 } },
+    })
+      .png()
+      .toBuffer();
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify({ created: 1, data: [{ b64_json: answer.toString("base64") }] }),
+    });
+    global.fetch = fetchMock;
+
+    const result = await openaiProvider.run({
+      imageBuffer: input,
+      maskBuffer: null,
+      prompt: "Raise the nasal tip slightly.",
+      negativePrompt: "",
+      numOutputs: 1,
+    });
+    return { fetchMock, result };
+  }
+
+  // Маска в images/edits необязательна, и ChatGPT её не шлёт: модель сама
+  // находит на снимке лицо и правит то, о чём просят. Навязанная маска —
+  // причина, по которой «убери мешки под глазами» у нас не работало.
+  it("маска в запрос не попадает вовсе", async () => {
+    const { fetchMock } = await callWithoutMask();
+    const body = fetchMock.mock.calls[0][1].body;
+    expect(body.has("mask")).toBe(false);
+    expect(body.has("image")).toBe(true);
+    expect(body.get("prompt")).toContain("Raise the nasal tip");
+  });
+
+  it("лицо держит input_fidelity=high, а не наши уговоры в промте", async () => {
+    const { fetchMock } = await callWithoutMask();
+    expect(fetchMock.mock.calls[0][1].body.get("input_fidelity")).toBe("high");
+  });
+
+  it("результат возвращается в размере оригинала", async () => {
+    const { result } = await callWithoutMask();
+    const meta = await sharp(result.images[0]).metadata();
+    expect(meta.width).toBe(452);
+    expect(meta.height).toBe(679);
+  });
+
+  // У gpt-image-2 параметра нет вовсе, и запрос с ним отклоняется: там
+  // высокая точность входа — поведение по умолчанию.
+  it("модели без input_fidelity его не получают", () => {
+    expect(supportsInputFidelity("gpt-image-1.5")).toBe(true);
+    expect(supportsInputFidelity("gpt-image-1")).toBe(true);
+    expect(supportsInputFidelity("gpt-image-2")).toBe(false);
+    expect(supportsInputFidelity("gpt-image-2-2026-04-21")).toBe(false);
   });
 });

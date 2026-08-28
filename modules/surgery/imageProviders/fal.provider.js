@@ -11,7 +11,12 @@
 //
 // Работа асинхронная: submit → опрос статуса → забрать результат.
 
+// Две модели, потому что задачи разные. Fill заполняет отмеченную зону и
+// без маски работать не может вовсе. Kontext правит снимок по инструкции —
+// «подними кончик носа» — и маски не требует: это аналог того, как
+// редактирует ChatGPT.
 const MODEL = process.env.FAL_MODEL || "fal-ai/flux-pro/v1/fill";
+const EDIT_MODEL = process.env.FAL_EDIT_MODEL || "fal-ai/flux-pro/kontext";
 const MAX_WAIT_MS = 180_000;
 const POLL_INTERVAL_MS = 3_000;
 
@@ -47,19 +52,25 @@ export const falProvider = {
     const FAL_KEY = key();
     if (!FAL_KEY) throw new Error(this.missingHint);
 
+    const model = maskBuffer ? MODEL : EDIT_MODEL;
     const body = {
       image_url: toDataUri(imageBuffer, sniffMime(imageBuffer)),
-      mask_url: toDataUri(maskBuffer, sniffMime(maskBuffer)),
       prompt,
-      negative_prompt: negativePrompt,
       num_images: numOutputs || 4,
       output_format: "jpeg",
       safety_tolerance: "5",
     };
+    if (maskBuffer) {
+      body.mask_url = toDataUri(maskBuffer, sniffMime(maskBuffer));
+      body.negative_prompt = negativePrompt;
+    }
 
-    console.log(`📤 [fal] отправка, модель: ${MODEL}`);
+    console.log(
+      `📤 [fal] отправка, модель: ${model}` +
+        `${maskBuffer ? "" : " (правка по инструкции, без маски)"}`,
+    );
 
-    const submitRes = await fetch(`https://queue.fal.run/${MODEL}`, {
+    const submitRes = await fetch(`https://queue.fal.run/${model}`, {
       method: "POST",
       headers: {
         Authorization: `Key ${FAL_KEY}`,

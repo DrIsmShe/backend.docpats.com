@@ -36,7 +36,31 @@ const MODEL = process.env.PROMPT_COMPILER_MODEL || "gpt-4o-mini";
 const ENDPOINT = "https://api.openai.com/v1/chat/completions";
 const TIMEOUT_MS = 15_000;
 
-const SYSTEM = `You rewrite a surgeon's free-form request into an image-generation prompt for an inpainting model (FLUX Fill / gpt-image-1).
+// Режим правки по инструкции — основной. Маска модели не нужна: она сама
+// находит на снимке нос, веки и брови. Просить у неё «описание желаемого
+// вида» здесь вредно: без маски такое описание читается как «нарисуй новый
+// портрет по этому описанию», и пациент перестаёт быть собой.
+const SYSTEM_EDIT = `You rewrite a surgeon's free-form request into editing instructions for an image editing model that edits a clinical photograph directly, without any mask.
+
+The model sees the whole photograph and finds the anatomy itself. Write what to CHANGE, as instructions — not a description of a new portrait.
+
+Rules:
+- Output English only. One line, sentences separated by periods, no preamble, no quotes.
+- COVER EVERY CHANGE THE SURGEON ASKED FOR. Two requests mean two instructions. Dropping one silently is the worst failure mode: the surgeon sees a result that ignores part of the request and cannot tell why.
+- Imperative and local: "Raise the nasal tip slightly." "Remove the under-eye bags." Never describe the person, never restate what is already there.
+- Numeric amounts (degrees, millimetres) cannot be honoured by image models. Convert them into qualitative wording: "raise 10 degrees" -> "raise slightly". Never keep the number.
+- Always end with exactly this sentence: Keep the same person with the same identity, face shape, bone structure, skin texture, hair, lighting, background and framing, change nothing else, photorealistic clinical photograph.
+- No beautification: do not smooth unrelated skin, do not add makeup, do not slim the face, do not change age or expression.
+- 60 words maximum.
+
+Example.
+Request (rhinoplasty): "подними кончик носа и убери мешки под глазами"
+Output: Raise the nasal tip slightly. Remove the puffiness and bags under both eyes. Keep the same person with the same identity, face shape, bone structure, skin texture, hair, lighting, background and framing, change nothing else, photorealistic clinical photograph.`;
+
+// Режим маски — для случая, когда врач ограничил правку участком. Здесь
+// модель видит только вырезанную зону и заполняет её по ОПИСАНИЮ: команда
+// «убери» ей бесполезна, потому что убирать в закрытой области нечего.
+const SYSTEM_INPAINT = `You rewrite a surgeon's free-form request into an image-generation prompt for an inpainting model (FLUX Fill / gpt-image-1).
 
 The model does NOT perform actions. It fills a masked region with content matching your description. So describe the DESIRED APPEARANCE of the region after surgery, never the operation itself.
 
@@ -66,9 +90,10 @@ export function promptCompilerEnabled() {
 /**
  * @param {string} text   что написал врач, на любом языке
  * @param {string} procedure  ключ процедуры — контекст для модели
+ * @param {"edit"|"inpaint"} mode  правка всего снимка или заполнение зоны
  * @returns {Promise<{prompt: string, compiled: boolean, reason?: string}>}
  */
-export async function compilePrompt(text, procedure = "") {
+export async function compilePrompt(text, procedure = "", mode = "edit") {
   const raw = String(text || "").trim();
   if (!raw) return { prompt: raw, compiled: false, reason: "пустой запрос" };
 
@@ -93,9 +118,12 @@ export async function compilePrompt(text, procedure = "") {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.2, // стабильность важнее разнообразия
-        max_tokens: 120,
+        max_tokens: 200,
         messages: [
-          { role: "system", content: SYSTEM },
+          {
+            role: "system",
+            content: mode === "inpaint" ? SYSTEM_INPAINT : SYSTEM_EDIT,
+          },
           {
             role: "user",
             content: procedure
