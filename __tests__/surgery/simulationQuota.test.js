@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import mongoose from "mongoose";
 import Simulation from "../../modules/surgery/simulation.model.js";
 import { createTestDoctor } from "../helpers/createTestUser.js";
+import { PLAN_LIMITS } from "../../common/config/aiPlanLimits.js";
 import {
   assertSimulationAllowed,
   simulationQuotaLeft,
@@ -121,5 +122,37 @@ describe("квота симуляций", () => {
     const free = await makeUser("doctor_free");
     const left = await simulationQuotaLeft(free._id);
     expect(left.limit).toBe(2);
+  });
+
+  // Забытый ключ в тарифе означает ЗАПРЕТ (см. planQuota), а не безлимит.
+  // Это защита от открытого счёта, но у неё есть обратная сторона: платный
+  // врач, чей план забыли прописать, молча теряет функцию. Проверяем, что
+  // прописаны все.
+  it("каждый платный врачебный и клинический план имеет свою квоту", () => {
+    const plans = [
+      "doctor_trial",
+      "doctor_free",
+      "doctor_lite",
+      "doctor_basic",
+      "doctor_super",
+      "doctor_pro",
+      "clinic_start",
+      "clinic",
+      "clinic_pro",
+    ];
+
+    const missing = plans.filter(
+      (p) => typeof PLAN_LIMITS[p]?.aiSimulations !== "number",
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it("квота растёт вместе с ценой тарифа", () => {
+    // Витрина обещает врачу, что старший план даёт больше. Сетка, где
+    // Growth щедрее Pro, — это не опечатка в числе, а неверное обещание.
+    const ladder = ["doctor_free", "doctor_lite", "doctor_basic", "doctor_super", "doctor_pro"];
+    const values = ladder.map((p) => PLAN_LIMITS[p].aiSimulations);
+    const sorted = [...values].sort((a, b) => a - b);
+    expect(values).toEqual(sorted);
   });
 });
