@@ -276,7 +276,15 @@ describe("правка без маски — основной режим", () =>
     expect(body.get("prompt")).toContain("Raise the nasal tip");
   });
 
-  it("лицо держит input_fidelity=high, а не наши уговоры в промте", async () => {
+  it("модель по умолчанию — gpt-image-2", async () => {
+    const { fetchMock } = await callWithoutMask();
+    expect(fetchMock.mock.calls[0][1].body.get("model")).toBe("gpt-image-2");
+    // У неё параметра нет вовсе, и запрос с ним отклоняется.
+    expect(fetchMock.mock.calls[0][1].body.has("input_fidelity")).toBe(false);
+  });
+
+  it("старым моделям лицо держит input_fidelity=high", async () => {
+    process.env.OPENAI_IMAGE_MODEL = "gpt-image-1.5";
     const { fetchMock } = await callWithoutMask();
     expect(fetchMock.mock.calls[0][1].body.get("input_fidelity")).toBe("high");
   });

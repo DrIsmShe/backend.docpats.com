@@ -31,8 +31,15 @@
 
 import sharp from "sharp";
 
-const MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1.5";
-const QUALITY = process.env.OPENAI_IMAGE_QUALITY || "high";
+// gpt-image-2 — самая свежая модель редактирования. input_fidelity ей не
+// передаётся: параметра у неё нет вовсе, высокая точность входа там
+// поведение по умолчанию (см. supportsInputFidelity ниже).
+//
+// Читаем env на каждом вызове, а не один раз при импорте: константа
+// замораживала выбор модели на момент загрузки модуля, из-за чего её нельзя
+// было ни подменить в тесте, ни переключить чем-либо кроме перезапуска.
+const model = () => (process.env.OPENAI_IMAGE_MODEL || "gpt-image-2").trim();
+const quality = () => (process.env.OPENAI_IMAGE_QUALITY || "high").trim();
 const ENDPOINT = "https://api.openai.com/v1/images/edits";
 
 // Размеры, которые умеют отдавать модели семейства gpt-image.
@@ -51,8 +58,8 @@ function key() {
  * с ним отклоняется — молчаливой деградации тут не будет, поэтому проверка
  * по имени модели, а не «попробуем и посмотрим».
  */
-export function supportsInputFidelity(model = MODEL) {
-  return /^gpt-image-1(\.5|-mini)?$/.test(model) || model === "chatgpt-image-latest";
+export function supportsInputFidelity(name = model()) {
+  return /^gpt-image-1(\.5|-mini)?$/.test(name) || name === "chatgpt-image-latest";
 }
 
 /** Ближайший поддерживаемый размер по соотношению сторон. */
@@ -156,16 +163,17 @@ export const openaiProvider = {
       : prompt;
 
     const form = new FormData();
-    form.append("model", MODEL);
+    const modelName = model();
+    form.append("model", modelName);
     form.append("prompt", fullPrompt);
     form.append("n", String(numOutputs || 4));
     form.append("size", size.label);
-    form.append("quality", QUALITY);
+    form.append("quality", quality());
     form.append("image", new Blob([image], { type: "image/png" }), "photo.png");
 
     // Ради лица и существует этот параметр. Без него модель «пересказывает»
     // черты по-своему, и пациент перестаёт быть собой.
-    if (supportsInputFidelity(MODEL)) {
+    if (supportsInputFidelity(modelName)) {
       form.append("input_fidelity", "high");
     }
 
@@ -175,9 +183,9 @@ export const openaiProvider = {
     }
 
     console.log(
-      `📤 [openai] ${MODEL}, ${meta.width}x${meta.height} → ${size.label},` +
+      `📤 [openai] ${modelName}, ${meta.width}x${meta.height} → ${size.label},` +
         ` ${maskBuffer ? "с маской" : "без маски (правка по инструкции)"}` +
-        `${supportsInputFidelity(MODEL) ? ", input_fidelity=high" : ""}`,
+        `${supportsInputFidelity(modelName) ? ", input_fidelity=high" : ""}`,
     );
 
     const res = await fetch(ENDPOINT, {
