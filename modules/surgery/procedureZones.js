@@ -3,32 +3,42 @@
 // Сколько кадра разрешено отдавать модели на перерисовку — по типу операции.
 //
 // Порог здесь не про качество картинки, а про смысл слова «симуляция».
-// Блефаропластика меняет полоску под глазами: если закрашено полкадра,
-// врач просит не симуляцию операции, а новое лицо, и получит именно его.
-// Лицевые вмешательства режем жёстко; на теле правка законно бывает
-// крупной (абдоминопластика — весь живот), там порог мягче.
+// Внутри маски модель рисует ЗАНОВО, и чем она больше, тем меньше остаётся
+// от пациента: сборка по маске держит неприкосновенным только то, что вне
+// её границ.
+//
+// Числа выведены из практики, а не из головы. На снимке лица крупным
+// планом (452×679) полоска под нижними веками занимает 2-3% кадра, нос
+// целиком — 4-6%, лоб с бровями — около 8%. Тридцать процентов, стоявшие
+// здесь сначала, — это нижняя треть лица: врач получал чужой подбородок и
+// швы по краю выделения, формально не превысив лимит.
 
-export const FACE_PROCEDURES = new Set([
+/** Точечные вмешательства: зона измеряется единицами процентов кадра. */
+const FACE_TIGHT = new Set([
   "rhinoplasty",
   "blepharoplasty",
-  "facelift",
   "brow_lift",
   "otoplasty",
   "chin_implant",
   "cheek_implant",
   "lip_augmentation",
   "lip_lift",
-  "neck_lift",
   "fat_grafting_face",
-  "ear_reconstruction",
   "septoplasty",
 ]);
+
+/** Обширные лицевые: правка законно захватывает половину лица или шею. */
+const FACE_WIDE = new Set(["facelift", "neck_lift", "ear_reconstruction"]);
+
+export const FACE_PROCEDURES = new Set([...FACE_TIGHT, ...FACE_WIDE]);
 
 export const isFaceProcedure = (procedure) => FACE_PROCEDURES.has(procedure);
 
 /** Верхняя граница закрашенного, % кадра. */
 export function maxPaintedPct(procedure) {
-  return isFaceProcedure(procedure) ? 30 : 70;
+  if (FACE_TIGHT.has(procedure)) return 12;
+  if (FACE_WIDE.has(procedure)) return 25;
+  return 70;
 }
 
 /**
@@ -40,4 +50,9 @@ export function maxPaintedPct(procedure) {
  */
 export const MIN_PAINTED_PCT = 0.5;
 
-export default { FACE_PROCEDURES, isFaceProcedure, maxPaintedPct, MIN_PAINTED_PCT };
+export default {
+  FACE_PROCEDURES,
+  isFaceProcedure,
+  maxPaintedPct,
+  MIN_PAINTED_PCT,
+};
