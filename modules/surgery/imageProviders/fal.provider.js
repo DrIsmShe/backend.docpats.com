@@ -23,6 +23,17 @@ function toDataUri(buf, mime) {
   return `data:${mime};base64,${buf.toString("base64")}`;
 }
 
+// MIME определяем по самим байтам, а не по названию поля. Воркер отдаёт
+// сюда то кроп зоны в PNG, то исходный JPEG целиком, и жёстко зашитое
+// "image/jpeg" в data-URI означало бы, что часть запросов уезжает с
+// заведомо ложным типом.
+export function sniffMime(buf) {
+  if (buf.length > 8 && buf[0] === 0x89 && buf[1] === 0x50) return "image/png";
+  if (buf.length > 12 && buf.slice(8, 12).toString("ascii") === "WEBP")
+    return "image/webp";
+  return "image/jpeg";
+}
+
 export const falProvider = {
   name: "fal",
 
@@ -37,8 +48,8 @@ export const falProvider = {
     if (!FAL_KEY) throw new Error(this.missingHint);
 
     const body = {
-      image_url: toDataUri(imageBuffer, "image/jpeg"),
-      mask_url: toDataUri(maskBuffer, "image/png"),
+      image_url: toDataUri(imageBuffer, sniffMime(imageBuffer)),
+      mask_url: toDataUri(maskBuffer, sniffMime(maskBuffer)),
       prompt,
       negative_prompt: negativePrompt,
       num_images: numOutputs || 4,

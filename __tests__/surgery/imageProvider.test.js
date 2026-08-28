@@ -11,6 +11,7 @@ import sharp from "sharp";
 import {
   toOpenAiMask,
   pickSize,
+  fitBox,
 } from "../../modules/surgery/imageProviders/openai.provider.js";
 import { getImageProvider } from "../../modules/surgery/imageProviders/index.js";
 
@@ -44,9 +45,16 @@ async function alphaOf(pngBuffer) {
   return { at, channels: info.channels, width: info.width, height: info.height };
 }
 
+// Размер модели и рамка вписывания. Раньше вход подгонялся кадрированием
+// (fit: "cover"), и вернуть результат на место попиксельно было уже нельзя —
+// часть кадра просто отрезана. Теперь кадр вписывается с полями, а из ответа
+// вырезается та же рамка.
+const SIZE = { label: "1024x1024", w: W, h: H };
+const BOX = { left: 0, top: 0, width: W, height: H };
+
 describe("маска для OpenAI", () => {
   it("делает ПРОЗРАЧНЫМ то, что у нас помечено белым", async () => {
-    const mask = await toOpenAiMask(await maskWithWhiteSquare(), W, H);
+    const mask = await toOpenAiMask(await maskWithWhiteSquare(), BOX, SIZE);
     const alpha = await alphaOf(mask);
 
     // Центр квадрата: врач пометил его к правке → OpenAI ждёт alpha = 0.
@@ -54,7 +62,7 @@ describe("маска для OpenAI", () => {
   });
 
   it("оставляет НЕПРОЗРАЧНЫМ всё, что должно сохраниться", async () => {
-    const mask = await toOpenAiMask(await maskWithWhiteSquare(), W, H);
+    const mask = await toOpenAiMask(await maskWithWhiteSquare(), BOX, SIZE);
     const alpha = await alphaOf(mask);
 
     // Углы — за пределами белого квадрата.
@@ -63,13 +71,31 @@ describe("маска для OpenAI", () => {
     expect(alpha.at(0, 63)).toBe(255);
   });
 
-  it("отдаёт RGBA нужного размера — endpoint требует совпадения с фото", async () => {
-    const mask = await toOpenAiMask(await maskWithWhiteSquare(), 128, 96);
+  it("отдаёт RGBA размера модели — endpoint требует совпадения с фото", async () => {
+    const size = { label: "128x96", w: 128, h: 96 };
+    const box = { left: 0, top: 0, width: 128, height: 96 };
+    const mask = await toOpenAiMask(await maskWithWhiteSquare(), box, size);
     const meta = await sharp(mask).metadata();
 
     expect(meta.width).toBe(128);
     expect(meta.height).toBe(96);
     expect(meta.hasAlpha).toBe(true);
+  });
+
+  it("поля вокруг вписанного кадра непрозрачны — за краем снимка править нечего", async () => {
+    // Кадр 64×64 вписан в 128×96: сверху и снизу остаются поля. Прозрачные
+    // поля означали бы «дорисуй за краем фотографии», и модель охотно
+    // дорисовывает — фон, плечи, чужую одежду.
+    const size = { label: "128x96", w: 128, h: 96 };
+    const box = fitBox(W, H, size);
+    const mask = await toOpenAiMask(await maskWithWhiteSquare(), box, size);
+    const alpha = await alphaOf(mask);
+
+    expect(box.width).toBe(96);
+    expect(box.top).toBe(0);
+    expect(box.left).toBe(16);
+    expect(alpha.at(2, 2)).toBe(255);
+    expect(alpha.at(125, 90)).toBe(255);
   });
 
   it("белое полотно целиком прозрачно — это режим «перерисовать весь кадр»", async () => {
@@ -79,9 +105,27 @@ describe("маска для OpenAI", () => {
       .png()
       .toBuffer();
 
-    const alpha = await alphaOf(await toOpenAiMask(white, W, H));
+    const alpha = await alphaOf(await toOpenAiMask(white, BOX, SIZE));
     expect(alpha.at(0, 0)).toBe(0);
     expect(alpha.at(32, 32)).toBe(0);
+  });
+});
+
+describe("рамка вписывания", () => {
+  it("сохраняет пропорции и центрирует кадр", () => {
+    const box = fitBox(1000, 500, { w: 1024, h: 1024 });
+    expect(box.width).toBe(1024);
+    expect(box.height).toBe(512);
+    expect(box.left).toBe(0);
+    expect(box.top).toBe(256);
+  });
+
+  it("совпадающая пропорция полей не оставляет", () => {
+    const box = fitBox(2000, 3000, { w: 1024, h: 1536 });
+    expect(box.left).toBe(0);
+    expect(box.top).toBe(0);
+    expect(box.width).toBe(1024);
+    expect(box.height).toBe(1536);
   });
 });
 

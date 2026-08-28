@@ -15,13 +15,21 @@
 //    оставить. Поэтому ниже строится RGBA-маска с альфой = 255 − яркость.
 //
 // 2. РАЗМЕР НЕ СОХРАНЯЕТСЯ. Модель отдаёт изображение одного из своих
-//    размеров, а не размер оригинала. Выбираем ближайший по пропорции —
-//    иначе лицо растянет. Полного соответствия исходному кадру тут не
-//    будет, и это плата за отсутствие второго вендора.
+//    размеров, а не размер входа. Раньше вход подгонялся под него через
+//    fit: "cover" — то есть кадрировался, — и вернуть результат на место
+//    попиксельно было уже нельзя: часть кадра просто отрезана. Теперь
+//    вход ВПИСЫВАЕТСЯ (contain) с полями, а из ответа вырезается ровно та
+//    же рамка и возвращается в исходном размере. Геометрия входа и
+//    выхода совпадает, и воркер может собрать кадр по маске.
 //
 // 3. НЕТ negative_prompt. У endpoint такого параметра нет вовсе,
 //    поэтому запреты дописываются в конец основного промта обычным
 //    текстом. Действует слабее, чем настоящий негативный промт.
+//
+// И главное про этот провайдер: gpt-image-1 не вклеивает область, а
+// пересобирает кадр целиком, «стараясь» сохранить остальное. Полагаться
+// на это нельзя — сохранность пациента обеспечивает сборка по маске в
+// воркере, а не поведение модели.
 
 import sharp from "sharp";
 
@@ -55,21 +63,52 @@ export function pickSize(width, height) {
 }
 
 /**
- * Наша маска (белое = править) → маска OpenAI (прозрачное = править).
+ * Рамка вписывания входа в размер модели: во что превратится кадр и где
+ * он окажется. Обратное извлечение из ответа считается по ней же.
+ */
+export function fitBox(width, height, size) {
+  const scale = Math.min(size.w / width, size.h / height);
+  const w = Math.max(1, Math.round(width * scale));
+  const h = Math.max(1, Math.round(height * scale));
+  return {
+    width: w,
+    height: h,
+    left: Math.floor((size.w - w) / 2),
+    top: Math.floor((size.h - h) / 2),
+  };
+}
+
+/**
+ * Наша маска (белое = править) → маска OpenAI (прозрачное = править),
+ * вписанная в размер модели. Поля вокруг кадра делаем НЕПРОЗРАЧНЫМИ:
+ * там править нечего, и разрешать модели дорисовывать за краем снимка —
+ * значит получить фантазию вместо фона.
  * RGB кладём чёрным: он не используется, значение имеет только альфа.
  */
-export async function toOpenAiMask(maskBuffer, width, height) {
+export async function toOpenAiMask(maskBuffer, box, size) {
   const alpha = await sharp(maskBuffer)
-    .resize(width, height, { fit: "fill" })
+    .resize(box.width, box.height, { fit: "fill" })
     .greyscale()
     .negate() // белое (править) → 0, чёрное (сохранить) → 255
+    .extend({
+      top: box.top,
+      left: box.left,
+      bottom: size.h - box.height - box.top,
+      right: size.w - box.width - box.left,
+      background: { r: 255, g: 255, b: 255 }, // поля = сохранить
+    })
     .raw()
     .toBuffer();
 
   return sharp({
-    create: { width, height, channels: 3, background: { r: 0, g: 0, b: 0 } },
+    create: {
+      width: size.w,
+      height: size.h,
+      channels: 3,
+      background: { r: 0, g: 0, b: 0 },
+    },
   })
-    .joinChannel(alpha, { raw: { width, height, channels: 1 } })
+    .joinChannel(alpha, { raw: { width: size.w, height: size.h, channels: 1 } })
     .png()
     .toBuffer();
 }
@@ -89,17 +128,26 @@ export const openaiProvider = {
 
     const meta = await sharp(imageBuffer).metadata();
     const size = pickSize(meta.width, meta.height);
+    const box = fitBox(meta.width, meta.height, size);
     console.log(
-      `📐 [openai] ${meta.width}x${meta.height} → ${size.label} (ближайшая пропорция)`,
+      `📐 [openai] ${meta.width}x${meta.height} → ${size.label}` +
+        ` (вписано ${box.width}x${box.height} @ ${box.left},${box.top})`,
     );
 
-    // Приводим оба файла к одному размеру: endpoint требует совпадения
-    // размеров фото и маски, иначе отвечает 400 без внятного объяснения.
+    // Endpoint требует совпадения размеров фото и маски, иначе отвечает
+    // 400 без внятного объяснения.
     const image = await sharp(imageBuffer)
-      .resize(size.w, size.h, { fit: "cover" })
+      .resize(box.width, box.height, { fit: "fill" })
+      .extend({
+        top: box.top,
+        left: box.left,
+        bottom: size.h - box.height - box.top,
+        right: size.w - box.width - box.left,
+        background: { r: 0, g: 0, b: 0 },
+      })
       .png()
       .toBuffer();
-    const mask = await toOpenAiMask(maskBuffer, size.w, size.h);
+    const mask = await toOpenAiMask(maskBuffer, box, size);
 
     const fullPrompt = negativePrompt
       ? `${prompt}\n\nAvoid: ${negativePrompt}`
@@ -135,7 +183,7 @@ export const openaiProvider = {
       throw new Error(`openai вернул пустой data: ${text.slice(0, 300)}`);
     }
 
-    const images = await Promise.all(
+    const raw = await Promise.all(
       items.map(async (item) => {
         if (item.b64_json) return Buffer.from(item.b64_json, "base64");
         // Часть моделей отдаёт ссылку вместо base64.
@@ -148,7 +196,29 @@ export const openaiProvider = {
       }),
     );
 
-    return { requestId: data.created ? String(data.created) : "openai", images, ext: "png" };
+    // Снимаем поля и возвращаем размер входа: дальше воркер собирает кадр
+    // по маске, и любое расхождение геометрии сдвинуло бы правку.
+    const images = await Promise.all(
+      raw.map((buf) =>
+        sharp(buf)
+          .resize(size.w, size.h, { fit: "fill" })
+          .extract({
+            left: box.left,
+            top: box.top,
+            width: box.width,
+            height: box.height,
+          })
+          .resize(meta.width, meta.height, { fit: "fill" })
+          .png()
+          .toBuffer(),
+      ),
+    );
+
+    return {
+      requestId: data.created ? String(data.created) : "openai",
+      images,
+      ext: "png",
+    };
   },
 };
 

@@ -28,6 +28,31 @@ const SimulationSchema = new Schema(
     prompt: { type: String },
     promptRaw: { type: String },
     promptCompiled: { type: Boolean, default: false },
+
+    // promptFinal — строка, реально ушедшая в модель изображений: prompt
+    // плюс описание человека на снимке. Хранится отдельно от prompt,
+    // потому что описание добавляется уже в воркере (там читается файл),
+    // а врачу показать нужно именно итог: по нему видно, знала ли модель,
+    // кого рисует.
+    promptFinal: { type: String },
+    subjectDescription: { type: String },
+
+    // Геометрия правки. Без этих чисел разбор жалобы «получился другой
+    // человек» упирается в чтение логов воркера, которых у врача нет:
+    // маска 300×150 вместо 452×679 или закрашенные полкадра видны здесь
+    // сразу и объясняют результат целиком.
+    maskStats: {
+      width: { type: Number },
+      height: { type: Number },
+      paintedPct: { type: Number },
+    },
+    cropRegion: {
+      left: { type: Number },
+      top: { type: Number },
+      width: { type: Number },
+      height: { type: Number },
+    },
+    provider: { type: String },
     negativePrompt: { type: String },
     guidanceScale: { type: Number, default: 7.5 },
     steps: { type: Number, default: 25 },

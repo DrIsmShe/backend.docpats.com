@@ -1,4 +1,5 @@
 import * as service from "./simulation.service.js";
+import { maxPaintedPct, isFaceProcedure } from "./procedureZones.js";
 
 // POST /api/surgery/cases/:id/simulate
 export async function startSimulation(req, res) {
@@ -49,8 +50,15 @@ export async function getSimulations(req, res) {
 export async function getPrompts(req, res) {
   try {
     const { procedure } = req.params;
-    const prompts = service.getPromptsForProcedure(procedure);
-    res.json({ success: true, prompts });
+    // Порог площади отдаём вместе со списком: клиент должен показать
+    // «отмечено N% кадра» и предупредить ДО генерации, а не дублировать у
+    // себя перечень лицевых операций, который разъедется с серверным.
+    res.json({
+      success: true,
+      prompts: service.getPromptsForProcedure(procedure),
+      maxPaintedPct: maxPaintedPct(procedure),
+      isFaceProcedure: isFaceProcedure(procedure),
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
