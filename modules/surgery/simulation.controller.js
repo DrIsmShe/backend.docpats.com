@@ -70,6 +70,19 @@ export async function getPrompts(req, res) {
   }
 }
 
+// GET /api/surgery/prompts — весь каталог зон правки
+//
+// Отдельно от /prompts/:procedure: клиенту нужен весь список сразу, чтобы
+// врач мог выбрать зону, не совпадающую с типом операции в кейсе.
+export async function getPromptCatalog(req, res) {
+  try {
+    res.json({ success: true, catalog: service.getPromptCatalog() });
+  } catch (err) {
+    console.error("[simulation] getPromptCatalog error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
 // PUT /api/surgery/simulations/:simId/select
 export async function selectResult(req, res) {
   try {
