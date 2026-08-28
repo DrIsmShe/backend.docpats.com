@@ -6,13 +6,14 @@
 // врач хотел сохранить, и заметить это можно будет только по результату,
 // уже потратив деньги на генерацию.
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import sharp from "sharp";
 import {
   toOpenAiMask,
   pickSize,
   fitBox,
 } from "../../modules/surgery/imageProviders/openai.provider.js";
+import { openaiProvider } from "../../modules/surgery/imageProviders/openai.provider.js";
 import { getImageProvider } from "../../modules/surgery/imageProviders/index.js";
 
 const W = 64;
@@ -159,5 +160,61 @@ describe("выбор провайдера", () => {
     process.env.IMAGE_PROVIDER = "midjourney";
     expect(() => getImageProvider()).toThrow(/неизвестен/);
     delete process.env.IMAGE_PROVIDER;
+  });
+});
+
+describe("ответ OpenAI возвращается в геометрии входа", () => {
+  const originalFetch = global.fetch;
+  const originalKey = process.env.OPENAI_API_KEY;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    process.env.OPENAI_API_KEY = originalKey;
+    vi.restoreAllMocks();
+  });
+
+  // Воркер собирает кадр по маске, накладывая ответ модели на исходный
+  // снимок. Любое расхождение размеров сдвинуло бы правку — поэтому
+  // провайдер обязан вернуть ровно ту геометрию, которую получил.
+  //
+  // Регрессия, стоившая рабочего дня: снятие полей и возврат к размеру
+  // входа стояли ОДНОЙ цепочкой sharp — resize → extract → resize. Sharp
+  // допускает один resize на пайплайн: второй не добавляется, а заменяет
+  // первый, и extract начинал отсчитываться от финального размера. Врач
+  // видел «extract_area: bad extract area» без единого намёка на причину.
+  it("снимает поля и отдаёт размер входа, а не размер модели", async () => {
+    process.env.OPENAI_API_KEY = "test-key";
+
+    const input = await sharp({
+      create: { width: 448, height: 224, channels: 3, background: { r: 200, g: 180, b: 170 } },
+    })
+      .png()
+      .toBuffer();
+    const inputMask = await maskWithWhiteSquare();
+
+    // gpt-image-1 отвечает своим размером — 1536×1024 для такой пропорции.
+    const modelAnswer = await sharp({
+      create: { width: 1536, height: 1024, channels: 3, background: { r: 20, g: 40, b: 200 } },
+    })
+      .png()
+      .toBuffer();
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify({ created: 1, data: [{ b64_json: modelAnswer.toString("base64") }] }),
+    });
+
+    const { images } = await openaiProvider.run({
+      imageBuffer: input,
+      maskBuffer: inputMask,
+      prompt: "x",
+      negativePrompt: "y",
+      numOutputs: 1,
+    });
+
+    const meta = await sharp(images[0]).metadata();
+    expect(meta.width).toBe(448);
+    expect(meta.height).toBe(224);
   });
 });

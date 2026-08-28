@@ -198,9 +198,15 @@ export const openaiProvider = {
 
     // Снимаем поля и возвращаем размер входа: дальше воркер собирает кадр
     // по маске, и любое расхождение геометрии сдвинуло бы правку.
+    //
+    // ДВА ПРОХОДА, А НЕ ОДНА ЦЕПОЧКА. sharp допускает один resize на
+    // пайплайн: второй вызов не добавляется, а ЗАМЕНЯЕТ первый, и extract
+    // между ними начинает отсчитываться от финального размера. Рамка
+    // 1536×768 в кадре 452×679 не помещается — наружу это выходило как
+    // «extract_area: bad extract area» без единого намёка на причину.
     const images = await Promise.all(
-      raw.map((buf) =>
-        sharp(buf)
+      raw.map(async (buf) => {
+        const framed = await sharp(buf)
           .resize(size.w, size.h, { fit: "fill" })
           .extract({
             left: box.left,
@@ -208,10 +214,14 @@ export const openaiProvider = {
             width: box.width,
             height: box.height,
           })
+          .png()
+          .toBuffer();
+
+        return sharp(framed)
           .resize(meta.width, meta.height, { fit: "fill" })
           .png()
-          .toBuffer(),
-      ),
+          .toBuffer();
+      }),
     );
 
     return {
