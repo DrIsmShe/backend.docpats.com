@@ -62,3 +62,62 @@ describe("notification preferences", () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe("подписка на конференции в настройках", () => {
+  it("врачу отдаётся подписка, список категорий и признак доступности", async () => {
+    const { userId } = await createTestDoctor();
+    const res = mockRes();
+    await getNotificationPreferences({ userId: String(userId) }, res);
+
+    expect(res.body.conferenceDigestEnabled).toBe(true);
+    expect(res.body.conferenceDigestAvailable).toBe(true);
+    expect(res.body.availableConferenceCategories).toHaveLength(14);
+    // Пустой список — это «все направления», а не «ни одного»: фронт рисует
+    // его как «сейчас все». Значение по умолчанию не должно стать null.
+    expect(res.body.conferenceCategories).toEqual([]);
+  });
+
+  it("пациенту переключатель не показывается", async () => {
+    // Рассылку шлёт jobs/conferenceDigest.job.js только врачам. Показать
+    // переключатель пациенту — пообещать письмо, которое не придёт.
+    const { userId } = await createTestDoctor({
+      role: "patient",
+      isDoctor: false,
+      isPatient: true,
+    });
+    const res = mockRes();
+    await getNotificationPreferences({ userId: String(userId) }, res);
+    expect(res.body.conferenceDigestAvailable).toBe(false);
+  });
+
+  it("отписка от конференций не трогает дайджест непрочитанных", async () => {
+    const { userId } = await createTestDoctor();
+    const res = mockRes();
+    await updateNotificationPreferences(
+      { userId: String(userId), body: { conferenceDigestEnabled: false } },
+      res,
+    );
+    const u = await User.findById(userId).select(
+      "conferenceDigestEnabled emailDigestEnabled",
+    );
+    expect(u.conferenceDigestEnabled).toBe(false);
+    expect(u.emailDigestEnabled).toBe(true);
+  });
+
+  it("незнакомые коды категорий отбрасываются, а не роняют сохранение", async () => {
+    // Список категорий живёт в двух репозиториях; рассинхрон не должен
+    // мешать врачу сохранить настройки.
+    const { userId } = await createTestDoctor();
+    const res = mockRes();
+    await updateNotificationPreferences(
+      {
+        userId: String(userId),
+        body: { conferenceCategories: ["oncology", "выдумка", "surgical", "oncology"] },
+      },
+      res,
+    );
+    expect(res.body.success).toBe(true);
+    const u = await User.findById(userId).select("conferenceCategories");
+    expect(u.conferenceCategories).toEqual(["oncology", "surgical"]);
+  });
+});

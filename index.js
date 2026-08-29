@@ -39,6 +39,8 @@ import { setRealtimeNamespace } from "./common/realtime/userChannel.js";
 import { attachRedisAdapter } from "./common/realtime/socketAdapter.js";
 import { scheduleSubscriptionReminders } from "./jobs/checkSubscriptionReminders.js";
 import { scheduleNotificationDigest } from "./jobs/notificationDigest.job.js";
+import { scheduleConferenceDigest } from "./jobs/conferenceDigest.job.js";
+import publicUnsubscribeRouter from "./modules/notifications/publicUnsubscribe.routes.js";
 import { scheduleWeeklyCaseNotification } from "./jobs/radiologyWeeklyCase.job.js";
 import { scheduleDailyCaseGeneration } from "./jobs/radiologyDailyCases.job.js";
 import { scheduleIndexNowSubmit } from "./jobs/indexnowSubmit.job.js";
@@ -156,6 +158,10 @@ app.use("/api/v1/public", publicDoctorsRouter);
 // он и делается. У агента нет инструментов и доступа к данным — см.
 // modules/guide/guide.service.js.
 app.use("/api/v1/public", guestGuideRouter);
+// Отписка от рассылок по ссылке из письма. Без session и без авторизации —
+// иначе вместо отписки человек нажмёт «спам», а жалоба бьёт по
+// доставляемости всех писем домена, включая напоминания о приёмах.
+app.use("/api/v1/public", publicUnsubscribeRouter);
 // (Роутер webhook'ов смонтирован выше, до express.json — подпись
 // проверяется по сырому телу. Здесь оставлено только пояснение, чтобы
 // следующий читатель не искал его среди публичных маршрутов.)
@@ -541,6 +547,8 @@ async function bootstrap(startPort = PORT) {
     // напоминания существовали только для пробного периода.
     scheduleSubscriptionReminders();
     scheduleNotificationDigest();
+    // Еженедельная подборка конференций врачам (понедельник, 09:00 UTC).
+    scheduleConferenceDigest();
     scheduleWeeklyCaseNotification();
     // Ночная автогенерация учебных кейсов лучевой станции (по одному на
     // модальность). Выключается через RADIOLOGY_AUTOGEN=off.

@@ -29,6 +29,7 @@ import adminOverviewRoute from "./routes/adminOverviewRoute.js";
 import adminEntitiesRoute from "./routes/adminEntitiesRoute.js";
 import adminOpsRoute from "./routes/adminOpsRoute.js";
 import adminDatabaseRoute from "./routes/adminDatabaseRoute.js";
+import adminConferencesRoute from "./routes/adminConferencesRoute.js";
 // Посещаемость сайта (PostHog). Лежит отдельным модулем: у него своя
 // внешняя зависимость и свой кеш, админка только даёт ему адрес.
 import analyticsRoutes from "../analytics/index.js";
@@ -76,6 +77,9 @@ router.use("/", adminEntitiesRoute);
 router.use("/", adminOpsRoute);
 // База данных — сводная аналитика (пациенты/статьи/врачи/пользователи)
 router.use("/database", adminDatabaseRoute);
+// Модерация конференций. Карточки живут в новостном движке — контроллер
+// ходит туда по внутреннему токену, браузер этот токен не видит.
+router.use("/conferences", adminConferencesRoute);
 // Посещаемость сайта: экраны, аудитория, источники, скорость (PostHog)
 router.use("/analytics", analyticsRoutes);
 //router.use("/admin-panel", isAdminRoute);

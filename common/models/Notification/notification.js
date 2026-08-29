@@ -50,6 +50,10 @@ const notificationSchema = new mongoose.Schema(
         "call_missed",
         "consent_request_new",
         "clinic_lead",
+        // Подборка конференций по специальности. Отдельный тип, а не
+        // system_message: у колокольчика своя иконка, и однажды его
+        // захотят выключить, не трогая остальные системные сообщения.
+        "conference_announced",
       ],
       default: "system_message",
       required: true,
