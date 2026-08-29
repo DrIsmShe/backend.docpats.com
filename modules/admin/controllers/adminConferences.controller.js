@@ -88,6 +88,53 @@ export async function runIngestion(req, res) {
   }
 }
 
+// ─── POST /admin/conferences/enrich ───────────────────────────────────
+// Добор подробностей со страниц самих конференций. body: { id? } — одна
+// карточка или все, которых добор ещё не касался.
+//
+// Отдельно от обхода: страница общества даёт только название, даты и место,
+// а программа, условия и дедлайны лежат на сайте мероприятия. Уже
+// заведённые карточки надо уметь дополнить, не обходя источники заново.
+export async function enrichConferences(req, res) {
+  try {
+    const id = req.body?.id;
+    const path = id ? `/admin/${id}/enrich` : "/admin/enrich";
+    const r = await engine({ timeoutMs: 10 * 60 * 1000 }).post(path, {
+      limit: req.body?.limit,
+    });
+    return res.json({ success: true, ...r.data });
+  } catch (err) {
+    if (err.code === "ECONNABORTED") {
+      return res.status(504).json({
+        success: false,
+        message: "Добор идёт дольше ожидания — он продолжается, нажмите «Обновить».",
+      });
+    }
+    return fail(res, err, "Не удалось дополнить карточки");
+  }
+}
+
+// ─── POST /admin/conferences/translate ────────────────────────────────
+// Перевод опубликованных карточек на пять языков интерфейса. Обычно не
+// нужен: перевод стартует сам при публикации. Кнопка — для тех карточек,
+// что опубликованы раньше или у которых перевод сорвался.
+export async function translateConferences(req, res) {
+  try {
+    const r = await engine({ timeoutMs: 10 * 60 * 1000 }).post("/admin/translate", {
+      limit: req.body?.limit,
+    });
+    return res.json({ success: true, ...r.data });
+  } catch (err) {
+    if (err.code === "ECONNABORTED") {
+      return res.status(504).json({
+        success: false,
+        message: "Перевод идёт дольше ожидания — он продолжается, нажмите «Обновить».",
+      });
+    }
+    return fail(res, err, "Не удалось перевести карточки");
+  }
+}
+
 // ─── PATCH /admin/conferences/:id ─────────────────────────────────────
 // body: { status: "published" | "rejected" | "draft", rejectedReason? }
 export async function moderateConference(req, res) {
