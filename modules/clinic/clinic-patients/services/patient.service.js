@@ -140,6 +140,7 @@ function toApiShape(doc) {
     notes: decryptValue(doc.notesEncrypted),
     dateOfBirth: doc.dateOfBirth || null,
     gender: doc.gender || null,
+    weightKg: doc.weightKg ?? null,
     departmentId: doc.departmentId ? String(doc.departmentId) : null,
     linkedUserId: doc.linkedUserId ? String(doc.linkedUserId) : null,
     createdBy: doc.createdBy ? String(doc.createdBy) : null,
@@ -425,6 +426,7 @@ export async function createPatient(input) {
         emailHash: normalizedEmail ? hashValue(normalizedEmail) : null,
         dateOfBirth: input.dateOfBirth || null,
         gender: input.gender || null,
+        weightKg: input.weightKg ?? null,
         notesEncrypted: input.notes ? encryptValue(input.notes) : null,
         linkedUserId: existingUser._id,
         createdBy: userId,
@@ -569,6 +571,7 @@ export async function createPatient(input) {
       }
       if (input.dateOfBirth) existingInClinic.dateOfBirth = input.dateOfBirth;
       if (input.gender) existingInClinic.gender = input.gender;
+      if (input.weightKg !== undefined) existingInClinic.weightKg = input.weightKg;
       // Only touch department if the caller explicitly sent the field
       // (departmentId here is the validated value — null if cleared).
       if (input.departmentId !== undefined) {
@@ -607,6 +610,7 @@ export async function createPatient(input) {
         emailHash: normalizedEmail ? hashValue(normalizedEmail) : null,
         dateOfBirth: input.dateOfBirth || null,
         gender: input.gender || null,
+        weightKg: input.weightKg ?? null,
         notesEncrypted: input.notes ? encryptValue(input.notes) : null,
         linkedUserId: existingUser._id,
         createdBy: userId,

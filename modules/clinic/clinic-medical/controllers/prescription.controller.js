@@ -161,10 +161,60 @@ export async function prescriptionPdfController(req, res, next) {
     }
 
     const clinic = req.clinic || null;
+    const patient = req.clinicPatient || null;
+
+    // Аллергии и возраст в бланк.
+    //
+    // Аллергии — единственное поле рецепта, из-за которого он может убить, и
+    // печатать пустую рамку, когда записи в карте есть, нельзя. Они лежат
+    // отдельными записями (AllergiesPatient), поэтому собираем их здесь, а
+    // не тянем в модель пациента.
+    //
+    // Возраст не храним: он вычисляется из даты рождения и через год
+    // протухнет. Считаем на момент печати.
+    let patientForPdf = patient;
+    if (patient?._id) {
+      let allergiesSummary = "";
+      try {
+        const { default: AllergiesPatient } = await import(
+          "../../../../common/models/Polyclinic/MedicalHistory/allergiesPatient.js"
+        );
+        const rows = await AllergiesPatient.find({ patientId: patient._id })
+          .select("content")
+          .lean();
+        allergiesSummary = rows
+          .map((r) => String(r.content || "").trim())
+          .filter(Boolean)
+          .join("; ");
+      } catch (e) {
+        // Не нашли аллергии — печатаем бланк без них. Рецепт важнее.
+        console.error("[prescriptionPdf] аллергии не прочитаны:", e.message);
+      }
+
+      const dob = patient.dateOfBirth ? new Date(patient.dateOfBirth) : null;
+      let age = null;
+      if (dob && !Number.isNaN(dob.getTime())) {
+        const now = new Date();
+        age = now.getUTCFullYear() - dob.getUTCFullYear();
+        const before =
+          now.getUTCMonth() < dob.getUTCMonth() ||
+          (now.getUTCMonth() === dob.getUTCMonth() &&
+            now.getUTCDate() < dob.getUTCDate());
+        if (before) age -= 1;
+        if (age < 0 || age > 130) age = null;
+      }
+
+      patientForPdf = {
+        ...(typeof patient.toObject === "function" ? patient.toObject() : patient),
+        allergiesSummary,
+        age,
+      };
+    }
+
     const pdfBuffer = await buildPrescriptionPdf({
       prescription: data,
       clinic,
-      patient: req.clinicPatient || null,
+      patient: patientForPdf,
       lang: req.query?.lang || req.tenantContext?.lang || "ru",
     });
 

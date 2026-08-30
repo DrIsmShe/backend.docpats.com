@@ -63,6 +63,15 @@ const objectIdField = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId");
 
 // ─── createPatientSchema ──────────────────────────────────────────────
 
+// Вес в килограммах. Верхняя граница не «на всякий случай»: она отсекает
+// опечатку вроде 700 вместо 70, из-за которой доза при расчёте на массу
+// тела вырастет в десять раз.
+const weightField = z
+  .number()
+  .min(0)
+  .max(700)
+  .nullable();
+
 export const createPatientSchema = z
   .object({
     firstName: nameField,
@@ -71,6 +80,7 @@ export const createPatientSchema = z
     email: emailField.optional().nullable(),
     dateOfBirth: dobField.optional().nullable(),
     gender: genderField.optional().nullable(),
+    weightKg: weightField.optional(),
     notes: notesField.optional().nullable(),
     // Optional primary department. Validated against the clinic's ACTIVE
     // departments in the service layer (assertDepartmentInClinic).
@@ -128,6 +138,7 @@ export const updatePatientSchema = z
     email: emailField.nullable().optional(),
     dateOfBirth: dobField.nullable().optional(),
     gender: genderField.nullable().optional(),
+    weightKg: weightField.optional(),
     notes: notesField.nullable().optional(),
     departmentId: objectIdField.nullable().optional(),
   })

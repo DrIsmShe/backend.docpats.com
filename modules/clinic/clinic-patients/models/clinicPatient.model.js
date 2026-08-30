@@ -115,6 +115,12 @@ const clinicPatientSchema = new Schema(
 
     // ─── Non-PHI demographics ───
     dateOfBirth: { type: Date, default: null },
+
+    // Вес нужен не для статистики: по нему считают дозу у детей, в
+    // нефрологии и онкологии, и он же печатается в рецептурном бланке —
+    // там это поле стандарта ВОЗ. Раньше его негде было хранить, и в
+    // бланке оставалась пустая линия под ручное заполнение.
+    weightKg: { type: Number, default: null, min: 0, max: 700 },
     gender: {
       type: String,
       enum: ["male", "female", "other", "unknown", null],
