@@ -11,11 +11,26 @@ import mongoose from "mongoose";
 import Prescription from "../../../common/models/Polyclinic/Prescription.js";
 import ClinicPatient from "../../clinic/clinic-patients/models/clinicPatient.model.js";
 import Clinic from "../../clinic/clinic-core/models/clinic.model.js";
+import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
+import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import {
   buildPatientForPdf,
   decryptPrescriptionDoc,
   resolvePrescriber,
 } from "../../clinic/clinic-medical/pdf/prescriptionPayload.js";
+
+// Карта пациента по виду, записанному в самом рецепте.
+async function loadCard(model, id) {
+  if (model === "DoctorPrivatePatient") {
+    return DoctorPrivatePatient.findById(id);
+  }
+  if (model === "NewPatientPolyclinic") {
+    return NewPatientPolyclinic.findById(id);
+  }
+  // Клиническая карта закрыта арендой; здесь читает сам пациент, а не
+  // клиника, поэтому скоуп снимаем — владение проверяется по linkedUserId.
+  return ClinicPatient.findById(id).setOptions({ skipTenantScope: true });
+}
 
 const getMyPrescriptionPdfController = async (req, res, next) => {
   try {
@@ -37,12 +52,12 @@ const getMyPrescriptionPdfController = async (req, res, next) => {
     }
 
     // 2. Владение: карта рецепта привязана к этому пользователю.
-    const card = await ClinicPatient.findById(rx.patientRef)
-      .setOptions({ skipTenantScope: true })
-      .select(
-        "_id linkedUserId firstNameEncrypted lastNameEncrypted dateOfBirth " +
-          "gender weightKg phoneEncrypted",
-      );
+    //
+    // Карта может быть одной из трёх моделей — клиника, частный приём
+    // врача, поликлиника, — и рецепт хранит её вид в patientTypeModel.
+    // Проверять только клиническую карту значило бы отдавать 403 на
+    // собственный рецепт пациента, выписанный врачом лично.
+    const card = await loadCard(rx.patientTypeModel, rx.patientRef);
 
     if (!card || String(card.linkedUserId || "") !== String(userId)) {
       return res.status(403).json({ ok: false, error: "Доступ запрещён" });
@@ -62,7 +77,14 @@ const getMyPrescriptionPdfController = async (req, res, next) => {
 
     // Пол, вес, телефон и аллергии тоже нужны бланку — раньше сюда
     // передавались только имя и дата рождения, и половина граф пустовала.
-    const patient = await buildPatientForPdf(card);
+    // У карт врача аллергии лежат прямо в записи одной строкой, а у
+    // клинической — отдельными записями, которые сборщик найдёт сам.
+    const inlineAllergies =
+      card.medicalProfile?.allergies || card.allergies || null;
+    const patient = await buildPatientForPdf(
+      card,
+      inlineAllergies ? { allergies: inlineAllergies } : undefined,
+    );
 
     // Кто выписал: в рецепте лежат только идентификаторы.
     const prescriber = await resolvePrescriber(rx);

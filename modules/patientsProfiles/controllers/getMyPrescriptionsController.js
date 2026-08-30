@@ -11,6 +11,8 @@
 
 import Prescription from "../../../common/models/Polyclinic/Prescription.js";
 import ClinicPatient from "../../clinic/clinic-patients/models/clinicPatient.model.js";
+import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
+import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import Clinic from "../../clinic/clinic-core/models/clinic.model.js";
 import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
@@ -21,22 +23,39 @@ const getMyPrescriptionsController = async (req, res) => {
       return res.status(401).json({ ok: false, error: "Не авторизован" });
     }
 
-    // 1. Все карты пациента (во всех клиниках), привязанные к этому юзеру.
-    const cards = await ClinicPatient.find({ linkedUserId: userId })
-      .setOptions({ skipTenantScope: true })
-      .select("_id")
-      .lean();
+    // 1. Все карты пациента, привязанные к этому юзеру.
+    //
+    // Карт три вида, и рецепт может быть выписан на любую: клиника ведёт
+    // ClinicPatient, врач на частном приёме — DoctorPrivatePatient, врач в
+    // поликлинике — NewPatientPolyclinic. Раньше мост искал только по
+    // клиническим картам, и рецепт, выписанный врачом лично, у пациента в
+    // списке не появлялся вовсе — при том что сам рецепт создан верно.
+    const [clinicCards, privateCards, polyCards] = await Promise.all([
+      ClinicPatient.find({ linkedUserId: userId })
+        .setOptions({ skipTenantScope: true })
+        .select("_id")
+        .lean(),
+      DoctorPrivatePatient.find({ linkedUserId: userId }).select("_id").lean(),
+      NewPatientPolyclinic.find({ linkedUserId: userId }).select("_id").lean(),
+    ]);
 
-    if (!cards.length) {
+    const byModel = [
+      ["ClinicPatient", clinicCards],
+      ["DoctorPrivatePatient", privateCards],
+      ["NewPatientPolyclinic", polyCards],
+    ].filter(([, rows]) => rows.length);
+
+    if (!byModel.length) {
       return res.status(200).json({ ok: true, items: [] });
     }
 
-    const cardIds = cards.map((c) => c._id);
-
-    // 2. Все рецепты по этим картам.
+    // 2. Все рецепты по этим картам. Модель указываем вместе с
+    //    идентификаторами: одного patientRef мало — он полиморфный.
     const docs = await Prescription.find({
-      patientRef: { $in: cardIds },
-      patientTypeModel: "ClinicPatient",
+      $or: byModel.map(([model, rows]) => ({
+        patientTypeModel: model,
+        patientRef: { $in: rows.map((r) => r._id) },
+      })),
     })
       .sort({ createdAt: -1 })
       .limit(200)
@@ -63,6 +82,38 @@ const getMyPrescriptionsController = async (req, res) => {
       : [];
     const clinicNameById = new Map(clinics.map((c) => [String(c._id), c.name]));
 
+    // Имена врачей — для рецептов, выписанных вне клиники. Без них такой
+    // рецепт стоит в списке вообще без источника: ни клиники, ни автора.
+    // Одним запросом на все строки, а не по запросу на строку.
+    const doctorIds = [
+      ...new Set(
+        docs
+          .filter((d) => !d.createdByClinicId)
+          .map((d) => (d.createdBy ? String(d.createdBy) : null))
+          .filter(Boolean),
+      ),
+    ];
+    const doctorNameById = new Map();
+    if (doctorIds.length) {
+      try {
+        const { default: User } = await import(
+          "../../../common/models/Auth/users.js"
+        );
+        // Без .lean(): расшифровка имени живёт в методе документа.
+        const users = await User.find({ _id: { $in: doctorIds } }).select(
+          "firstNameEncrypted lastNameEncrypted",
+        );
+        for (const u of users) {
+          const f = typeof u.decryptFields === "function" ? u.decryptFields() : {};
+          const name = [f.firstName, f.lastName].filter(Boolean).join(" ");
+          if (name) doctorNameById.set(String(u._id), name);
+        }
+      } catch (e) {
+        // Имени не будет — список важнее подписи.
+        console.error("[мои рецепты] врач не определён:", e.message);
+      }
+    }
+
     // 4. Сборка плоского списка.
     const items = docs.map((d) => ({
       _id: String(d._id),
@@ -75,6 +126,11 @@ const getMyPrescriptionsController = async (req, res) => {
       clinicName: d.createdByClinicId
         ? clinicNameById.get(String(d.createdByClinicId)) || ""
         : "",
+      // Кто выписал, когда клиники нет. Клиент показывает это там же, где
+      // название клиники: у рецепта всегда должен быть виден источник.
+      issuedByName: d.createdByClinicId
+        ? ""
+        : doctorNameById.get(String(d.createdBy || "")) || "",
       // Текст диагноза, общие указания и указания к приёму хранятся
       // зашифрованными. Документ читается напрямую, поэтому расшифровка
       // нужна здесь: без неё пациент видел в списке своих рецептов
