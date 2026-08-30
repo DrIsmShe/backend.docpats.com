@@ -147,6 +147,9 @@ const clinicSchema = new mongoose.Schema(
 
     legalName: { type: String, trim: true, maxlength: 300 },
     taxId: { type: String, trim: true, maxlength: 50 }, // VOEN, ИНН, VAT
+    // Номер лицензии учреждения. Печатается в шапке рецепта: без него
+    // бланк в аптеке недействителен, а ввести его было негде.
+    licenseNumber: { type: String, trim: true, maxlength: 100 },
 
     contacts: {
       phone: { type: String, trim: true },

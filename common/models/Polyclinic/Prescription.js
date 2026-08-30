@@ -142,6 +142,16 @@ const prescriptionSchema = new mongoose.Schema(
       text: { type: String, trim: true, default: "" },
     },
 
+    // ── УСЛОВИЯ ОТПУСКА (WHO: substitution & validity) ─────────────
+    // Бланк ВОЗ требует явного указания, можно ли отпустить аналог:
+    // молчание аптека трактует по-своему, и пациент получает не то, что
+    // выписали. null — врач не выбрал, ни один квадрат не отмечается.
+    substitutionAllowed: { type: Boolean, default: null },
+    // Число повторных отпусков по одному бланку.
+    refills: { type: Number, min: 0, max: 12, default: null },
+    // Срок действия бланка. Дальше аптека отпускать не должна.
+    validUntil: { type: Date, default: null },
+
     // ── FSM ───────────────────────────────────────────────────────
     status: {
       type: String,

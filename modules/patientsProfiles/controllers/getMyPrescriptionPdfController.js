@@ -9,10 +9,13 @@
 
 import mongoose from "mongoose";
 import Prescription from "../../../common/models/Polyclinic/Prescription.js";
-import ClinicPatient, {
-  decryptValue,
-} from "../../clinic/clinic-patients/models/clinicPatient.model.js";
+import ClinicPatient from "../../clinic/clinic-patients/models/clinicPatient.model.js";
 import Clinic from "../../clinic/clinic-core/models/clinic.model.js";
+import {
+  buildPatientForPdf,
+  decryptPrescriptionDoc,
+  resolvePrescriber,
+} from "../../clinic/clinic-medical/pdf/prescriptionPayload.js";
 
 const getMyPrescriptionPdfController = async (req, res, next) => {
   try {
@@ -37,9 +40,9 @@ const getMyPrescriptionPdfController = async (req, res, next) => {
     const card = await ClinicPatient.findById(rx.patientRef)
       .setOptions({ skipTenantScope: true })
       .select(
-        "_id linkedUserId firstNameEncrypted lastNameEncrypted dateOfBirth",
-      )
-      .lean();
+        "_id linkedUserId firstNameEncrypted lastNameEncrypted dateOfBirth " +
+          "gender weightKg phoneEncrypted",
+      );
 
     if (!card || String(card.linkedUserId || "") !== String(userId)) {
       return res.status(403).json({ ok: false, error: "Доступ запрещён" });
@@ -51,34 +54,25 @@ const getMyPrescriptionPdfController = async (req, res, next) => {
       : null;
 
     // 4. Та же форма данных, что отдаёт clinic-сервис в toApiShape.
-    const prescription = {
-      _id: String(rx._id),
-      status: rx.status,
-      issuedAt: rx.issuedAt || rx.createdAt || null,
-      createdAt: rx.createdAt || null,
-      diagnosis: rx.diagnosis
-        ? {
-            code: rx.diagnosis.code || "",
-            codeTitle: rx.diagnosis.codeTitle || "",
-            text: rx.diagnosis.text || "",
-          }
-        : null,
-      generalNotes: rx.generalNotes || "",
-      items: Array.isArray(rx.items) ? rx.items : [],
-    };
+    //
+    // Документ читается напрямую, а указания к приёму, диагноз и общие
+    // замечания хранятся зашифрованными: без расшифровки бланк печатал
+    // в графе «Приём» строку вида "4c153d92…:7459bee…" вместо указаний.
+    const prescription = decryptPrescriptionDoc(rx);
 
-    const patient = {
-      firstName: decryptValue(card.firstNameEncrypted) || "",
-      lastName: decryptValue(card.lastNameEncrypted) || "",
-      dateOfBirth: card.dateOfBirth || null,
-    };
+    // Пол, вес, телефон и аллергии тоже нужны бланку — раньше сюда
+    // передавались только имя и дата рождения, и половина граф пустовала.
+    const patient = await buildPatientForPdf(card);
+
+    // Кто выписал: в рецепте лежат только идентификаторы.
+    const prescriber = await resolvePrescriber(rx);
 
     // 5. Тот же генератор, что у клиники.
     const { buildPrescriptionPdf } =
       await import("../../clinic/clinic-medical/pdf/prescriptionPdf.js");
 
     const pdfBuffer = await buildPrescriptionPdf({
-      prescription,
+      prescription: { ...prescription, ...prescriber },
       clinic,
       patient,
       lang: req.query?.lang || clinic?.defaultLanguage || "ru",

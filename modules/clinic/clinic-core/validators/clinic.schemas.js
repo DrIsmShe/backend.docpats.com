@@ -109,6 +109,7 @@ export const createClinicSchema = z.object({
 
   legalName: z.string().trim().max(300).optional(),
   taxId: z.string().trim().max(50).optional(),
+  licenseNumber: z.string().trim().max(100).optional(),
 
   contacts: z
     .object({

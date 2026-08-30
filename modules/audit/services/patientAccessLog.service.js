@@ -54,6 +54,7 @@ const SECTION = {
   "clinic-medical-lab-result": "анализы",
   "clinic-medical-summary": "вся карта (сводка)",
   "clinic-medical-fhir-export": "выгрузка всей карты в файл",
+  "clinic-medical-card-print": "печать всей карты",
   "patient-consent": "согласие на доступ",
   consultation: "консультация",
   "ai-consultation": "AI-консультация",

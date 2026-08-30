@@ -163,105 +163,16 @@ export async function prescriptionPdfController(req, res, next) {
     const clinic = req.clinic || null;
     const patient = req.clinicPatient || null;
 
-    // Аллергии и возраст в бланк.
-    //
-    // Аллергии — единственное поле рецепта, из-за которого он может убить, и
-    // печатать пустую рамку, когда записи в карте есть, нельзя. Они лежат
-    // отдельными записями (AllergiesPatient), поэтому собираем их здесь, а
-    // не тянем в модель пациента.
-    //
-    // Возраст не храним: он вычисляется из даты рождения и через год
-    // протухнет. Считаем на момент печати.
-    let patientForPdf = patient;
-    if (patient?._id) {
-      let allergiesSummary = "";
-      try {
-        const { default: AllergiesPatient } = await import(
-          "../../../../common/models/Polyclinic/MedicalHistory/allergiesPatient.js"
-        );
-        const rows = await AllergiesPatient.find({ patientId: patient._id })
-          .select("content")
-          .lean();
-        allergiesSummary = rows
-          .map((r) => String(r.content || "").trim())
-          .filter(Boolean)
-          .join("; ");
-      } catch (e) {
-        // Не нашли аллергии — печатаем бланк без них. Рецепт важнее.
-        console.error("[prescriptionPdf] аллергии не прочитаны:", e.message);
-      }
+    // Возраст, аллергии и имя врача собирает общий сборщик: тот же бланк
+    // печатается из пациентского портала и из кабинета врача, и, когда
+    // каждый собирал данные сам, они разошлись.
+    const {
+      buildPatientForPdf,
+      resolvePrescriber,
+    } = await import("../pdf/prescriptionPayload.js");
 
-      const dob = patient.dateOfBirth ? new Date(patient.dateOfBirth) : null;
-      let age = null;
-      if (dob && !Number.isNaN(dob.getTime())) {
-        const now = new Date();
-        age = now.getUTCFullYear() - dob.getUTCFullYear();
-        const before =
-          now.getUTCMonth() < dob.getUTCMonth() ||
-          (now.getUTCMonth() === dob.getUTCMonth() &&
-            now.getUTCDate() < dob.getUTCDate());
-        if (before) age -= 1;
-        if (age < 0 || age > 130) age = null;
-      }
-
-      // virtuals: true — обязательно. Имя, телефон и почта пациента хранятся
-      // зашифрованными, а наружу отдаются виртуальными полями; обычный
-      // toObject() их не включает, и в бланке оставались пустые линии при
-      // заполненной карте.
-      patientForPdf = {
-        ...(typeof patient.toObject === "function"
-          ? patient.toObject({ virtuals: true })
-          : patient),
-        allergiesSummary,
-        age,
-      };
-    }
-
-    // Кто выписал. В рецепте хранятся только идентификаторы, поэтому имя и
-    // квалификацию достаём отдельно: бланк без врача недействителен, а
-    // пустая строка «Назначил» выглядит как недоделка.
-    let prescriber = {};
-    try {
-      // Поле может прийти как идентификатор или как подгруженный документ.
-      const id = (v) => (v && typeof v === "object" ? v._id : v) || null;
-      const userId = id(data?.issuedByUserId) || id(data?.createdBy);
-      const employeeId =
-        id(data?.issuedByEmployeeId) || id(data?.createdByEmployee);
-      if (userId) {
-        const { default: User } = await import(
-          "../../../../common/models/Auth/users.js"
-        );
-        // Без .lean(): расшифровка живёт в методе документа.
-        const u = await User.findById(userId).select(
-          "firstNameEncrypted lastNameEncrypted specialization",
-        );
-        if (u) {
-          const f = typeof u.decryptFields === "function" ? u.decryptFields() : {};
-          const name = [f.firstName, f.lastName].filter(Boolean).join(" ");
-          prescriber = { doctorName: name || null };
-        }
-      } else if (employeeId) {
-        // Сотрудник клиники — отдельная сущность со своей схемой шифрования.
-        const { default: ClinicEmployee, decryptValue } = await import(
-          "../../clinic-staff/models/clinicEmployee.model.js"
-        );
-        const emp = await ClinicEmployee.findById(employeeId)
-          .select("firstNameEncrypted lastNameEncrypted")
-          .lean();
-        if (emp) {
-          const name = [
-            decryptValue(emp.firstNameEncrypted),
-            decryptValue(emp.lastNameEncrypted),
-          ]
-            .filter(Boolean)
-            .join(" ");
-          prescriber = { doctorName: name || null };
-        }
-      }
-    } catch (e) {
-      // Врача не нашли — печатаем бланк с пустой строкой. Рецепт важнее.
-      console.error("[prescriptionPdf] врач не определён:", e.message);
-    }
+    const patientForPdf = await buildPatientForPdf(patient);
+    const prescriber = await resolvePrescriber(data);
 
     const pdfBuffer = await buildPrescriptionPdf({
       prescription: { ...data, ...prescriber },

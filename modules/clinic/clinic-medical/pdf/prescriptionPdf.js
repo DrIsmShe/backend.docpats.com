@@ -427,47 +427,63 @@ export async function buildPrescriptionPdf({
     return doc.y + 3;
   };
 
-  // ── Шапка учреждения ──────────────────────────────────────────────
+  // ── Шапка ─────────────────────────────────────────────────────────
+  //
+  // Бланк выписывают из двух мест, и шапка у них разная. Рецепт клиники
+  // идёт под названием клиники: за него отвечает учреждение, его лицензия
+  // стоит справа. Рецепт, который врач выписал сам, своему частному
+  // пациенту, никакой клиникой не подписан — ставить туда название чужого
+  // учреждения нельзя. Такой бланк идёт под маркой самого проекта, а
+  // вместо реквизитов учреждения печатаются данные врача.
   const licW = 150;
   const headW = contentW - licW - 16;
 
+  const selfIssued = !clinic;
+  const headName = selfIssued ? "DocPats" : clinicName;
+  const headSub = selfIssued
+    ? prescription?.doctorQualification || ""
+    : clinic?.department || clinic?.type || "";
+  const headLines = selfIssued
+    ? [
+        prescription?.doctorName ? `${t.doctor}: ${prescription.doctorName}` : "",
+        prescription?.doctorEmail || "",
+        "docpats.com",
+      ].filter(Boolean)
+    : [
+        [clinic?.address?.street, clinic?.address?.city, clinic?.address?.country]
+          .filter(Boolean)
+          .join(", "),
+        [clinic?.contacts?.phone, clinic?.contacts?.email, clinic?.contacts?.website]
+          .filter(Boolean)
+          .join("  ·  "),
+      ].filter(Boolean);
+
   doc.font(F_BOLD).fontSize(15).fillColor(NAVY);
-  doc.text(tx(clinicName), left, y, { width: headW });
+  doc.text(tx(headName), left, y, { width: headW });
   let leftY = doc.y + 2;
 
-  if (clinic?.department || clinic?.type) {
+  if (headSub) {
     doc.font(F_REG).fontSize(7.5).fillColor(MUTED);
-    doc.text(tx(String(clinic.department || clinic.type).toUpperCase()), left, leftY, { width: headW });
+    doc.text(tx(String(headSub).toUpperCase()), left, leftY, { width: headW });
     leftY = doc.y + 3;
   }
 
   doc.font(F_REG).fontSize(8).fillColor(MUTED);
-  const addr = [clinic?.address?.street, clinic?.address?.city, clinic?.address?.country]
-    .filter(Boolean)
-    .join(", ");
-  if (addr) {
-    doc.text(tx(addr), left, leftY, { width: headW });
-    leftY = doc.y;
-  }
-  const contactLine = [
-    clinic?.contacts?.phone,
-    clinic?.contacts?.email,
-    clinic?.contacts?.website,
-  ]
-    .filter(Boolean)
-    .join("  ·  ");
-  if (contactLine) {
-    doc.text(tx(contactLine), left, leftY, { width: headW });
+  for (const line of headLines) {
+    doc.text(tx(line), left, leftY, { width: headW });
     leftY = doc.y;
   }
 
   // Лицензия и ссылка на форму — справа, как на официальных бланках.
   const licX = right - licW;
   let licY = y;
-  label(t.facilityLicence, licX, licY, licW);
+  label(selfIssued ? t.registrationNo : t.facilityLicence, licX, licY, licW);
   licY = doc.y + 1;
   doc.font(F_REG).fontSize(8.5).fillColor(INK);
-  doc.text(tx(clinic?.licenseNumber || clinic?.taxId || "________________"), licX, licY, { width: licW });
+  const licValue = selfIssued
+    ? prescription?.doctorLicenseNumber || ""
+    : clinic?.licenseNumber || clinic?.taxId || "";
+  doc.text(tx(licValue || "________________"), licX, licY, { width: licW });
   licY = doc.y + 5;
   label(t.formRef, licX, licY, licW);
   licY = doc.y + 1;
@@ -675,13 +691,25 @@ export async function buildPrescriptionPdf({
   doc.moveTo(left, y).lineTo(right, y).lineWidth(0.7).strokeColor(RULE).stroke();
   y += 8;
 
-  const box = (x, yy) => {
+  // Квадратики раньше всегда печатались пустыми — врач выбирал условие
+  // отпуска в форме, а на бланк оно не попадало, и аптека видела рецепт
+  // без указания, можно ли заменять препарат.
+  const box = (x, yy, checked) => {
     doc.rect(x, yy, 8, 8).lineWidth(1).strokeColor(NAVY).stroke();
+    if (!checked) return;
+    doc
+      .moveTo(x + 1.6, yy + 4.2)
+      .lineTo(x + 3.3, yy + 6.2)
+      .lineTo(x + 6.5, yy + 1.8)
+      .lineWidth(1.4)
+      .strokeColor(NAVY)
+      .stroke();
   };
+  const sub = prescription?.substitutionAllowed;
   doc.font(F_REG).fontSize(8.5).fillColor(INK);
-  box(left, y);
+  box(left, y, sub === true);
   doc.text(tx(t.substitutionAllowed), left + 13, y - 1, { width: contentW * 0.32 });
-  box(left + contentW * 0.36, y);
+  box(left + contentW * 0.36, y, sub === false);
   doc.text(tx(t.dispenseAsWritten), left + contentW * 0.36 + 13, y - 1, { width: contentW * 0.3 });
   y = doc.y + 6;
 

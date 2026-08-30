@@ -5,6 +5,9 @@ import { canAccessPatientRecord } from "../utils/phiAccess.js";
 // ⚠️ Проверьте путь к модели под ваш проект!
 // Ниже — примерный путь. Если у вас модель лежит в другом месте, поправьте import.
 import AngiographyScan from "../../../common/models/Polyclinic/ExamenationsTemplates/AngiographyscanTemplates/Angiographyscan.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 /* =============== helpers =============== */
 const toObjectId = (id) =>
@@ -155,9 +158,9 @@ export default async function getMyAngiographyScanFilesDetailsController(
 
       // Заключение врача
       nameofexam: doc.nameofexam || "",
-      report: doc.report || "",
+      report: decryptPHI(doc.report) || "",
       recomandation: doc.recomandation || "",
-      diagnosis: doc.diagnosis || "",
+      diagnosis: decryptPHI(doc.diagnosis) || "",
 
       // Параметры, характерные для ангиографии/сопутствующих измерений
       radiationDose: doc.radiationDose ?? null,
@@ -195,7 +198,7 @@ export default async function getMyAngiographyScanFilesDetailsController(
 
       // Качество/риск/прочее
       validatedByDoctor: !!doc.validatedByDoctor,
-      doctorNotes: doc.doctorNotes || "",
+      doctorNotes: decryptPHI(doc.doctorNotes) || "",
       threeDModel: doc.threeDModel ?? null,
       imageQuality: doc.imageQuality ?? null,
       needsRetake: !!doc.needsRetake,

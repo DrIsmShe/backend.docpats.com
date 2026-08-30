@@ -3,6 +3,9 @@ import mongoose from "mongoose";
 import { canAccessPatientRecord } from "../utils/phiAccess.js";
 // ⚠️ Проверьте путь к модели EKGScans:
 import EKGScans from "../../../common/models/Polyclinic/ExamenationsTemplates/EKGscanTemplates/EKGscan.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 /* =============== helpers =============== */
 const toObjectId = (id) =>
@@ -145,9 +148,9 @@ export default async function getMyEKGScanFilesDetailsController(req, res) {
 
       // Текстовые поля заключения
       nameofexam: doc.nameofexam || "",
-      report: doc.report || "",
+      report: decryptPHI(doc.report) || "",
       recomandation: doc.recomandation || "",
-      diagnosis: doc.diagnosis || "",
+      diagnosis: decryptPHI(doc.diagnosis) || "",
 
       // Специфика EKG/Holter/мониторинг
       monitoringDuration:
@@ -187,7 +190,7 @@ export default async function getMyEKGScanFilesDetailsController(req, res) {
 
       // Качество/риск/прочее
       validatedByDoctor: !!doc.validatedByDoctor,
-      doctorNotes: doc.doctorNotes || "",
+      doctorNotes: decryptPHI(doc.doctorNotes) || "",
       threeDModel: doc.threeDModel ?? null,
       imageQuality: doc.imageQuality ?? null,
       needsRetake: !!doc.needsRetake,

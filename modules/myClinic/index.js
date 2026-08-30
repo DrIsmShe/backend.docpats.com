@@ -9,6 +9,7 @@ import addPatientPolyclinicRoute from "./routes/addPatientPolyclinicRoute.js";
 import patientDetailsRoute from "./routes/patientDetailsRoute.js";
 
 import privatePatientDetailsRoute from "./routes/privatePatientDetailsRoute.js";
+import doctorPrescriptionsRoute from "./routes/doctorPrescriptionsRoute.js";
 import patientsPolyclinicRoute from "./routes/patientsPolyclinicRoute.js";
 import addPatientsPolyclinicMedicalHistoryRoute from "./routes/addPatientsPolyclinicMedicalHistoryRoute.js";
 import patientSearchPolyclinicRoute from "./routes/patientSearchPolyclinicRoute.js";
@@ -86,6 +87,9 @@ router.use("/add-private-patient-polyclinic", addPrivatePatientPolyclinicRoute);
 router.use("/add-patient-polyclinic", addPatientPolyclinicRoute);
 router.use("/patient-details", patientDetailsRoute);
 router.use("/private-patient-details", privatePatientDetailsRoute);
+// Рецепты частному пациенту врача. Отдельно от clinic-medical: тот путь
+// требует членства в клинике, которого у частного приёма нет.
+router.use("/doctor-prescriptions", doctorPrescriptionsRoute);
 router.use("/patients-polyclinic", patientsPolyclinicRoute);
 
 router.use("/patient-delete-from-offices-doctor", patientDeleteFromDoctorRoute);

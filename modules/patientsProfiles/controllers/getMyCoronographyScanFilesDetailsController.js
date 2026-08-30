@@ -5,6 +5,9 @@ import { canAccessPatientRecord } from "../utils/phiAccess.js";
 // ⚠️ Проверьте путь к модели под вашу структуру проекта!
 // Например, если модель лежит в server/common/models/CoronographyScan.js:
 import CoronographyScan from "../../../common/models/Polyclinic/ExamenationsTemplates/CoronographyscanTemplates/Coronographyscan.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 /* =============== helpers =============== */
 const toObjectId = (id) =>
@@ -152,9 +155,9 @@ export default async function getMyCoronographyScanFilesDetailsController(
 
       // Текстовые поля заключения
       nameofexam: doc.nameofexam || "",
-      report: doc.report || "",
+      report: decryptPHI(doc.report) || "",
       recomandation: doc.recomandation || "",
-      diagnosis: doc.diagnosis || "",
+      diagnosis: decryptPHI(doc.diagnosis) || "",
 
       // Параметры по схеме Coronography
       monitoringDuration:
@@ -198,7 +201,7 @@ export default async function getMyCoronographyScanFilesDetailsController(
 
       // Качество/риск/прочее
       validatedByDoctor: !!doc.validatedByDoctor,
-      doctorNotes: doc.doctorNotes || "",
+      doctorNotes: decryptPHI(doc.doctorNotes) || "",
       threeDModel: doc.threeDModel ?? null,
       imageQuality:
         typeof doc.imageQuality === "number" ? doc.imageQuality : null,

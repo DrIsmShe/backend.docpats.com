@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 import SPECTScan from "../../../common/models/Polyclinic/ExamenationsTemplates/SPECTScansTemplates/SPECTScan.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 /* ===================== HELPERS ===================== */
 
@@ -196,9 +199,9 @@ export default async function getSPECTScanFilesDetailController(req, res) {
         : [],
 
       nameofexam: doc.nameofexam || "",
-      report: doc.report || "",
+      report: decryptPHI(doc.report) || "",
       recomandation: doc.recomandation || "",
-      diagnosis: doc.diagnosis || "",
+      diagnosis: decryptPHI(doc.diagnosis) || "",
 
       radiationDose: doc.radiationDose ?? null,
       bodyPart: doc.bodyPart || "",
@@ -217,7 +220,7 @@ export default async function getSPECTScanFilesDetailController(req, res) {
       aiProcessedAt: doc.aiProcessedAt ?? null,
 
       validatedByDoctor: !!doc.validatedByDoctor,
-      doctorNotes: doc.doctorNotes || "",
+      doctorNotes: decryptPHI(doc.doctorNotes) || "",
 
       imageQuality: doc.imageQuality ?? null,
       needsRetake: !!doc.needsRetake,

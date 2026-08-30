@@ -4,6 +4,9 @@ import crypto from "crypto";
 import LabTest from "../../../common/models/Polyclinic/ExamenationsTemplates/Labtest/LabTest.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import User from "../../../common/models/Auth/users.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 /* ================= helpers ================= */
 
@@ -136,8 +139,8 @@ const getMyLablFilesDetailsController = async (req, res) => {
 
       testType: doc.testType || "",
       labName: doc.labName || "",
-      diagnosis: doc.diagnosis || "",
-      report: doc.report || "",
+      diagnosis: decryptPHI(doc.diagnosis) || "",
+      report: decryptPHI(doc.report) || "",
 
       testParameters: Array.isArray(doc.testParameters)
         ? doc.testParameters
@@ -150,7 +153,7 @@ const getMyLablFilesDetailsController = async (req, res) => {
         : [],
 
       validatedByDoctor: Boolean(doc.validatedByDoctor),
-      doctorNotes: doc.doctorNotes || "",
+      doctorNotes: decryptPHI(doc.doctorNotes) || "",
 
       createdAt: doc.createdAt || null,
       updatedAt: doc.updatedAt || null,

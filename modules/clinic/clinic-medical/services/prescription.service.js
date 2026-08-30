@@ -61,7 +61,7 @@ function requireActor() {
  * Normalize one incoming item into a clean WHO sub-doc shape.
  * Drops items without an INN (drug name) — WHO requires the generic name.
  */
-function normalizeItems(rawItems) {
+export function normalizeItems(rawItems) {
   if (!Array.isArray(rawItems)) return [];
   return rawItems
     .filter((it) => it && typeof it.inn === "string" && it.inn.trim())
@@ -78,6 +78,26 @@ function normalizeItems(rawItems) {
       prn: !!it.prn,
       instructions: encryptPHI((it.instructions || "").trim()), // PHI
     }));
+}
+
+// Повторные отпуски: целое от 0 до 12. Мусор из формы отбрасываем молча —
+// пустая графа честнее выдуманного числа на рецепте.
+export function normalizeRefills(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  if (!Number.isInteger(n) || n < 0 || n > 12) return null;
+  return n;
+}
+
+// Срок действия: дата в прошлом бессмысленна на только что выписанном
+// бланке, поэтому не сохраняем её вовсе.
+export function normalizeValidUntil(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return d < today ? null : d;
 }
 
 /**
@@ -128,6 +148,13 @@ function toApiShape(doc) {
         }
       : null,
     generalNotes: decryptPHI(doc.generalNotes) || "",
+
+    // Условия отпуска (WHO): можно ли отпустить аналог, сколько повторов,
+    // до какого числа бланк действителен.
+    substitutionAllowed:
+      doc.substitutionAllowed === undefined ? null : doc.substitutionAllowed,
+    refills: doc.refills ?? null,
+    validUntil: doc.validUntil || null,
     items: Array.isArray(doc.items)
       ? doc.items.map((it) => ({
           _id: it._id ? String(it._id) : undefined,
@@ -240,6 +267,15 @@ export async function createPrescription({ patient, body }) {
     items,
     generalNotes: encryptPHI((body.generalNotes || "").trim()), // PHI
     diagnosis,
+
+    // Условия отпуска. Не выбрано — остаётся null, и на бланке не
+    // отмечается ни один квадрат: догадываться за врача нельзя.
+    substitutionAllowed:
+      typeof body.substitutionAllowed === "boolean"
+        ? body.substitutionAllowed
+        : null,
+    refills: normalizeRefills(body.refills),
+    validUntil: normalizeValidUntil(body.validUntil),
 
     sharedWith: Array.isArray(body.sharedWith) ? body.sharedWith : [],
   };

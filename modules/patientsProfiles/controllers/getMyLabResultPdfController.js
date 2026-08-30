@@ -18,6 +18,9 @@ import {
   loincFor,
   canonUnit,
 } from "../../../common/standards/labStandards.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 const getUserId = (req) =>
   req.user?.userId || req.session?.userId || req.userId || null;
@@ -153,7 +156,7 @@ const getMyLabResultPdfController = async (req, res) => {
         effectiveDateTime: clinicDoc.effectiveDateTime,
         createdAt: clinicDoc.createdAt,
         labName: clinicDoc.labName || "",
-        report: clinicDoc.report || "",
+        report: decryptPHI(clinicDoc.report) || "",
         diagnosis: clinicDoc.diagnosis || null,
         doctorName,
         parameters: Array.isArray(clinicDoc.parameters)
@@ -209,7 +212,7 @@ const getMyLabResultPdfController = async (req, res) => {
       effectiveDateTime: legacy.date || legacy.createdAt,
       createdAt: legacy.createdAt,
       labName: legacy.labName || "",
-      report: legacy.report || "",
+      report: decryptPHI(legacy.report) || "",
       diagnosis: legacy.diagnosis ? { code: "", text: legacy.diagnosis } : null,
       doctorName: legacy.doctor
         ? [

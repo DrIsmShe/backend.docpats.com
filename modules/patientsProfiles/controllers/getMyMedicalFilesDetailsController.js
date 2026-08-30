@@ -43,6 +43,9 @@ import "../../../common/models/Polyclinic/ExamenationsTemplates/EKGscanTemplates
 import "../../../common/models/Polyclinic/ExamenationsTemplates/EchoEKGscanTemplates/EchoEKGscan.js";
 import "../../../common/models/Polyclinic/ExamenationsTemplates/CoronographyscanTemplates/Coronographyscan.js";
 import "../../../common/models/Polyclinic/ExamenationsTemplates/Labtest/LabTest.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 /* ===============================
    📚 Старые модели
@@ -244,8 +247,8 @@ const getMyMedicalFilesDetailsController = async (req, res) => {
             type: modelName,
             source: "legacy",
             nameofexam: scan.nameofexam || "",
-            diagnosis: scan.diagnosis || "",
-            report: scan.report || "",
+            diagnosis: decryptPHI(scan.diagnosis) || "",
+            report: decryptPHI(scan.report) || "",
             recomandation: scan.recomandation || "",
             createdAt: scan.createdAt || scan.date || null,
             doctor: normalizeDoctor(scan.doctor),
@@ -308,8 +311,8 @@ const getMyMedicalFilesDetailsController = async (req, res) => {
           type: frontType,
           source: "clinic", // ← маркер для детальной страницы (File 2)
           nameofexam: study.diagnosis || "",
-          diagnosis: study.diagnosis || "",
-          report: study.report || "",
+          diagnosis: decryptPHI(study.diagnosis) || "",
+          report: decryptPHI(study.report) || "",
           recomandation: "",
           createdAt: study.date || study.createdAt || null,
           doctor: doctorFromImaging(study),

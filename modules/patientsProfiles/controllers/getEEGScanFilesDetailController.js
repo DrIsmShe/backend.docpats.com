@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 import EEGScan from "../../../common/models/Polyclinic/ExamenationsTemplates/EEGScansTemplates/EEGScan.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 // ^ проверь точный путь к модели EEGScan
 
 const toObjectId = (id) =>
@@ -97,9 +100,9 @@ export default async function getEEGScanFilesDetailController(req, res) {
         : [],
 
       nameofexam: doc.nameofexam || "",
-      report: doc.report || "",
+      report: decryptPHI(doc.report) || "",
       recomandation: doc.recomandation || "",
-      diagnosis: doc.diagnosis || "",
+      diagnosis: decryptPHI(doc.diagnosis) || "",
 
       electrodePlacement: doc.electrodePlacement ?? null,
       signalDuration: doc.signalDuration ?? null,
@@ -113,7 +116,7 @@ export default async function getEEGScanFilesDetailController(req, res) {
       aiVersion: doc.aiVersion ?? null,
 
       validatedByDoctor: !!doc.validatedByDoctor,
-      doctorNotes: doc.doctorNotes || "",
+      doctorNotes: decryptPHI(doc.doctorNotes) || "",
       doctorComments: Array.isArray(doc.doctorComments)
         ? doc.doctorComments.map((c) => ({
             doctor: c.doctor

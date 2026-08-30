@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 import MRIScan from "../../../common/models/Polyclinic/ExamenationsTemplates/MRIScansTemplates/MRIScan.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 /* ===================== HELPERS ===================== */
 const toObjectId = (id) =>
@@ -120,8 +123,8 @@ export default async function getMRIlFilesDetailController(req, res) {
         files: doc.files || [],
 
         nameofexam: doc.nameofexam || "",
-        report: doc.report || "",
-        diagnosis: doc.diagnosis || "",
+        report: decryptPHI(doc.report) || "",
+        diagnosis: decryptPHI(doc.diagnosis) || "",
         recomandation: doc.recomandation || "",
 
         createdAt: doc.createdAt,

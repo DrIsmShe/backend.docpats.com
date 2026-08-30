@@ -15,6 +15,7 @@ import ClinicPatient, {
   decryptValue,
 } from "../../clinic/clinic-patients/models/clinicPatient.model.js";
 import { decrypt } from "../../../common/models/Auth/users.js";
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 const STUDY_TYPE_LABEL = {
   CT: "КТ",
@@ -119,10 +120,17 @@ const getMyClinicImagingDetailsController = async (req, res) => {
 
       contrastUsed: Boolean(study.contrastUsed),
 
-      nameofexam: STUDY_TYPE_LABEL[study.studyType] || study.studyType,
-      diagnosis: study.diagnosis || "",
-      recomandation: "",
-      report: study.report || "",
+      // Протокол, заключение и рекомендации клиника сохраняет
+      // зашифрованными (imaging.service → encryptPHI). Здесь документ
+      // читается напрямую, и без расшифровки пациент видел на своей
+      // странице строку вида "9c66ea36…:4e61959e…" вместо заключения.
+      nameofexam:
+        decryptPHI(study.nameOfExam) ||
+        STUDY_TYPE_LABEL[study.studyType] ||
+        study.studyType,
+      diagnosis: decryptPHI(study.diagnosis) || "",
+      recomandation: decryptPHI(study.recommendation) || "",
+      report: decryptPHI(study.report) || "",
 
       // снимки клиники → images[] (строки-URL); files[] — File-субдоки (обычно пуст)
       images: Array.isArray(study.images) ? study.images : [],

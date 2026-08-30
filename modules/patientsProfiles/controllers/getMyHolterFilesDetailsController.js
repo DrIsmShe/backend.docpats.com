@@ -2,6 +2,9 @@
 import mongoose from "mongoose";
 import { canAccessPatientRecord } from "../utils/phiAccess.js";
 import HOLTERScan from "../../../common/models/Polyclinic/ExamenationsTemplates/HOLTERscanTemplates/HOLTERscan.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 // ^^^ проверьте и поправьте путь к модели при необходимости
 
 /* ================= helpers ================= */
@@ -145,9 +148,9 @@ export default async function getMyHolterFilesDetailsController(req, res) {
 
       // Текстовые поля заключения
       nameofexam: doc.nameofexam || "",
-      report: doc.report || "",
+      report: decryptPHI(doc.report) || "",
       recomandation: doc.recomandation || "",
-      diagnosis: doc.diagnosis || "",
+      diagnosis: decryptPHI(doc.diagnosis) || "",
 
       // Параметры холтера
       radiationDose: doc.radiationDose ?? null, // если в модели используется
@@ -180,7 +183,7 @@ export default async function getMyHolterFilesDetailsController(req, res) {
 
       // Качество/риск/прочее
       validatedByDoctor: !!doc.validatedByDoctor,
-      doctorNotes: doc.doctorNotes || "",
+      doctorNotes: decryptPHI(doc.doctorNotes) || "",
       threeDModel: doc.threeDModel ?? null,
       imageQuality: doc.imageQuality ?? null,
       needsRetake: !!doc.needsRetake,

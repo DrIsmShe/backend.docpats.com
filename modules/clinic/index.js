@@ -11,6 +11,11 @@ import clinicInvitationRouter from "./clinic-staff/routes/invitation.routes.js";
 import clinicEmployeeAuthRouter from "./clinic-staff/routes/employeeAuth.routes.js";
 import clinicPatientRouter from "./clinic-patients/routes/patient.routes.js";
 import clinicConsentRequestRouter from "./clinic-patients/routes/consentRequest.routes.js";
+// Выданные согласия пациента (GET /patients/:cardId/consents). Файл
+// маршрутов существовал, но не был подключён ни здесь, ни где-либо ещё:
+// запрос уходил в 404, и панель «Предоставленный доступ» показывала
+// ошибку загрузки даже когда пациент выдал доступ ко всему.
+import clinicConsentRouter from "./clinic-patients/routes/consent.routes.js";
 import clinicAppointmentsRouter from "./clinic-appointments/index.js";
 import clinicReviewModerationRouter from "./clinic-core/routes/clinicReviewModeration.routes.js";
 // РІвЂќР‚РІвЂќР‚РІвЂќР‚ UMR / clinic-medical (Sprint 2 Phase 2B + 2C) РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚РІвЂќР‚
@@ -282,6 +287,7 @@ router.use("/", clinicPatientRouter);
 router.use("/", clinicConsiliumRouter);
 router.use("/", clinicTelemedRouter);
 router.use("/", clinicConsentRequestRouter);
+router.use("/", clinicConsentRouter);
 router.use("/", membershipRequestRouter);
 router.use("/appointments", clinicAppointmentsRouter);
 // UMR / clinic-medical РІР‚вЂќ encounter + sub-records, mounted under /medical

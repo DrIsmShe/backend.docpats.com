@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 import CTScan from "../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScan.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 /* ===================== helpers ===================== */
 const toObjectId = (id) =>
@@ -102,8 +105,8 @@ export default async function getCTlFilesDetailController(req, res) {
         files: doc.files || [],
 
         nameofexam: doc.nameofexam || "",
-        report: doc.report || "",
-        diagnosis: doc.diagnosis || "",
+        report: decryptPHI(doc.report) || "",
+        diagnosis: decryptPHI(doc.diagnosis) || "",
         recomandation: doc.recomandation || "",
 
         createdAt: doc.createdAt,

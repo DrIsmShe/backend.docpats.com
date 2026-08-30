@@ -12,6 +12,7 @@
 import Prescription from "../../../common/models/Polyclinic/Prescription.js";
 import ClinicPatient from "../../clinic/clinic-patients/models/clinicPatient.model.js";
 import Clinic from "../../clinic/clinic-core/models/clinic.model.js";
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 const getMyPrescriptionsController = async (req, res) => {
   try {
@@ -74,13 +75,17 @@ const getMyPrescriptionsController = async (req, res) => {
       clinicName: d.createdByClinicId
         ? clinicNameById.get(String(d.createdByClinicId)) || ""
         : "",
+      // Текст диагноза, общие указания и указания к приёму хранятся
+      // зашифрованными. Документ читается напрямую, поэтому расшифровка
+      // нужна здесь: без неё пациент видел в списке своих рецептов
+      // строку "fce1df8c…:7b371477…" вместо диагноза.
       diagnosis: d.diagnosis
         ? {
             code: d.diagnosis.code || "",
-            text: d.diagnosis.text || "",
+            text: decryptPHI(d.diagnosis.text) || "",
           }
         : null,
-      generalNotes: d.generalNotes || "",
+      generalNotes: decryptPHI(d.generalNotes) || "",
       items: Array.isArray(d.items)
         ? d.items.map((it) => ({
             inn: it.inn || "",
@@ -93,7 +98,7 @@ const getMyPrescriptionsController = async (req, res) => {
             duration: it.duration || "",
             quantity: it.quantity || "",
             prn: !!it.prn,
-            instructions: it.instructions || "",
+            instructions: decryptPHI(it.instructions) || "",
           }))
         : [],
     }));

@@ -4,6 +4,9 @@ import { canAccessPatientRecord } from "../utils/phiAccess.js";
 
 // ⚠️ Проверьте путь к модели EchoEKGScan под вашу структуру проекта:
 import EchoEKGScan from "../../../common/models/Polyclinic/ExamenationsTemplates/EchoEKGscanTemplates/EchoEKGscan.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 /* =============== helpers =============== */
 const toObjectId = (id) =>
@@ -146,9 +149,9 @@ export default async function getMyECHOEKGScanFilesDetailsController(req, res) {
 
       // Текстовые поля заключения
       nameofexam: doc.nameofexam || "",
-      report: doc.report || "",
+      report: decryptPHI(doc.report) || "",
       recomandation: doc.recomandation || "",
-      diagnosis: doc.diagnosis || "",
+      diagnosis: decryptPHI(doc.diagnosis) || "",
 
       // Параметры, которые встречаются в вашей схеме EchoEKG
       monitoringDuration:
@@ -186,7 +189,7 @@ export default async function getMyECHOEKGScanFilesDetailsController(req, res) {
 
       // Качество/риск/прочее
       validatedByDoctor: !!doc.validatedByDoctor,
-      doctorNotes: doc.doctorNotes || "",
+      doctorNotes: decryptPHI(doc.doctorNotes) || "",
       threeDModel: doc.threeDModel ?? null,
       imageQuality: doc.imageQuality ?? null,
       needsRetake: !!doc.needsRetake,

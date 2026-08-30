@@ -3,6 +3,9 @@ import mongoose from "mongoose";
 import { canAccessPatientRecord } from "../utils/phiAccess.js";
 // ⚠️ ПРОВЕРИТЕ ПУТЬ К МОДЕЛИ:
 import DoplerScan from "../../../common/models/Polyclinic/ExamenationsTemplates/DoplerScansTemplates/DoplerScan.js";
+// PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
+// расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
+import { decryptPHI } from "../../../common/utils/phiCrypto.js";
 
 /* =============== helpers =============== */
 const toObjectId = (id) =>
@@ -146,9 +149,9 @@ export default async function getMyDoplerFilesDetailsController(req, res) {
 
       // Текстовые поля заключения
       nameofexam: doc.nameofexam || "",
-      report: doc.report || "",
+      report: decryptPHI(doc.report) || "",
       recomandation: doc.recomandation || "",
-      diagnosis: doc.diagnosis || "",
+      diagnosis: decryptPHI(doc.diagnosis) || "",
 
       // Тех/служебные флаги (из вашей модели)
       radiationDose: doc.radiationDose ?? null,
@@ -170,7 +173,7 @@ export default async function getMyDoplerFilesDetailsController(req, res) {
 
       // Качество/риск/прочее
       validatedByDoctor: !!doc.validatedByDoctor,
-      doctorNotes: doc.doctorNotes || "",
+      doctorNotes: decryptPHI(doc.doctorNotes) || "",
       threeDModel: doc.threeDModel ?? null,
       imageQuality: doc.imageQuality ?? null,
       needsRetake: !!doc.needsRetake,
