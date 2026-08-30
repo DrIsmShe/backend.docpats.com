@@ -19,6 +19,7 @@ import { resolveClinicPatient } from "../middleware/resolveClinicPatient.middlew
 import { checkConsent } from "../middleware/checkConsent.middleware.js";
 import * as ctrl from "../controllers/patientSummary.controller.js";
 import * as fhirCtrl from "../controllers/fhirExport.controller.js";
+import * as cardPdfCtrl from "../controllers/patientCardPdf.controller.js";
 
 const router = express.Router();
 const ENC = ACTIONS.ENCOUNTER;
@@ -38,6 +39,27 @@ router.get(
   resolveClinicPatient,
   checkConsent({ scope: "encounters", patientLevel: true }),
   ctrl.getPatientSummaryController,
+);
+
+// ─── Печать карты одним листом ────────────────────────────────────────
+//
+// Права и согласие те же, что у сводки: содержимое ровно то же, меняется
+// только носитель. А вот в журнале это отдельный тип и действие CREATE —
+// как у выгрузки в FHIR: с момента печати карта живёт вне системы, и через
+// полгода надо уметь ответить, кто её вынес.
+router.get(
+  "/patients/:patientId/card.pdf",
+  auditMiddleware({
+    resourceType: "clinic-medical-card-print",
+    action: ENC.CREATE,
+    resourceIdFrom: () => null,
+    resourceOwnerIdFrom: (req) => req.clinicPatient?.linkedUserId || null,
+    metaFrom: (req) => ({ patientId: req.params?.patientId }),
+  }),
+  checkClinicMedicalAccess({ action: ENC.LIST }),
+  resolveClinicPatient,
+  checkConsent({ scope: "encounters", patientLevel: true }),
+  cardPdfCtrl.patientCardPdfController,
 );
 
 // ─── Выгрузка карты в FHIR R4 ─────────────────────────────────────────
