@@ -49,16 +49,31 @@ function firstParagraph(body) {
 }
 
 async function latestArticles(locale) {
+  // Берём только те статьи, которые ПЕРЕВЕДЕНЫ на язык подписчика.
+  //
+  // Подписчик выбрал язык писем сам, и подмешивать в письмо материалы на
+  // другом языке нельзя: человек, выбравший азербайджанский, получал бы
+  // русские заголовки и не понимал, почему. Лучше более короткое письмо,
+  // чем письмо на двух языках.
+  //
+  // Оригинал написан по-русски, поэтому для ru перевод не требуется.
+  const query =
+    locale === "ru"
+      ? { status: "published" }
+      : {
+          status: "published",
+          [`translations.${locale}.title`]: { $exists: true, $ne: "" },
+        };
+
   const rows = await newsDb()
     .collection("syntheses")
-    .find({ status: "published" })
+    .find(query)
     .sort({ createdAt: -1 })
     .limit(ARTICLES)
     .toArray();
 
   return rows.map((a) => {
-    // У статьи есть переводы; берём язык подписчика, иначе оригинал.
-    const tr = a.translations?.[locale];
+    const tr = locale === "ru" ? null : a.translations?.[locale];
     return {
       title: tr?.title || a.title || "",
       teaser: firstParagraph(tr?.body || a.body || ""),
@@ -68,15 +83,28 @@ async function latestArticles(locale) {
 }
 
 async function upcomingConferences(locale) {
+  // Правило то же, что у статей, но язык оригинала другой: конференции
+  // приходят с сайтов обществ по-английски и переводятся на остальные
+  // четыре, а статьи пишутся по-русски и переводятся на английский в том
+  // числе. Поэтому «оригинал вместо перевода» здесь означает en, а там ru.
+  const base = { status: "published", startDate: { $gte: new Date() } };
+  const query =
+    locale === "en"
+      ? base
+      : {
+          ...base,
+          [`translations.${locale}.title`]: { $exists: true, $ne: "" },
+        };
+
   const rows = await newsDb()
     .collection("conferences")
-    .find({ status: "published", startDate: { $gte: new Date() } })
+    .find(query)
     .sort({ startDate: 1 })
     .limit(CONFERENCES)
     .toArray();
 
   return rows.map((c) => {
-    const tr = c.translations?.[locale];
+    const tr = locale === "en" ? null : c.translations?.[locale];
     return {
       title: tr?.title || c.title || "",
       where: [c.city, c.country].filter(Boolean).join(", "),
