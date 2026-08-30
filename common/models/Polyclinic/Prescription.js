@@ -80,6 +80,25 @@ const prescriptionItemSchema = new mongoose.Schema(
     quantity: { type: String, trim: true, default: "" }, // на курс: "№20" (опц.)
     prn: { type: Boolean, default: false }, // по требованию
     instructions: { type: String, trim: true, default: "" }, // указания пациенту
+
+    // ── ДОЗИРОВАНИЕ В КОДАХ ───────────────────────────────────────
+    //
+    // Поля выше — готовый текст, и на нём бланк не переводится: врач
+    // заполнил форму по-русски, а пациент печатает по-азербайджански и
+    // видит в графе «QƏBUL» строку «1 таблетка · 4 раза в день».
+    // Перевести текст задним числом нельзя — из «54 дня» не вытащишь
+    // число и единицу надёжно.
+    //
+    // Поэтому рядом хранятся код единицы и число: бланк складывает из них
+    // строку на своём языке. Текстовые поля остаются — они заполнены у
+    // старых рецептов и у тех, где врач написал условие своими словами.
+    strengthAmount: { type: Number, default: null },
+    strengthUnit: { type: String, trim: true, default: "" },
+    doseAmount: { type: Number, default: null },
+    doseUnit: { type: String, trim: true, default: "" },
+    durationAmount: { type: Number, default: null },
+    durationUnit: { type: String, trim: true, default: "" },
+    frequencyCode: { type: String, trim: true, default: "" },
   },
   { _id: true },
 );

@@ -204,6 +204,13 @@ export function decryptPrescriptionDoc(rx) {
           quantity: it.quantity || "",
           prn: !!it.prn,
           instructions: safe(it.instructions),
+          strengthAmount: it.strengthAmount ?? null,
+          strengthUnit: it.strengthUnit || "",
+          doseAmount: it.doseAmount ?? null,
+          doseUnit: it.doseUnit || "",
+          durationAmount: it.durationAmount ?? null,
+          durationUnit: it.durationUnit || "",
+          frequencyCode: it.frequencyCode || "",
         }))
       : [],
   };

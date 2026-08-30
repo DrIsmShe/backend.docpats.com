@@ -61,6 +61,21 @@ function requireActor() {
  * Normalize one incoming item into a clean WHO sub-doc shape.
  * Drops items without an INN (drug name) — WHO requires the generic name.
  */
+// Число из формы. Мусор отбрасываем молча: пустое поле честнее
+// выдуманного числа на рецепте.
+function num(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && n < 100000 ? n : null;
+}
+
+// Код единицы. Только буквы, цифры и подчёркивание: сюда приходит ключ
+// словаря, а не текст, и всё остальное — ошибка клиента.
+function code(v) {
+  const s = String(v || "").trim();
+  return /^[a-z0-9_]{1,24}$/i.test(s) ? s : "";
+}
+
 export function normalizeItems(rawItems) {
   if (!Array.isArray(rawItems)) return [];
   return rawItems
@@ -77,6 +92,17 @@ export function normalizeItems(rawItems) {
       quantity: (it.quantity || "").trim(),
       prn: !!it.prn,
       instructions: encryptPHI((it.instructions || "").trim()), // PHI
+
+      // Коды дозирования: из них бланк собирает строку на своём языке.
+      // Текстовые поля выше остаются как есть — они нужны там, где врач
+      // написал условие своими словами.
+      strengthAmount: num(it.strengthAmount),
+      strengthUnit: code(it.strengthUnit),
+      doseAmount: num(it.doseAmount),
+      doseUnit: code(it.doseUnit),
+      durationAmount: num(it.durationAmount),
+      durationUnit: code(it.durationUnit),
+      frequencyCode: code(it.frequencyCode),
     }));
 }
 
@@ -169,6 +195,13 @@ function toApiShape(doc) {
           quantity: it.quantity || "",
           prn: !!it.prn,
           instructions: decryptPHI(it.instructions) || "",
+          strengthAmount: it.strengthAmount ?? null,
+          strengthUnit: it.strengthUnit || "",
+          doseAmount: it.doseAmount ?? null,
+          doseUnit: it.doseUnit || "",
+          durationAmount: it.durationAmount ?? null,
+          durationUnit: it.durationUnit || "",
+          frequencyCode: it.frequencyCode || "",
         }))
       : [],
 

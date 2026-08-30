@@ -73,8 +73,36 @@ export async function buildPatientCardPdf({ summary, patient, clinic, lang }) {
   doc.registerFont("arabic", FONTS.arabic);
   doc.registerFont("arabicBold", FONTS.arabicBold);
 
-  const F_REG = isRtl ? "arabic" : "sans";
-  const F_BOLD = isRtl ? "arabicBold" : "sansBold";
+  // Шрифт по содержимому строки, а не по языку карты: в арабском шрифте нет
+  // латиницы и кириллицы, и имя пациента, названия препаратов и диагнозы
+  // печатались бы рядами пустых квадратов. Обратное тоже верно.
+  const F_REG = "sans";
+  const F_BOLD = "sansBold";
+
+  const ARABIC_TEXT = /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/;
+  let boldWanted = false;
+  const applyFont = doc.font.bind(doc);
+  doc.font = (name, ...rest) => {
+    if (name === "sans" || name === "arabic") boldWanted = false;
+    else if (name === "sansBold" || name === "arabicBold") boldWanted = true;
+    return applyFont(name, ...rest);
+  };
+  const drawText = doc.text.bind(doc);
+  doc.text = (str, ...rest) => {
+    if (typeof str === "string" && str) {
+      const arabic = ARABIC_TEXT.test(str);
+      applyFont(
+        arabic
+          ? boldWanted
+            ? "arabicBold"
+            : "arabic"
+          : boldWanted
+            ? "sansBold"
+            : "sans",
+      );
+    }
+    return drawText(str, ...rest);
+  };
 
   const chunks = [];
   doc.on("data", (c) => chunks.push(c));

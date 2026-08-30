@@ -20,6 +20,9 @@ import { FORM_LABELS } from "./prescriptionFormLabels.js";
 // пяти слов разошёлся бы с первым при любой правке.
 import { CARD_LABELS } from "./patientCardLabels.js";
 import { prepareRtl } from "./rtl.js";
+// Дозирование печатается на языке БЛАНКА, а не на том, на котором врач
+// заполнял форму: строка собирается здесь из кодов, сохранённых в рецепте.
+import { amountText, freqText } from "./dosingUnits.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FONT_DIR = path.join(__dirname, "fonts");
@@ -332,7 +335,18 @@ export async function buildPrescriptionPdf({
   // каждый по два десятка ключей значило бы править пять мест сразу.
   const t = { ...(L[language] || L.ru), ...(FORM_LABELS[language] || FORM_LABELS.ru) };
   const isRtl = RTL_LANGS.has(language);
-  const tx = (s) => prepareRtl(s, language);
+
+  // Арабский текст НЕ разворачиваем вручную.
+  //
+  // Раньше здесь стоял посимвольный разворот строки. Он ломал вязь: в
+  // арабском форма буквы зависит от соседей, и у перевёрнутой строки
+  // шрифтовой движок соединяет буквы иначе — на бланке получалась
+  // нечитаемая каша. Проверено прямым разбором шрифта: развёрнутая строка
+  // даёт не зеркальный, а совершенно другой набор глифов.
+  //
+  // Порядок и соединения — забота движка (pdfkit → fontkit), ему нужен
+  // обычный логический порядок. Наше дело — выравнивание по правому краю.
+  const tx = (v) => v;
 
   for (const [key, p] of Object.entries(FONTS)) {
     if (!fs.existsSync(p)) {
@@ -343,9 +357,14 @@ export async function buildPrescriptionPdf({
     }
   }
 
-  const useArabic = isRtl;
-  const F_REG = useArabic ? "arabic" : "sans";
-  const F_BOLD = useArabic ? "arabicBold" : "sansBold";
+  // Шрифт выбирается ПО СОДЕРЖИМОМУ строки, а не по языку бланка.
+  //
+  // Раньше на арабском бланке всё печаталось арабским шрифтом, а в нём нет
+  // ни латиницы, ни кириллицы: название клиники, имя пациента и названия
+  // препаратов выходили рядами пустых квадратов. Обратное тоже верно — в
+  // Noto Sans нет арабских букв.
+  const F_REG = "sans";
+  const F_BOLD = "sansBold";
 
   const doc = new PDFDocument({ size: "A4", margin: 48 });
 
@@ -353,6 +372,39 @@ export async function buildPrescriptionPdf({
   doc.registerFont("sansBold", FONTS.sansBold);
   doc.registerFont("arabic", FONTS.arabic);
   doc.registerFont("arabicBold", FONTS.arabicBold);
+
+  // Подмена шрифта под содержимое строки.
+  //
+  // На одном бланке соседствуют арабские подписи и латинские названия
+  // препаратов, а ни один из двух шрифтов не покрывает обе письменности.
+  // Выбирать вручную в шести десятках мест — значит рано или поздно
+  // пропустить одно, поэтому подмена сделана один раз здесь: doc.font
+  // запоминает, что просили обычный или жирный, а doc.text перед выводом
+  // берёт ту гарнитуру, в которой есть нужные буквы.
+  const ARABIC_TEXT = /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/;
+  let boldWanted = false;
+  const applyFont = doc.font.bind(doc);
+  doc.font = (name, ...rest) => {
+    if (name === "sans" || name === "arabic") boldWanted = false;
+    else if (name === "sansBold" || name === "arabicBold") boldWanted = true;
+    return applyFont(name, ...rest);
+  };
+  const drawText = doc.text.bind(doc);
+  doc.text = (str, ...rest) => {
+    if (typeof str === "string" && str) {
+      const arabic = ARABIC_TEXT.test(str);
+      applyFont(
+        arabic
+          ? boldWanted
+            ? "arabicBold"
+            : "arabic"
+          : boldWanted
+            ? "sansBold"
+            : "sans",
+      );
+    }
+    return drawText(str, ...rest);
+  };
 
   const chunks = [];
   doc.on("data", (c) => chunks.push(c));
@@ -633,7 +685,13 @@ export async function buildPrescriptionPdf({
     doc.text(String(i + 1), cols[0].x + 3, y, { width: cols[0].w - 6, align: "center" });
     doc.text(tx(medName), cols[1].x + 3, y, { width: cols[1].w - 6 });
     const medBottom = doc.y;
-    doc.text(tx(it.strength || ""), cols[2].x + 3, y, { width: cols[2].w - 6 });
+    // Готовый текст из рецепта — только запасной путь: он на языке того,
+    // кто выписывал. Есть код единицы — собираем строку на языке бланка.
+    const strengthText =
+      amountText(it.strengthAmount, it.strengthUnit, "strength", language) ||
+      it.strength ||
+      "";
+    doc.text(tx(strengthText), cols[2].x + 3, y, { width: cols[2].w - 6 });
     doc.text(tx(t.forms?.[it.form] || it.form || ""), cols[3].x + 3, y, { width: cols[3].w - 6 });
     doc.text(tx(it.quantity != null ? String(it.quantity) : ""), cols[4].x + 3, y, {
       width: cols[4].w - 6,
@@ -646,10 +704,11 @@ export async function buildPrescriptionPdf({
     // Строка приёма — то, по чему пациент принимает препарат. Собирается из
     // разрозненных полей в одну человеческую фразу.
     const sigParts = [
-      it.dose,
+      amountText(it.doseAmount, it.doseUnit, "dose", language) || it.dose,
       t.routes?.[it.route] || it.route,
-      it.frequency,
-      it.duration,
+      freqText(it.frequencyCode, language) || it.frequency,
+      amountText(it.durationAmount, it.durationUnit, "duration", language) ||
+        it.duration,
       it.prn ? t.prn : "",
       it.instructions,
     ].filter(Boolean);
