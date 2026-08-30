@@ -60,6 +60,35 @@ async function ownedPatient(patientId, userId) {
   return null;
 }
 
+// Другие карты того же человека.
+//
+// Связь между картами одна — привязка к учётной записи DocPats
+// (linkedUserId). Нет привязки — нет и способа надёжно понять, что это тот
+// же человек: совпадение имени таким способом не является.
+async function relatedCards(card, exceptId) {
+  const linked = card?.linkedUserId;
+  if (!linked) return [];
+
+  const { default: ClinicPatient } = await import(
+    "../../clinic/clinic-patients/models/clinicPatient.model.js"
+  );
+
+  // skipTenantScope: читаем вне контекста клиники, и владение проверяется
+  // не арендой, а авторством рецепта в запросе выше.
+  const [clinicCards, privateCards, polyCards] = await Promise.all([
+    ClinicPatient.find({ linkedUserId: linked })
+      .setOptions({ skipTenantScope: true })
+      .select("_id")
+      .lean(),
+    DoctorPrivatePatient.find({ linkedUserId: linked }).select("_id").lean(),
+    NewPatientPolyclinic.find({ linkedUserId: linked }).select("_id").lean(),
+  ]);
+
+  return [...clinicCards, ...privateCards, ...polyCards]
+    .map((c) => c._id)
+    .filter((id) => String(id) !== String(exceptId));
+}
+
 // Наружу отдаём расшифрованный рецепт: клиент показывает его в списке.
 function toApi(rx) {
   const d = decryptPrescriptionDoc(rx);
@@ -143,10 +172,34 @@ export async function listDoctorPrescriptions(req, res, next) {
       return res.status(404).json({ ok: false, error: "Пациент не найден" });
     }
 
-    const rows = await Prescription.find({
-      patientRef: patient.doc._id,
-      patientTypeModel: patient.model,
-    })
+    // Что показываем в кабинете врача.
+    //
+    // У одного человека может быть несколько карт: клиническая, частная у
+    // врача, поликлиническая. Рецепт привязан к КОНКРЕТНОЙ карте, поэтому
+    // выписанный в клинике не появлялся на странице того же пациента в
+    // личном кабинете врача — карты разные.
+    //
+    // Правило:
+    //   • на этой карте — все рецепты;
+    //   • на других картах того же человека — только те, что выписал САМ
+    //     этот врач.
+    //
+    // Второе ограничение принципиальное. Рецепты, написанные другими
+    // врачами клиники, принадлежат клинике, и доступ к ним идёт через
+    // согласие пациента. Показывать их в личном кабинете значило бы
+    // обойти согласие, которое весь остальной код аккуратно соблюдает. А
+    // свой собственный рецепт врач вправе видеть везде: под ним стоит его
+    // имя.
+    const or = [
+      { patientRef: patient.doc._id, patientTypeModel: patient.model },
+    ];
+
+    const otherCards = await relatedCards(patient.doc, patient.doc._id);
+    if (otherCards.length) {
+      or.push({ patientRef: { $in: otherCards }, createdBy: userId });
+    }
+
+    const rows = await Prescription.find({ $or: or })
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();
@@ -187,6 +240,25 @@ export async function updateDoctorPrescription(req, res, next) {
         error:
           "Править можно только активный рецепт. Отмените его и выпишите новый.",
       });
+    }
+
+    // Отпуск по рецепту закрывает правку навсегда — то же правило, что в
+    // клинике. Без него личный кабинет стал бы обходным путём: бумага на
+    // руках у пациента разошлась бы с записью.
+    try {
+      const { default: DispenseLog } = await import(
+        "../../clinic/clinic-pharmacy/models/dispenseLog.model.js"
+      );
+      if (await DispenseLog.exists({ prescriptionId: rx._id })) {
+        return res.status(409).json({
+          ok: false,
+          error:
+            "По рецепту уже был отпуск — править нельзя. Отмените его и выпишите новый.",
+        });
+      }
+    } catch (e) {
+      // Недоступность журнала аптеки не должна запрещать правку опечатки.
+      console.error("[рецепт врача] отпуск не проверен:", e.message);
     }
 
     const body = req.body || {};
@@ -272,10 +344,34 @@ export async function doctorPrescriptionPdf(req, res, next) {
       return res.status(403).json({ ok: false, error: "Доступ запрещён" });
     }
 
-    const patient =
-      rx.patientTypeModel === "NewPatientPolyclinic"
-        ? await NewPatientPolyclinic.findById(rx.patientRef)
-        : await DoctorPrivatePatient.findById(rx.patientRef);
+    // Карта может быть любой из трёх: врач печатает и свой рецепт,
+    // выписанный в клинике, — под ним стоит его имя.
+    let patient;
+    if (rx.patientTypeModel === "NewPatientPolyclinic") {
+      patient = await NewPatientPolyclinic.findById(rx.patientRef);
+    } else if (rx.patientTypeModel === "ClinicPatient") {
+      const { default: ClinicPatient } = await import(
+        "../../clinic/clinic-patients/models/clinicPatient.model.js"
+      );
+      // Вне контекста клиники аренда не действует; право на печать уже
+      // проверено выше по авторству рецепта.
+      patient = await ClinicPatient.findById(rx.patientRef).setOptions({
+        skipTenantScope: true,
+      });
+    } else {
+      patient = await DoctorPrivatePatient.findById(rx.patientRef);
+    }
+
+    // Шапка бланка. Рецепт, выписанный в клинике, печатается под ЕЁ
+    // названием и лицензией — за него отвечает учреждение. Под маркой
+    // проекта идёт только то, что врач выписал вне клиники.
+    let clinic = null;
+    if (rx.createdByClinicId) {
+      const { default: Clinic } = await import(
+        "../../clinic/clinic-core/models/clinic.model.js"
+      );
+      clinic = await Clinic.findById(rx.createdByClinicId).lean();
+    }
     const { buildPrescriptionPdf } = await import(
       "../../clinic/clinic-medical/pdf/prescriptionPdf.js"
     );
@@ -285,16 +381,19 @@ export async function doctorPrescriptionPdf(req, res, next) {
         ...decryptPrescriptionDoc(rx),
         ...(await resolvePrescriber(rx)),
       },
-      // Аллергии частного пациента лежат прямо в карте одной строкой, а не
-      // отдельными записями, как у клиники.
-      // Аллергии лежат прямо в карте одной строкой, а не отдельными
-      // записями, как у клиники; поле у двух моделей называется по-разному.
-      patient: await buildPatientForPdf(patient, {
-        allergies:
-          patient?.medicalProfile?.allergies || patient?.allergies || "",
-      }),
-      // Клиники нет — генератор напечатает шапку проекта с данными врача.
-      clinic: null,
+      // У карт врача аллергии лежат прямо в записи одной строкой, причём
+      // поле называется по-разному; у клинической — отдельными записями,
+      // и их найдёт сам сборщик.
+      patient: await buildPatientForPdf(
+        patient,
+        rx.patientTypeModel === "ClinicPatient"
+          ? undefined
+          : {
+              allergies:
+                patient?.medicalProfile?.allergies || patient?.allergies || "",
+            },
+      ),
+      clinic,
       lang: req.query?.lang || "ru",
     });
 
