@@ -111,6 +111,18 @@ export async function getPrescriptionController(req, res) {
   res.status(200).json({ prescription: result });
 }
 
+// ─── PATCH /prescriptions/:id ─────────────────────────────────────────
+// Правка выписанного бланка. Ограничения — в сервисе: только активный
+// рецепт, только пока по нему ничего не отпущено, каждое изменение в
+// history со старым и новым значением.
+export async function updatePrescriptionController(req, res) {
+  const result = await prescriptionService.updatePrescription({
+    record: req.medicalRecord,
+    body: req.body || {},
+  });
+  res.status(200).json({ prescription: result });
+}
+
 // ─── PATCH /prescriptions/:id/cancel ───────────────────────────────────
 export async function cancelPrescriptionController(req, res) {
   const result = await prescriptionService.cancelPrescription({

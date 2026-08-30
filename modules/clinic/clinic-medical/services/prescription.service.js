@@ -436,6 +436,172 @@ export async function cancelPrescription({ record, body = {} }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+//  UPDATE PRESCRIPTION (правка выписанного)
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Рецепт — документ, и менять его задним числом в общем случае нельзя:
+// правильный путь — отменить и выписать новый, тогда в журнале останутся
+// оба. Но опечатка в дозировке через минуту после выписки — это не новый
+// рецепт, а опечатка, и заставлять врача плодить отменённые бланки из-за
+// неё значит получить журнал, в котором ничего не найти.
+//
+// Поэтому правка разрешена, но узко:
+//   • только пока рецепт active — отменённый или завершённый неприкосновенен;
+//   • только пока по нему ничего не отпущено: как только аптека что-то
+//     выдала, бумага на руках у пациента расходится с записью, и молчаливая
+//     правка превращает журнал в ложь;
+//   • каждое изменённое поле ложится в history со старым и новым значением.
+//
+// Автора, дату выписки, пациента и клинику не трогаем вовсе: это не
+// содержание бланка, а его личность.
+
+const EDITABLE_FIELDS = [
+  "items",
+  "diagnosis",
+  "generalNotes",
+  "substitutionAllowed",
+  "refills",
+  "validUntil",
+];
+
+// Сравнение старого и нового значения. Позиции и диагноз — объекты,
+// поэтому сравниваем по содержимому, иначе в истории окажется запись о
+// «правке», которой не было.
+function sameValue(a, b) {
+  if (a === b) return true;
+  if (a == null && b == null) return true;
+  if (a instanceof Date || b instanceof Date) {
+    const ta = a ? new Date(a).getTime() : null;
+    const tb = b ? new Date(b).getTime() : null;
+    return ta === tb;
+  }
+  if (typeof a === "object" || typeof b === "object") {
+    try {
+      return JSON.stringify(a) === JSON.stringify(b);
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+export async function updatePrescription({ record, body = {} }) {
+  requirePerm("medical_record", "write");
+  requireClinicId();
+  const { userId } = requireActor();
+
+  if (!record) throw new NotFoundError("Prescription");
+
+  if (record.status !== "active") {
+    throw new ConflictError(
+      `Cannot edit prescription in status='${record.status}'. Only active prescriptions can be edited.`,
+      { code: "INVALID_STATUS_TRANSITION", currentStatus: record.status },
+    );
+  }
+
+  // Отпуск по рецепту закрывает правку навсегда. Импорт внутри функции —
+  // аптека это отдельный модуль, и тянуть его в медкарту на старте не нужно.
+  try {
+    const { default: DispenseLog } = await import(
+      "../../clinic-pharmacy/models/dispenseLog.model.js"
+    );
+    const dispensed = await DispenseLog.exists({ prescriptionId: record._id });
+    if (dispensed) {
+      throw new ConflictError(
+        "Cannot edit a prescription that has already been dispensed. Cancel it and issue a new one.",
+        { code: "ALREADY_DISPENSED" },
+      );
+    }
+  } catch (err) {
+    // Сам конфликт пробрасываем; недоступность модуля аптеки — нет:
+    // отсутствие журнала не должно запрещать правку опечатки.
+    if (err instanceof ConflictError) throw err;
+    log.warn(
+      { prescriptionId: String(record._id), err: err.message },
+      "Не удалось проверить отпуск по рецепту — правка разрешена",
+    );
+  }
+
+  // Собираем новые значения ровно из тех полей, что пришли.
+  const next = {};
+  if (body.items !== undefined) {
+    const items = normalizeItems(body.items);
+    if (items.length === 0) {
+      throw new UnprocessableError(
+        "Prescription requires at least one item with an INN (drug name)",
+      );
+    }
+    next.items = items;
+  }
+  if (body.diagnosis !== undefined) {
+    next.diagnosis = body.diagnosis
+      ? {
+          code: (body.diagnosis.code || "").trim(),
+          codeTitle: (body.diagnosis.codeTitle || "").trim(),
+          text: encryptPHI((body.diagnosis.text || "").trim()), // PHI
+        }
+      : { code: "", codeTitle: "", text: "" };
+  }
+  if (body.generalNotes !== undefined) {
+    next.generalNotes = encryptPHI(String(body.generalNotes || "").trim());
+  }
+  if (body.substitutionAllowed !== undefined) {
+    next.substitutionAllowed =
+      typeof body.substitutionAllowed === "boolean"
+        ? body.substitutionAllowed
+        : null;
+  }
+  if (body.refills !== undefined) next.refills = normalizeRefills(body.refills);
+  if (body.validUntil !== undefined) {
+    next.validUntil = normalizeValidUntil(body.validUntil);
+  }
+
+  const now = new Date();
+  const changed = [];
+
+  for (const field of EDITABLE_FIELDS) {
+    if (!(field in next)) continue;
+
+    // Из документа берём простое значение: сравнивать сабдокумент Mongoose
+    // с обычным объектом бессмысленно — они не равны никогда.
+    const oldRaw = record.get(field);
+    const oldPlain =
+      oldRaw && typeof oldRaw.toObject === "function"
+        ? oldRaw.toObject()
+        : oldRaw;
+
+    if (sameValue(oldPlain, next[field])) continue;
+
+    record.history.push({
+      updatedBy: userId,
+      updatedAt: now,
+      changes: { field, oldValue: oldPlain, newValue: next[field] },
+    });
+    record.set(field, next[field]);
+    changed.push(field);
+  }
+
+  if (changed.length === 0) {
+    // Ничего не изменилось — не пишем в историю запись «правил, но не
+    // правил»: журнал должен отвечать на вопрос, что изменилось.
+    return toApiShape(record.toObject());
+  }
+
+  await record.save();
+
+  log.info(
+    {
+      prescriptionId: String(record._id),
+      updatedBy: String(userId),
+      fields: changed,
+    },
+    "Prescription updated",
+  );
+
+  return toApiShape(record.toObject());
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 //  COMPLETE PRESCRIPTION (active → completed)
 // ─────────────────────────────────────────────────────────────────────────
 

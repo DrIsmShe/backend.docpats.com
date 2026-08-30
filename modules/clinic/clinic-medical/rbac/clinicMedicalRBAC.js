@@ -73,6 +73,10 @@ const PRESCRIPTION = {
   CREATE: "clinic.medical.prescription.create",
   READ: "clinic.medical.prescription.read",
   LIST: "clinic.medical.prescription.list",
+  // UPDATE — правка выписанного бланка. Узкая: только пока рецепт активен
+  // и по нему ничего не отпущено. Смысл в опечатке, замеченной сразу, а не
+  // в переписывании назначений задним числом.
+  UPDATE: "clinic.medical.prescription.update",
   CANCEL: "clinic.medical.prescription.cancel",
   COMPLETE: "clinic.medical.prescription.complete",
   DELETE: "clinic.medical.prescription.delete",
@@ -159,6 +163,7 @@ const DOCTOR_FULL = [
   PRESCRIPTION.CREATE,
   PRESCRIPTION.READ,
   PRESCRIPTION.LIST,
+  PRESCRIPTION.UPDATE,
   PRESCRIPTION.CANCEL,
   PRESCRIPTION.COMPLETE,
   PRESCRIPTION.EXPORT,

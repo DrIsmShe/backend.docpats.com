@@ -136,6 +136,30 @@ router.get(
   ctrl.prescriptionPdfController,
 );
 
+// ─── PATCH /prescriptions/:id ─────────────────────────────────────────
+// Правка выписанного бланка. Ограничения в сервисе: только активный рецепт,
+// только пока по нему ничего не отпущено, каждое изменение — в history.
+//
+// Объявлен ПОСЛЕ подпутей (/cancel, /complete, /pdf): иначе ":id" съел бы
+// их, и «отменить» стало бы «править».
+router.patch(
+  "/prescriptions/:id",
+  auditMiddleware({
+    resourceType: "clinic-medical-prescription",
+    action: RX.UPDATE,
+    resourceIdFrom: "params.id",
+    metaFrom: (req) => ({
+      // Только имена изменённых полей: содержимое рецепта — PHI, и в
+      // журнале ему не место.
+      fields: Object.keys(req.body || {}),
+    }),
+  }),
+  checkClinicMedicalAccess({ action: RX.UPDATE }),
+  resolvePrescription,
+  checkConsent({ scope: "encounters" }),
+  ctrl.updatePrescriptionController,
+);
+
 // ─── DELETE /prescriptions/:id (owner only via RBAC) ──────────────────
 router.delete(
   "/prescriptions/:id",

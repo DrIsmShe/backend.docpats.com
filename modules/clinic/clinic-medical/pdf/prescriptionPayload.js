@@ -64,9 +64,18 @@ export async function buildPatientForPdf(patient, { allergies } = {}) {
       ? patient.toObject({ virtuals: true })
       : { ...patient };
 
+  // Три модели карт называют одно и то же по-разному: клиника хранит
+  // dateOfBirth и phone, карты врача — birthDate и phoneNumber. Приводим
+  // здесь, чтобы генератор бланка не знал о трёх схемах: он и так печатает
+  // один и тот же бланк, откуда бы рецепт ни пришёл.
+  const dateOfBirth = plain.dateOfBirth || plain.birthDate || null;
+  const phone = plain.phone || plain.phoneNumber || null;
+
   return {
     ...plain,
-    age: ageFromDob(plain.dateOfBirth),
+    dateOfBirth,
+    phone,
+    age: ageFromDob(dateOfBirth),
     allergiesSummary:
       allergies !== undefined ? allergies : await allergiesFor(plain._id),
   };

@@ -4,6 +4,7 @@ import {
   createDoctorPrescription,
   listDoctorPrescriptions,
   doctorPrescriptionPdf,
+  updateDoctorPrescription,
 } from "../controllers/doctorPrescriptionsController.js";
 
 const router = Router();
@@ -14,5 +15,7 @@ const router = Router();
 router.get("/patient/:patientId", authMidleWeare, listDoctorPrescriptions);
 router.post("/patient/:patientId", authMidleWeare, createDoctorPrescription);
 router.get("/:id/pdf", authMidleWeare, doctorPrescriptionPdf);
+// Объявлен после /:id/pdf: иначе ":id" перехватил бы подпуть.
+router.patch("/:id", authMidleWeare, updateDoctorPrescription);
 
 export default router;
