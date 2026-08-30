@@ -39,6 +39,22 @@ class TypedEventBus extends EventEmitter {
    * @param {object} payload
    */
   emitSafe(eventName, payload = {}) {
+    // Имя события обязано быть строкой.
+    //
+    // Опечатка или забытая константа давала EVENTS.X === undefined, и
+    // дальше падал сам поиск слушателей — то есть публикация события
+    // роняла операцию, которая его опубликовала. Ради этого emitSafe и
+    // существует: рецепт сохранён, и сбой рассылки не должен превращаться
+    // в ошибку у врача. Пишем в лог как ошибку — это дефект кода, но
+    // наружу не выпускаем.
+    if (typeof eventName !== "string" || !eventName) {
+      log.error(
+        { eventName, payload },
+        "emitSafe вызван без имени события — проверьте константу в EVENTS",
+      );
+      return;
+    }
+
     const listeners = this.listeners(eventName);
     if (listeners.length === 0) {
       log.debug({ event: eventName }, "Event emitted with no listeners");
@@ -138,6 +154,21 @@ export const EVENTS = Object.freeze({
   INVOICE_VOIDED: "invoice.voided",
   PAYMENT_RECEIVED: "payment.received",
   PAYMENT_REFUNDED: "payment.refunded",
+
+  // Медкарта: рецепты и результаты анализов.
+  //
+  // Этих имён здесь не было, хотя сервисы их отправляли: EVENTS.X
+  // возвращал undefined, и emitSafe падал на попытке найти слушателей
+  // несуществующего события. Рецепт при этом успевал сохраниться, а врач
+  // видел «Internal server error» и выписывал заново — в карте копились
+  // дубли одного назначения.
+  MEDICAL_PRESCRIPTION_CREATED: "medical.prescription.created",
+  MEDICAL_PRESCRIPTION_CANCELLED: "medical.prescription.cancelled",
+  MEDICAL_PRESCRIPTION_COMPLETED: "medical.prescription.completed",
+  MEDICAL_PRESCRIPTION_DELETED: "medical.prescription.deleted",
+  MEDICAL_LAB_RESULT_CREATED: "medical.lab_result.created",
+  MEDICAL_LAB_RESULT_UPDATED: "medical.lab_result.updated",
+  MEDICAL_LAB_RESULT_DELETED: "medical.lab_result.deleted",
 
   // Pharmacy
   PRESCRIPTION_ISSUED: "prescription.issued",
