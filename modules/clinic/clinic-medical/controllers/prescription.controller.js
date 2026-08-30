@@ -160,8 +160,32 @@ export async function prescriptionPdfController(req, res, next) {
       return res.status(200).json({ prescription: data, pdf: "not_wired_yet" });
     }
 
-    const clinic = req.clinic || null;
-    const patient = req.clinicPatient || null;
+    // Пациента и клинику берём из самого рецепта, а не из запроса.
+    //
+    // В адресе /prescriptions/:id/pdf пациента нет, поэтому и
+    // resolveClinicPatient в цепочке нет — req.clinicPatient здесь пуст
+    // всегда, как и req.clinic, которого никто не заполняет. Из-за этого
+    // клинический бланк печатался вообще без данных пациента, а шапка
+    // вставала «от врача»: генератор видит отсутствие клиники как признак
+    // рецепта, выписанного вне учреждения.
+    let patient = req.clinicPatient || null;
+    let clinic = req.clinic || null;
+
+    if (!patient && data?.patientRef) {
+      const { default: ClinicPatient } = await import(
+        "../../clinic-patients/models/clinicPatient.model.js"
+      );
+      // Запрос скоупится по клинике из контекста арендатора — карта чужой
+      // клиники не вернётся даже по прямому идентификатору.
+      patient = await ClinicPatient.findById(data.patientRef);
+    }
+
+    if (!clinic && data?.createdByClinicId) {
+      const { default: Clinic } = await import(
+        "../../clinic-core/models/clinic.model.js"
+      );
+      clinic = await Clinic.findById(data.createdByClinicId).lean();
+    }
 
     // Возраст, аллергии и имя врача собирает общий сборщик: тот же бланк
     // печатается из пациентского портала и из кабинета врача, и, когда
