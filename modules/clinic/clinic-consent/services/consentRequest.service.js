@@ -223,6 +223,80 @@ export async function createRequest({ payload, actor, context }) {
     throw err;
   }
 
+  // ─── Уже висит запрос к этому пациенту ───
+  //
+  // Ограничения «не больше трёх» мало: пациент получал несколько
+  // одинаковых запросов от одной клиники и не понимал, на какой отвечать,
+  // а список запросов на карте превращался в ленту дублей. Пока висит
+  // хотя бы один — новый не создаём.
+  const pending = await ConsentRequest.findOne({
+    patientRef,
+    clinicId,
+    status: "pending",
+  })
+    .select("_id createdAt")
+    .lean();
+
+  if (pending) {
+    safeAudit({
+      actor,
+      action: "consent_request.create",
+      resourceType: RESOURCE_TYPE,
+      resourceId: String(pending._id),
+      outcome: "failure",
+      failureReason: "duplicate_pending",
+      metadata: { patientRef: String(patientRef), clinicId: String(clinicId) },
+      context,
+    });
+    const err = new Error(
+      "Запрос этому пациенту уже отправлен и ждёт ответа. Дождитесь ответа или отзовите прежний запрос.",
+    );
+    err.code = "DUPLICATE_PENDING";
+    throw err;
+  }
+
+  // ─── Доступ уже выдан ───
+  //
+  // Если действующее согласие покрывает всё, что запрашивают, спрашивать
+  // нечего: пациенту придёт уведомление о доступе, который у клиники уже
+  // есть. Частично покрытый запрос пропускаем — недостающее спросить надо.
+  try {
+    const { default: PatientConsent } = await import(
+      "../../../../common/models/Polyclinic/PatientConsent.js"
+    );
+    const now = new Date();
+    const active = await PatientConsent.findOne({
+      patientRef,
+      clinicId,
+      revokedAt: null,
+      $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
+    })
+      .select("scopes")
+      .lean();
+
+    if (active) {
+      const have = active.scopes || {};
+      // cleanScopes — объект флагов, а не список: берём только
+      // запрошенные и смотрим, каких из них нет в действующем согласии.
+      const missing = Object.entries(cleanScopes)
+        .filter(([, asked]) => asked)
+        .map(([scope]) => scope)
+        .filter((scope) => !have[scope]);
+      if (missing.length === 0) {
+        const err = new Error(
+          "Пациент уже открыл клинике эти данные — запрашивать их повторно не нужно.",
+        );
+        err.code = "ALREADY_GRANTED";
+        throw err;
+      }
+    }
+  } catch (e) {
+    // Свой отказ пробрасываем; сбой проверки — нет: невозможность
+    // прочитать согласие не должна запрещать врачу спросить доступ.
+    if (e.code === "ALREADY_GRANTED") throw e;
+    console.error("[запрос доступа] проверка согласия не прошла:", e.message);
+  }
+
   // ─── Rate limit: max 3 pending от одной (clinic, patient) ───
   const activeCount = await ConsentRequest.countActivePending(
     patientRef,
