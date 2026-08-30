@@ -40,7 +40,9 @@ import { attachRedisAdapter } from "./common/realtime/socketAdapter.js";
 import { scheduleSubscriptionReminders } from "./jobs/checkSubscriptionReminders.js";
 import { scheduleNotificationDigest } from "./jobs/notificationDigest.job.js";
 import { scheduleConferenceDigest } from "./jobs/conferenceDigest.job.js";
+import { startNewsletterWeeklyJob } from "./jobs/newsletterWeekly.job.js";
 import publicUnsubscribeRouter from "./modules/notifications/publicUnsubscribe.routes.js";
+import newsletterRouter from "./modules/newsletter/newsletter.routes.js";
 import { scheduleWeeklyCaseNotification } from "./jobs/radiologyWeeklyCase.job.js";
 import { scheduleDailyCaseGeneration } from "./jobs/radiologyDailyCases.job.js";
 import { scheduleIndexNowSubmit } from "./jobs/indexnowSubmit.job.js";
@@ -162,6 +164,9 @@ app.use("/api/v1/public", guestGuideRouter);
 // иначе вместо отписки человек нажмёт «спам», а жалоба бьёт по
 // доставляемости всех писем домена, включая напоминания о приёмах.
 app.use("/api/v1/public", publicUnsubscribeRouter);
+// Подписка гостя на рассылку. Рядом с отпиской и до сессии: подписывается
+// тот, у кого аккаунта нет.
+app.use("/api/v1/public", newsletterRouter);
 // (Роутер webhook'ов смонтирован выше, до express.json — подпись
 // проверяется по сырому телу. Здесь оставлено только пояснение, чтобы
 // следующий читатель не искал его среди публичных маршрутов.)
@@ -549,6 +554,9 @@ async function bootstrap(startPort = PORT) {
     scheduleNotificationDigest();
     // Еженедельная подборка конференций врачам (понедельник, 09:00 UTC).
     scheduleConferenceDigest();
+    // Рассылка гостям — рядом с дайджестом конференций: обе идут по почте
+    // и обе зависят от базы движка новостей.
+    startNewsletterWeeklyJob();
     scheduleWeeklyCaseNotification();
     // Ночная автогенерация учебных кейсов лучевой станции (по одному на
     // модальность). Выключается через RADIOLOGY_AUTOGEN=off.
