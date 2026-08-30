@@ -17,6 +17,7 @@ const updateProfileControllerDoctor = async (req, res) => {
       clinic,
       about,
       country,
+      licenseNumber,
       twitter,
       facebook,
       instagram,
@@ -60,6 +61,7 @@ const updateProfileControllerDoctor = async (req, res) => {
         clinic,
         about,
         country,
+        licenseNumber,
         twitter,
         facebook,
         instagram,
@@ -114,6 +116,7 @@ const updateProfileControllerDoctor = async (req, res) => {
     assignIfDefined(profile, "address", address);
     assignIfDefined(profile, "clinic", clinic);
     assignIfDefined(profile, "about", about);
+    assignIfDefined(profile, "licenseNumber", licenseNumber);
     assignIfDefined(profile, "country", country);
     assignIfDefined(profile, "twitter", twitter);
     assignIfDefined(profile, "facebook", facebook);

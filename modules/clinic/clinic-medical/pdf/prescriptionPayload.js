@@ -95,9 +95,28 @@ export async function resolvePrescriber(prescription) {
         .populate("specialization", "name");
       if (u) {
         const f = typeof u.decryptFields === "function" ? u.decryptFields() : {};
+
+        // Номер лицензии живёт в профиле врача, а не в учётной записи:
+        // на бланке это графа «Регистрационный номер», без неё рецепт,
+        // выписанный вне клиники, в аптеке недействителен.
+        let licenseNumber = null;
+        try {
+          const { default: ProfileDoctor } = await import(
+            "../../../../common/models/DoctorProfile/profileDoctor.js"
+          );
+          const prof = await ProfileDoctor.findOne({ userId })
+            .select("licenseNumber")
+            .lean();
+          licenseNumber = prof?.licenseNumber || null;
+        } catch (e) {
+          // Профиля нет — печатаем бланк без номера. Рецепт важнее.
+          console.error("[рецепт] лицензия врача не прочитана:", e.message);
+        }
+
         return {
           doctorName: [f.firstName, f.lastName].filter(Boolean).join(" ") || null,
           doctorQualification: u.specialization?.name || null,
+          doctorLicenseNumber: licenseNumber,
           // Нужна шапке бланка, который врач выписывает сам, без клиники:
           // там вместо реквизитов учреждения стоят его собственные.
           // Телефона у пользователя в модели нет — только почта.

@@ -46,6 +46,15 @@ const userDoctorSchema = new mongoose.Schema(
 
     verificationDocuments: { type: [String], default: [] },
 
+    // Номер врачебной лицензии. Печатается в графе «Регистрационный номер»
+    // на бланке рецепта, который врач выписывает вне клиники: без него
+    // бланк в аптеке недействителен, а хранились до сих пор только сканы
+    // документов — из файла номер не подставишь.
+    //
+    // Не шифруем: это профессиональный идентификатор, он и так стоит на
+    // каждом выписанном рецепте, а по нему ищут в реестрах.
+    licenseNumber: { type: String, trim: true, maxlength: 100, default: null },
+
     // Образование / специализация
     educationInstitution: { type: String, default: null },
     educationStartYear: { type: Number, default: null },
