@@ -16,6 +16,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import { FORM_LABELS } from "./prescriptionFormLabels.js";
+// Названия полов уже переведены для карты пациента — второй словарь тех же
+// пяти слов разошёлся бы с первым при любой правке.
+import { CARD_LABELS } from "./patientCardLabels.js";
+import { prepareRtl } from "./rtl.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FONT_DIR = path.join(__dirname, "fonts");
@@ -293,11 +297,6 @@ const L = {
 
 const RTL_LANGS = new Set(["ar"]);
 
-function prepareRtl(text, lang) {
-  if (!RTL_LANGS.has(lang) || !text) return text;
-  return [...String(text)].reverse().join("");
-}
-
 function fmtDate(d, lang) {
   if (!d) return "—";
   try {
@@ -443,14 +442,20 @@ export async function buildPrescriptionPdf({
   }
 
   doc.font(F_REG).fontSize(8).fillColor(MUTED);
-  const addr = [clinic?.address?.line1, clinic?.address?.city, clinic?.address?.country]
+  const addr = [clinic?.address?.street, clinic?.address?.city, clinic?.address?.country]
     .filter(Boolean)
     .join(", ");
   if (addr) {
     doc.text(tx(addr), left, leftY, { width: headW });
     leftY = doc.y;
   }
-  const contactLine = [clinic?.phone, clinic?.email].filter(Boolean).join(" · ");
+  const contactLine = [
+    clinic?.contacts?.phone,
+    clinic?.contacts?.email,
+    clinic?.contacts?.website,
+  ]
+    .filter(Boolean)
+    .join("  ·  ");
   if (contactLine) {
     doc.text(tx(contactLine), left, leftY, { width: headW });
     leftY = doc.y;
@@ -462,7 +467,7 @@ export async function buildPrescriptionPdf({
   label(t.facilityLicence, licX, licY, licW);
   licY = doc.y + 1;
   doc.font(F_REG).fontSize(8.5).fillColor(INK);
-  doc.text(tx(clinic?.licenseNumber || "________________"), licX, licY, { width: licW });
+  doc.text(tx(clinic?.licenseNumber || clinic?.taxId || "________________"), licX, licY, { width: licW });
   licY = doc.y + 5;
   label(t.formRef, licX, licY, licW);
   licY = doc.y + 1;
@@ -479,7 +484,10 @@ export async function buildPrescriptionPdf({
 
   doc.font(F_REG).fontSize(8).fillColor(MUTED);
   const metaY = y + 2;
-  const rxText = `${t.rxNo} ${prescription?.rxNumber || "__________"}`;
+  // Своего номера у рецепта нет — берём хвост идентификатора. Прочерк
+  // означал бы, что два рецепта нельзя различить при разборе.
+  const rxShort = prescription?._id ? String(prescription._id).slice(-8).toUpperCase() : "";
+  const rxText = `${t.rxNo} ${prescription?.rxNumber || rxShort || "__________"}`;
   const dateText = `${t.date} ${fmtDate(prescription?.issuedAt || prescription?.createdAt || new Date(), language)}`;
   doc.text(tx(`${rxText}     ${dateText}`), left + contentW * 0.5, metaY, {
     width: contentW * 0.5,
@@ -499,16 +507,24 @@ export async function buildPrescriptionPdf({
 
   const patientName =
     patient?.fullName ||
-    [patient?.lastName, patient?.firstName].filter(Boolean).join(" ") ||
+    [patient?.firstName, patient?.lastName].filter(Boolean).join(" ") ||
     "";
 
   let rowY = field(t.fullName, patientName, left, y, w2 + w4 + gap);
-  field(t.patientId, patient?.medicalRecordNumber || patient?.patientId || "", left + w2 + w4 + gap * 2, y, w4);
+  // Номера карты в модели нет; аптеке и клинике нужно чем-то связать бланк с
+  // записью, поэтому берём хвост идентификатора — как и у номера рецепта.
+  const patientNo =
+    patient?.medicalRecordNumber ||
+    patient?.patientId ||
+    (patient?._id ? String(patient._id).slice(-8).toUpperCase() : "");
+  field(t.patientId, patientNo, left + w2 + w4 + gap * 2, y, w4);
   y = rowY;
 
   rowY = field(t.dob, patient?.dateOfBirth ? fmtDate(patient.dateOfBirth, language) : "", left, y, w4);
   field(t.age, patient?.age != null ? String(patient.age) : "", left + w4 + gap, y, w4);
-  field(t.sex, patient?.sex || patient?.gender || "", left + (w4 + gap) * 2, y, w4);
+  const genders = (CARD_LABELS[language] || CARD_LABELS.ru).genders || {};
+  const sexRaw = patient?.sex || patient?.gender || "";
+  field(t.sex, genders[sexRaw] || sexRaw, left + (w4 + gap) * 2, y, w4);
   field(t.weight, patient?.weightKg != null ? String(patient.weightKg) : "", left + (w4 + gap) * 3, y, w4);
   y = rowY;
 
@@ -531,7 +547,13 @@ export async function buildPrescriptionPdf({
   y = allergyBoxY + allergyH + 8;
 
   // ── Диагноз ───────────────────────────────────────────────────────
-  const dx = prescription?.diagnosisText || prescription?.diagnosis || "";
+  // Диагноз приходит объектом {code, codeTitle, text}. Раньше он подставлялся
+  // как есть и печатался «[object Object]».
+  const d = prescription?.diagnosis;
+  const dx =
+    typeof d === "string"
+      ? d
+      : [d?.code, d?.text || d?.codeTitle].filter(Boolean).join(" — ");
   if (dx) {
     const dxH = 34;
     doc.rect(left, y, contentW, dxH).fillAndStroke(PANEL, RULE);

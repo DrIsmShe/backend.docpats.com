@@ -204,15 +204,67 @@ export async function prescriptionPdfController(req, res, next) {
         if (age < 0 || age > 130) age = null;
       }
 
+      // virtuals: true — обязательно. Имя, телефон и почта пациента хранятся
+      // зашифрованными, а наружу отдаются виртуальными полями; обычный
+      // toObject() их не включает, и в бланке оставались пустые линии при
+      // заполненной карте.
       patientForPdf = {
-        ...(typeof patient.toObject === "function" ? patient.toObject() : patient),
+        ...(typeof patient.toObject === "function"
+          ? patient.toObject({ virtuals: true })
+          : patient),
         allergiesSummary,
         age,
       };
     }
 
+    // Кто выписал. В рецепте хранятся только идентификаторы, поэтому имя и
+    // квалификацию достаём отдельно: бланк без врача недействителен, а
+    // пустая строка «Назначил» выглядит как недоделка.
+    let prescriber = {};
+    try {
+      // Поле может прийти как идентификатор или как подгруженный документ.
+      const id = (v) => (v && typeof v === "object" ? v._id : v) || null;
+      const userId = id(data?.issuedByUserId) || id(data?.createdBy);
+      const employeeId =
+        id(data?.issuedByEmployeeId) || id(data?.createdByEmployee);
+      if (userId) {
+        const { default: User } = await import(
+          "../../../../common/models/Auth/users.js"
+        );
+        // Без .lean(): расшифровка живёт в методе документа.
+        const u = await User.findById(userId).select(
+          "firstNameEncrypted lastNameEncrypted specialization",
+        );
+        if (u) {
+          const f = typeof u.decryptFields === "function" ? u.decryptFields() : {};
+          const name = [f.firstName, f.lastName].filter(Boolean).join(" ");
+          prescriber = { doctorName: name || null };
+        }
+      } else if (employeeId) {
+        // Сотрудник клиники — отдельная сущность со своей схемой шифрования.
+        const { default: ClinicEmployee, decryptValue } = await import(
+          "../../clinic-staff/models/clinicEmployee.model.js"
+        );
+        const emp = await ClinicEmployee.findById(employeeId)
+          .select("firstNameEncrypted lastNameEncrypted")
+          .lean();
+        if (emp) {
+          const name = [
+            decryptValue(emp.firstNameEncrypted),
+            decryptValue(emp.lastNameEncrypted),
+          ]
+            .filter(Boolean)
+            .join(" ");
+          prescriber = { doctorName: name || null };
+        }
+      }
+    } catch (e) {
+      // Врача не нашли — печатаем бланк с пустой строкой. Рецепт важнее.
+      console.error("[prescriptionPdf] врач не определён:", e.message);
+    }
+
     const pdfBuffer = await buildPrescriptionPdf({
-      prescription: data,
+      prescription: { ...data, ...prescriber },
       clinic,
       patient: patientForPdf,
       lang: req.query?.lang || req.tenantContext?.lang || "ru",

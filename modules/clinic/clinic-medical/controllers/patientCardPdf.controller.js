@@ -37,7 +37,11 @@ export async function patientCardPdfController(req, res, next) {
     const pdfBuffer = await buildPatientCardPdf({
       summary,
       patient: {
-        ...(typeof patient.toObject === "function" ? patient.toObject() : patient),
+        // virtuals: true — имя, телефон и почта пациента зашифрованы и
+        // отдаются виртуальными полями; обычный toObject() их теряет.
+        ...(typeof patient.toObject === "function"
+          ? patient.toObject({ virtuals: true })
+          : patient),
         age,
       },
       clinic: req.clinic || null,
