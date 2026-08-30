@@ -47,6 +47,7 @@ const STATIC_PAGES = [
   { path: "/top-doctors", priority: "0.8", changefreq: "weekly" },
   { path: "/demo", priority: "0.5", changefreq: "monthly" },
   { path: "/docs", priority: "0.7", changefreq: "weekly" },
+  { path: "/conferences", priority: "0.8", changefreq: "daily" },
 ];
 
 // ─── HELPERS ─────────────────────────────────────────────────────────
@@ -398,6 +399,45 @@ async function fetchNews() {
     );
   } catch (err) {
     console.error("[sitemap] fetchNews:", err.message);
+    return [];
+  }
+}
+
+// /conferences/:slug  +  /conferences/:slug?locale=ru|az|tr|ar
+//
+// Язык есть в адресе query-параметром — ровно как у новостей, поэтому и
+// записей пять на карточку с перекрёстными hreflang.
+//
+// В карту попадают только ПРЕДСТОЯЩИЕ: страница прошедшего конгресса
+// открывается, но отдавать её поисковику незачем — она устареет к моменту
+// индексации и будет тянуть вниз качество выдачи.
+async function fetchConferences() {
+  try {
+    const db = mongoose.connection.getClient().db(NEWS_DB_NAME);
+    const now = new Date();
+    const items = await db
+      .collection("conferences")
+      .find(
+        {
+          status: "published",
+          slug: { $exists: true, $ne: null },
+          $or: [
+            { endDate: { $gte: now } },
+            { endDate: null, startDate: { $gte: now } },
+          ],
+        },
+        { projection: { slug: 1, updatedAt: 1, startDate: 1 } },
+      )
+      .toArray();
+
+    return items.map((c) =>
+      urlEntriesForLocalizedNews({
+        baseUrl: `${FRONTEND_URL}/conferences/${encodeURIComponent(c.slug)}`,
+        lastmod: toW3cDate(c.updatedAt || c.startDate),
+      }),
+    );
+  } catch (err) {
+    console.error("[sitemap] fetchConferences:", err.message);
     return [];
   }
 }
@@ -891,6 +931,7 @@ async function collectSections() {
     scientificArticles,
     docs,
     clinicUrls,
+    conferences,
   ] = await Promise.all([
     fetchDoctors(),
     fetchNews(),
@@ -899,6 +940,7 @@ async function collectSections() {
     fetchScientificArticles(),
     fetchDocsSections(),
     fetchClinicUrls(),
+    fetchConferences(),
   ]);
 
   const staticEntries = STATIC_PAGES.map((p) =>
@@ -915,6 +957,7 @@ async function collectSections() {
     { name: "docs", entries: docs },
     { name: "doctors", entries: doctors },
     { name: "news", entries: news },
+    { name: "conferences", entries: conferences },
     { name: "articles", entries: synthesis },
     { name: "doctor-articles", entries: doctorArticles },
     { name: "scientific", entries: scientificArticles },
