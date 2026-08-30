@@ -89,7 +89,13 @@ export const recordAction = async (params) => {
     action.endsWith(".user_search") ||
     isAdminTransfer ||
     action === "system.r2_orphan.cleanup";
-  if (!resourceId && !isCollectionAction) {
+  // У НЕУДАЧНОЙ попытки ресурса нет и быть не может: запись не создалась,
+  // доступ не дали. Требовать идентификатор от такой записи значит терять
+  // ровно то, ради чего журнал существует, — «кто пытался и не смог».
+  // Ошибку recordActionAsync наружу не отдаёт, поэтому терялось молча.
+  const isFailedAttempt = outcome !== "success";
+
+  if (!resourceId && !isCollectionAction && !isFailedAttempt) {
     throw new Error(
       `audit.recordAction: resourceId is required for action "${action}"`,
     );
