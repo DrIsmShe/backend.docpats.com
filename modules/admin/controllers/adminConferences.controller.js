@@ -135,6 +135,18 @@ export async function translateConferences(req, res) {
   }
 }
 
+// ─── PATCH /admin/conferences/:id/dates ───────────────────────────────
+// Проставить даты руками: на части сайтов года нет вовсе, и модель обязана
+// оставить поле пустым. Без этого карточка застревала бы в очереди навсегда.
+export async function setDates(req, res) {
+  try {
+    const r = await engine().patch(`/admin/${req.params.id}/dates`, req.body || {});
+    return res.json({ success: true, ...r.data });
+  } catch (err) {
+    return fail(res, err, "Не удалось сохранить даты");
+  }
+}
+
 // ─── PATCH /admin/conferences/:id ─────────────────────────────────────
 // body: { status: "published" | "rejected" | "draft", rejectedReason? }
 export async function moderateConference(req, res) {

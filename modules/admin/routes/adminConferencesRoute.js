@@ -11,6 +11,7 @@ import {
   runIngestion,
   enrichConferences,
   translateConferences,
+  setDates,
 } from "../controllers/adminConferences.controller.js";
 
 const router = Router();
@@ -23,6 +24,7 @@ router.post("/", createConference);
 router.post("/run-ingestion", runIngestion);
 router.post("/enrich", enrichConferences);
 router.post("/translate", translateConferences);
+router.patch("/:id/dates", setDates);
 router.patch("/:id", moderateConference);
 
 export default router;
