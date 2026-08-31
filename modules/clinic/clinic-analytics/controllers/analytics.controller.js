@@ -55,8 +55,13 @@ export const getOverview = asyncHandler(async (req, res) => {
   // доступом, и до сих пор открывал её беспрепятственно: флаг analytics
   // из тарифа не читала ни одна строка кода.
   if (!(await clinicHasFeature(clinicId, "analytics"))) {
+    // Признак в details, а не только текст: сообщение показывается врачу,
+    // а серверные тексты не переводятся — на азербайджанской странице
+    // выскакивала русская фраза. По признаку клиент подставит свой перевод,
+    // а текст остаётся как запасной для тех, кто читает ответ напрямую.
     throw new ForbiddenError(
       "Аналитика по клинике входит в тарифы Business и Enterprise",
+      { reason: "feature_not_in_plan", feature: "analytics" },
     );
   }
 
