@@ -85,6 +85,24 @@ export function getPlanAmount(planKey, period) {
 }
 
 /**
+ * Прибавить месяцы, не выскакивая за конец месяца.
+ *
+ * Штатный setMonth переполняется: 31 августа плюс три месяца он считает
+ * как 31 ноября, которого нет, и отдаёт 1 декабря. Подписка, выданная на
+ * три месяца, кончалась бы в четвёртом — и тем чаще, чем ближе к концу
+ * месяца выдача. Поэтому день подрезаем до последнего дня месяца-цели.
+ */
+function addMonths(date, months) {
+  const d = new Date(date);
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + months);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, lastDay));
+  return d;
+}
+
+/**
  * Считает дату окончания оплаченного периода. Если у юзера ещё активна
  * прошлая подписка — продлеваем от её конца (стекинг), иначе от now.
  */
@@ -95,11 +113,9 @@ export function computeSubscriptionEnd(period, currentEndsAt, now) {
       : new Date(now);
   const end = new Date(base);
   if (period === "yearly") {
-    end.setFullYear(end.getFullYear() + 1);
-  } else {
-    end.setMonth(end.getMonth() + 1);
+    return addMonths(end, 12);
   }
-  return end;
+  return addMonths(end, 1);
 }
 
 /**
@@ -116,9 +132,7 @@ export function computeEndFromMonths(months, currentEndsAt, now) {
     currentEndsAt && new Date(currentEndsAt) > now
       ? new Date(currentEndsAt)
       : new Date(now);
-  const end = new Date(base);
-  end.setMonth(end.getMonth() + months);
-  return end;
+  return addMonths(new Date(base), months);
 }
 
 /**
