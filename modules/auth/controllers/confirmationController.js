@@ -87,6 +87,31 @@ export const confirmationRegister = async (req, res) => {
       user.otpExpiresAt = undefined;
       await user.save({ validateModifiedOnly: true });
 
+      // ── Связать карты пациента в клиниках ─────────────────────────────
+      //
+      // Здесь и только здесь почта доказана: код из письма только что
+      // сошёлся. Раньше связь карты с аккаунтом умела возникать лишь в
+      // обратную сторону — регистратор находил уже существующего
+      // пользователя. Человек, регистрировавшийся ради видеоприёма,
+      // получал отказ и после регистрации: новый аккаунт с картой не
+      // связан ничем.
+      //
+      // Незаблокирующе, как и привязка приглашения ниже: аккаунт уже
+      // подтверждён, и сбой связывания не повод этого не признать.
+      let linkedCards = 0;
+      try {
+        const { linkClinicCardsByEmail } = await import(
+          "../../clinic/clinic-patients/services/linkOnSignup.service.js"
+        );
+        const r = await linkClinicCardsByEmail({ email, userId: user._id });
+        linkedCards = r.linked;
+      } catch (linkErr) {
+        console.warn(
+          "[register] clinic card link failed:",
+          linkErr?.message?.slice(0, 200),
+        );
+      }
+
       // ── Optional: bind a pending clinic membership invite ──────────────
       // Non-blocking: a bad/expired/mismatched invite must NOT fail the
       // verification. The account is already verified above. The service
@@ -122,6 +147,10 @@ export const confirmationRegister = async (req, res) => {
       return res.status(200).json({
         message: "OTP verified successfully",
         ...(inviteResult ? { invite: inviteResult } : {}),
+        // Сколько карт подцепилось. Клиент по этому числу показывает
+        // человеку, что его медкарта уже на месте, — это и есть отдача за
+        // регистрацию, и увидеть её надо сразу, а не потом в колокольчике.
+        ...(linkedCards ? { linkedClinicCards: linkedCards } : {}),
       });
     } else {
       return invalid();

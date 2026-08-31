@@ -640,4 +640,8 @@ export default {
   "app.role.staff": "сотрудника",
   "app.appointment.statusUpdated": "Статус приёма обновлён: {{status}}",
   "app.notification.allMarkedRead": "Все уведомления ({{count}}) помечены как прочитанные",
+
+  "app.notify.cardLinked.title": "Ваша медкарта найдена",
+  "app.notify.cardLinked.messageWithClinic": "Клиника «{{clinicName}}» ведёт вашу медицинскую карту — теперь она в вашем кабинете.",
+  "app.notify.cardLinked.message": "Клиника ведёт вашу медицинскую карту — теперь она в вашем кабинете.",
 };

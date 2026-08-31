@@ -639,4 +639,8 @@ export default {
   "app.role.staff": "موظف",
   "app.appointment.statusUpdated": "تم تحديث حالة الموعد: {{status}}",
   "app.notification.allMarkedRead": "تم وضع علامة مقروء على كل الإشعارات ({{count}})",
+
+  "app.notify.cardLinked.title": "تم العثور على ملفك الطبي",
+  "app.notify.cardLinked.messageWithClinic": "تحتفظ عيادة «{{clinicName}}» بملفك الطبي — وهو الآن في حسابك.",
+  "app.notify.cardLinked.message": "تحتفظ عيادة بملفك الطبي — وهو الآن في حسابك.",
 };

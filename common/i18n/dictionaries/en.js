@@ -639,4 +639,8 @@ export default {
   "app.role.staff": "staff member",
   "app.appointment.statusUpdated": "Appointment status updated: {{status}}",
   "app.notification.allMarkedRead": "All notifications ({{count}}) marked as read",
+
+  "app.notify.cardLinked.title": "Your medical record was found",
+  "app.notify.cardLinked.messageWithClinic": "The clinic “{{clinicName}}” keeps your medical record — it is now in your account.",
+  "app.notify.cardLinked.message": "A clinic keeps your medical record — it is now in your account.",
 };

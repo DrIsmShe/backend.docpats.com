@@ -639,4 +639,8 @@ export default {
   "app.role.staff": "əməkdaş",
   "app.appointment.statusUpdated": "Qəbulun statusu yeniləndi: {{status}}",
   "app.notification.allMarkedRead": "Bütün bildirişlər ({{count}}) oxunmuş kimi işarələndi",
+
+  "app.notify.cardLinked.title": "Tibbi kartanız tapıldı",
+  "app.notify.cardLinked.messageWithClinic": "«{{clinicName}}» klinikası tibbi kartanızı aparır — o, artıq kabinetinizdədir.",
+  "app.notify.cardLinked.message": "Klinika tibbi kartanızı aparır — o, artıq kabinetinizdədir.",
 };

@@ -639,4 +639,8 @@ export default {
   "app.role.staff": "personel",
   "app.appointment.statusUpdated": "Randevu durumu güncellendi: {{status}}",
   "app.notification.allMarkedRead": "Tüm bildirimler ({{count}}) okundu olarak işaretlendi",
+
+  "app.notify.cardLinked.title": "Sağlık dosyanız bulundu",
+  "app.notify.cardLinked.messageWithClinic": "“{{clinicName}}” kliniği sağlık dosyanızı tutuyor — dosya artık hesabınızda.",
+  "app.notify.cardLinked.message": "Bir klinik sağlık dosyanızı tutuyor — dosya artık hesabınızda.",
 };
