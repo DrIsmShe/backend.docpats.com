@@ -4,6 +4,7 @@
 // (authMiddleware → req.userId). No clinic membership required.
 
 import { listPatientTelemedSessions } from "../services/patientTelemedList.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const listPatientTelemedSessionsController = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ export const listPatientTelemedSessionsController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
 
     const data = await listPatientTelemedSessions({ userId });

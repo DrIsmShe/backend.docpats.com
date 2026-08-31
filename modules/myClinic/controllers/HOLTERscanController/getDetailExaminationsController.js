@@ -1,6 +1,7 @@
 // controllers/CTscanControllers/getDetailExaminationsController.js
 
 import HOLTERScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/HOLTERscanTemplates/HOLTERscan.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getDetailExaminationsController = async (req, res) => {
   try {
@@ -19,7 +20,7 @@ const getDetailExaminationsController = async (req, res) => {
       ); // комментарии врачей
 
     if (!holterScan) {
-      return res.status(404).json({ message: req.t("myClinic.study.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.study.notFound") });
     }
 
     // Расшифровка имени врача, если используется шифрование
@@ -40,7 +41,7 @@ const getDetailExaminationsController = async (req, res) => {
     res.status(200).json(holterScan);
   } catch (error) {
     console.error("Ошибка при получении USM-исследования:", error);
-    res.status(500).json({ message: req.t("myClinic.server.error2"), error: error.message });
+    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: error.message });
   }
 };
 

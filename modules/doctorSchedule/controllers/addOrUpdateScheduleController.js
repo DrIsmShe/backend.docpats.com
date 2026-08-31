@@ -1,6 +1,7 @@
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import AppointmentAudit from "../../../common/models/Appointment/appointmentAudit.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import { tReq } from "../../../common/i18n/index.js";
 /**
  * 📅 Контроллер: создание или обновление расписания врача
  * - Создаёт новое расписание, если его нет
@@ -16,7 +17,7 @@ export const addOrUpdateScheduleController = async (req, res) => {
     if (!doctorId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
 
     const validStatuses = [
@@ -29,7 +30,7 @@ export const addOrUpdateScheduleController = async (req, res) => {
     if (!validStatuses.includes(status)) {
       return res
         .status(400)
-        .json({ success: false, message: "Недопустимый статус" });
+        .json({ success: false, message: tReq(req, "app.appointment.status.invalid") });
     }
 
     // 🔹 Обновляем статус
@@ -42,7 +43,7 @@ export const addOrUpdateScheduleController = async (req, res) => {
     if (!appointment) {
       return res
         .status(404)
-        .json({ success: false, message: "Приём не найден" });
+        .json({ success: false, message: tReq(req, "app.appointment.notFound") });
     }
 
     // 🔍 Ищем пациента через NewPatientPolyclinic
@@ -74,7 +75,7 @@ export const addOrUpdateScheduleController = async (req, res) => {
     console.error("❌ Ошибка updateAppointmentStatus:", error);
     res.status(500).json({
       success: false,
-      message: "Ошибка при обновлении статуса приёма",
+      message: tReq(req, "app.appointment.status.updateError"),
     });
   }
 };

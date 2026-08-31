@@ -8,6 +8,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import { asyncHandler } from "../../../common/middlewares/errorHandler.js";
 import { ValidationError } from "../../../common/utils/errors.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   searchEvidence,
   EVIDENCE_LEVELS,
@@ -35,10 +36,18 @@ const searchLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => String(req.ebmActor?.userId || "anonymous"),
   skip: () => process.env.NODE_ENV === "test",
-  message: {
+  // Сообщение ограничителя — ФУНКЦИЕЙ, а не готовым объектом.
+  //
+  // Настройка вычисляется при загрузке модуля, где запроса ещё нет: любое
+  // обращение к req там роняет весь файл маршрутов. Функция вызывается на
+  // каждый отказ — вот там запрос и появляется, а с ним язык того, кого
+  // ограничили.
+  message: (req) => ({
     error:
-      "Слишком много запросов к PubMed. Подождите минуту — лимит общий на весь проект.",
-  },
+      typeof req.t === "function"
+        ? tReq(req, "app.pubmed.rateLimitExceededProject")
+        : "Слишком много запросов к PubMed. Подождите минуту — лимит общий на весь проект.",
+  }),
 });
 
 const MAX_PER_LEVEL = 20;
@@ -76,7 +85,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const term = String(req.query.q || "").trim();
     if (term.length < 3) {
-      throw new ValidationError("Запрос слишком короткий — минимум 3 символа");
+      throw new ValidationError(tReq(req, "app.query.tooShort"));
     }
 
     const perLevel = clampInt(req.query.perLevel, 5, 1, MAX_PER_LEVEL);
@@ -114,9 +123,12 @@ const askLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => String(req.ebmActor?.userId || "anonymous"),
   skip: () => process.env.NODE_ENV === "test",
-  message: {
-    error: "Слишком много вопросов подряд. Подождите минуту.",
-  },
+  message: (req) => ({
+    error:
+      typeof req.t === "function"
+        ? tReq(req, "app.question.rateLimitExceeded")
+        : "Слишком много вопросов подряд. Подождите минуту.",
+  }),
 });
 
 /**
@@ -135,7 +147,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const question = String(req.body?.question || "").trim();
     if (question.length < 5) {
-      throw new ValidationError("Слишком короткий вопрос");
+      throw new ValidationError(tReq(req, "app.question.tooShort"));
     }
 
     const result = await askEvidence({

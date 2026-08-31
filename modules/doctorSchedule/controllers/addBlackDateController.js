@@ -1,5 +1,6 @@
 import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * @desc Добавить, обновить или снять блокировку дня (исключения)
@@ -17,7 +18,7 @@ export const addBlockDate = async (req, res) => {
     if (!date) {
       return res.status(400).json({
         success: false,
-        message: "Дата обязательна",
+        message: tReq(req, "app.date.required"),
       });
     }
 
@@ -26,7 +27,7 @@ export const addBlockDate = async (req, res) => {
     if (!profile) {
       return res
         .status(404)
-        .json({ success: false, message: "Профиль врача не найден" });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound") });
     }
 
     const doctorId = profile._id;
@@ -56,7 +57,7 @@ export const addBlockDate = async (req, res) => {
       } else {
         return res.status(404).json({
           success: false,
-          message: "Такой даты не найдено в блокировках.",
+          message: tReq(req, "app.block.dateNotFound"),
         });
       }
     }
@@ -88,14 +89,14 @@ export const addBlockDate = async (req, res) => {
 
     res.json({
       success: true,
-      message: "✅ Блокировка успешно добавлена или обновлена",
+      message: tReq(req, "app.block.successfullyAddedOrUpdated"),
       data: schedule,
     });
   } catch (err) {
     console.error("❌ Ошибка addBlockDate:", err);
     res.status(500).json({
       success: false,
-      message: "Ошибка при работе с блокировками",
+      message: tReq(req, "app.block.operationError"),
       error: err.message,
     });
   }
@@ -109,7 +110,7 @@ export const getBlockedDays = async (req, res) => {
     if (!profile) {
       return res
         .status(404)
-        .json({ success: false, message: "Профиль врача не найден", data: [] });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound"), data: [] });
     }
 
     // 🔹 Находим расписание врача
@@ -120,7 +121,7 @@ export const getBlockedDays = async (req, res) => {
     if (!schedule) {
       return res.status(200).json({
         success: true,
-        message: "У врача нет блокировок",
+        message: tReq(req, "app.doctor.noBlockedDays"),
         data: [],
       });
     }
@@ -134,14 +135,14 @@ export const getBlockedDays = async (req, res) => {
 
     res.json({
       success: true,
-      message: "✅ Блокированные дни успешно получены",
+      message: tReq(req, "app.doctor.blockedDays.fetchSuccess"),
       data: blocked || [],
     });
   } catch (err) {
     console.error("❌ Ошибка getBlockedDays:", err);
     res.status(500).json({
       success: false,
-      message: "Ошибка при получении блокированных дней",
+      message: tReq(req, "app.doctor.blockedDays.fetchError"),
       error: err.message,
       data: [],
     });

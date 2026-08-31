@@ -1,12 +1,13 @@
 import PETScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/PETScansTemplates/PETScan.js";
 import { decrypt } from "../../../../common/models/Auth/users.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getListPETScanerController = async (req, res) => {
   try {
     const patient = req.patient;
 
     if (!patient) {
-      return res.status(404).json({ message: req.t("myClinic.patient.notFound2") });
+      return res.status(404).json({ message: tReq(req, "myClinic.patient.notFound2") });
     }
 
     // автоматически определяем модель пациента
@@ -39,7 +40,7 @@ const getListPETScanerController = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: req.t("myClinic.petStudies.fetchError"),
+      message: tReq(req, "myClinic.petStudies.fetchError"),
       error: error.message,
     });
   }

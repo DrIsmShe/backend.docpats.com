@@ -2,6 +2,7 @@ import newPatientMedicalHistory from "../../../common/models/Polyclinic/MedicalH
 import User from "../../../common/models/Auth/users.js";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { decrypt } from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const patientsMedicalHistoryGetController = async (req, res) => {
   try {
@@ -9,7 +10,7 @@ const patientsMedicalHistoryGetController = async (req, res) => {
 
     if (!patient || !patientType) {
       return res.status(404).json({
-        message: req.t("myClinic.patient.notFound2"),
+        message: tReq(req, "myClinic.patient.notFound2"),
       });
     }
 
@@ -19,7 +20,7 @@ const patientsMedicalHistoryGetController = async (req, res) => {
 
     if (!patientId) {
       return res.status(400).json({
-        message: req.t("myClinic.patient.cannotDetermineId"),
+        message: tReq(req, "myClinic.patient.cannotDetermineId"),
       });
     }
 

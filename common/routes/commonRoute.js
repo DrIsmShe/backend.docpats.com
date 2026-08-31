@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import articlesAllController from "../../controllers/common/articlesAllController.js";
 import { uploadPDF, getPDF } from "../middlewares/uploadPdfFileMiddleWere.js";
+import { tReq } from "../i18n/index.js";
 
 const router = Router();
 
@@ -37,7 +38,7 @@ const imageUpload = multer({
 
 router.post("/upload/image", imageUpload.single("upload"), async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ message: req.t("app.file.notFound") });
+    return res.status(400).json({ message: tReq(req, "app.file.notFound") });
   }
 
   try {
@@ -61,7 +62,7 @@ router.post("/upload/image", imageUpload.single("upload"), async (req, res) => {
     });
   } catch (error) {
     console.error("Ошибка загрузки файла:", error);
-    res.status(500).json({ message: req.t("app.file.uploadError") });
+    res.status(500).json({ message: tReq(req, "app.file.uploadError") });
   }
 });
 

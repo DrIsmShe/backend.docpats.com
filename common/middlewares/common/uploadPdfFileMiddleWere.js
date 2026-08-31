@@ -1,6 +1,7 @@
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import { tReq } from "../../i18n/index.js";
 
 // Папка для загрузки файлов
 const uploadDir = "uploads";
@@ -46,10 +47,10 @@ export const uploadPDF = (req, res) => {
     if (err) {
       return res
         .status(500)
-        .json({ message: req.t("app.file.uploadError"), error: err.message });
+        .json({ message: tReq(req, "app.file.uploadError"), error: err.message });
     }
     res.json({
-      message: req.t("app.file.uploadSuccess"),
+      message: tReq(req, "app.file.uploadSuccess"),
       fileUrl: `/uploads/${req.file.filename}`,
     });
   });
@@ -63,7 +64,7 @@ export const getPDF = (req, res) => {
   if (fs.existsSync(filePath)) {
     res.sendFile(path.resolve(filePath));
   } else {
-    res.status(404).json({ message: req.t("app.file.notFound") });
+    res.status(404).json({ message: tReq(req, "app.file.notFound") });
   }
 };
 const downloadPDF = async () => {

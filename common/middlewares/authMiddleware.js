@@ -1,19 +1,20 @@
 import User from "../../common/models/Auth/users.js";
 import NewPatientPolyclinic from "../../common/models/Polyclinic/newPatientPolyclinic.js";
+import { tReq } from "../i18n/index.js";
 
 const authMiddleware = async (req, res, next) => {
   try {
     if (!req.session || !req.session.userId) {
       return res
         .status(401)
-        .json({ authenticated: false, message: req.t("app.auth.notAuthorized") });
+        .json({ authenticated: false, message: tReq(req, "app.auth.notAuthorized") });
     }
 
     const user = await User.findById(req.session.userId);
     if (!user) {
       return res
         .status(401)
-        .json({ authenticated: false, message: req.t("app.user.notFound") });
+        .json({ authenticated: false, message: tReq(req, "app.user.notFound") });
     }
 
     // 🧩 Проверяем, есть ли у пациента профиль в поликлинике
@@ -38,7 +39,7 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (err) {
     console.error("❌ Ошибка в authMiddleware:", err.message);
-    return res.status(500).json({ message: req.t("app.server.internalError") });
+    return res.status(500).json({ message: tReq(req, "app.server.internalError") });
   }
 };
 

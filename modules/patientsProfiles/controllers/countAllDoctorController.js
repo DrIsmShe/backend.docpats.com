@@ -1,4 +1,5 @@
 import Doctor from "../../models/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const countAllDoctorController = async (req, res) => {
   try {
@@ -7,7 +8,7 @@ const countAllDoctorController = async (req, res) => {
     res.status(200).json({ count: totalDoctors });
   } catch (error) {
     console.error("Ошибка при подсчете докторов:", error);
-    res.status(500).json({ message: req.t("app.doctors.countError") });
+    res.status(500).json({ message: tReq(req, "app.doctors.countError") });
   }
 };
 

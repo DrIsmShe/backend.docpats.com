@@ -82,3 +82,21 @@ export function i18nMiddleware(req, res, next) {
 }
 
 export default { t, langOf, i18nMiddleware, SUPPORTED };
+
+/**
+ * Перевод, не зависящий от того, прошёл ли запрос через прослойку.
+ *
+ * req.t ставит i18nMiddleware, но контроллеры вызывают не только из
+ * маршрутов: так их зовут тесты, обработчики сокетов и задания по
+ * расписанию, подсовывая обычный объект вместо запроса. Обращение к
+ * несуществующему req.t там роняло бы обработчик — вместо ответа с
+ * понятной ошибкой пользователь получал бы 500.
+ *
+ * Поэтому язык берётся из запроса, если он настоящий, и из языка по
+ * умолчанию, если запроса нет.
+ */
+export function tReq(req, code, params, fallback) {
+  return typeof req?.t === "function"
+    ? req.t(code, params, fallback)
+    : t(code, langOf(req), params, fallback);
+}

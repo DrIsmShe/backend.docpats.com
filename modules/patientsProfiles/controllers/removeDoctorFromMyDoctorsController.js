@@ -1,6 +1,7 @@
 // server/modules/patientProfile/controllers/removeDoctorFromMyDoctorsController.js
 import mongoose from "mongoose";
 import User from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const toOID = (v) =>
   mongoose.isValidObjectId(v) ? new mongoose.Types.ObjectId(v) : null;
@@ -22,12 +23,12 @@ export async function removeDoctorFromMyDoctors(req, res) {
     if (!patientId) {
       return res
         .status(401)
-        .json({ success: false, message: req.t("app.patient.notAuthorized") });
+        .json({ success: false, message: tReq(req, "app.patient.notAuthorized") });
     }
     if (!doctorId && !alt) {
       return res
         .status(400)
-        .json({ success: false, message: req.t("app.validation.doctorIdMissing") });
+        .json({ success: false, message: tReq(req, "app.validation.doctorIdMissing") });
     }
 
     // Собираем все кандидаты (как строки и как ObjectId)
@@ -72,22 +73,22 @@ export async function removeDoctorFromMyDoctors(req, res) {
     if (!result.matchedCount) {
       return res
         .status(404)
-        .json({ success: false, message: req.t("app.patient.notFound2") });
+        .json({ success: false, message: tReq(req, "app.patient.notFound2") });
     }
     if (!result.modifiedCount) {
       return res
         .status(400)
-        .json({ success: false, message: req.t("app.doctor.notFoundInMyDoctors") });
+        .json({ success: false, message: tReq(req, "app.doctor.notFoundInMyDoctors") });
     }
 
     return res
       .status(200)
-      .json({ success: true, message: req.t("app.doctor.removedFromMyDoctors") });
+      .json({ success: true, message: tReq(req, "app.doctor.removedFromMyDoctors") });
   } catch (error) {
     console.error("❌ Ошибка при удалении доктора:", error);
     return res.status(500).json({
       success: false,
-      message: req.t("app.doctor.removeError"),
+      message: tReq(req, "app.doctor.removeError"),
     });
   }
 }

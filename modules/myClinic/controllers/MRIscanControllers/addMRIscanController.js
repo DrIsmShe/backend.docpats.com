@@ -4,6 +4,7 @@ import User from "../../../../common/models/Auth/users.js";
 import { recordActionAsync } from "../../../audit/index.js";
 /* ================= MIME → fileType ================= */
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 function resolveFileType(mimetype) {
   if (!mimetype) return "other";
@@ -31,11 +32,11 @@ const addMRIScanController = async (req, res) => {
     /* ================= AUTH ================= */
 
     if (!doctorId) {
-      return res.status(401).json({ message: req.t("myClinic.auth.notAuthorized") });
+      return res.status(401).json({ message: tReq(req, "myClinic.auth.notAuthorized") });
     }
 
     if (!patient) {
-      return res.status(404).json({ message: req.t("myClinic.patient.notFound3") });
+      return res.status(404).json({ message: tReq(req, "myClinic.patient.notFound3") });
     }
 
     /* ================= DOCTOR ================= */
@@ -43,7 +44,7 @@ const addMRIScanController = async (req, res) => {
     const doctor = await User.findById(doctorId).populate("specialization");
 
     if (!doctor) {
-      return res.status(404).json({ message: req.t("myClinic.doctor.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.doctor.notFound") });
     }
 
     const allowedSpecializations = [

@@ -1,5 +1,6 @@
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * @desc Разархивировать приём (вернуть в активные)
@@ -14,7 +15,7 @@ const unarchiveAppointmentController = async (req, res) => {
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: "Неавторизованный доступ.",
+        message: tReq(req, "app.auth.unauthorized2"),
       });
     }
 
@@ -23,7 +24,7 @@ const unarchiveAppointmentController = async (req, res) => {
     if (!doctorProfile) {
       return res.status(404).json({
         success: false,
-        message: "Профиль врача не найден.",
+        message: tReq(req, "app.doctor.profile.notFound"),
       });
     }
 
@@ -37,7 +38,7 @@ const unarchiveAppointmentController = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: "Приём не найден или уже активен.",
+        message: tReq(req, "app.appointment.notFoundOrActive"),
       });
     }
 
@@ -48,13 +49,13 @@ const unarchiveAppointmentController = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Приём успешно возвращён из архива.",
+      message: tReq(req, "app.appointment.restoredFromArchive"),
     });
   } catch (error) {
     console.error("❌ Ошибка при разархивировании:", error);
     return res.status(500).json({
       success: false,
-      message: "Внутренняя ошибка при разархивировании.",
+      message: tReq(req, "app.archive.extractionError"),
       error: error.message,
     });
   }

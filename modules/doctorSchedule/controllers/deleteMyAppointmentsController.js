@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * @desc Удаление приёмов врача — одиночное или массовое
@@ -19,7 +20,7 @@ const deleteMyAppointmentsController = async (req, res) => {
     if (!doctorUserId) {
       return res.status(401).json({
         success: false,
-        message: "Неавторизованный доступ. Пожалуйста, войдите заново.",
+        message: tReq(req, "app.auth.unauthorized"),
       });
     }
 
@@ -58,14 +59,14 @@ const deleteMyAppointmentsController = async (req, res) => {
       return res.status(400).json({
         success: false,
         message:
-          "Не указано, что удалять. Передайте ?appointmentId=... или /delete/:id, либо ?all=true.",
+          tReq(req, "app.appointment.delete.parameterMissing"),
       });
     }
 
     if (!mongoose.Types.ObjectId.isValid(targetId)) {
       return res.status(400).json({
         success: false,
-        message: "Некорректный идентификатор приёма.",
+        message: tReq(req, "app.appointment.invalidId2"),
       });
     }
 
@@ -83,7 +84,7 @@ const deleteMyAppointmentsController = async (req, res) => {
       if (!exists) {
         return res.status(404).json({
           success: false,
-          message: "Приём не найден.",
+          message: tReq(req, "app.appointment.notFound2"),
         });
       }
 
@@ -94,27 +95,27 @@ const deleteMyAppointmentsController = async (req, res) => {
       if (!belongsToDoctor) {
         return res.status(403).json({
           success: false,
-          message: "Этот приём принадлежит другому врачу.",
+          message: tReq(req, "app.appointment.belongsToAnotherDoctor"),
         });
       }
 
       // Теоретически сюда не попадём, но на всякий случай:
       return res.status(500).json({
         success: false,
-        message: "Не удалось удалить приём. Попробуйте ещё раз.",
+        message: tReq(req, "app.appointment.deleteFailed"),
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Приём успешно удалён.",
+      message: tReq(req, "app.appointment.deleteSuccess"),
       deletedId: deleted._id,
     });
   } catch (error) {
     console.error("Ошибка при удалении приёмов:", error);
     return res.status(500).json({
       success: false,
-      message: "Внутренняя ошибка сервера при удалении приёмов.",
+      message: tReq(req, "app.appointment.deleteServerError"),
       error: error.message,
     });
   }

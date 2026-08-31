@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import newPatientMedicalHistoryModel from "../../../common/models/Polyclinic/MedicalHistory/newPatientMedicalHistory.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import ClinicPatient from "../../clinic/clinic-patients/models/clinicPatient.model.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * GET /patient-profile/get-my-medical-history
@@ -38,14 +39,14 @@ const getMyMedicalHistoryController = async (req, res) => {
     if (!userId || role !== "patient") {
       return res.status(401).json({
         success: false,
-        message: req.t("app.access.registeredPatientsOnly"),
+        message: tReq(req, "app.access.registeredPatientsOnly"),
       });
     }
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: req.t("app.validation.invalidUserId"),
+        message: tReq(req, "app.validation.invalidUserId"),
       });
     }
 

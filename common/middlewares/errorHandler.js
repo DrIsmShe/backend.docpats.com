@@ -6,6 +6,7 @@
 
 import logger from "../logger.js";
 import { toErrorResponse, AppError } from "../utils/errors.js";
+import { tReq } from "../i18n/index.js";
 
 export function errorHandler(err, req, res, next) {
   if (res.headersSent) {
@@ -46,7 +47,7 @@ export function errorHandler(err, req, res, next) {
   // (свои классы вроде BookingPatientError). Оба варианта — один механизм.
   const i18nCode = err?.details?.i18n || err?.i18n;
   if (i18nCode && typeof req.t === "function") {
-    body.error = req.t(i18nCode, err?.details?.i18nParams || {}, body.error);
+    body.error = tReq(req, i18nCode, err?.details?.i18nParams || {}, body.error);
   }
 
   res.status(status).json(body);

@@ -1,6 +1,7 @@
 import AngiographyScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/AngiographyscanTemplates/Angiographyscan.js";
 import User, { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getListAngiographyScanController = async (req, res) => {
   const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -14,7 +15,7 @@ const getListAngiographyScanController = async (req, res) => {
     if (!patient) {
       return res.status(404).json({
         success: false,
-        message: req.t("myClinic.patient.notFound2"),
+        message: tReq(req, "myClinic.patient.notFound2"),
       });
     }
 
@@ -54,7 +55,7 @@ const getListAngiographyScanController = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: req.t("myClinic.angiography.fetchError"),
+      message: tReq(req, "myClinic.angiography.fetchError"),
       error: error.message,
     });
   }

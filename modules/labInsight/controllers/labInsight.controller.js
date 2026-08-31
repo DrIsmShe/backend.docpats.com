@@ -4,6 +4,7 @@
 
 import * as svc from "../services/labInsight.service.js";
 import { labInsightQuotaLeft } from "../services/labInsightQuota.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   ValidationError,
   NotFoundError,
@@ -29,7 +30,7 @@ function handleError(res, err) {
   console.error("labInsight:", err);
   return res
     .status(500)
-    .json({ success: false, message: "Не удалось разобрать бланк" });
+    .json({ success: false, message: res.req?.t?.("app.labForm.parseFailed") ?? "Не удалось разобрать бланк" });
 }
 
 export async function createController(req, res) {
@@ -37,7 +38,7 @@ export async function createController(req, res) {
     if (!req.file?.buffer?.length) {
       return res.status(400).json({
         success: false,
-        message: "Приложите фотографию бланка или PDF из лаборатории",
+        message: tReq(req, "app.labForm.attachmentRequired"),
       });
     }
 

@@ -8,6 +8,7 @@
 // authMiddleware кладёт req.userId.
 
 import * as notificationService from "../services/notification.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 // GET /notifications?status=all|unread|read&limit=&before=
 export const list = async (req, res) => {
@@ -16,7 +17,7 @@ export const list = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
 
     const { status = "all", limit, before } = req.query;
@@ -38,7 +39,7 @@ export const list = async (req, res) => {
     console.error("❌ notifications.list:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка загрузки уведомлений" });
+      .json({ success: false, message: tReq(req, "app.notifications.loadError") });
   }
 };
 
@@ -49,13 +50,13 @@ export const getUnreadCount = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
     const unread = await notificationService.unreadCount(userId);
     return res.status(200).json({ success: true, unreadCount: unread });
   } catch (err) {
     console.error("❌ notifications.unreadCount:", err);
-    return res.status(500).json({ success: false, message: "Ошибка сервера" });
+    return res.status(500).json({ success: false, message: tReq(req, "app.server.error") });
   }
 };
 
@@ -66,19 +67,19 @@ export const markRead = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
     const { id } = req.params;
     const result = await notificationService.markRead(userId, id);
     if (!result.matchedCount) {
       return res
         .status(404)
-        .json({ success: false, message: "Уведомление не найдено" });
+        .json({ success: false, message: tReq(req, "app.notification.notFound") });
     }
     return res.status(200).json({ success: true });
   } catch (err) {
     console.error("❌ notifications.markRead:", err);
-    return res.status(500).json({ success: false, message: "Ошибка сервера" });
+    return res.status(500).json({ success: false, message: tReq(req, "app.server.error") });
   }
 };
 
@@ -89,7 +90,7 @@ export const markAllRead = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
     const result = await notificationService.markAllRead(userId);
     return res
@@ -97,7 +98,7 @@ export const markAllRead = async (req, res) => {
       .json({ success: true, modified: result.modifiedCount ?? 0 });
   } catch (err) {
     console.error("❌ notifications.markAllRead:", err);
-    return res.status(500).json({ success: false, message: "Ошибка сервера" });
+    return res.status(500).json({ success: false, message: tReq(req, "app.server.error") });
   }
 };
 
@@ -108,19 +109,19 @@ export const remove = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
     const { id } = req.params;
     const result = await notificationService.remove(userId, id);
     if (!result.deletedCount) {
       return res
         .status(404)
-        .json({ success: false, message: "Уведомление не найдено" });
+        .json({ success: false, message: tReq(req, "app.notification.notFound") });
     }
     return res.status(200).json({ success: true });
   } catch (err) {
     console.error("❌ notifications.remove:", err);
-    return res.status(500).json({ success: false, message: "Ошибка сервера" });
+    return res.status(500).json({ success: false, message: tReq(req, "app.server.error") });
   }
 };
 

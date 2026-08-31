@@ -1,4 +1,5 @@
 import Article from "../../../common/models/Articles/articles.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const countArticlesTodayController = async (req, res) => {
   try {
@@ -13,7 +14,7 @@ const countArticlesTodayController = async (req, res) => {
 
     res.json({ count });
   } catch (error) {
-    res.status(500).json({ message: req.t("app.articles.countingError") });
+    res.status(500).json({ message: tReq(req, "app.articles.countingError") });
   }
 };
 

@@ -2,6 +2,7 @@ import CoronographyScanerTemplateNameofexam from "../../../../common/models/Poly
 import CoronographyScanerTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/CoronographyscanTemplates/CoronographyScanTemplateReport.js";
 import CoronographyScanerTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/CoronographyscanTemplates/CoronographyScanTemplateDiagnosis.js";
 import CoronographyScanerTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/CoronographyscanTemplates/CoronographyScanTemplateRecomandation.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 // Получить список шаблонов отчёта (Report)
 const getListNameofexamTemplatesCoronographyscanerController = async (
@@ -20,7 +21,7 @@ const getListNameofexamTemplatesCoronographyscanerController = async (
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.reportTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.reportTemplate.fetchError"), error });
   }
 };
 
@@ -38,7 +39,7 @@ const getListReportTemplatesCoronographyscanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.reportTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.reportTemplate.fetchError"), error });
   }
 };
 
@@ -59,7 +60,7 @@ const getListDiagnosisTemplatesCoronographyscanerController = async (
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.diagnosisTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.diagnosisTemplate.fetchError"), error });
   }
 };
 
@@ -80,7 +81,7 @@ const getListRecomandationTemplatesCoronographyscanerController = async (
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.recommendationTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.recommendationTemplate.fetchError"), error });
   }
 };
 

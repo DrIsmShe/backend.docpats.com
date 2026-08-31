@@ -1,5 +1,6 @@
 import chronicDiseasesPatient from "../../../common/models/Polyclinic/MedicalHistory/chronicDiseasesPatient.js";
 import path from "path";
+import { tReq } from "../../../common/i18n/index.js";
 
 // Контроллер для создания нового пациента
 const addPatientChronicDiseasesPatientController = async (req, res) => {
@@ -9,7 +10,7 @@ const addPatientChronicDiseasesPatientController = async (req, res) => {
       console.log("Ошибка: пользователь не аутентифицирован.");
       return res
         .status(403)
-        .json({ message: req.t("myClinic.auth.pleaseLogin") });
+        .json({ message: tReq(req, "myClinic.auth.pleaseLogin") });
     }
 
     const patientId = req.params.id;
@@ -22,7 +23,7 @@ const addPatientChronicDiseasesPatientController = async (req, res) => {
     if (!chronicDiseases || chronicDiseases.trim() === "") {
       return res
         .status(400)
-        .json({ message: req.t("myClinic.field.chronicDiseases.required") });
+        .json({ message: tReq(req, "myClinic.field.chronicDiseases.required") });
     }
 
     // Создание нового пациента с хроническими заболеваниями
@@ -38,13 +39,13 @@ const addPatientChronicDiseasesPatientController = async (req, res) => {
     console.log("Пациент успешно добавлен:", newchronicDiseasesPatient);
 
     return res.status(201).json({
-      message: req.t("myClinic.patient.addSuccess"),
+      message: tReq(req, "myClinic.patient.addSuccess"),
       patient: newchronicDiseasesPatient,
     });
   } catch (error) {
     console.error("Ошибка при добавлении пациента:", error);
     return res.status(500).json({
-      message: req.t("myClinic.patient.addError"),
+      message: tReq(req, "myClinic.patient.addError"),
       error: error.message,
     });
   }

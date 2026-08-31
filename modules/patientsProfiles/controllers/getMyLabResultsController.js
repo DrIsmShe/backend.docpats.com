@@ -28,6 +28,7 @@ import {
 // PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
 // расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
 import { decryptPHI } from "../../../common/utils/phiCrypto.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const getUserId = (req) =>
   req.user?.userId || req.session?.userId || req.userId || null;
@@ -74,7 +75,7 @@ const getMyLabResultsController = async (req, res) => {
   try {
     const rawUserId = getUserId(req);
     if (!rawUserId) {
-      return res.status(401).json({ ok: false, error: req.t("app.auth.notAuthorized2") });
+      return res.status(401).json({ ok: false, error: tReq(req, "app.auth.notAuthorized2") });
     }
     const userId = mongoose.Types.ObjectId.isValid(rawUserId)
       ? new mongoose.Types.ObjectId(rawUserId)

@@ -10,6 +10,7 @@
 // it is only a label inside the call, never used for auth.
 
 import { issueAppointmentRoomToken } from "../services/appointmentVideo.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const issueAppointmentVideoTokenController = async (req, res) => {
   try {
@@ -17,7 +18,7 @@ export const issueAppointmentVideoTokenController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
 
     const rawName =

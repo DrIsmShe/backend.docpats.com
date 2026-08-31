@@ -3,6 +3,7 @@ import User from "../../../common/models/Auth/users.js";
 import Article from "../../../common/models/Articles/articles.js";
 import Specialization from "../../../common/models/DoctorProfile/specialityOfDoctor.js";
 import DoctorReview from "../../../common/models/DoctorProfile/doctorReview.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /** Унифицированная функция нормализации URL */
 const normalizeImageUrl = (raw, baseUrl) => {
@@ -123,7 +124,7 @@ const AllDoctorController = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     console.error("❌ Ошибка при получении докторов:", error);
-    return res.status(500).json({ error: "Ошибка сервера" });
+    return res.status(500).json({ error: tReq(req, "app.server.error") });
   }
 };
 

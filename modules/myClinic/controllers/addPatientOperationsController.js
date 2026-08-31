@@ -1,5 +1,6 @@
 import PatientOperations from "../../models/polyclinic/operationsPatient.js";
 import path from "path";
+import { tReq } from "../../../common/i18n/index.js";
 
 // Контроллер для добавления данных об операциях пациента
 const addPatientOperationsController = async (req, res) => {
@@ -9,7 +10,7 @@ const addPatientOperationsController = async (req, res) => {
       console.log("Ошибка: пользователь не аутентифицирован.");
       return res
         .status(403)
-        .json({ message: req.t("myClinic.auth.pleaseLogin") });
+        .json({ message: tReq(req, "myClinic.auth.pleaseLogin") });
     }
 
     const patientId = req.params.id;
@@ -21,7 +22,7 @@ const addPatientOperationsController = async (req, res) => {
     // Проверка на наличие данных
     if (!operations || operations.trim() === "") {
       return res.status(400).json({
-        message: req.t("myClinic.field.operations.required"),
+        message: tReq(req, "myClinic.field.operations.required"),
       });
     }
 
@@ -38,13 +39,13 @@ const addPatientOperationsController = async (req, res) => {
     console.log("Данные успешно добавлены:", newPatientOperations);
 
     return res.status(201).json({
-      message: req.t("myClinic.operations.addSuccess"),
+      message: tReq(req, "myClinic.operations.addSuccess"),
       patient: newPatientOperations,
     });
   } catch (error) {
     console.error("Ошибка при добавлении данных об операциях:", error);
     return res.status(500).json({
-      message: req.t("myClinic.operations.addError"),
+      message: tReq(req, "myClinic.operations.addError"),
       error: error.message,
     });
   }

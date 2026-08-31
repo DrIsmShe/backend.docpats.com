@@ -29,6 +29,7 @@ import {
   ForbiddenError,
 } from "../../../common/utils/errors.js";
 import { asyncHandler } from "../../../common/middlewares/errorHandler.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 // Роли User, которым разрешено писать учебный контент.
 const AUTHOR_ROLES = ["admin"];
@@ -42,11 +43,11 @@ const REVIEWER_ROLES = ["admin"];
  */
 export const requireLearner = asyncHandler(async (req, res, next) => {
   const userId = req.session?.userId;
-  if (!userId) throw new UnauthorizedError("Требуется авторизация");
+  if (!userId) throw new UnauthorizedError(tReq(req, "app.auth.required"));
 
   const user = await User.findById(userId).select("_id role isBlocked").lean();
-  if (!user) throw new UnauthorizedError("Пользователь не найден");
-  if (user.isBlocked) throw new ForbiddenError("Аккаунт заблокирован");
+  if (!user) throw new UnauthorizedError(tReq(req, "app.user.notFound"));
+  if (user.isBlocked) throw new ForbiddenError(tReq(req, "app.account.blocked"));
 
   req.educationActor = { userId: user._id, role: user.role };
   next();

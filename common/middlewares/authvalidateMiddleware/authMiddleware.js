@@ -1,4 +1,5 @@
 import User from "../../../common/models/Auth/users.js";
+import { tReq } from "../../i18n/index.js";
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -15,7 +16,7 @@ const authMiddleware = async (req, res, next) => {
     if (user.permanentlyBanned) {
       return res
         .status(403)
-        .json({ message: req.t("app.account.permanentlyBlocked") });
+        .json({ message: tReq(req, "app.account.permanentlyBlocked") });
     }
 
     if (user.blockedUntil && user.blockedUntil > new Date()) {

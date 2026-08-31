@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import ArticleSingle from "../../../common/models/Articles/articles-scince.js";
 import User from "../../../common/models/Auth/users.js";
 import { getOrCreateTranslation } from "../../../modules/translation/translation.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const buildAuthorPublic = (authorId) => {
   if (!authorId) return null;
@@ -32,7 +33,7 @@ export const myArticleScientificSingleController = async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(articleId)) {
     return res
       .status(400)
-      .json({ success: false, message: "Неверный формат ID статьи" });
+      .json({ success: false, message: tReq(req, "app.article.invalidIdFormat") });
   }
 
   try {
@@ -52,7 +53,7 @@ export const myArticleScientificSingleController = async (req, res) => {
     if (!articleDoc) {
       return res
         .status(404)
-        .json({ success: false, message: "Статья не найдена" });
+        .json({ success: false, message: tReq(req, "app.article.notFound") });
     }
 
     const targetLanguage =

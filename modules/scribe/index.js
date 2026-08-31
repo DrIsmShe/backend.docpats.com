@@ -15,6 +15,7 @@
 import express from "express";
 import multer from "multer";
 import * as ctrl from "./controllers/scribe.controller.js";
+import { tReq } from "../../common/i18n/index.js";
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ function requireUser(req, res, next) {
   if (!req.session?.userId) {
     return res
       .status(401)
-      .json({ success: false, message: "Требуется вход в аккаунт" });
+      .json({ success: false, message: tReq(req, "app.auth.loginRequired") });
   }
   next();
 }

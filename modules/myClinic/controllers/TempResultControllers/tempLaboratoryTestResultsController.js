@@ -1,17 +1,18 @@
 import TempLaboratoryTestResults from "../../../../common/models/Polyclinic/TempResults/tempLaboratoryTestResults.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const TempLaboratoryTestResultsController = async (req, res) => {
   try {
     const { title, content, tags } = req.body;
     const userId = req.session.userId;
     if (!userId) {
-      return res.status(400).json({ message: req.t("myClinic.auth.userNotAuthorized") });
+      return res.status(400).json({ message: tReq(req, "myClinic.auth.userNotAuthorized") });
     }
     const existingTemplate = await TempLaboratoryTestResults.findOne({ title });
     if (existingTemplate) {
       return res
         .status(400)
-        .json({ message: req.t("myClinic.template.nameAlreadyExists") });
+        .json({ message: tReq(req, "myClinic.template.nameAlreadyExists") });
     }
     let tagsArray = [];
     if (tags) {
@@ -27,14 +28,14 @@ const TempLaboratoryTestResultsController = async (req, res) => {
     });
     await newTemplate.save();
     res.status(201).json({
-      message: req.t("myClinic.anamnesisMorbi.templateCreatedSuccessfully"),
+      message: tReq(req, "myClinic.anamnesisMorbi.templateCreatedSuccessfully"),
       template: newTemplate,
     });
   } catch (error) {
     console.error("Ошибка при создании шаблона анамнеза morbi:", error);
     res
       .status(500)
-      .json({ message: req.t("myClinic.template.createError"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError"), error: error.message });
   }
 };
 

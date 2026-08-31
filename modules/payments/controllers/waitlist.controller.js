@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────
 
 import PricingWaitlist from "../models/pricingWaitlist.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   PLAN_PRICES,
   EXAM_ADDON_PRICES,
@@ -32,7 +33,7 @@ export async function joinWaitlist(req, res) {
     if (!EMAIL_RE.test(clean)) {
       return res
         .status(400)
-        .json({ success: false, message: "Некорректный email" });
+        .json({ success: false, message: tReq(req, "app.email.invalid") });
     }
 
     // Неизвестный ключ тарифа не повод отказывать: заявка ценнее
@@ -58,7 +59,7 @@ export async function joinWaitlist(req, res) {
       success: true,
       id: doc._id,
       // Клиенту важно только «приняли» — списка мы не показываем.
-      message: "Заявка принята",
+      message: tReq(req, "app.request.accepted"),
     });
   } catch (err) {
     console.error("joinWaitlist error:", err.message);

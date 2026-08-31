@@ -1,0 +1,3434 @@
+[
+ {
+  "ru": "Аналитика не настроена: задайте POSTHOG_API_KEY и POSTHOG_PROJECT_ID в .env сервера ",
+  "code": "app.analytics.notConfigured",
+  "en": "Analytics not configured: set POSTHOG_API_KEY and POSTHOG_PROJECT_ID in server .env",
+  "az": "Analitika konfiqurasiya edilməyib: server .env faylında POSTHOG_API_KEY və POSTHOG_PROJECT_ID təyin edin",
+  "tr": "Analitik yapılandırılmadı: sunucu .env dosyasında POSTHOG_API_KEY ve POSTHOG_PROJECT_ID ayarlayın",
+  "ar": "لم يتم تكوين التحليلات: قم بتعيين POSTHOG_API_KEY و POSTHOG_PROJECT_ID في ملف .env الخاص بالخادم"
+ },
+ {
+  "ru": "PostHog не настроен: нет POSTHOG_API_KEY или POSTHOG_PROJECT_ID",
+  "code": "app.posthog.notConfigured",
+  "en": "PostHog not configured: missing POSTHOG_API_KEY or POSTHOG_PROJECT_ID",
+  "az": "PostHog konfiqurasiya edilməyib: POSTHOG_API_KEY və ya POSTHOG_PROJECT_ID yoxdur",
+  "tr": "PostHog yapılandırılmadı: POSTHOG_API_KEY veya POSTHOG_PROJECT_ID eksik",
+  "ar": "لم يتم تكوين PostHog: POSTHOG_API_KEY أو POSTHOG_PROJECT_ID مفقود"
+ },
+ {
+  "ru": "Неавторизованный доступ",
+  "code": "app.access.unauthorized",
+  "en": "Unauthorized access",
+  "az": "İcazəsiz giriş",
+  "tr": "Yetkisiz erişim",
+  "ar": "وصول غير مصرح به"
+ },
+ {
+  "ru": "Приём не найден",
+  "code": "app.appointment.notFound",
+  "en": "Appointment not found",
+  "az": "Qəbul tapılmadı",
+  "tr": "Randevu bulunamadı",
+  "ar": "لم يتم العثور على الموعد"
+ },
+ {
+  "ru": "Отчёт о видеосессии сохранён",
+  "code": "app.videoSession.reportSaved",
+  "en": "Video session report saved",
+  "az": "Video sessiyanın hesabatı saxlanıldı",
+  "tr": "Video oturumu raporu kaydedildi",
+  "ar": "تم حفظ تقرير جلسة الفيديو"
+ },
+ {
+  "ru": "Ошибка сервера",
+  "code": "app.server.error",
+  "en": "Server error",
+  "az": "Server xətası",
+  "tr": "Sunucu hatası",
+  "ar": "خطأ في الخادم"
+ },
+ {
+  "ru": "Файл не найден",
+  "code": "app.file.notFound",
+  "en": "File not found",
+  "az": "Fayl tapılmadı",
+  "tr": "Dosya bulunamadı",
+  "ar": "لم يتم العثور على الملف"
+ },
+ {
+  "ru": "Ошибка загрузки файла",
+  "code": "app.file.uploadError",
+  "en": "File upload error",
+  "az": "Fayl yükləmə xətası",
+  "tr": "Dosya yükleme hatası",
+  "ar": "خطأ في تحميل الملف"
+ },
+ {
+  "ru": "❌ Ошибка: ENCRYPTION_KEY не найден или некорректен!",
+  "code": "app.encryptionKey.invalid",
+  "en": "❌ Error: ENCRYPTION_KEY not found or invalid!",
+  "az": "❌ Xəta: ENCRYPTION_KEY tapılmadı və ya yanlışdır!",
+  "tr": "❌ Hata: ENCRYPTION_KEY bulunamadı veya geçersiz!",
+  "ar": "❌ خطأ: ENCRYPTION_KEY غير موجود أو غير صالح!"
+ },
+ {
+  "ru": "email, password, username і role обязательны",
+  "code": "app.registration.requiredFields",
+  "en": "email, password, username and role are required",
+  "az": "email, password, username və role mütləqdir",
+  "tr": "email, password, username ve role gereklidir",
+  "ar": "email و password و username و role مطلوبة"
+ },
+ {
+  "ru": "Derived local minutes are out of range — DST or tz boundary?",
+  "code": "app.dateTime.outOfRange",
+  "en": "Derived local minutes are out of range — DST or tz boundary?",
+  "az": "Hesablanmış yerli dəqiqələr diapazondan kənardır — DST və ya tz sərhədi?",
+  "tr": "Türetilen yerel dakikalar aralık dışında — DST veya tz sınırı?",
+  "ar": "الدقائق المحلية المشتقة خارج النطاق — حدود DST أو المنطقة الزمنية؟"
+ },
+ {
+  "ru": "Пробный период клиники закончился. Данные и выгрузка доступны, ",
+  "code": "app.clinic.trialExpired",
+  "en": "Clinic trial period has ended. Data and export are available, ",
+  "az": "Klinikanın sınaq müddəti bitib. Məlumatlar və ixrac əlçatandır, ",
+  "tr": "Kliniğin deneme süresi sona erdi. Veri ve dışa aktarma kullanılabilir, ",
+  "ar": "انتهت الفترة التجريبية للعيادة. البيانات والتصدير متاحان، "
+ },
+ {
+  "ru": "Для протокола исследования нужен вид исследования",
+  "code": "app.studyProtocol.studyTypeRequired",
+  "en": "Study type is required for the study protocol",
+  "az": "Müayinə protokolu üçün müayinə növü tələb olunur",
+  "tr": "Tetkik protokolü için tetkik türü gereklidir",
+  "ar": "نوع الفحص مطلوب لبروتوكول الفحص"
+ },
+ {
+  "ru": "Нужно передать title или body",
+  "code": "app.validation.titleOrBodyRequired",
+  "en": "Either title or body must be provided",
+  "az": "Başlıq və ya mətn təqdim edilməlidir",
+  "tr": "Başlık veya içerik sağlanmalıdır",
+  "ar": "يجب تقديم العنوان أو المحتوى"
+ },
+ {
+  "ru": "Нет активной клиники",
+  "code": "app.clinic.noActiveClinic",
+  "en": "No active clinic",
+  "az": "Aktiv klinika yoxdur",
+  "tr": "Aktif klinik yok",
+  "ar": "لا توجد عيادة نشطة"
+ },
+ {
+  "ru": "title обязателен",
+  "code": "app.validation.titleRequired",
+  "en": "Title is required",
+  "az": "Başlıq tələb olunur",
+  "tr": "Başlık gereklidir",
+  "ar": "العنوان مطلوب"
+ },
+ {
+  "ru": "title не может быть пустым",
+  "code": "app.validation.titleCannotBeEmpty",
+  "en": "Title cannot be empty",
+  "az": "Başlıq boş ola bilməz",
+  "tr": "Başlık boş olamaz",
+  "ar": "لا يمكن أن يكون العنوان فارغاً"
+ },
+ {
+  "ru": "Категория не может быть родителем сама себе",
+  "code": "app.category.cannotBeOwnParent",
+  "en": "Category cannot be its own parent",
+  "az": "Kateqoriya özünün valideyn kateqoriyası ola bilməz",
+  "tr": "Kategori kendi üst kategorisi olamaz",
+  "ar": "لا يمكن أن تكون الفئة أصلاً لنفسها"
+ },
+ {
+  "ru": "Родительская категория не найдена",
+  "code": "app.category.parentNotFound",
+  "en": "Parent category not found",
+  "az": "Valideyn kateqoriya tapılmadı",
+  "tr": "Üst kategori bulunamadı",
+  "ar": "لم يتم العثور على الفئة الأصل"
+ },
+ {
+  "ru": "Нельзя вкладывать глубже двух уровней (подкатегория не может иметь подкатегорий)",
+  "code": "app.category.maxNestingLevelExceeded",
+  "en": "Cannot nest deeper than two levels (subcategory cannot have subcategories)",
+  "az": "İki səviyyədən daha dərin yerləşdirmək mümkün deyil (altkateqoriyanın altkateqoriyası ola bilməz)",
+  "tr": "İki seviyeden daha derin iç içe geçirilemez (alt kategori, alt kategoriye sahip olamaz)",
+  "ar": "لا يمكن التداخل أعمق من مستويين (الفئة الفرعية لا يمكن أن تحتوي على فئات فرعية)"
+ },
+ {
+  "ru": "У этой категории есть подкатегории — её нельзя сделать подкатегорией",
+  "code": "app.category.cannotMakeSubcategoryWithChildren",
+  "en": "This category has subcategories — it cannot be made a subcategory",
+  "az": "Bu kateqoriyanın altkateqoriyaları var — onu altkateqoriya etmək mümkün deyil",
+  "tr": "Bu kategorinin alt kategorileri var — alt kategori yapılamaz",
+  "ar": "هذه الفئة تحتوي على فئات فرعية — لا يمكن جعلها فئة فرعية"
+ },
+ {
+  "ru": "Приглашённый пользователь принял приглашение и присоединился к клинике.",
+  "code": "app.invitation.userAcceptedAndJoined",
+  "en": "The invited user has accepted the invitation and joined the clinic.",
+  "az": "Dəvət olunmuş istifadəçi dəvəti qəbul edib klinikaya qoşuldu.",
+  "tr": "Davet edilen kullanıcı daveti kabul etti ve kliniğe katıldı.",
+  "ar": "قبل المستخدم المدعو الدعوة وانضم إلى العيادة."
+ },
+ {
+  "ru": "Приглашённый пользователь отклонил приглашение в клинику.",
+  "code": "app.invitation.userDeclined",
+  "en": "The invited user has declined the invitation to the clinic.",
+  "az": "Dəvət olunmuş istifadəçi klinikaya dəvəti rədd etdi.",
+  "tr": "Davet edilen kullanıcı kliniğe daveti reddetti.",
+  "ar": "رفض المستخدم المدعو الدعوة إلى العيادة."
+ },
+ {
+  "ru": "Комментарий не может быть пустым",
+  "code": "app.comment.cannotBeEmpty",
+  "en": "Comment cannot be empty",
+  "az": "Şərh boş ola bilməz",
+  "tr": "Yorum boş olamaz",
+  "ar": "لا يمكن أن يكون التعليق فارغاً"
+ },
+ {
+  "ru": "Комментарий слишком длинный (макс. 1000 символов)",
+  "code": "app.comment.tooLong",
+  "en": "Comment is too long (max. 1000 characters)",
+  "az": "Şərh çox uzundur (maks. 1000 simvol)",
+  "tr": "Yorum çok uzun (maks. 1000 karakter)",
+  "ar": "التعليق طويل جداً (الحد الأقصى 1000 حرف)"
+ },
+ {
+  "ru": "Вы навсегда заблокированы",
+  "code": "app.user.bannedPermanently",
+  "en": "You are permanently blocked",
+  "az": "Siz daimi olaraq bloklanmısınız",
+  "tr": "Kalıcı olarak engellendiniz",
+  "ar": "لقد تم حظرك بشكل دائم"
+ },
+ {
+  "ru": "Вы временно заблокированы",
+  "code": "app.user.bannedTemporarily",
+  "en": "You are temporarily blocked",
+  "az": "Siz müvəqqəti olaraq bloklanmısınız",
+  "tr": "Geçici olarak engellendiniz",
+  "ar": "لقد تم حظرك مؤقتاً"
+ },
+ {
+  "ru": "Обнаружен оскорбительный текст",
+  "code": "app.content.offensiveDetected",
+  "en": "Offensive content detected",
+  "az": "Təhqiredici mətn aşkar edilib",
+  "tr": "Rahatsız edici içerik tespit edildi",
+  "ar": "تم اكتشاف محتوى مسيء"
+ },
+ {
+  "ru": "Ошибка при создании комментария",
+  "code": "app.comment.createError",
+  "en": "Error creating comment",
+  "az": "Şərh yaradılarkən xəta baş verdi",
+  "tr": "Yorum oluşturulurken hata",
+  "ar": "خطأ في إنشاء التعليق"
+ },
+ {
+  "ru": "Ошибка при получении комментариев",
+  "code": "app.comment.fetchError",
+  "en": "Error retrieving comments",
+  "az": "Şərhlər əldə edilərkən xəta baş verdi",
+  "tr": "Yorumlar alınırken hata",
+  "ar": "خطأ في استرجاع التعليقات"
+ },
+ {
+  "ru": "Комментарий не найден",
+  "code": "app.comment.notFound",
+  "en": "Comment not found",
+  "az": "Şərh tapılmadı",
+  "tr": "Yorum bulunamadı",
+  "ar": "التعليق غير موجود"
+ },
+ {
+  "ru": "Редактирование недоступно",
+  "code": "app.comment.editNotAllowed",
+  "en": "Editing is not available",
+  "az": "Redaktə mümkün deyil",
+  "tr": "Düzenleme mümkün değil",
+  "ar": "التعديل غير متاح"
+ },
+ {
+  "ru": "Ошибка при редактировании",
+  "code": "app.comment.editError",
+  "en": "Error editing comment",
+  "az": "Redaktə zamanı xəta baş verdi",
+  "tr": "Düzenlerken hata",
+  "ar": "خطأ في تعديل التعليق"
+ },
+ {
+  "ru": "Вы не можете удалить этот комментарий",
+  "code": "app.comment.deleteNotAllowed",
+  "en": "You cannot delete this comment",
+  "az": "Bu şərhi silə bilməzsiniz",
+  "tr": "Bu yorumu silemezsiniz",
+  "ar": "لا يمكنك حذف هذا التعليق"
+ },
+ {
+  "ru": "Комментарий удален",
+  "code": "app.comment.deleted",
+  "en": "Comment deleted",
+  "az": "Şərh silindi",
+  "tr": "Yorum silindi",
+  "ar": "تم حذف التعليق"
+ },
+ {
+  "ru": "Ошибка при удалении",
+  "code": "app.comment.deleteError",
+  "en": "Error deleting comment",
+  "az": "Silinərkən xəta baş verdi",
+  "tr": "Silinirken hata",
+  "ar": "خطأ في حذف التعليق"
+ },
+ {
+  "ru": "Ошибка при лайке",
+  "code": "app.like.error",
+  "en": "Error while liking",
+  "az": "Bəyənmə zamanı xəta",
+  "tr": "Beğenme sırasında hata",
+  "ar": "خطأ أثناء الإعجاب"
+ },
+ {
+  "ru": "ids должен быть массивом",
+  "code": "app.validation.idsMustBeArray",
+  "en": "ids must be an array",
+  "az": "ids massiv olmalıdır",
+  "tr": "ids bir dizi olmalıdır",
+  "ar": "يجب أن يكون ids مصفوفة"
+ },
+ {
+  "ru": "Не найдено",
+  "code": "app.general.notFound",
+  "en": "Not found",
+  "az": "Tapılmadı",
+  "tr": "Bulunamadı",
+  "ar": "غير موجود"
+ },
+ {
+  "ru": "Ошибка получения статуса лайка",
+  "code": "app.like.statusError",
+  "en": "Error retrieving like status",
+  "az": "Bəyənmə statusunu əldə etmə xətası",
+  "tr": "Beğeni durumu alınırken hata",
+  "ar": "خطأ في استرجاع حالة الإعجاب"
+ },
+ {
+  "ru": "Статья не найдена",
+  "code": "app.article.notFound",
+  "en": "Article not found",
+  "az": "Məqalə tapılmadı",
+  "tr": "Makale bulunamadı",
+  "ar": "المقالة غير موجودة"
+ },
+ {
+  "ru": "Доктор не найден",
+  "code": "app.doctor.notFound",
+  "en": "Doctor not found",
+  "az": "Həkim tapılmadı",
+  "tr": "Doktor bulunamadı",
+  "ar": "الطبيب غير موجود"
+ },
+ {
+  "ru": "Не удалось отправить SMS",
+  "code": "app.sms.sendFailed",
+  "en": "Failed to send SMS",
+  "az": "SMS göndərilmədi",
+  "tr": "SMS gönderilemedi",
+  "ar": "فشل إرسال الرسالة النصية"
+ },
+ {
+  "ru": "Файл не передан",
+  "code": "app.file.notProvided",
+  "en": "File not provided",
+  "az": "Fayl təqdim edilməyib",
+  "tr": "Dosya sağlanmadı",
+  "ar": "لم يتم توفير الملف"
+ },
+ {
+  "ru": "targetLang обязателен",
+  "code": "app.validation.targetLangRequired",
+  "en": "targetLang is required",
+  "az": "targetLang tələb olunur",
+  "tr": "targetLang gereklidir",
+  "ar": "targetLang مطلوب"
+ },
+ {
+  "ru": "Неверный messageId",
+  "code": "app.validation.invalidMessageId",
+  "en": "Invalid messageId",
+  "az": "Yanlış messageId",
+  "tr": "Geçersiz messageId",
+  "ar": "messageId غير صالح"
+ },
+ {
+  "ru": "Сообщение не найдено",
+  "code": "app.message.notFound",
+  "en": "Message not found",
+  "az": "Mesaj tapılmadı",
+  "tr": "Mesaj bulunamadı",
+  "ar": "الرسالة غير موجودة"
+ },
+ {
+  "ru": "Сообщение удалено",
+  "code": "app.message.deleted",
+  "en": "Message deleted",
+  "az": "Mesaj silindi",
+  "tr": "Mesaj silindi",
+  "ar": "تم حذف الرسالة"
+ },
+ {
+  "ru": "Перевод доступен только для текстовых сообщений",
+  "code": "app.translation.textMessagesOnly",
+  "en": "Translation is available only for text messages",
+  "az": "Tərcümə yalnız mətn mesajları üçün mövcuddur",
+  "tr": "Çeviri yalnızca metin mesajları için kullanılabilir",
+  "ar": "الترجمة متاحة فقط للرسائل النصية"
+ },
+ {
+  "ru": "Слишком много запросов. Подождите минуту.",
+  "code": "app.rateLimit.tooManyRequests",
+  "en": "Too many requests. Please wait a minute.",
+  "az": "Çox sayda sorğu. Bir dəqiqə gözləyin.",
+  "tr": "Çok fazla istek. Lütfen bir dakika bekleyin.",
+  "ar": "عدد كبير جداً من الطلبات. يرجى الانتظار لمدة دقيقة."
+ },
+ {
+  "ru": "Неверный код языка. Используй формат ISO 639-1 (en, ru, ja, zh-TW, ...)",
+  "code": "app.language.invalidCode",
+  "en": "Invalid language code. Use ISO 639-1 format (en, ru, ja, zh-TW, ...)",
+  "az": "Yanlış dil kodu. ISO 639-1 formatından istifadə edin (en, ru, ja, zh-TW, ...)",
+  "tr": "Geçersiz dil kodu. ISO 639-1 formatını kullanın (en, ru, ja, zh-TW, ...)",
+  "ar": "رمز لغة غير صحيح. استخدم تنسيق ISO 639-1 (en, ru, ja, zh-TW, ...)"
+ },
+ {
+  "ru": "peerUserId обязателен",
+  "code": "app.validation.peerUserIdRequired",
+  "en": "peerUserId is required",
+  "az": "peerUserId tələb olunur",
+  "tr": "peerUserId gereklidir",
+  "ar": "peerUserId مطلوب"
+ },
+ {
+  "ru": "currentUserId и peerUserId обязательны",
+  "code": "app.validation.userIdsRequired",
+  "en": "currentUserId and peerUserId are required",
+  "az": "currentUserId və peerUserId tələb olunur",
+  "tr": "currentUserId ve peerUserId gereklidir",
+  "ar": "currentUserId و peerUserId مطلوبان"
+ },
+ {
+  "ru": "Сообщение недоступно для перевода",
+  "code": "app.translation.messageNotAvailable",
+  "en": "Message is not available for translation",
+  "az": "Mesaj tərcümə üçün mövcud deyil",
+  "tr": "Mesaj çeviri için kullanılamıyor",
+  "ar": "الرسالة غير متاحة للترجمة"
+ },
+ {
+  "ru": "Сообщение не может быть пустым",
+  "code": "app.validation.messageEmpty",
+  "en": "Message cannot be empty",
+  "az": "Mesaj boş ola bilməz",
+  "tr": "Mesaj boş olamaz",
+  "ar": "لا يمكن أن تكون الرسالة فارغة"
+ },
+ {
+  "ru": "Сообщение слишком длинное (максимум 5000 символов)",
+  "code": "app.validation.messageTooLong",
+  "en": "Message is too long (maximum 5000 characters)",
+  "az": "Mesaj çox uzundur (maksimum 5000 simvol)",
+  "tr": "Mesaj çok uzun (maksimum 5000 karakter)",
+  "ar": "الرسالة طويلة جداً (الحد الأقصى 5000 حرف)"
+ },
+ {
+  "ru": "attachments должен быть массивом",
+  "code": "app.validation.attachmentsMustBeArray",
+  "en": "attachments must be an array",
+  "az": "attachments massiv olmalıdır",
+  "tr": "attachments bir dizi olmalıdır",
+  "ar": "attachments يجب أن يكون مصفوفة"
+ },
+ {
+  "ru": "Максимум 10 вложений за раз",
+  "code": "app.validation.attachmentsLimit",
+  "en": "Maximum 10 attachments at a time",
+  "az": "Eyni anda maksimum 10 əlavə",
+  "tr": "Aynı anda maksimum 10 ek",
+  "ar": "الحد الأقصى 10 مرفقات في المرة الواحدة"
+ },
+ {
+  "ru": "AI вернул пустой ответ",
+  "code": "app.ai.emptyResponse",
+  "en": "AI returned an empty response",
+  "az": "AI boş cavab qaytardı",
+  "tr": "AI boş bir yanıt döndürdü",
+  "ar": "أرجع الذكاء الاصطناعي استجابة فارغة"
+ },
+ {
+  "ru": "AI вернул невалидный JSON для эпикриза",
+  "code": "app.ai.invalidEpicrisisJson",
+  "en": "AI returned invalid JSON for epicrisis",
+  "az": "AI epikriz üçün yanlış JSON qaytardı",
+  "tr": "AI epikriz için geçersiz JSON döndürdü",
+  "ar": "أرجع الذكاء الاصطناعي JSON غير صحيح للملخص الطبي"
+ },
+ {
+  "ru": "Audit service недоступен — модуль diagnostics работать не должен",
+  "code": "app.diagnostics.auditServiceUnavailable",
+  "en": "Audit service unavailable — diagnostics module should not operate",
+  "az": "Audit xidməti əlçatan deyil — diagnostika modulu işləməməlidir",
+  "tr": "Denetim servisi kullanılamıyor — tanı modülü çalışmamalıdır",
+  "ar": "خدمة التدقيق غير متاحة — يجب ألا تعمل وحدة التشخيص"
+ },
+ {
+  "ru": "Файл не похож на DICOM: нет маркера DICM",
+  "code": "app.dicom.invalidFormat",
+  "en": "File does not appear to be DICOM: DICM marker missing",
+  "az": "Fayl DICOM formatında deyil: DICM markeri yoxdur",
+  "tr": "Dosya DICOM formatında görünmüyor: DICM işaretleyicisi eksik",
+  "ar": "الملف لا يبدو بتنسيق DICOM: علامة DICM مفقودة"
+ },
+ {
+  "ru": "В файле нет пиксельных данных или размеров изображения",
+  "code": "app.dicom.missingPixelData",
+  "en": "File contains no pixel data or image dimensions",
+  "az": "Faylda piksel məlumatları və ya şəkil ölçüləri yoxdur",
+  "tr": "Dosyada piksel verisi veya görüntü boyutları bulunmuyor",
+  "ar": "الملف لا يحتوي على بيانات البكسل أو أبعاد الصورة"
+ },
+ {
+  "ru": "Цветной DICOM (RGB) пока не поддерживается — выгрузите срез в PNG",
+  "code": "app.dicom.rgbNotSupported",
+  "en": "Color DICOM (RGB) is not yet supported — export the slice as PNG",
+  "az": "Rəngli DICOM (RGB) hələ dəstəklənmir — kəsiyi PNG formatında ixrac edin",
+  "tr": "Renkli DICOM (RGB) henüz desteklenmiyor — kesiti PNG olarak dışa aktarın",
+  "ar": "DICOM الملون (RGB) غير مدعوم حاليًا — قم بتصدير المقطع بصيغة PNG"
+ },
+ {
+  "ru": "Не удалось открыть PDF — файл повреждён или защищён паролем",
+  "code": "app.pdf.cannotOpen",
+  "en": "Failed to open PDF — file is corrupted or password-protected",
+  "az": "PDF açıla bilmədi — fayl zədələnib və ya parol ilə qorunur",
+  "tr": "PDF açılamadı — dosya bozuk veya parola korumalı",
+  "ar": "فشل فتح ملف PDF — الملف تالف أو محمي بكلمة مرور"
+ },
+ {
+  "ru": "Файл пуст",
+  "code": "app.file.empty",
+  "en": "File is empty",
+  "az": "Fayl boşdur",
+  "tr": "Dosya boş",
+  "ar": "الملف فارغ"
+ },
+ {
+  "ru": "ИИ не настроен: задайте ANTHROPIC_API_KEY в .env сервера",
+  "code": "app.ai.notConfigured",
+  "en": "AI is not configured: set ANTHROPIC_API_KEY in server .env",
+  "az": "AI konfiqurasiya edilməyib: serverin .env faylında ANTHROPIC_API_KEY təyin edin",
+  "tr": "AI yapılandırılmamış: sunucu .env dosyasında ANTHROPIC_API_KEY ayarlayın",
+  "ar": "الذكاء الاصطناعي غير مُعدّ: قم بتعيين ANTHROPIC_API_KEY في ملف .env للخادم"
+ },
+ {
+  "ru": "Модель вернула пустой ответ",
+  "code": "app.ai.emptyResponse2",
+  "en": "Model returned an empty response",
+  "az": "Model boş cavab qaytardı",
+  "tr": "Model boş yanıt döndürdü",
+  "ar": "أرجع النموذج استجابة فارغة"
+ },
+ {
+  "ru": "Модель вернула некорректный JSON",
+  "code": "app.ai.invalidJson",
+  "en": "Model returned invalid JSON",
+  "az": "Model yanlış JSON qaytardı",
+  "tr": "Model geçersiz JSON döndürdü",
+  "ar": "أرجع النموذج JSON غير صالح"
+ },
+ {
+  "ru": "Разбор запущен. Результаты появятся в деле по мере готовности.",
+  "code": "app.analysis.started",
+  "en": "Analysis started. Results will appear in the case as they become available.",
+  "az": "Təhlil başladı. Nəticələr hazır olduqca işdə görünəcək.",
+  "tr": "Analiz başlatıldı. Sonuçlar hazır oldukça vakada görünecektir.",
+  "ar": "بدأ التحليل. ستظهر النتائج في الملف عند جاهزيتها."
+ },
+ {
+  "ru": "Файл не приложен",
+  "code": "app.file.notAttached",
+  "en": "File not attached",
+  "az": "Fayl əlavə edilməyib",
+  "tr": "Dosya eklenmemiş",
+  "ar": "الملف غير مرفق"
+ },
+ {
+  "ru": "Дело не найдено",
+  "code": "app.case.notFound",
+  "en": "Case not found",
+  "az": "İş tapılmadı",
+  "tr": "Vaka bulunamadı",
+  "ar": "الملف غير موجود"
+ },
+ {
+  "ru": "Дело закрыто — переоткройте его, чтобы добавить материалы",
+  "code": "app.case.closedReopenToAddMaterials",
+  "en": "Case is closed — reopen it to add materials",
+  "az": "İş bağlanıb — material əlavə etmək üçün onu yenidən açın",
+  "tr": "Vaka kapalı — materyal eklemek için yeniden açın",
+  "ar": "الحالة مغلقة — أعد فتحها لإضافة المواد"
+ },
+ {
+  "ru": "Не выбрано ни одной модальности для разбора",
+  "code": "app.analysis.noModalitySelected",
+  "en": "No modality selected for analysis",
+  "az": "Təhlil üçün heç bir modalitet seçilməyib",
+  "tr": "Analiz için hiçbir modalite seçilmedi",
+  "ar": "لم يتم اختيار أي طريقة للتحليل"
+ },
+ {
+  "ru": "Задание не найдено",
+  "code": "app.task.notFound",
+  "en": "Task not found",
+  "az": "Tapşırıq tapılmadı",
+  "tr": "Görev bulunamadı",
+  "ar": "المهمة غير موجودة"
+ },
+ {
+  "ru": "Задание уже выполняется",
+  "code": "app.task.alreadyInProgress",
+  "en": "Task is already in progress",
+  "az": "Tapşırıq artıq icra olunur",
+  "tr": "Görev zaten devam ediyor",
+  "ar": "المهمة قيد التنفيذ بالفعل"
+ },
+ {
+  "ru": "Это чужое дело",
+  "code": "app.case.notAuthorized",
+  "en": "This case belongs to another user",
+  "az": "Bu iş başqa istifadəçiyə aiddir",
+  "tr": "Bu vaka başka bir kullanıcıya ait",
+  "ar": "هذه الحالة تخص مستخدمًا آخر"
+ },
+ {
+  "ru": "Дело закрыто",
+  "code": "app.case.closed",
+  "en": "Case is closed",
+  "az": "İş bağlanıb",
+  "tr": "Vaka kapalı",
+  "ar": "الحالة مغلقة"
+ },
+ {
+  "ru": "Напишите вывод врача — дело закрывается им, а не разбором ИИ",
+  "code": "app.case.doctorConclusionRequired",
+  "en": "Write the doctor's conclusion — the case is closed by it, not by AI analysis",
+  "az": "Həkimin nəticəsini yazın — iş onunla bağlanır, süni intellekt təhlili ilə yox",
+  "tr": "Doktor sonucunu yazın — vaka onunla kapatılır, yapay zeka analizi ile değil",
+  "ar": "اكتب استنتاج الطبيب — تُغلق الحالة به وليس بتحليل الذكاء الاصطناعي"
+ },
+ {
+  "ru": "Материал не найден",
+  "code": "app.material.notFound",
+  "en": "Material not found",
+  "az": "Material tapılmadı",
+  "tr": "Materyal bulunamadı",
+  "ar": "المادة غير موجودة"
+ },
+ {
+  "ru": "Вывод не найден",
+  "code": "app.conclusion.notFound",
+  "en": "Conclusion not found",
+  "az": "Nəticə tapılmadı",
+  "tr": "Sonuç bulunamadı",
+  "ar": "الاستنتاج غير موجود"
+ },
+ {
+  "ru": "Нужно хотя бы одно поле",
+  "code": "app.validation.atLeastOneFieldRequired",
+  "en": "At least one field is required",
+  "az": "Ən azı bir sahə tələb olunur",
+  "tr": "En az bir alan gereklidir",
+  "ar": "مطلوب حقل واحد على الأقل"
+ },
+ {
+  "ru": "Материал пуст: нужен текст, файл или структурированные данные",
+  "code": "app.material.empty",
+  "en": "Material is empty: text, file, or structured data required",
+  "az": "Material boşdur: mətn, fayl və ya strukturlaşdırılmış məlumat tələb olunur",
+  "tr": "Materyal boş: metin, dosya veya yapılandırılmış veri gereklidir",
+  "ar": "المادة فارغة: مطلوب نص أو ملف أو بيانات منظمة"
+ },
+ {
+  "ru": "Требуется авторизация",
+  "code": "app.auth.required",
+  "en": "Authorization required",
+  "az": "Avtorizasiya tələb olunur",
+  "tr": "Yetkilendirme gerekli",
+  "ar": "التفويض مطلوب"
+ },
+ {
+  "ru": "Пользователь не найден",
+  "code": "app.user.notFound",
+  "en": "User not found",
+  "az": "İstifadəçi tapılmadı",
+  "tr": "Kullanıcı bulunamadı",
+  "ar": "المستخدم غير موجود"
+ },
+ {
+  "ru": "Аккаунт заблокирован",
+  "code": "app.account.blocked",
+  "en": "Account blocked",
+  "az": "Hesab bloklanıb",
+  "tr": "Hesap engellenmiş",
+  "ar": "الحساب محظور"
+ },
+ {
+  "ru": "Раздел доступен врачам: разбор материалов ведёт врач",
+  "code": "app.section.doctorsOnly",
+  "en": "Section available to doctors: materials are reviewed by a physician",
+  "az": "Bölmə yalnız həkimlər üçün əlçatandır: materialları həkim nəzərdən keçirir",
+  "tr": "Bölüm yalnızca doktorlar içindir: materyaller doktor tarafından incelenir",
+  "ar": "القسم متاح للأطباء: يتم مراجعة المواد من قبل الطبيب"
+ },
+ {
+  "ru": "Этот приватный пациент не принадлежит текущему врачу",
+  "code": "app.privatePatient.notOwnedByCurrentDoctor",
+  "en": "This private patient does not belong to the current doctor",
+  "az": "Bu şəxsi xəstə cari həkimə aid deyil",
+  "tr": "Bu özel hasta mevcut doktora ait değil",
+  "ar": "هذا المريض الخاص لا ينتمي إلى الطبيب الحالي"
+ },
+ {
+  "ru": "Этот пациент не принадлежит текущему врачу",
+  "code": "app.patient.notOwnedByCurrentDoctor",
+  "en": "This patient does not belong to the current doctor",
+  "az": "Bu xəstə cari həkimə aid deyil",
+  "tr": "Bu hasta mevcut doktora ait değil",
+  "ar": "هذا المريض لا ينتمي إلى الطبيب الحالي"
+ },
+ {
+  "ru": "Пожалуйста, войдите в систему",
+  "code": "app.auth.pleaseLogin",
+  "en": "Please log in",
+  "az": "Zəhmət olmasa daxil olun",
+  "tr": "Lütfen giriş yapın",
+  "ar": "الرجاء تسجيل الدخول"
+ },
+ {
+  "ru": "Аудиофайл не передан (поле audio)",
+  "code": "app.audio.fileNotProvided",
+  "en": "Audio file not provided (audio field)",
+  "az": "Audio fayl təqdim edilməyib (audio sahəsi)",
+  "tr": "Ses dosyası sağlanmadı (audio alanı)",
+  "ar": "لم يتم توفير ملف الصوت (حقل audio)"
+ },
+ {
+  "ru": "Ожидается аудиофайл (webm, ogg, mp4, wav)",
+  "code": "app.audio.invalidFormat",
+  "en": "Audio file expected (webm, ogg, mp4, wav)",
+  "az": "Audio fayl gözlənilir (webm, ogg, mp4, wav)",
+  "tr": "Ses dosyası bekleniyor (webm, ogg, mp4, wav)",
+  "ar": "ملف صوتي متوقع (webm, ogg, mp4, wav)"
+ },
+ {
+  "ru": "Пациент",
+  "code": "app.patient.label",
+  "en": "Patient",
+  "az": "Xəstə",
+  "tr": "Hasta",
+  "ar": "المريض"
+ },
+ {
+  "ru": "Некорректный ID пациента",
+  "code": "app.patient.invalidId",
+  "en": "Invalid patient ID",
+  "az": "Yanlış xəstə ID-si",
+  "tr": "Geçersiz hasta kimliği",
+  "ar": "معرف المريض غير صالح"
+ },
+ {
+  "ru": "Ожидается объект draft с полями черновика",
+  "code": "app.draft.objectExpected",
+  "en": "Draft object with draft fields expected",
+  "az": "Qaralama sahələri olan draft obyekti gözlənilir",
+  "tr": "Taslak alanlarına sahip draft nesnesi bekleniyor",
+  "ar": "كائن draft مع حقول المسودة متوقع"
+ },
+ {
+  "ru": "Это задание принадлежит другому врачу",
+  "code": "app.task.belongsToAnotherDoctor",
+  "en": "This task belongs to another doctor",
+  "az": "Bu tapşırıq başqa həkimə aiddir",
+  "tr": "Bu görev başka bir doktora ait",
+  "ar": "هذه المهمة تنتمي إلى طبيب آخر"
+ },
+ {
+  "ru": "Аудиофайл не передан",
+  "code": "app.audio.fileNotProvided2",
+  "en": "Audio file not provided",
+  "az": "Audio faylı təqdim edilməyib",
+  "tr": "Ses dosyası sağlanmadı",
+  "ar": "لم يتم توفير الملف الصوتي"
+ },
+ {
+  "ru": "Не определён пациент для надиктовки",
+  "code": "app.dictation.patientNotSpecified",
+  "en": "Patient not specified for dictation",
+  "az": "Diktə üçün xəstə təyin edilməyib",
+  "tr": "Dikte için hasta belirtilmedi",
+  "ar": "لم يتم تحديد المريض للإملاء"
+ },
+ {
+  "ru": "У задания нет черновика",
+  "code": "app.task.draftNotFound",
+  "en": "Task has no draft",
+  "az": "Tapşırığın layihəsi yoxdur",
+  "tr": "Görevin taslağı yok",
+  "ar": "المهمة ليس لها مسودة"
+ },
+ {
+  "ru": "Задание уже прикреплено к карте — отказаться нельзя",
+  "code": "app.task.alreadyAttachedCannotDecline",
+  "en": "Task is already attached to the record — cannot decline",
+  "az": "Tapşırıq artıq karta əlavə edilib — imtina etmək mümkün deyil",
+  "tr": "Görev zaten kayda eklendi — reddetmek mümkün değil",
+  "ar": "المهمة مرفقة بالفعل بالسجل — لا يمكن الرفض"
+ },
+ {
+  "ru": "У задания нет аудио",
+  "code": "app.task.audioNotFound",
+  "en": "Task has no audio",
+  "az": "Tapşırığın audiosu yoxdur",
+  "tr": "Görevin sesi yok",
+  "ar": "المهمة ليس لها صوت"
+ },
+ {
+  "ru": "Пустая расшифровка — нечего разбирать",
+  "code": "app.transcription.emptyNothingToParse",
+  "en": "Empty transcription — nothing to parse",
+  "az": "Boş transkript — təhlil üçün heç nə yoxdur",
+  "tr": "Boş transkript — ayrıştırılacak bir şey yok",
+  "ar": "نسخ فارغ — لا يوجد شيء للتحليل"
+ },
+ {
+  "ru": "ИИ отказался обрабатывать эту надиктовку. Черновик придётся заполнить вручную.",
+  "code": "app.ai.refusedToProcessDictation",
+  "en": "AI refused to process this dictation. The draft will need to be filled out manually.",
+  "az": "Süni intellekt bu diktəni emal etməkdən imtina etdi. Layihə əl ilə doldurulmalıdır.",
+  "tr": "Yapay zeka bu dikteyi işlemeyi reddetti. Taslağın manuel olarak doldurulması gerekecek.",
+  "ar": "رفض الذكاء الاصطناعي معالجة هذا الإملاء. سيتعين ملء المسودة يدويًا."
+ },
+ {
+  "ru": "Надиктовка слишком длинная для одной обработки — разбейте её на части",
+  "code": "app.dictation.tooLongSplitRequired",
+  "en": "Dictation is too long for single processing — split it into parts",
+  "az": "Diktə tək emal üçün çox uzundur — onu hissələrə bölün",
+  "tr": "Dikte tek işlem için çok uzun — parçalara bölün",
+  "ar": "الإملاء طويل جدًا للمعالجة الواحدة — قسّمه إلى أجزاء"
+ },
+ {
+  "ru": "Ответ ИИ оборвался на пределе длины — попробуйте надиктовать короче",
+  "code": "app.ai.responseTruncatedDictateShorter",
+  "en": "AI response was cut off at length limit — try dictating shorter",
+  "az": "Süni intellektin cavabı uzunluq limitində kəsildi — daha qısa diktə etməyə çalışın",
+  "tr": "Yapay zeka yanıtı uzunluk sınırında kesildi — daha kısa dikte etmeyi deneyin",
+  "ar": "تم قطع استجابة الذكاء الاصطناعي عند حد الطول — حاول الإملاء بشكل أقصر"
+ },
+ {
+  "ru": "ИИ вернул пустой ответ",
+  "code": "app.ai.emptyResponse3",
+  "en": "AI returned an empty response",
+  "az": "Süni intellekt boş cavab qaytardı",
+  "tr": "Yapay zeka boş bir yanıt döndürdü",
+  "ar": "أرجع الذكاء الاصطناعي استجابة فارغة"
+ },
+ {
+  "ru": "ИИ вернул некорректный JSON",
+  "code": "app.ai.invalidJsonResponse",
+  "en": "AI returned invalid JSON",
+  "az": "Süni intellekt yanlış JSON qaytardı",
+  "tr": "Yapay zeka geçersiz JSON döndürdü",
+  "ar": "أرجع الذكاء الاصطناعي JSON غير صالح"
+ },
+ {
+  "ru": "Пустой аудиофайл",
+  "code": "app.audio.fileEmpty",
+  "en": "Empty audio file",
+  "az": "Boş audio fayl",
+  "tr": "Boş ses dosyası",
+  "ar": "ملف صوتي فارغ"
+ },
+ {
+  "ru": "Распознавание не настроено: задайте OPENAI_API_KEY в .env сервера",
+  "code": "app.speechRecognition.notConfigured",
+  "en": "Speech recognition is not configured: set OPENAI_API_KEY in server .env",
+  "az": "Nitq tanınması konfiqurasiya edilməyib: serverin .env faylında OPENAI_API_KEY təyin edin",
+  "tr": "Konuşma tanıma yapılandırılmamış: sunucu .env dosyasında OPENAI_API_KEY ayarlayın",
+  "ar": "التعرف على الكلام غير مكوّن: قم بتعيين OPENAI_API_KEY في ملف .env الخاص بالخادم"
+ },
+ {
+  "ru": "В записи не распознана речь. Проверьте микрофон и надиктуйте заново.",
+  "code": "app.speechRecognition.noSpeechDetected",
+  "en": "No speech detected in the recording. Check your microphone and dictate again.",
+  "az": "Yazıda nitq tanınmadı. Mikrofonu yoxlayın və yenidən diqtə edin.",
+  "tr": "Kayıtta konuşma algılanmadı. Mikrofonunuzu kontrol edin ve tekrar dikte edin.",
+  "ar": "لم يتم التعرف على الكلام في التسجيل. تحقق من الميكروفون وأعد الإملاء."
+ },
+ {
+  "ru": "clinic.sink: у задания нет clinicId — запись создать некуда",
+  "code": "app.task.clinicIdMissing",
+  "en": "clinic.sink: task has no clinicId — cannot create record",
+  "az": "clinic.sink: tapşırıqda clinicId yoxdur — qeyd yaratmaq mümkün deyil",
+  "tr": "clinic.sink: görevde clinicId yok — kayıt oluşturulamıyor",
+  "ar": "clinic.sink: المهمة لا تحتوي على clinicId — لا يمكن إنشاء السجل"
+ },
+ {
+  "ru": "Некорректный ID приёма",
+  "code": "app.appointment.invalidId",
+  "en": "Invalid appointment ID",
+  "az": "Yanlış qəbul ID-si",
+  "tr": "Geçersiz randevu kimliği",
+  "ar": "معرّف الموعد غير صالح"
+ },
+ {
+  "ru": "История не найдена",
+  "code": "app.history.notFound",
+  "en": "History not found",
+  "az": "Tarixçə tapılmadı",
+  "tr": "Geçmiş bulunamadı",
+  "ar": "السجل غير موجود"
+ },
+ {
+  "ru": "Ошибка сервера: ",
+  "code": "app.server.error2",
+  "en": "Server error: ",
+  "az": "Server xətası: ",
+  "tr": "Sunucu hatası: ",
+  "ar": "خطأ في الخادم: "
+ },
+ {
+  "ru": "Профиль врача не найден",
+  "code": "app.doctor.profileNotFound",
+  "en": "Doctor profile not found",
+  "az": "Həkim profili tapılmadı",
+  "tr": "Doktor profili bulunamadı",
+  "ar": "لم يتم العثور على ملف الطبيب"
+ },
+ {
+  "ru": "Чат создаётся только для видео-приёмов",
+  "code": "app.chat.videoAppointmentsOnly",
+  "en": "Chat is created only for video appointments",
+  "az": "Söhbət yalnız video qəbullar üçün yaradılır",
+  "tr": "Sohbet yalnızca görüntülü randevular için oluşturulur",
+  "ar": "يتم إنشاء الدردشة فقط للمواعيد المرئية"
+ },
+ {
+  "ru": "Дата обязательна",
+  "code": "app.date.required",
+  "en": "Date is required",
+  "az": "Tarix məcburidir",
+  "tr": "Tarih gereklidir",
+  "ar": "التاريخ مطلوب"
+ },
+ {
+  "ru": "Такой даты не найдено в блокировках.",
+  "code": "app.block.dateNotFound",
+  "en": "This date not found in blocks.",
+  "az": "Bu tarix bloklarda tapılmadı.",
+  "tr": "Bu tarih engellemelerde bulunamadı.",
+  "ar": "لم يتم العثور على هذا التاريخ في عمليات الحظر."
+ },
+ {
+  "ru": "✅ Блокировка успешно добавлена или обновлена",
+  "code": "app.block.successfullyAddedOrUpdated",
+  "en": "✅ Block successfully added or updated",
+  "az": "✅ Blok uğurla əlavə edildi və ya yeniləndi",
+  "tr": "✅ Engelleme başarıyla eklendi veya güncellendi",
+  "ar": "✅ تمت إضافة الحظر أو تحديثه بنجاح"
+ },
+ {
+  "ru": "Ошибка при работе с блокировками",
+  "code": "app.block.operationError",
+  "en": "Error working with blocks",
+  "az": "Bloklarla işləyərkən xəta",
+  "tr": "Engellemelerle çalışırken hata",
+  "ar": "خطأ في العمل مع عمليات الحظر"
+ },
+ {
+  "ru": "У врача нет блокировок",
+  "code": "app.doctor.noBlockedDays",
+  "en": "The doctor has no blocked days",
+  "az": "Həkimin bloklanan günləri yoxdur",
+  "tr": "Doktorun engellenmiş günü yoktur",
+  "ar": "لا توجد أيام محظورة للطبيب"
+ },
+ {
+  "ru": "✅ Блокированные дни успешно получены",
+  "code": "app.doctor.blockedDays.fetchSuccess",
+  "en": "✅ Blocked days successfully retrieved",
+  "az": "✅ Bloklanan günlər uğurla əldə edildi",
+  "tr": "✅ Engellenmiş günler başarıyla alındı",
+  "ar": "✅ تم استرجاع الأيام المحظورة بنجاح"
+ },
+ {
+  "ru": "Ошибка при получении блокированных дней",
+  "code": "app.doctor.blockedDays.fetchError",
+  "en": "Error retrieving blocked days",
+  "az": "Bloklanan günlərin əldə edilməsində xəta",
+  "tr": "Engellenmiş günler alınırken hata oluştu",
+  "ar": "خطأ في استرجاع الأيام المحظورة"
+ },
+ {
+  "ru": "Недопустимый статус",
+  "code": "app.appointment.status.invalid",
+  "en": "Invalid status",
+  "az": "Yanlış status",
+  "tr": "Geçersiz durum",
+  "ar": "حالة غير صالحة"
+ },
+ {
+  "ru": "Ошибка при обновлении статуса приёма",
+  "code": "app.appointment.status.updateError",
+  "en": "Error updating appointment status",
+  "az": "Qəbulun statusunun yenilənməsində xəta",
+  "tr": "Randevu durumu güncellenirken hata oluştu",
+  "ar": "خطأ في تحديث حالة الموعد"
+ },
+ {
+  "ru": "Профиль врача не найден.",
+  "code": "app.doctor.profile.notFound",
+  "en": "Doctor profile not found.",
+  "az": "Həkim profili tapılmadı.",
+  "tr": "Doktor profili bulunamadı.",
+  "ar": "لم يتم العثور على ملف الطبيب."
+ },
+ {
+  "ru": "Приём не найден или не принадлежит данному врачу.",
+  "code": "app.appointment.notFoundOrUnauthorized",
+  "en": "Appointment not found or does not belong to this doctor.",
+  "az": "Qəbul tapılmadı və ya bu həkimə aid deyil.",
+  "tr": "Randevu bulunamadı veya bu doktora ait değil.",
+  "ar": "الموعد غير موجود أو لا ينتمي لهذا الطبيب."
+ },
+ {
+  "ru": "Этот приём уже находится в архиве.",
+  "code": "app.appointment.alreadyArchived",
+  "en": "This appointment is already archived.",
+  "az": "Bu qəbul artıq arxivləşdirilib.",
+  "tr": "Bu randevu zaten arşivlenmiş.",
+  "ar": "هذا الموعد مؤرشف بالفعل."
+ },
+ {
+  "ru": "Приём успешно архивирован.",
+  "code": "app.appointment.archiveSuccess",
+  "en": "Appointment successfully archived.",
+  "az": "Qəbul uğurla arxivləşdirildi.",
+  "tr": "Randevu başarıyla arşivlendi.",
+  "ar": "تم أرشفة الموعد بنجاح."
+ },
+ {
+  "ru": "Ошибка сервера при архивировании приёма.",
+  "code": "app.appointment.archiveError",
+  "en": "Server error while archiving appointment.",
+  "az": "Qəbulun arxivləşdirilməsi zamanı server xətası.",
+  "tr": "Randevu arşivlenirken sunucu hatası oluştu.",
+  "ar": "خطأ في الخادم أثناء أرشفة الموعد."
+ },
+ {
+  "ru": "Неавторизованный доступ. Пожалуйста, войдите заново.",
+  "code": "app.auth.unauthorized",
+  "en": "Unauthorized access. Please log in again.",
+  "az": "İcazəsiz giriş. Zəhmət olmasa yenidən daxil olun.",
+  "tr": "Yetkisiz erişim. Lütfen tekrar giriş yapın.",
+  "ar": "وصول غير مصرح به. يرجى تسجيل الدخول مرة أخرى."
+ },
+ {
+  "ru": "Не указано, что удалять. Передайте ?appointmentId=... или /delete/:id, либо ?all=true.",
+  "code": "app.appointment.delete.parameterMissing",
+  "en": "Deletion target not specified. Provide ?appointmentId=... or /delete/:id, or ?all=true.",
+  "az": "Silinəcək göstərilməyib. ?appointmentId=... və ya /delete/:id, yaxud ?all=true göndərin.",
+  "tr": "Silinecek öğe belirtilmedi. ?appointmentId=... veya /delete/:id ya da ?all=true gönderin.",
+  "ar": "لم يتم تحديد ما يجب حذفه. قم بتوفير ?appointmentId=... أو /delete/:id أو ?all=true."
+ },
+ {
+  "ru": "Некорректный идентификатор приёма.",
+  "code": "app.appointment.invalidId2",
+  "en": "Invalid appointment ID.",
+  "az": "Qəbulun identifikatoru yanlışdır.",
+  "tr": "Geçersiz randevu kimliği.",
+  "ar": "معرف الموعد غير صحيح."
+ },
+ {
+  "ru": "Приём не найден.",
+  "code": "app.appointment.notFound2",
+  "en": "Appointment not found.",
+  "az": "Qəbul tapılmadı.",
+  "tr": "Randevu bulunamadı.",
+  "ar": "لم يتم العثور على الموعد."
+ },
+ {
+  "ru": "Этот приём принадлежит другому врачу.",
+  "code": "app.appointment.belongsToAnotherDoctor",
+  "en": "This appointment belongs to another doctor.",
+  "az": "Bu qəbul başqa həkimə aiddir.",
+  "tr": "Bu randevu başka bir doktora aittir.",
+  "ar": "هذا الموعد يخص طبيباً آخر."
+ },
+ {
+  "ru": "Не удалось удалить приём. Попробуйте ещё раз.",
+  "code": "app.appointment.deleteFailed",
+  "en": "Failed to delete appointment. Please try again.",
+  "az": "Qəbulu silmək mümkün olmadı. Zəhmət olmasa yenidən cəhd edin.",
+  "tr": "Randevu silinemedi. Lütfen tekrar deneyin.",
+  "ar": "فشل حذف الموعد. يرجى المحاولة مرة أخرى."
+ },
+ {
+  "ru": "Приём успешно удалён.",
+  "code": "app.appointment.deleteSuccess",
+  "en": "Appointment successfully deleted.",
+  "az": "Qəbul uğurla silindi.",
+  "tr": "Randevu başarıyla silindi.",
+  "ar": "تم حذف الموعد بنجاح."
+ },
+ {
+  "ru": "Внутренняя ошибка сервера при удалении приёмов.",
+  "code": "app.appointment.deleteServerError",
+  "en": "Internal server error while deleting appointments.",
+  "az": "Qəbulları silərkən daxili server xətası.",
+  "tr": "Randevuları silerken sunucu hatası oluştu.",
+  "ar": "خطأ داخلي في الخادم أثناء حذف المواعيد."
+ },
+ {
+  "ru": "У вас пока нет назначенных приёмов.",
+  "code": "app.appointment.noScheduled",
+  "en": "You have no scheduled appointments yet.",
+  "az": "Hələ planlaşdırılmış qəbulunuz yoxdur.",
+  "tr": "Henüz planlanmış randevunuz bulunmamaktadır.",
+  "ar": "ليس لديك مواعيد مجدولة بعد."
+ },
+ {
+  "ru": "Ошибка сервера при получении приёмов.",
+  "code": "app.appointment.fetchServerError",
+  "en": "Server error while retrieving appointments.",
+  "az": "Qəbulları əldə edərkən server xətası.",
+  "tr": "Randevuları alırken sunucu hatası oluştu.",
+  "ar": "خطأ في الخادم أثناء استرجاع المواعيد."
+ },
+ {
+  "ru": "Приём не найден для этого врача",
+  "code": "app.appointment.notFoundForDoctor",
+  "en": "Appointment not found for this doctor.",
+  "az": "Bu həkim üçün qəbul tapılmadı.",
+  "tr": "Bu doktor için randevu bulunamadı.",
+  "ar": "لم يتم العثور على موعد لهذا الطبيب."
+ },
+ {
+  "ru": "Ошибка сервера при обновлении статуса.",
+  "code": "app.status.updateServerError",
+  "en": "Server error while updating status.",
+  "az": "Statusu yeniləyərkən server xətası.",
+  "tr": "Durum güncellenirken sunucu hatası oluştu.",
+  "ar": "خطأ في الخادم أثناء تحديث الحالة."
+ },
+ {
+  "ru": "У вас пока нет расписания",
+  "code": "app.schedule.notSet",
+  "en": "You do not have a schedule yet.",
+  "az": "Hələ cədvəliniz yoxdur.",
+  "tr": "Henüz programınız bulunmamaktadır.",
+  "ar": "ليس لديك جدول بعد."
+ },
+ {
+  "ru": "✅ Расписание успешно сохранено",
+  "code": "app.schedule.saveSuccess",
+  "en": "✅ Schedule successfully saved.",
+  "az": "✅ Cədvəl uğurla saxlanıldı.",
+  "tr": "✅ Program başarıyla kaydedildi.",
+  "ar": "✅ تم حفظ الجدول بنجاح."
+ },
+ {
+  "ru": "Расписание не найдено",
+  "code": "app.schedule.notFound",
+  "en": "Schedule not found",
+  "az": "Cədvəl tapılmadı",
+  "tr": "Program bulunamadı",
+  "ar": "لم يتم العثور على الجدول"
+ },
+ {
+  "ru": "У вас пока нет приёмов",
+  "code": "app.appointments.noAppointments",
+  "en": "You have no appointments yet",
+  "az": "Hələ qəbulunuz yoxdur",
+  "tr": "Henüz randevunuz yok",
+  "ar": "لا توجد لديك مواعيد بعد"
+ },
+ {
+  "ru": "Нет ID приёма",
+  "code": "app.appointment.idMissing",
+  "en": "Appointment ID is missing",
+  "az": "Qəbul ID-si yoxdur",
+  "tr": "Randevu ID'si eksik",
+  "ar": "معرف الموعد مفقود"
+ },
+ {
+  "ru": "Ошибка при получении истории действий: ",
+  "code": "app.actionHistory.fetchError",
+  "en": "Error retrieving action history: ",
+  "az": "Əməliyyat tarixçəsinin alınmasında xəta: ",
+  "tr": "İşlem geçmişi alınırken hata: ",
+  "ar": "خطأ في استرجاع سجل الإجراءات: "
+ },
+ {
+  "ru": "Неавторизованный доступ.",
+  "code": "app.auth.unauthorized2",
+  "en": "Unauthorized access.",
+  "az": "İcazəsiz giriş.",
+  "tr": "Yetkisiz erişim.",
+  "ar": "وصول غير مصرح به."
+ },
+ {
+  "ru": "Внутренняя ошибка сервера при получении архива.",
+  "code": "app.archive.serverError",
+  "en": "Internal server error while retrieving archive.",
+  "az": "Arxiv alınarkən daxili server xətası.",
+  "tr": "Arşiv alınırken sunucu hatası.",
+  "ar": "خطأ داخلي في الخادم أثناء استرجاع الأرشيف."
+ },
+ {
+  "ru": "Некорректная дата",
+  "code": "app.date.invalid",
+  "en": "Invalid date",
+  "az": "Yanlış tarix",
+  "tr": "Geçersiz tarih",
+  "ar": "تاريخ غير صحيح"
+ },
+ {
+  "ru": "Необходимо передать doctorId, date и type",
+  "code": "app.parameters.required",
+  "en": "doctorId, date and type are required",
+  "az": "doctorId, date və type məcburidir",
+  "tr": "doctorId, date ve type gereklidir",
+  "ar": "doctorId و date و type مطلوبة"
+ },
+ {
+  "ru": "Расписание врача не найдено",
+  "code": "app.doctor.scheduleNotFound",
+  "en": "Doctor's schedule not found",
+  "az": "Həkimin cədvəli tapılmadı",
+  "tr": "Doktorun programı bulunamadı",
+  "ar": "لم يتم العثور على جدول الطبيب"
+ },
+ {
+  "ru": "Ошибка сервера при загрузке слотов",
+  "code": "app.slots.loadError",
+  "en": "Server error while loading slots",
+  "az": "Slotlar yüklənərkən server xətası",
+  "tr": "Slotlar yüklenirken sunucu hatası",
+  "ar": "خطأ في الخادم أثناء تحميل الفترات الزمنية"
+ },
+ {
+  "ru": "Приём не найден или уже активен.",
+  "code": "app.appointment.notFoundOrActive",
+  "en": "Appointment not found or already active.",
+  "az": "Qəbul tapılmadı və ya artıq aktivdir.",
+  "tr": "Randevu bulunamadı veya zaten aktif.",
+  "ar": "لم يتم العثور على الموعد أو أنه نشط بالفعل."
+ },
+ {
+  "ru": "Приём успешно возвращён из архива.",
+  "code": "app.appointment.restoredFromArchive",
+  "en": "Appointment successfully restored from archive.",
+  "az": "Qəbul arxivdən uğurla bərpa edildi.",
+  "tr": "Randevu arşivden başarıyla geri yüklendi.",
+  "ar": "تم استعادة الموعد من الأرشيف بنجاح."
+ },
+ {
+  "ru": "Внутренняя ошибка при разархивировании.",
+  "code": "app.archive.extractionError",
+  "en": "Internal error during extraction.",
+  "az": "Arxivdən çıxarma zamanı daxili xəta.",
+  "tr": "Arşiv açılırken dahili hata.",
+  "ar": "خطأ داخلي أثناء فك الضغط."
+ },
+ {
+  "ru": "Не авторизован",
+  "code": "app.auth.notAuthorized",
+  "en": "Not authorized",
+  "az": "İcazə verilməyib",
+  "tr": "Yetkilendirilmemiş",
+  "ar": "غير مصرح"
+ },
+ {
+  "ru": "Доступ запрещен",
+  "code": "app.access.forbidden",
+  "en": "Access forbidden",
+  "az": "Giriş qadağandır",
+  "tr": "Erişim yasak",
+  "ar": "الوصول محظور"
+ },
+ {
+  "ru": "Ошибка сервера при получении статей",
+  "code": "app.articles.fetchError",
+  "en": "Server error while fetching articles",
+  "az": "Məqalələr əldə edilərkən server xətası",
+  "tr": "Makaleler getirilirken sunucu hatası",
+  "ar": "خطأ في الخادم أثناء جلب المقالات"
+ },
+ {
+  "ru": "Некорректный ID коллеги",
+  "code": "app.colleague.invalidId",
+  "en": "Invalid colleague ID",
+  "az": "Yanlış həmkar İD-si",
+  "tr": "Geçersiz meslektaş kimliği",
+  "ar": "معرف الزميل غير صالح"
+ },
+ {
+  "ru": "Нельзя добавить себя в друзья",
+  "code": "app.colleague.cannotAddSelf",
+  "en": "Cannot add yourself as a colleague",
+  "az": "Özünüzü həmkar kimi əlavə edə bilməzsiniz",
+  "tr": "Kendinizi meslektaş olarak ekleyemezsiniz",
+  "ar": "لا يمكن إضافة نفسك كزميل"
+ },
+ {
+  "ru": "Текущий пользователь не найден",
+  "code": "app.user.currentNotFound",
+  "en": "Current user not found",
+  "az": "Cari istifadəçi tapılmadı",
+  "tr": "Mevcut kullanıcı bulunamadı",
+  "ar": "المستخدم الحالي غير موجود"
+ },
+ {
+  "ru": "Пользователь для добавления не является доктором",
+  "code": "app.colleague.notDoctor",
+  "en": "User to be added is not a doctor",
+  "az": "Əlavə ediləcək istifadəçi həkim deyil",
+  "tr": "Eklenecek kullanıcı doktor değil",
+  "ar": "المستخدم المراد إضافته ليس طبيبًا"
+ },
+ {
+  "ru": "Этот пользователь уже у вас в друзьях",
+  "code": "app.colleague.alreadyAdded",
+  "en": "This user is already in your colleagues",
+  "az": "Bu istifadəçi artıq həmkarlarınız arasındadır",
+  "tr": "Bu kullanıcı zaten meslektaşlarınız arasında",
+  "ar": "هذا المستخدم موجود بالفعل في زملائك"
+ },
+ {
+  "ru": "Не удалось добавить в друзья",
+  "code": "app.colleague.addFailed",
+  "en": "Failed to add colleague",
+  "az": "Həmkar əlavə edilə bilmədi",
+  "tr": "Meslektaş eklenemedi",
+  "ar": "فشل في إضافة الزميل"
+ },
+ {
+  "ru": "Друг успешно добавлен",
+  "code": "app.colleague.addSuccess",
+  "en": "Colleague successfully added",
+  "az": "Həmkar uğurla əlavə edildi",
+  "tr": "Meslektaş başarıyla eklendi",
+  "ar": "تمت إضافة الزميل بنجاح"
+ },
+ {
+  "ru": "Некорректный ID друга",
+  "code": "app.colleague.invalidFriendId",
+  "en": "Invalid colleague ID",
+  "az": "Yanlış həmkar İD-si",
+  "tr": "Geçersiz meslektaş kimliği",
+  "ar": "معرف الزميل غير صالح"
+ },
+ {
+  "ru": "Друг не найден (не удалось сопоставить ID)",
+  "code": "app.friend.idNotMatched",
+  "en": "Friend not found (failed to match ID)",
+  "az": "Dost tapılmadı (ID uyğunlaşdırıla bilmədi)",
+  "tr": "Arkadaş bulunamadı (ID eşleştirilemedi)",
+  "ar": "لم يتم العثور على الصديق (فشل في مطابقة المعرف)"
+ },
+ {
+  "ru": "Друг не найден в вашем списке",
+  "code": "app.friend.notInList",
+  "en": "Friend not found in your list",
+  "az": "Dost sizin siyahınızda tapılmadı",
+  "tr": "Arkadaş listenizde bulunamadı",
+  "ar": "لم يتم العثور على الصديق في قائمتك"
+ },
+ {
+  "ru": "Требуется авторизация.",
+  "code": "app.auth.required2",
+  "en": "Authorization required.",
+  "az": "Avtorizasiya tələb olunur.",
+  "tr": "Yetkilendirme gerekli.",
+  "ar": "التفويض مطلوب."
+ },
+ {
+  "ru": "Некорректный ID врача.",
+  "code": "app.doctor.invalidId",
+  "en": "Invalid doctor ID.",
+  "az": "Yanlış həkim ID-si.",
+  "tr": "Geçersiz doktor kimliği.",
+  "ar": "معرف الطبيب غير صالح."
+ },
+ {
+  "ru": "Оценка должна быть от 1 до 5.",
+  "code": "app.rating.outOfRange",
+  "en": "Rating must be between 1 and 5.",
+  "az": "Qiymət 1 ilə 5 arasında olmalıdır.",
+  "tr": "Değerlendirme 1 ile 5 arasında olmalıdır.",
+  "ar": "يجب أن يكون التقييم بين 1 و 5."
+ },
+ {
+  "ru": "Отзыв слишком длинный (макс. 1000).",
+  "code": "app.review.tooLong",
+  "en": "Review is too long (max. 1000).",
+  "az": "Rəy çox uzundur (maks. 1000).",
+  "tr": "Yorum çok uzun (maks. 1000).",
+  "ar": "المراجعة طويلة جدًا (الحد الأقصى 1000)."
+ },
+ {
+  "ru": "Врач не найден.",
+  "code": "app.doctor.notFound2",
+  "en": "Doctor not found.",
+  "az": "Həkim tapılmadı.",
+  "tr": "Doktor bulunamadı.",
+  "ar": "لم يتم العثور على الطبيب."
+ },
+ {
+  "ru": "Нельзя оценивать свой профиль.",
+  "code": "app.review.cannotReviewSelf",
+  "en": "Cannot review your own profile.",
+  "az": "Öz profilinizi qiymətləndirə bilməzsiniz.",
+  "tr": "Kendi profilinizi değerlendiremezsiniz.",
+  "ar": "لا يمكن مراجعة ملفك الشخصي."
+ },
+ {
+  "ru": "Некорректный ID отзыва.",
+  "code": "app.review.invalidId",
+  "en": "Invalid review ID.",
+  "az": "Yanlış rəy ID-si.",
+  "tr": "Geçersiz yorum kimliği.",
+  "ar": "معرف المراجعة غير صالح."
+ },
+ {
+  "ru": "Ответ не может быть пустым.",
+  "code": "app.reply.empty",
+  "en": "Reply cannot be empty.",
+  "az": "Cavab boş ola bilməz.",
+  "tr": "Yanıt boş olamaz.",
+  "ar": "لا يمكن أن يكون الرد فارغًا."
+ },
+ {
+  "ru": "Ответ слишком длинный (макс. 1000).",
+  "code": "app.reply.tooLong",
+  "en": "Reply is too long (max. 1000).",
+  "az": "Cavab çox uzundur (maks. 1000).",
+  "tr": "Yanıt çok uzun (maks. 1000).",
+  "ar": "الرد طويل جدًا (الحد الأقصى 1000)."
+ },
+ {
+  "ru": "Отзыв не найден.",
+  "code": "app.review.notFound",
+  "en": "Review not found.",
+  "az": "Rəy tapılmadı.",
+  "tr": "Yorum bulunamadı.",
+  "ar": "لم يتم العثور على المراجعة."
+ },
+ {
+  "ru": "Отвечать можно только на отзывы о своём профиле.",
+  "code": "app.review.canOnlyReplyToOwnProfile",
+  "en": "You can only reply to reviews on your own profile.",
+  "az": "Yalnız öz profiliniz haqqında rəylərə cavab verə bilərsiniz.",
+  "tr": "Yalnızca kendi profilinizdeki yorumlara yanıt verebilirsiniz.",
+  "ar": "يمكنك الرد فقط على التقييمات الخاصة بملفك الشخصي."
+ },
+ {
+  "ru": "Неверный формат ID статьи",
+  "code": "app.article.invalidIdFormat",
+  "en": "Invalid article ID format",
+  "az": "Məqalə ID formatı yanlışdır",
+  "tr": "Geçersiz makale ID formatı",
+  "ar": "تنسيق معرّف المقالة غير صالح"
+ },
+ {
+  "ru": "Поиск доказательств доступен медицинскому персоналу",
+  "code": "app.evidence.searchRestrictedToMedicalStaff",
+  "en": "Evidence search is available to medical personnel only",
+  "az": "Dəlil axtarışı yalnız tibb işçiləri üçün əlçatandır",
+  "tr": "Kanıt araması yalnızca sağlık personeline açıktır",
+  "ar": "البحث عن الأدلة متاح للكوادر الطبية فقط"
+ },
+ {
+  "ru": "Слишком много запросов к PubMed. Подождите минуту — лимит общий на весь проект.",
+  "code": "app.pubmed.rateLimitExceededProject",
+  "en": "Too many requests to PubMed. Please wait a minute — the limit is shared across the entire project.",
+  "az": "PubMed-ə həddindən artıq sorğu. Bir dəqiqə gözləyin — limit bütün layihə üçün ortaqdır.",
+  "tr": "PubMed'e çok fazla istek gönderildi. Lütfen bir dakika bekleyin — limit tüm proje için ortaktır.",
+  "ar": "عدد كبير جدًا من الطلبات إلى PubMed. يرجى الانتظار دقيقة — الحد مشترك لكامل المشروع."
+ },
+ {
+  "ru": "Слишком много вопросов подряд. Подождите минуту.",
+  "code": "app.question.rateLimitExceeded",
+  "en": "Too many questions in a row. Please wait a minute.",
+  "az": "Ardıcıl olaraq həddindən artıq sual. Bir dəqiqə gözləyin.",
+  "tr": "Art arda çok fazla soru. Lütfen bir dakika bekleyin.",
+  "ar": "عدد كبير جدًا من الأسئلة المتتالية. يرجى الانتظار دقيقة."
+ },
+ {
+  "ru": "Запрос слишком короткий — минимум 3 символа",
+  "code": "app.query.tooShort",
+  "en": "Query is too short — minimum 3 characters",
+  "az": "Sorğu çox qısadır — minimum 3 simvol",
+  "tr": "Sorgu çok kısa — en az 3 karakter",
+  "ar": "الاستعلام قصير جدًا — 3 أحرف كحد أدنى"
+ },
+ {
+  "ru": "Слишком короткий вопрос",
+  "code": "app.question.tooShort",
+  "en": "Question is too short",
+  "az": "Sual çox qısadır",
+  "tr": "Soru çok kısa",
+  "ar": "السؤال قصير جدًا"
+ },
+ {
+  "ru": "Слишком короткий запрос",
+  "code": "app.query.tooShortGeneric",
+  "en": "Query is too short",
+  "az": "Sorğu çox qısadır",
+  "tr": "Sorgu çok kısa",
+  "ar": "الاستعلام قصير جدًا"
+ },
+ {
+  "ru": "PubMed ограничил частоту запросов — попробуйте через минуту",
+  "code": "app.pubmed.rateLimitExceeded",
+  "en": "PubMed has limited the request rate — please try again in a minute",
+  "az": "PubMed sorğu tezliyini məhdudlaşdırıb — bir dəqiqə sonra yenidən cəhd edin",
+  "tr": "PubMed istek hızını sınırladı — lütfen bir dakika sonra tekrar deneyin",
+  "ar": "قيّد PubMed معدل الطلبات — يرجى المحاولة بعد دقيقة"
+ },
+ {
+  "ru": "Вопрос слишком короткий",
+  "code": "app.question.tooShortGeneric",
+  "en": "Question is too short",
+  "az": "Sual çox qısadır",
+  "tr": "Soru çok kısa",
+  "ar": "السؤال قصير جدًا"
+ },
+ {
+  "ru": "Вопрос слишком длинный — сформулируйте короче",
+  "code": "app.question.tooLong",
+  "en": "Question is too long — please rephrase it more concisely",
+  "az": "Sual çox uzundur — daha qısa formalaşdırın",
+  "tr": "Soru çok uzun — lütfen daha kısa bir şekilde ifade edin",
+  "ar": "السؤال طويل جدًا — يرجى صياغته بشكل أقصر"
+ },
+ {
+  "ru": "Разбор вопроса недоступен: не задан ANTHROPIC_API_KEY. Поиск по запросу PubMed работает без него — /api/v1/ebm/search",
+  "code": "app.question.analysisUnavailableMissingApiKey",
+  "en": "Question analysis is unavailable: ANTHROPIC_API_KEY is not set. PubMed query search works without it — /api/v1/ebm/search",
+  "az": "Sualın təhlili əlçatan deyil: ANTHROPIC_API_KEY təyin olunmayıb. PubMed sorğu axtarışı onsuz da işləyir — /api/v1/ebm/search",
+  "tr": "Soru analizi kullanılamıyor: ANTHROPIC_API_KEY ayarlanmamış. PubMed sorgu araması onsuz çalışır — /api/v1/ebm/search",
+  "ar": "تحليل السؤال غير متاح: لم يتم تعيين ANTHROPIC_API_KEY. يعمل البحث في PubMed بدونه — /api/v1/ebm/search"
+ },
+ {
+  "ru": "Модель отказалась разбирать этот вопрос — переформулируйте нейтральнее. Поиск по запросу PubMed напрямую работает без неё: /api/v1/ebm/search",
+  "code": "app.ai.refusedQuery",
+  "en": "The model refused to process this query — please rephrase it more neutrally. Direct PubMed search works without it: /api/v1/ebm/search",
+  "az": "Model bu sorğunu emal etməkdən imtina etdi — lütfən, daha neytral şəkildə yenidən ifadə edin. Birbaşa PubMed axtarışı onsuz işləyir: /api/v1/ebm/search",
+  "tr": "Model bu sorguyu işlemeyi reddetti — lütfen daha tarafsız bir şekilde yeniden ifade edin. Doğrudan PubMed araması onsuz çalışır: /api/v1/ebm/search",
+  "ar": "رفض النموذج معالجة هذا الاستعلام — يرجى إعادة صياغته بشكل أكثر حيادية. البحث المباشر في PubMed يعمل بدونه: /api/v1/ebm/search"
+ },
+ {
+  "ru": "Ответ модели оборвался — задайте вопрос короче",
+  "code": "app.ai.responseTruncated",
+  "en": "The model response was cut off — please ask a shorter question",
+  "az": "Model cavabı kəsildi — lütfən, daha qısa sual verin",
+  "tr": "Model yanıtı kesildi — lütfen daha kısa bir soru sorun",
+  "ar": "تم قطع استجابة النموذج — يرجى طرح سؤال أقصر"
+ },
+ {
+  "ru": "Модель вернула ответ в неожиданном виде — попробуйте ещё раз",
+  "code": "app.ai.unexpectedFormat",
+  "en": "The model returned a response in an unexpected format — please try again",
+  "az": "Model gözlənilməz formatda cavab verdi — lütfən, yenidən cəhd edin",
+  "tr": "Model beklenmeyen bir formatta yanıt verdi — lütfen tekrar deneyin",
+  "ar": "أرجع النموذج استجابة بتنسيق غير متوقع — يرجى المحاولة مرة أخرى"
+ },
+ {
+  "ru": "Тест не разбит на блоки",
+  "code": "app.test.noBlocks",
+  "en": "The test is not divided into blocks",
+  "az": "Test bloklara bölünməyib",
+  "tr": "Test bloklara bölünmemiş",
+  "ar": "الاختبار غير مقسم إلى كتل"
+ },
+ {
+  "ru": "По тесту есть пройденные или начатые попытки — удаление запрещено. Уберите тест в архив, чтобы сохранить историю сдач.",
+  "code": "app.test.cannotDeleteWithAttempts",
+  "en": "The test has completed or started attempts — deletion is prohibited. Archive the test to preserve attempt history.",
+  "az": "Testin tamamlanmış və ya başladılmış cəhdləri var — silinməsi qadağandır. Cəhd tarixini qorumaq üçün testi arxivləşdirin.",
+  "tr": "Testin tamamlanmış veya başlatılmış denemeleri var — silme yasaktır. Deneme geçmişini korumak için testi arşivleyin.",
+  "ar": "يحتوي الاختبار على محاولات مكتملة أو بدأت — الحذف محظور. قم بأرشفة الاختبار للحفاظ على سجل المحاولات."
+ },
+ {
+  "ru": "Нечего переводить: название теста пустое",
+  "code": "app.test.emptyTitle",
+  "en": "Nothing to translate: test title is empty",
+  "az": "Tərcümə ediləcək heç nə yoxdur: testin adı boşdur",
+  "tr": "Çevrilecek bir şey yok: test başlığı boş",
+  "ar": "لا شيء للترجمة: عنوان الاختبار فارغ"
+ },
+ {
+  "ru": "Модель отказалась переводить название теста",
+  "code": "app.ai.refusedTranslation",
+  "en": "The model refused to translate the test title",
+  "az": "Model testin adını tərcümə etməkdən imtina etdi",
+  "tr": "Model test başlığını çevirmeyi reddetti",
+  "ar": "رفض النموذج ترجمة عنوان الاختبار"
+ },
+ {
+  "ru": "Ответ модели оборвался на пределе длины",
+  "code": "app.ai.responseLimitReached",
+  "en": "The model response was cut off at the length limit",
+  "az": "Model cavabı uzunluq limitində kəsildi",
+  "tr": "Model yanıtı uzunluk sınırında kesildi",
+  "ar": "تم قطع استجابة النموذج عند حد الطول"
+ },
+ {
+  "ru": "Категория не может быть родителем самой себе",
+  "code": "app.category.cannotBeOwnParent2",
+  "en": "A category cannot be its own parent",
+  "az": "Kateqoriya özünün valideyni ola bilməz",
+  "tr": "Bir kategori kendi üst kategorisi olamaz",
+  "ar": "لا يمكن أن تكون الفئة والدًا لنفسها"
+ },
+ {
+  "ru": "Родительская категория",
+  "code": "app.category.parent",
+  "en": "Parent category",
+  "az": "Valideyn kateqoriya",
+  "tr": "Üst kategori",
+  "ar": "الفئة الأصلية"
+ },
+ {
+  "ru": "Нельзя переместить категорию внутрь её же подкатегории",
+  "code": "app.category.cannotMoveIntoSubcategory",
+  "en": "Cannot move a category into its own subcategory",
+  "az": "Kateqoriyanı öz alt kateqoriyasının içinə köçürmək olmaz",
+  "tr": "Bir kategori kendi alt kategorisine taşınamaz",
+  "ar": "لا يمكن نقل فئة إلى فئتها الفرعية"
+ },
+ {
+  "ru": "Имя категории обязательно",
+  "code": "app.category.nameRequired",
+  "en": "Category name is required",
+  "az": "Kateqoriya adı tələb olunur",
+  "tr": "Kategori adı gereklidir",
+  "ar": "اسم الفئة مطلوب"
+ },
+ {
+  "ru": "Категория с таким именем здесь уже есть",
+  "code": "app.category.nameAlreadyExists",
+  "en": "A category with this name already exists here",
+  "az": "Bu adda kateqoriya artıq mövcuddur",
+  "tr": "Bu isimde bir kategori zaten mevcut",
+  "ar": "توجد فئة بهذا الاسم بالفعل هنا"
+ },
+ {
+  "ru": "Категория",
+  "code": "app.category.label",
+  "en": "Category",
+  "az": "Kateqoriya",
+  "tr": "Kategori",
+  "ar": "الفئة"
+ },
+ {
+  "ru": "У категории есть подкатегории — сначала удалите или перенесите их",
+  "code": "app.category.hasSubcategories",
+  "en": "This category has subcategories — delete or move them first",
+  "az": "Bu kateqoriyanın alt kateqoriyaları var — əvvəlcə onları silin və ya köçürün",
+  "tr": "Bu kategorinin alt kategorileri var — önce onları silin veya taşıyın",
+  "ar": "تحتوي هذه الفئة على فئات فرعية — احذفها أو انقلها أولاً"
+ },
+ {
+  "ru": "К категории привязаны тесты — сначала перенесите их в другую категорию",
+  "code": "app.category.hasLinkedTests",
+  "en": "Tests are linked to this category — move them to another category first",
+  "az": "Bu kateqoriyaya testlər bağlıdır — əvvəlcə onları başqa kateqoriyaya köçürün",
+  "tr": "Bu kategoriye testler bağlı — önce onları başka bir kategoriye taşıyın",
+  "ar": "هناك فحوصات مرتبطة بهذه الفئة — انقلها إلى فئة أخرى أولاً"
+ },
+ {
+  "ru": "Нечего переводить: имя рубрики пустое",
+  "code": "app.translation.emptyName",
+  "en": "Nothing to translate: category name is empty",
+  "az": "Tərcümə ediləcək heç nə yoxdur: kateqoriya adı boşdur",
+  "tr": "Çevrilecek bir şey yok: kategori adı boş",
+  "ar": "لا يوجد ما يمكن ترجمته: اسم الفئة فارغ"
+ },
+ {
+  "ru": "Модель отказалась переводить название рубрики",
+  "code": "app.translation.modelRefused",
+  "en": "The model refused to translate the category name",
+  "az": "Model kateqoriya adını tərcümə etməkdən imtina etdi",
+  "tr": "Model kategori adını çevirmeyi reddetti",
+  "ar": "رفض النموذج ترجمة اسم الفئة"
+ },
+ {
+  "ru": "Ключ Anthropic API отклонён (401). Проверьте ANTHROPIC_API_KEY в .env сервера: ",
+  "code": "app.api.anthropic.unauthorized",
+  "en": "Anthropic API key rejected (401). Check ANTHROPIC_API_KEY in server .env: ",
+  "az": "Anthropic API açarı rədd edildi (401). Serverin .env faylında ANTHROPIC_API_KEY-i yoxlayın: ",
+  "tr": "Anthropic API anahtarı reddedildi (401). Sunucu .env dosyasında ANTHROPIC_API_KEY'i kontrol edin: ",
+  "ar": "تم رفض مفتاح Anthropic API (401). تحقق من ANTHROPIC_API_KEY في ملف .env الخاص بالخادم: "
+ },
+ {
+  "ru": "У ключа нет доступа к модели (403). Проверьте права ключа в консоли Anthropic.",
+  "code": "app.api.anthropic.forbidden",
+  "en": "The key does not have access to the model (403). Check key permissions in Anthropic console.",
+  "az": "Açarın modelə girişi yoxdur (403). Anthropic konsolunda açarın icazələrini yoxlayın.",
+  "tr": "Anahtarın modele erişimi yok (403). Anthropic konsolunda anahtar izinlerini kontrol edin.",
+  "ar": "المفتاح لا يملك صلاحية الوصول إلى النموذج (403). تحقق من أذونات المفتاح في لوحة تحكم Anthropic."
+ },
+ {
+  "ru": "Превышен лимит запросов к Anthropic API (429). Подождите минуту и повторите загрузку.",
+  "code": "app.api.anthropic.rateLimitExceeded",
+  "en": "Anthropic API request limit exceeded (429). Wait a minute and retry the upload.",
+  "az": "Anthropic API sorğu limiti aşıldı (429). Bir dəqiqə gözləyin və yükləməni təkrarlayın.",
+  "tr": "Anthropic API istek sınırı aşıldı (429). Bir dakika bekleyin ve yüklemeyi tekrarlayın.",
+  "ar": "تم تجاوز حد طلبات Anthropic API (429). انتظر دقيقة وأعد محاولة التحميل."
+ },
+ {
+  "ru": "Файл слишком большой для одного запроса. Разбейте его на части по 20–30 страниц.",
+  "code": "app.upload.fileTooLarge",
+  "en": "File is too large for a single request. Split it into parts of 20–30 pages.",
+  "az": "Fayl bir sorğu üçün çox böyükdür. Onu 20-30 səhifəlik hissələrə bölün.",
+  "tr": "Dosya tek bir istek için çok büyük. 20-30 sayfalık parçalara bölün.",
+  "ar": "الملف كبير جداً لطلب واحد. قسّمه إلى أجزاء من 20-30 صفحة."
+ },
+ {
+  "ru": "Не удалось связаться с Anthropic API — проверьте сеть и исходящие соединения с сервера.",
+  "code": "app.api.anthropic.networkError",
+  "en": "Failed to connect to Anthropic API — check network and outgoing connections from server.",
+  "az": "Anthropic API ilə əlaqə qurmaq alınmadı — şəbəkəni və serverdən çıxan əlaqələri yoxlayın.",
+  "tr": "Anthropic API'ye bağlanılamadı — ağı ve sunucudan giden bağlantıları kontrol edin.",
+  "ar": "فشل الاتصال بـ Anthropic API — تحقق من الشبكة والاتصالات الصادرة من الخادم."
+ },
+ {
+  "ru": "Anthropic API сейчас перегружен запросами. Это временно и не связано с вашими данными — ",
+  "code": "app.api.anthropic.overloaded",
+  "en": "Anthropic API is currently overloaded with requests. This is temporary and not related to your data — ",
+  "az": "Anthropic API hal-hazırda sorğularla yüklənib. Bu müvəqqətidir və sizin məlumatlarınızla əlaqəli deyil — ",
+  "tr": "Anthropic API şu anda isteklerle aşırı yüklü. Bu geçicidir ve verilerinizle ilgili değil — ",
+  "ar": "Anthropic API محمّل بشكل زائد حالياً بالطلبات. هذا مؤقت وغير مرتبط ببياناتك — "
+ },
+ {
+  "ru": "Anthropic API временно недоступен. Повторите загрузку через несколько минут.",
+  "code": "app.api.anthropic.temporarilyUnavailable",
+  "en": "Anthropic API is temporarily unavailable. Please retry the upload in a few minutes.",
+  "az": "Anthropic API müvəqqəti əlçatan deyil. Bir neçə dəqiqədən sonra yükləməyi təkrar cəhd edin.",
+  "tr": "Anthropic API geçici olarak kullanılamıyor. Birkaç dakika sonra yüklemeyi tekrar deneyin.",
+  "ar": "واجهة Anthropic API غير متاحة مؤقتاً. يرجى إعادة المحاولة بعد بضع دقائق."
+ },
+ {
+  "ru": "Часть слишком плотная: ответ модели не поместился в лимит за один проход.",
+  "code": "app.model.response.exceedsLimit",
+  "en": "Section too dense: model response exceeded the limit in one pass.",
+  "az": "Bölmə çox sıxdır: modelin cavabı bir keçiddə limiti aşdı.",
+  "tr": "Bölüm çok yoğun: model yanıtı tek geçişte limiti aştı.",
+  "ar": "القسم كثيف جداً: استجابة النموذج تجاوزت الحد في تمريرة واحدة."
+ },
+ {
+  "ru": "Не удалось прочитать файл .doc — возможно, он повреждён или это ",
+  "code": "app.file.doc.readError",
+  "en": "Failed to read .doc file — it may be corrupted or ",
+  "az": ".doc faylını oxumaq mümkün olmadı — ola bilər ki, zədələnib və ya ",
+  "tr": ".doc dosyası okunamadı — bozuk olabilir veya ",
+  "ar": "فشل قراءة ملف .doc — قد يكون تالفاً أو "
+ },
+ {
+  "ru": "Из файла не удалось извлечь текст. Возможно, это скан — тогда сохраните его как PDF или изображение, ",
+  "code": "app.file.textExtractionFailed",
+  "en": "Failed to extract text from file. It may be a scan — in that case, save it as PDF or image, ",
+  "az": "Fayldan mətni çıxarmaq mümkün olmadı. Ola bilər ki, bu skan şəklidir — belə hallarda onu PDF və ya şəkil kimi saxlayın, ",
+  "tr": "Dosyadan metin çıkarılamadı. Taranmış belge olabilir — bu durumda PDF veya görüntü olarak kaydedin, ",
+  "ar": "فشل استخراج النص من الملف. قد يكون مسحاً ضوئياً — في هذه الحالة احفظه كملف PDF أو صورة، "
+ },
+ {
+  "ru": "Тема генерации не указана",
+  "code": "app.generation.topicNotSpecified",
+  "en": "Generation topic not specified",
+  "az": "Generasiya mövzusu göstərilməyib",
+  "tr": "Üretim konusu belirtilmedi",
+  "ar": "لم يتم تحديد موضوع التوليد"
+ },
+ {
+  "ru": "Модель отказалась генерировать вопросы по этой теме. Уточните формулировку темы.",
+  "code": "app.generation.topicRejected",
+  "en": "The model refused to generate questions on this topic. Please refine the topic wording.",
+  "az": "Model bu mövzu üzrə suallar yaratmaqdan imtina etdi. Mövzunun ifadəsini dəqiqləşdirin.",
+  "tr": "Model bu konuda soru oluşturmayı reddetti. Lütfen konu ifadesini netleştirin.",
+  "ar": "رفض النموذج توليد أسئلة حول هذا الموضوع. يرجى توضيح صياغة الموضوع."
+ },
+ {
+  "ru": "Батч генерации не поместился в лимит ответа.",
+  "code": "app.generation.batch.exceedsLimit",
+  "en": "Generation batch exceeded the response limit.",
+  "az": "Generasiya dəstəsi cavab limitini aşdı.",
+  "tr": "Üretim grubu yanıt limitini aştı.",
+  "ar": "تجاوزت دفعة التوليد حد الاستجابة."
+ },
+ {
+  "ru": "Распознавание остановлено оператором.",
+  "code": "app.recognition.stoppedByOperator",
+  "en": "Recognition stopped by operator.",
+  "az": "Tanıma operator tərəfindən dayandırıldı.",
+  "tr": "Tanıma operatör tarafından durduruldu.",
+  "ar": "تم إيقاف التعرف من قبل المشغل."
+ },
+ {
+  "ru": "Задание нельзя запустить в текущем статусе",
+  "code": "app.task.cannotStartInCurrentStatus",
+  "en": "Task cannot be started in current status",
+  "az": "Tapşırıq cari statusda başladıla bilməz",
+  "tr": "Görev mevcut durumda başlatılamıyor",
+  "ar": "لا يمكن بدء المهمة في الحالة الحالية"
+ },
+ {
+  "ru": "Укажите тему для генерации",
+  "code": "app.generation.specifyTopic",
+  "en": "Specify a topic for generation",
+  "az": "Generasiya üçün mövzu göstərin",
+  "tr": "Üretim için bir konu belirtin",
+  "ar": "حدد موضوعاً للتوليد"
+ },
+ {
+  "ru": "Число вопросов должно быть целым и больше нуля",
+  "code": "app.questions.count.invalid",
+  "en": "Number of questions must be an integer greater than zero",
+  "az": "Sualların sayı tam ədəd və sıfırdan böyük olmalıdır",
+  "tr": "Soru sayısı sıfırdan büyük bir tam sayı olmalıdır",
+  "ar": "يجب أن يكون عدد الأسئلة عدداً صحيحاً أكبر من الصفر"
+ },
+ {
+  "ru": "Задание сейчас распознаётся — дождитесь завершения",
+  "code": "app.task.recognition.inProgress",
+  "en": "Task is currently being processed — please wait for completion",
+  "az": "Tapşırıq hazırda tanınır — tamamlanmasını gözləyin",
+  "tr": "Görev şu anda işleniyor — lütfen tamamlanmasını bekleyin",
+  "ar": "المهمة قيد المعالجة حالياً — يرجى انتظار الانتهاء"
+ },
+ {
+  "ru": "Перевод не поместился в лимит ответа за один проход.",
+  "code": "app.translation.responseLimitExceeded",
+  "en": "Translation did not fit in the response limit in one pass.",
+  "az": "Tərcümə bir keçiddə cavab limitinə sığmadı.",
+  "tr": "Çeviri tek geçişte yanıt sınırına sığmadı.",
+  "ar": "لم تتسع الترجمة في حد الاستجابة في محاولة واحدة."
+ },
+ {
+  "ru": "getExamQuota: нужен userId или guestSessionId",
+  "code": "app.examQuota.identifierRequired",
+  "en": "getExamQuota: userId or guestSessionId required",
+  "az": "getExamQuota: userId və ya guestSessionId tələb olunur",
+  "tr": "getExamQuota: userId veya guestSessionId gerekli",
+  "ar": "getExamQuota: مطلوب userId أو guestSessionId"
+ },
+ {
+  "ru": "корпус пуст",
+  "code": "app.corpus.empty",
+  "en": "Corpus is empty",
+  "az": "Korpus boşdur",
+  "tr": "Korpus boş",
+  "ar": "المدونة فارغة"
+ },
+ {
+  "ru": "Слишком много вопросов подряд. Попробуйте через минуту.",
+  "code": "app.rateLimit.tooManyQuestions",
+  "en": "Too many questions in a row. Please try again in a minute.",
+  "az": "Ardıcıl çox sual. Bir dəqiqədən sonra yenidən cəhd edin.",
+  "tr": "Çok fazla ardışık soru. Bir dakika sonra tekrar deneyin.",
+  "ar": "عدد كبير جداً من الأسئلة المتتالية. حاول مرة أخرى بعد دقيقة."
+ },
+ {
+  "ru": "Помощник сейчас недоступен",
+  "code": "app.assistant.unavailable",
+  "en": "Assistant is currently unavailable",
+  "az": "Köməkçi hazırda əlçatan deyil",
+  "tr": "Asistan şu anda kullanılamıyor",
+  "ar": "المساعد غير متاح حالياً"
+ },
+ {
+  "ru": "Справочные материалы сейчас недоступны",
+  "code": "app.referenceMaterials.unavailable",
+  "en": "Reference materials are currently unavailable",
+  "az": "Sorğu materialları hazırda əlçatan deyil",
+  "tr": "Referans materyaller şu anda kullanılamıyor",
+  "ar": "المواد المرجعية غير متاحة حالياً"
+ },
+ {
+  "ru": "Нужен хотя бы один вопрос",
+  "code": "app.question.atLeastOneRequired",
+  "en": "At least one question is required",
+  "az": "Ən azı bir sual tələb olunur",
+  "tr": "En az bir soru gerekli",
+  "ar": "مطلوب سؤال واحد على الأقل"
+ },
+ {
+  "ru": "Последним сообщением должен быть вопрос пользователя",
+  "code": "app.conversation.lastMessageMustBeQuestion",
+  "en": "Last message must be a user question",
+  "az": "Son mesaj istifadəçi sualı olmalıdır",
+  "tr": "Son mesaj kullanıcı sorusu olmalıdır",
+  "ar": "يجب أن تكون الرسالة الأخيرة سؤال المستخدم"
+ },
+ {
+  "ru": "Требуется вход в аккаунт",
+  "code": "app.auth.loginRequired",
+  "en": "Login required",
+  "az": "Giriş tələb olunur",
+  "tr": "Oturum açma gerekli",
+  "ar": "تسجيل الدخول مطلوب"
+ },
+ {
+  "ru": "Не удалось разобрать бланк",
+  "code": "app.labForm.parseFailed",
+  "en": "Failed to parse the form",
+  "az": "Blankın təhlili uğursuz oldu",
+  "tr": "Form ayrıştırılamadı",
+  "ar": "فشل تحليل النموذج"
+ },
+ {
+  "ru": "Приложите фотографию бланка или PDF из лаборатории",
+  "code": "app.labForm.attachmentRequired",
+  "en": "Please attach a photo of the form or PDF from the laboratory",
+  "az": "Zəhmət olmasa laboratoriyadan blankın fotoşəklini və ya PDF-ni əlavə edin",
+  "tr": "Lütfen laboratuvardan formun fotoğrafını veya PDF'ini ekleyin",
+  "ar": "يرجى إرفاق صورة للنموذج أو ملف PDF من المختبر"
+ },
+ {
+  "ru": "На фотографии не удалось распознать бланк анализов.",
+  "code": "app.labForm.recognitionFailed",
+  "en": "Could not recognize the lab form in the photo.",
+  "az": "Fotoşəkildə analiz blankı tanınmadı.",
+  "tr": "Fotoğrafta tetkik formu tanınamadı.",
+  "ar": "تعذر التعرف على نموذج التحاليل في الصورة."
+ },
+ {
+  "ru": "Показатели на бланке не прочитались. Попробуйте снять ближе ",
+  "code": "app.labForm.readError",
+  "en": "Lab values on the form could not be read. Try taking a closer image ",
+  "az": "Blankdakı göstəricilər oxunmadı. Daha yaxından çəkməyə cəhd edin ",
+  "tr": "Formdaki değerler okunamadı. Daha yakından çekmeyi deneyin ",
+  "ar": "تعذرت قراءة القيم على النموذج. حاول التصوير عن قرب أكبر "
+ },
+ {
+  "ru": "Разбор не найден",
+  "code": "app.analysis.notFound",
+  "en": "Analysis not found",
+  "az": "Təhlil tapılmadı",
+  "tr": "Analiz bulunamadı",
+  "ar": "التحليل غير موجود"
+ },
+ {
+  "ru": "Не удалось загрузить журнал доступа",
+  "code": "app.accessLog.loadFailed",
+  "en": "Failed to load access log",
+  "az": "Giriş jurnalını yükləmək mümkün olmadı",
+  "tr": "Erişim günlüğü yüklenemedi",
+  "ar": "فشل تحميل سجل الوصول"
+ },
+ {
+  "ru": "Справочник кодов доступен медицинскому персоналу",
+  "code": "app.codeDirectory.medicalStaffOnly",
+  "en": "Code directory is available to medical staff only",
+  "az": "Kod kataloqu yalnız tibb işçiləri üçün əlçatandır",
+  "tr": "Kod dizini yalnızca tıbbi personel tarafından erişilebilir",
+  "ar": "دليل الرموز متاح للطاقم الطبي فقط"
+ },
+ {
+  "ru": "Слишком много запросов к справочнику. Подождите минуту.",
+  "code": "app.codeDirectory.rateLimitExceeded",
+  "en": "Too many requests to the directory. Please wait a minute.",
+  "az": "Kataloqua həddindən artıq sorğu. Bir dəqiqə gözləyin.",
+  "tr": "Dizine çok fazla istek gönderildi. Lütfen bir dakika bekleyin.",
+  "ar": "عدد كبير جداً من الطلبات إلى الدليل. يرجى الانتظار دقيقة واحدة."
+ },
+ {
+  "ru": "Код не найден в справочнике",
+  "code": "app.codeDirectory.codeNotFound",
+  "en": "Code not found in directory",
+  "az": "Kod kataloqda tapılmadı",
+  "tr": "Kod dizinde bulunamadı",
+  "ar": "الرمز غير موجود في الدليل"
+ },
+ {
+  "ru": "В ответе модели нет JSON-массива",
+  "code": "app.model.jsonArrayMissing",
+  "en": "Model response does not contain a JSON array",
+  "az": "Model cavabında JSON massivi yoxdur",
+  "tr": "Model yanıtında JSON dizisi bulunmuyor",
+  "ar": "استجابة النموذج لا تحتوي على مصفوفة JSON"
+ },
+ {
+  "ru": "Ответ модели — не массив",
+  "code": "app.model.responseNotArray",
+  "en": "Model response is not an array",
+  "az": "Model cavabı massiv deyil",
+  "tr": "Model yanıtı bir dizi değil",
+  "ar": "استجابة النموذج ليست مصفوفة"
+ },
+ {
+  "ru": "ANTHROPIC_API_KEY не задан — переводить нечем",
+  "code": "app.translation.apiKeyMissing",
+  "en": "ANTHROPIC_API_KEY is not set — translation unavailable",
+  "az": "ANTHROPIC_API_KEY təyin edilməyib — tərcümə mümkün deyil",
+  "tr": "ANTHROPIC_API_KEY ayarlanmamış — çeviri yapılamıyor",
+  "ar": "ANTHROPIC_API_KEY غير محدد — الترجمة غير متاحة"
+ },
+ {
+  "ru": "Модель отказалась переводить эту пачку",
+  "code": "app.translation.batchRejected",
+  "en": "Model refused to translate this batch",
+  "az": "Model bu dəstəni tərcümə etməkdən imtina etdi",
+  "tr": "Model bu toplu çevirmeyi reddetti",
+  "ar": "رفض النموذج ترجمة هذه الدفعة"
+ },
+ {
+  "ru": "Пустой ответ модели",
+  "code": "app.model.emptyResponse",
+  "en": "Empty model response",
+  "az": "Boş model cavabı",
+  "tr": "Boş model yanıtı",
+  "ar": "استجابة النموذج فارغة"
+ },
+ {
+  "ru": "Произошла ошибка при получении пользователей",
+  "code": "app.users.fetchError",
+  "en": "An error occurred while retrieving users",
+  "az": "İstifadəçiləri əldə edərkən xəta baş verdi",
+  "tr": "Kullanıcılar alınırken bir hata oluştu",
+  "ar": "حدث خطأ أثناء استرجاع المستخدمين"
+ },
+ {
+  "ru": "Слишком много попыток. Попробуйте позже.",
+  "code": "app.rateLimit.tooManyAttempts",
+  "en": "Too many attempts. Please try again later.",
+  "az": "Çox cəhd edilib. Zəhmət olmasa sonra yenidən cəhd edin.",
+  "tr": "Çok fazla deneme. Lütfen daha sonra tekrar deneyin.",
+  "ar": "محاولات كثيرة جداً. يرجى المحاولة لاحقاً."
+ },
+ {
+  "ru": "Ошибка при создании уведомления",
+  "code": "app.notification.createError",
+  "en": "Error creating notification",
+  "az": "Bildiriş yaradılarkən xəta baş verdi",
+  "tr": "Bildirim oluşturulurken hata oluştu",
+  "ar": "خطأ في إنشاء الإشعار"
+ },
+ {
+  "ru": "Уведомление не найдено или доступ запрещён",
+  "code": "app.notification.notFoundOrForbidden",
+  "en": "Notification not found or access denied",
+  "az": "Bildiriş tapılmadı və ya giriş qadağandır",
+  "tr": "Bildirim bulunamadı veya erişim reddedildi",
+  "ar": "الإشعار غير موجود أو الوصول محظور"
+ },
+ {
+  "ru": "Уведомление успешно удалено",
+  "code": "app.notification.deleteSuccess",
+  "en": "Notification successfully deleted",
+  "az": "Bildiriş uğurla silindi",
+  "tr": "Bildirim başarıyla silindi",
+  "ar": "تم حذف الإشعار بنجاح"
+ },
+ {
+  "ru": "Ошибка при удалении уведомления",
+  "code": "app.notification.deleteError",
+  "en": "Error deleting notification",
+  "az": "Bildiriş silinərkən xəta baş verdi",
+  "tr": "Bildirim silinirken hata oluştu",
+  "ar": "خطأ في حذف الإشعار"
+ },
+ {
+  "ru": "✅ Уведомления успешно получены",
+  "code": "app.notification.fetchSuccess",
+  "en": "✅ Notifications successfully retrieved",
+  "az": "✅ Bildirişlər uğurla əldə edildi",
+  "tr": "✅ Bildirimler başarıyla alındı",
+  "ar": "✅ تم استرجاع الإشعارات بنجاح"
+ },
+ {
+  "ru": "Ошибка сервера при загрузке уведомлений",
+  "code": "app.notification.fetchServerError",
+  "en": "Server error while loading notifications",
+  "az": "Bildirişlər yüklənərkən server xətası",
+  "tr": "Bildirimler yüklenirken sunucu hatası",
+  "ar": "خطأ في الخادم أثناء تحميل الإشعارات"
+ },
+ {
+  "ru": "Ошибка при загрузке уведомлений",
+  "code": "app.notification.fetchError",
+  "en": "Error loading notifications",
+  "az": "Bildirişlər yüklənərkən xəta",
+  "tr": "Bildirimler yüklenirken hata oluştu",
+  "ar": "خطأ في تحميل الإشعارات"
+ },
+ {
+  "ru": "Уведомление не найдено или не принадлежит пользователю",
+  "code": "app.notification.notFoundOrNotOwned",
+  "en": "Notification not found or does not belong to user",
+  "az": "Bildiriş tapılmadı və ya istifadəçiyə aid deyil",
+  "tr": "Bildirim bulunamadı veya kullanıcıya ait değil",
+  "ar": "الإشعار غير موجود أو لا ينتمي للمستخدم"
+ },
+ {
+  "ru": "✅ Уведомление помечено как прочитанное",
+  "code": "app.notification.markReadSuccess",
+  "en": "✅ Notification marked as read",
+  "az": "✅ Bildiriş oxunmuş kimi qeyd edildi",
+  "tr": "✅ Bildirim okundu olarak işaretlendi",
+  "ar": "✅ تم وضع علامة مقروء على الإشعار"
+ },
+ {
+  "ru": "Ошибка сервера при обновлении уведомлений",
+  "code": "app.notification.updateServerError",
+  "en": "Server error while updating notifications",
+  "az": "Bildirişlər yenilənərkən server xətası",
+  "tr": "Bildirimler güncellenirken sunucu hatası",
+  "ar": "خطأ في الخادم أثناء تحديث الإشعارات"
+ },
+ {
+  "ru": "Уведомление не найдено",
+  "code": "app.notification.notFound",
+  "en": "Notification not found",
+  "az": "Bildiriş tapılmadı",
+  "tr": "Bildirim bulunamadı",
+  "ar": "الإشعار غير موجود"
+ },
+ {
+  "ru": "Ошибка загрузки уведомлений",
+  "code": "app.notifications.loadError",
+  "en": "Error loading notifications",
+  "az": "Bildirişlərin yüklənməsində xəta",
+  "tr": "Bildirimler yüklenirken hata oluştu",
+  "ar": "خطأ في تحميل الإشعارات"
+ },
+ {
+  "ru": "Пользователь не авторизован",
+  "code": "app.user.notAuthorized",
+  "en": "User not authorized",
+  "az": "İstifadəçi icazəli deyil",
+  "tr": "Kullanıcı yetkili değil",
+  "ar": "المستخدم غير مصرح له"
+ },
+ {
+  "ru": "Доступ разрешен только для пациентов",
+  "code": "app.access.patientsOnly",
+  "en": "Access allowed only for patients",
+  "az": "Giriş yalnız xəstələr üçün icazəlidir",
+  "tr": "Erişim yalnızca hastalar için izinlidir",
+  "ar": "الوصول مسموح للمرضى فقط"
+ },
+ {
+  "ru": "Невозможно отменить завершённый приём",
+  "code": "app.appointment.cannotCancelCompleted",
+  "en": "Cannot cancel a completed appointment",
+  "az": "Tamamlanmış qəbulu ləğv etmək mümkün deyil",
+  "tr": "Tamamlanmış randevu iptal edilemez",
+  "ar": "لا يمكن إلغاء موعد مكتمل"
+ },
+ {
+  "ru": "Приём успешно отменён",
+  "code": "app.appointment.cancelledSuccessfully",
+  "en": "Appointment cancelled successfully",
+  "az": "Qəbul uğurla ləğv edildi",
+  "tr": "Randevu başarıyla iptal edildi",
+  "ar": "تم إلغاء الموعد بنجاح"
+ },
+ {
+  "ru": "Ошибка сервера при отмене приёма",
+  "code": "app.appointment.cancelServerError",
+  "en": "Server error while cancelling appointment",
+  "az": "Qəbulu ləğv edərkən server xətası",
+  "tr": "Randevu iptal edilirken sunucu hatası",
+  "ar": "خطأ في الخادم أثناء إلغاء الموعد"
+ },
+ {
+  "ru": "Доступ запрещён: пациент не авторизован.",
+  "code": "app.access.patientNotAuthorized",
+  "en": "Access denied: patient not authorized.",
+  "az": "Giriş qadağandır: xəstə icazəli deyil.",
+  "tr": "Erişim reddedildi: hasta yetkili değil.",
+  "ar": "تم رفض الوصول: المريض غير مصرح له."
+ },
+ {
+  "ru": "У пациента пока нет записей на приём.",
+  "code": "app.patient.noAppointments",
+  "en": "Patient has no appointments yet.",
+  "az": "Xəstənin hələlik qəbul yazısı yoxdur.",
+  "tr": "Hastanın henüz randevusu yok.",
+  "ar": "ليس لدى المريض مواعيد بعد."
+ },
+ {
+  "ru": "Ошибка сервера при загрузке списка приёмов.",
+  "code": "app.appointments.loadServerError",
+  "en": "Server error while loading appointments list.",
+  "az": "Qəbullar siyahısını yükləyərkən server xətası.",
+  "tr": "Randevu listesi yüklenirken sunucu hatası.",
+  "ar": "خطأ في الخادم أثناء تحميل قائمة المواعيد."
+ },
+ {
+  "ru": "История приёмов успешно получена",
+  "code": "app.appointments.historyLoadedSuccessfully",
+  "en": "Appointments history retrieved successfully",
+  "az": "Qəbullar tarixi uğurla əldə edildi",
+  "tr": "Randevu geçmişi başarıyla alındı",
+  "ar": "تم استرجاع سجل المواعيد بنجاح"
+ },
+ {
+  "ru": "Необходимо указать doctorId, startsAt и endsAt",
+  "code": "app.appointment.requiredFieldsMissing",
+  "en": "doctorId, startsAt and endsAt must be specified",
+  "az": "doctorId, startsAt və endsAt göstərilməlidir",
+  "tr": "doctorId, startsAt ve endsAt belirtilmelidir",
+  "ar": "يجب تحديد doctorId و startsAt و endsAt"
+ },
+ {
+  "ru": "Некорректные дата и время приёма",
+  "code": "app.appointment.invalidDateTime",
+  "en": "Invalid appointment date and time",
+  "az": "Qəbulun tarixi və vaxtı yanlışdır",
+  "tr": "Geçersiz randevu tarihi ve saati",
+  "ar": "تاريخ ووقت الموعد غير صحيح"
+ },
+ {
+  "ru": "Конец приёма должен быть позже его начала",
+  "code": "app.appointment.endBeforeStart",
+  "en": "Appointment end time must be after start time",
+  "az": "Qəbulun bitmə vaxtı başlama vaxtından sonra olmalıdır",
+  "tr": "Randevu bitiş saati başlangıç saatinden sonra olmalıdır",
+  "ar": "يجب أن يكون وقت انتهاء الموعد بعد وقت البدء"
+ },
+ {
+  "ru": "Нельзя записаться на прошедшее время. Выберите другую дату.",
+  "code": "app.appointment.pastTimeNotAllowed",
+  "en": "Cannot schedule an appointment in the past. Please select another date.",
+  "az": "Keçmiş vaxta qeyd olmaq mümkün deyil. Zəhmət olmasa başqa tarix seçin.",
+  "tr": "Geçmiş bir zamana randevu oluşturulamaz. Lütfen başka bir tarih seçin.",
+  "ar": "لا يمكن حجز موعد في وقت سابق. يرجى اختيار تاريخ آخر."
+ },
+ {
+  "ru": "Врач не может записаться сам к себе.",
+  "code": "app.appointment.selfBookingNotAllowed",
+  "en": "A doctor cannot book an appointment with themselves.",
+  "az": "Həkim özünə qeyd yarada bilməz.",
+  "tr": "Doktor kendi kendine randevu oluşturamaz.",
+  "ar": "لا يمكن للطبيب حجز موعد مع نفسه."
+ },
+ {
+  "ru": "Этот временной слот уже занят. Выберите другое время.",
+  "code": "app.appointment.timeSlotOccupied",
+  "en": "This time slot is already booked. Please select another time.",
+  "az": "Bu vaxt artıq doludur. Zəhmət olmasa başqa vaxt seçin.",
+  "tr": "Bu zaman dilimi zaten dolu. Lütfen başka bir zaman seçin.",
+  "ar": "هذه الفترة الزمنية محجوزة بالفعل. يرجى اختيار وقت آخر."
+ },
+ {
+  "ru": "Запись успешно создана!",
+  "code": "app.appointment.createdSuccessfully",
+  "en": "Appointment created successfully!",
+  "az": "Qeyd uğurla yaradıldı!",
+  "tr": "Randevu başarıyla oluşturuldu!",
+  "ar": "تم إنشاء الموعد بنجاح!"
+ },
+ {
+  "ru": "Ошибка сервера при создании записи",
+  "code": "app.appointment.serverErrorOnCreate",
+  "en": "Server error while creating appointment",
+  "az": "Qeyd yaradılarkən server xətası",
+  "tr": "Randevu oluşturulurken sunucu hatası",
+  "ar": "خطأ في الخادم أثناء إنشاء الموعد"
+ },
+ {
+  "ru": "userId и planKey обязательны",
+  "code": "app.validation.userIdAndPlanKeyRequired",
+  "en": "userId and planKey are required",
+  "az": "userId və planKey tələb olunur",
+  "tr": "userId ve planKey zorunludur",
+  "ar": "userId و planKey مطلوبان"
+ },
+ {
+  "ru": "Укажите причину выдачи — она попадёт в журнал",
+  "code": "app.validation.reasonRequired",
+  "en": "Please specify the reason for issuance — it will be recorded in the log",
+  "az": "Zəhmət olmasa verilmə səbəbini göstərin — o, jurnala yazılacaq",
+  "tr": "Lütfen veriliş nedenini belirtin — kayıt günlüğüne işlenecektir",
+  "ar": "يرجى تحديد سبب الإصدار — سيتم تسجيله في السجل"
+ },
+ {
+  "ru": "Укажите корректный email",
+  "code": "app.validation.validEmailRequired",
+  "en": "Please provide a valid email",
+  "az": "Zəhmət olmasa düzgün email göstərin",
+  "tr": "Lütfen geçerli bir e-posta adresi girin",
+  "ar": "يرجى إدخال بريد إلكتروني صحيح"
+ },
+ {
+  "ru": "Укажите название организации или своё имя",
+  "code": "app.validation.organizationOrNameRequired",
+  "en": "Please provide organization name or your name",
+  "az": "Zəhmət olmasa təşkilatın adını və ya öz adınızı göstərin",
+  "tr": "Lütfen kuruluş adını veya kendi adınızı belirtin",
+  "ar": "يرجى إدخال اسم المنظمة أو اسمك"
+ },
+ {
+  "ru": "Неизвестный тариф",
+  "code": "app.subscription.unknownPlan",
+  "en": "Unknown plan",
+  "az": "Naməlum tarif",
+  "tr": "Bilinmeyen tarife",
+  "ar": "خطة غير معروفة"
+ },
+ {
+  "ru": "Ссылка недействительна или устарела. Напишите нам в ответ на письмо.",
+  "code": "app.link.invalidOrExpired",
+  "en": "The link is invalid or expired. Please reply to our email.",
+  "az": "Keçid etibarsızdır və ya müddəti bitib. Zəhmət olmasa məktuba cavab yazın.",
+  "tr": "Bağlantı geçersiz veya süresi dolmuş. Lütfen e-postamıza yanıt verin.",
+  "ar": "الرابط غير صالح أو منتهي الصلاحية. يرجى الرد على رسالتنا الإلكترونية."
+ },
+ {
+  "ru": "Заявка не найдена",
+  "code": "app.request.notFound",
+  "en": "Request not found",
+  "az": "Sorğu tapılmadı",
+  "tr": "Başvuru bulunamadı",
+  "ar": "الطلب غير موجود"
+ },
+ {
+  "ru": "Оплата уже подтверждена, тариф подключён.",
+  "code": "app.payment.alreadyConfirmedAndActivated",
+  "en": "Payment already confirmed, plan activated.",
+  "az": "Ödəniş artıq təsdiqlənib, tarif aktivləşdirilib.",
+  "tr": "Ödeme zaten onaylandı, tarife etkinleştirildi.",
+  "ar": "تم تأكيد الدفع بالفعل، تم تفعيل الباقة."
+ },
+ {
+  "ru": "Спасибо, мы проверим поступление и подключим тариф в течение рабочего дня.",
+  "code": "app.payment.willVerifyAndActivate",
+  "en": "Thank you, we will verify the payment and activate the plan within one business day.",
+  "az": "Təşəkkür edirik, biz ödənişi yoxlayacaq və bir iş günü ərzində tarifi aktivləşdirəcəyik.",
+  "tr": "Teşekkür ederiz, ödemeyi doğrulayacağız ve tarifeyi bir iş günü içinde etkinleştireceğiz.",
+  "ar": "شكراً، سنتحقق من الدفع وسنقوم بتفعيل الباقة خلال يوم عمل واحد."
+ },
+ {
+  "ru": "Заявка оплачена: на ней транзакция, удаление разорвало бы связь с деньгами",
+  "code": "app.request.cannotDeleteHasTransaction",
+  "en": "Request has been paid: it has a transaction, deletion would break the link with the payment",
+  "az": "Sorğu ödənilib: əlaqəli tranzaksiya var, silinmə ödənişlə əlaqəni pozar",
+  "tr": "Başvuru ödenmiş: işlem mevcut, silme işlemi ödemeyle bağlantıyı koparacaktır",
+  "ar": "تم دفع الطلب: يحتوي على معاملة، الحذف سيقطع الارتباط بالدفع"
+ },
+ {
+  "ru": "Сначала отправьте заявку в архив — оттуда её можно вернуть, а удаление необратимо",
+  "code": "app.request.archiveBeforeDelete",
+  "en": "First archive the request — it can be restored from there, deletion is irreversible",
+  "az": "Əvvəlcə sorğunu arxivə göndərin — oradan bərpa oluna bilər, silinmə geri qaytarılmazdır",
+  "tr": "Önce başvuruyu arşive gönderin — oradan geri yüklenebilir, silme işlemi geri alınamaz",
+  "ar": "أولاً قم بأرشفة الطلب — يمكن استعادته من هناك، الحذف غير قابل للإلغاء"
+ },
+ {
+  "ru": "Заявка уже оплачена",
+  "code": "app.request.alreadyPaid",
+  "en": "Request already paid",
+  "az": "Sorğu artıq ödənilib",
+  "tr": "Başvuru zaten ödenmiş",
+  "ar": "تم دفع الطلب بالفعل"
+ },
+ {
+  "ru": "Укажите userId, кому выдать тариф: в заявке аккаунт не привязан",
+  "code": "app.request.userIdRequiredNoAccount",
+  "en": "Specify userId to assign the plan: no account linked to the request",
+  "az": "Tarifi təyin etmək üçün userId göstərin: sorğuya hesab bağlanmayıb",
+  "tr": "Tarifeyi atamak için userId belirtin: başvuruya bağlı hesap yok",
+  "ar": "حدد userId لتعيين الباقة: لا يوجد حساب مرتبط بالطلب"
+ },
+ {
+  "ru": "Нужны название и сами реквизиты",
+  "code": "app.paymentDetails.nameAndDetailsRequired",
+  "en": "Name and payment details are required",
+  "az": "Ad və ödəniş rekvizitləri tələb olunur",
+  "tr": "Ad ve ödeme bilgileri gereklidir",
+  "ar": "الاسم والتفاصيل المصرفية مطلوبة"
+ },
+ {
+  "ru": "Реквизит не найден",
+  "code": "app.paymentDetails.notFound",
+  "en": "Payment details not found",
+  "az": "Ödəniş rekvizitləri tapılmadı",
+  "tr": "Ödeme bilgileri bulunamadı",
+  "ar": "التفاصيل المصرفية غير موجودة"
+ },
+ {
+  "ru": "Название и реквизиты не могут быть пустыми",
+  "code": "app.paymentDetails.cannotBeEmpty",
+  "en": "Name and payment details cannot be empty",
+  "az": "Ad və ödəniş rekvizitləri boş ola bilməz",
+  "tr": "Ad ve ödeme bilgileri boş olamaz",
+  "ar": "الاسم والتفاصيل المصرفية لا يمكن أن تكون فارغة"
+ },
+ {
+  "ru": "Некорректный email",
+  "code": "app.email.invalid",
+  "en": "Invalid email",
+  "az": "Yanlış e-poçt",
+  "tr": "Geçersiz e-posta",
+  "ar": "البريد الإلكتروني غير صحيح"
+ },
+ {
+  "ru": "Заявка принята",
+  "code": "app.request.accepted",
+  "en": "Request accepted",
+  "az": "Sorğu qəbul edildi",
+  "tr": "Başvuru kabul edildi",
+  "ar": "تم قبول الطلب"
+ },
+ {
+  "ru": "Ссылка недействительна или срок её действия истёк. ",
+  "code": "app.link.invalidOrExpired2",
+  "en": "The link is invalid or has expired.",
+  "az": "Keçid etibarsızdır və ya müddəti bitib.",
+  "tr": "Bağlantı geçersiz veya süresi dolmuş.",
+  "ar": "الرابط غير صالح أو انتهت صلاحيته."
+ },
+ {
+  "ru": "Анкета не найдена",
+  "code": "app.questionnaire.notFound",
+  "en": "Questionnaire not found",
+  "az": "Anket tapılmadı",
+  "tr": "Anket bulunamadı",
+  "ar": "لم يتم العثور على الاستبيان"
+ },
+ {
+  "ru": "Ссылка недействительна или истекла",
+  "code": "app.link.invalidOrExpired3",
+  "en": "The link is invalid or has expired",
+  "az": "Keçid etibarsızdır və ya müddəti bitib",
+  "tr": "Bağlantı geçersiz veya süresi dolmuş",
+  "ar": "الرابط غير صالح أو انتهت صلاحيته"
+ },
+ {
+  "ru": "На это время уже есть запись",
+  "code": "app.appointment.timeSlotAlreadyBooked",
+  "en": "This time slot is already booked",
+  "az": "Bu vaxt artıq tutulub",
+  "tr": "Bu zaman dilimi zaten dolu",
+  "ar": "هذا الوقت محجوز بالفعل"
+ },
+ {
+  "ru": "Некорректный интервал дат",
+  "code": "app.dateRange.invalid",
+  "en": "Invalid date range",
+  "az": "Yanlış tarix intervalı",
+  "tr": "Geçersiz tarih aralığı",
+  "ar": "نطاق التاريخ غير صالح"
+ },
+ {
+  "ru": "Сначала завершите, отмените или перенесите запись — активную в архив убрать нельзя",
+  "code": "app.appointment.cannotArchiveActive",
+  "en": "First complete, cancel, or reschedule the appointment — an active appointment cannot be archived",
+  "az": "Əvvəlcə qəbulu tamamlayın, ləğv edin və ya təxirə salın — aktiv qəbulu arxivə köçürmək olmaz",
+  "tr": "Önce randevuyu tamamlayın, iptal edin veya erteleyin — aktif randevu arşivlenemez",
+  "ar": "أكمل الموعد أو ألغه أو أعد جدولته أولاً — لا يمكن أرشفة موعد نشط"
+ },
+ {
+  "ru": "Запись не найдена",
+  "code": "app.appointment.notFound3",
+  "en": "Appointment not found",
+  "az": "Qəbul tapılmadı",
+  "tr": "Randevu bulunamadı",
+  "ar": "لم يتم العثور على الموعد"
+ },
+ {
+  "ru": "Некорректное время начала",
+  "code": "app.time.startTimeInvalid",
+  "en": "Invalid start time",
+  "az": "Yanlış başlama vaxtı",
+  "tr": "Geçersiz başlangıç saati",
+  "ar": "وقت البدء غير صالح"
+ },
+ {
+  "ru": "Не указана длительность",
+  "code": "app.duration.notSpecified",
+  "en": "Duration not specified",
+  "az": "Müddət göstərilməyib",
+  "tr": "Süre belirtilmemiş",
+  "ar": "المدة غير محددة"
+ },
+ {
+  "ru": "Нельзя записать на прошедшее время",
+  "code": "app.appointment.cannotBookPastTime",
+  "en": "Cannot book an appointment in the past",
+  "az": "Keçmiş vaxta qəbul təyin etmək olmaz",
+  "tr": "Geçmiş bir zamana randevu oluşturulamaz",
+  "ar": "لا يمكن حجز موعد في الماضي"
+ },
+ {
+  "ru": "На это время у вас уже назначен приём",
+  "code": "app.appointment.alreadyScheduled",
+  "en": "You already have an appointment scheduled at this time",
+  "az": "Bu vaxt artıq sizin qəbulunuz var",
+  "tr": "Bu saatte zaten planlanmış bir randevunuz var",
+  "ar": "لديك موعد مجدول بالفعل في هذا الوقت"
+ },
+ {
+  "ru": "На это время у вас уже назначено вмешательство",
+  "code": "app.intervention.alreadyScheduled",
+  "en": "You already have an intervention scheduled at this time",
+  "az": "Bu vaxt artıq sizin müdaxiləniz var",
+  "tr": "Bu saatte zaten planlanmış bir müdahaleniz var",
+  "ar": "لديك تدخل مجدول بالفعل في هذا الوقت"
+ },
+ {
+  "ru": "Укажите вид: операция (surgery) или обследование (examination)",
+  "code": "app.intervention.typeRequired",
+  "en": "Specify type: surgery or examination",
+  "az": "Növü göstərin: əməliyyat (surgery) və ya müayinə (examination)",
+  "tr": "Türü belirtin: ameliyat (surgery) veya muayene (examination)",
+  "ar": "حدد النوع: جراحة أو فحص"
+ },
+ {
+  "ru": "Укажите название вмешательства",
+  "code": "app.intervention.nameRequired",
+  "en": "Specify intervention name",
+  "az": "Müdaxilənin adını göstərin",
+  "tr": "Girişim adını belirtin",
+  "ar": "حدد اسم التدخل"
+ },
+ {
+  "ru": "Укажите дату и время начала",
+  "code": "app.intervention.startDateTimeRequired",
+  "en": "Specify start date and time",
+  "az": "Başlama tarixini və vaxtını göstərin",
+  "tr": "Başlangıç tarih ve saatini belirtin",
+  "ar": "حدد تاريخ ووقت البدء"
+ },
+ {
+  "ru": "Укажите длительность в минутах",
+  "code": "app.intervention.durationRequired",
+  "en": "Specify duration in minutes",
+  "az": "Müddəti dəqiqələrlə göstərin",
+  "tr": "Süreyi dakika olarak belirtin",
+  "ar": "حدد المدة بالدقائق"
+ },
+ {
+  "ru": "Некорректный вид анестезии",
+  "code": "app.anesthesia.typeInvalid",
+  "en": "Invalid anesthesia type",
+  "az": "Anesteziya növü səhvdir",
+  "tr": "Geçersiz anestezi türü",
+  "ar": "نوع التخدير غير صالح"
+ },
+ {
+  "ru": "Не указан тип пациента",
+  "code": "app.patient.typeNotSpecified",
+  "en": "Patient type not specified",
+  "az": "Xəstə növü göstərilməyib",
+  "tr": "Hasta türü belirtilmedi",
+  "ar": "لم يتم تحديد نوع المريض"
+ },
+ {
+  "ru": "Некорректный статус",
+  "code": "app.status.invalid",
+  "en": "Invalid status",
+  "az": "Status səhvdir",
+  "tr": "Geçersiz durum",
+  "ar": "الحالة غير صالحة"
+ },
+ {
+  "ru": "Перенос оформляется отдельным запросом, а не сменой статуса",
+  "code": "app.intervention.rescheduleRequiresSeparateRequest",
+  "en": "Rescheduling requires a separate request, not a status change",
+  "az": "Təxirə salma ayrı sorğu ilə rəsmiləşdirilir, statusun dəyişdirilməsi ilə deyil",
+  "tr": "Erteleme, durum değişikliği ile değil ayrı bir talep ile yapılmalıdır",
+  "ar": "إعادة الجدولة تتطلب طلبًا منفصلاً، وليس تغيير الحالة"
+ },
+ {
+  "ru": "Укажите новую дату и время",
+  "code": "app.intervention.newDateTimeRequired",
+  "en": "Specify new date and time",
+  "az": "Yeni tarix və vaxtı göstərin",
+  "tr": "Yeni tarih ve saati belirtin",
+  "ar": "حدد التاريخ والوقت الجديد"
+ },
+ {
+  "ru": "Некорректная длительность",
+  "code": "app.intervention.durationInvalid",
+  "en": "Invalid duration",
+  "az": "Müddət səhvdir",
+  "tr": "Geçersiz süre",
+  "ar": "المدة غير صالحة"
+ },
+ {
+  "ru": "ИИ отказался обрабатывать этот снимок",
+  "code": "app.ai.imageProcessingRefused",
+  "en": "AI refused to process this image",
+  "az": "Süni intellekt bu şəkli emal etməkdən imtina etdi",
+  "tr": "Yapay zeka bu görüntüyü işlemeyi reddetti",
+  "ar": "رفض الذكاء الاصطناعي معالجة هذه الصورة"
+ },
+ {
+  "ru": "ИИ-помощник не настроен: задайте ANTHROPIC_API_KEY в .env сервера",
+  "code": "app.ai.assistantNotConfigured",
+  "en": "AI assistant not configured: set ANTHROPIC_API_KEY in server .env",
+  "az": "Süni intellekt köməkçisi konfiqurasiya edilməyib: serverin .env faylında ANTHROPIC_API_KEY təyin edin",
+  "tr": "Yapay zeka asistanı yapılandırılmamış: sunucu .env dosyasında ANTHROPIC_API_KEY ayarlayın",
+  "ar": "مساعد الذكاء الاصطناعي غير مُعدّ: قم بتعيين ANTHROPIC_API_KEY في ملف .env الخاص بالخادم"
+ },
+ {
+  "ru": "Нет снимка для анализа",
+  "code": "app.analysis.imageNotFound",
+  "en": "No image available for analysis",
+  "az": "Təhlil üçün şəkil yoxdur",
+  "tr": "Analiz için görüntü bulunamadı",
+  "ar": "لا توجد صورة متاحة للتحليل"
+ },
+ {
+  "ru": "ИИ-разбор не настроен: задайте ANTHROPIC_API_KEY в .env сервера",
+  "code": "app.ai.configurationMissing",
+  "en": "AI analysis not configured: set ANTHROPIC_API_KEY in server .env",
+  "az": "Süni intellekt təhlili konfiqurasiya edilməyib: server .env faylında ANTHROPIC_API_KEY təyin edin",
+  "tr": "Yapay zeka analizi yapılandırılmamış: sunucu .env dosyasında ANTHROPIC_API_KEY ayarlayın",
+  "ar": "لم يتم تكوين تحليل الذكاء الاصطناعي: قم بتعيين ANTHROPIC_API_KEY في ملف .env للخادم"
+ },
+ {
+  "ru": "Нет снимка для разбора",
+  "code": "app.parsing.imageNotFound",
+  "en": "No image available for parsing",
+  "az": "Təhlil üçün şəkil yoxdur",
+  "tr": "İşleme için görüntü bulunamadı",
+  "ar": "لا توجد صورة متاحة للمعالجة"
+ },
+ {
+  "ru": "Агент уже работает над этим кейсом",
+  "code": "app.case.agentAlreadyProcessing",
+  "en": "Agent is already processing this case",
+  "az": "Agent artıq bu hadisə üzərində işləyir",
+  "tr": "Ajan bu vaka üzerinde zaten çalışıyor",
+  "ar": "الوكيل يعالج هذه الحالة بالفعل"
+ },
+ {
+  "ru": "Укажите тему кейса для ИИ",
+  "code": "app.ai.caseTopicRequired",
+  "en": "Specify case topic for AI",
+  "az": "Süni intellekt üçün hadisə mövzusunu göstərin",
+  "tr": "Yapay zeka için vaka konusunu belirtin",
+  "ar": "حدد موضوع الحالة للذكاء الاصطناعي"
+ },
+ {
+  "ru": "ИИ вернул слишком короткую панель показателей — попробуйте уточнить тему",
+  "code": "app.ai.dashboardTooShort",
+  "en": "AI returned too short a dashboard — try to clarify the topic",
+  "az": "Süni intellekt çox qısa panel qaytardı — mövzunu dəqiqləşdirməyə çalışın",
+  "tr": "Yapay zeka çok kısa bir panel döndürdü — konuyu netleştirmeyi deneyin",
+  "ar": "أرجع الذكاء الاصطناعي لوحة قصيرة جدًا — حاول توضيح الموضوع"
+ },
+ {
+  "ru": "ИИ вернул меньше двух обследований — попробуйте уточнить тему",
+  "code": "app.ai.insufficientExaminations",
+  "en": "AI returned fewer than two examinations — try to clarify the topic",
+  "az": "Süni intellekt ikidən az müayinə qaytardı — mövzunu dəqiqləşdirməyə çalışın",
+  "tr": "Yapay zeka ikiden az muayene döndürdü — konuyu netleştirmeyi deneyin",
+  "ar": "أرجع الذكاء الاصطناعي أقل من فحصين — حاول توضيح الموضوع"
+ },
+ {
+  "ru": "Не выбрана модальность",
+  "code": "app.modality.notSelected",
+  "en": "Modality not selected",
+  "az": "Modalite seçilməyib",
+  "tr": "Modalite seçilmedi",
+  "ar": "لم يتم تحديد الطريقة"
+ },
+ {
+  "ru": "Нет замечаний для исправления",
+  "code": "app.correction.noCommentsFound",
+  "en": "No comments to correct",
+  "az": "Düzəliş üçün qeyd yoxdur",
+  "tr": "Düzeltilecek yorum yok",
+  "ar": "لا توجد ملاحظات للتصحيح"
+ },
+ {
+  "ru": "Нет кейса для исправления",
+  "code": "app.correction.caseNotFound",
+  "en": "No case to correct",
+  "az": "Düzəliş üçün hadisə yoxdur",
+  "tr": "Düzeltilecek vaka yok",
+  "ar": "لا توجد حالة للتصحيح"
+ },
+ {
+  "ru": "Редактор вернул слишком короткую панель — правки не применены",
+  "code": "app.editor.dashboardTooShort",
+  "en": "Editor returned too short a panel — changes not applied",
+  "az": "Redaktor çox qısa panel qaytardı — dəyişikliklər tətbiq edilmədi",
+  "tr": "Editör çok kısa bir panel döndürdü — değişiklikler uygulanmadı",
+  "ar": "أرجع المحرر لوحة قصيرة جدًا — لم يتم تطبيق التغييرات"
+ },
+ {
+  "ru": "Нет сценария для исправления",
+  "code": "app.correction.scenarioNotFound",
+  "en": "No scenario to correct",
+  "az": "Düzəliş üçün ssenari yoxdur",
+  "tr": "Düzeltilecek senaryo yok",
+  "ar": "لا يوجد سيناريو للتصحيح"
+ },
+ {
+  "ru": "Редактор вернул меньше двух обследований — правки не применены",
+  "code": "app.editor.insufficientExaminationsReturned",
+  "en": "Editor returned fewer than two examinations — changes not applied",
+  "az": "Redaktor iki müayinədən az qaytardı — dəyişikliklər tətbiq edilmədi",
+  "tr": "Düzenleyici iki muayeneden az döndürdü — değişiklikler uygulanmadı",
+  "ar": "أرجع المحرر أقل من فحصين — لم يتم تطبيق التغييرات"
+ },
+ {
+  "ru": "Для вариантов нужна панель хотя бы из 2 показателей",
+  "code": "app.variants.minimumIndicatorsRequired",
+  "en": "Variants require a panel of at least 2 indicators",
+  "az": "Variantlar üçün ən azı 2 göstəricidən ibarət panel lazımdır",
+  "tr": "Varyantlar için en az 2 göstergeden oluşan bir panel gereklidir",
+  "ar": "تتطلب المتغيرات لوحة تحتوي على مؤشرين على الأقل"
+ },
+ {
+  "ru": "Для вариантов нужно хотя бы 2 обследования",
+  "code": "app.variants.minimumExaminationsRequired",
+  "en": "Variants require at least 2 examinations",
+  "az": "Variantlar üçün ən azı 2 müayinə lazımdır",
+  "tr": "Varyantlar için en az 2 muayene gereklidir",
+  "ar": "تتطلب المتغيرات فحصين على الأقل"
+ },
+ {
+  "ru": "Нет кейса для проверки",
+  "code": "app.validation.noCaseAvailable",
+  "en": "No case available for validation",
+  "az": "Yoxlama üçün keys yoxdur",
+  "tr": "Doğrulama için mevcut vaka yok",
+  "ar": "لا توجد حالة متاحة للتحقق"
+ },
+ {
+  "ru": "Нет сценария для проверки",
+  "code": "app.validation.noScenarioAvailable",
+  "en": "No scenario available for validation",
+  "az": "Yoxlama üçün ssenari yoxdur",
+  "tr": "Doğrulama için mevcut senaryo yok",
+  "ar": "لا يوجد سيناريو متاح للتحقق"
+ },
+ {
+  "ru": "Опишите тему кейса — по двум буквам искать нечего",
+  "code": "app.case.searchQueryTooShort",
+  "en": "Describe the case topic — two letters are not enough to search",
+  "az": "Keysin mövzusunu təsvir edin — iki hərflə axtarış mümkün deyil",
+  "tr": "Vaka konusunu açıklayın — iki harfle arama yapmak mümkün değil",
+  "ar": "صف موضوع الحالة — حرفان لا يكفيان للبحث"
+ },
+ {
+  "ru": "Модель вернула неразборчивый ответ",
+  "code": "app.model.unreadableResponse",
+  "en": "Model returned an unreadable response",
+  "az": "Model oxunmaz cavab qaytardı",
+  "tr": "Model okunamaz bir yanıt döndürdü",
+  "ar": "أرجع النموذج استجابة غير مقروءة"
+ },
+ {
+  "ru": "Нет замечаний для разбора",
+  "code": "app.review.noCommentsAvailable",
+  "en": "No comments available for review",
+  "az": "Təhlil üçün şərh yoxdur",
+  "tr": "İnceleme için mevcut yorum yok",
+  "ar": "لا توجد تعليقات متاحة للمراجعة"
+ },
+ {
+  "ru": "Нужен caseId",
+  "code": "app.validation.caseIdRequired",
+  "en": "caseId is required",
+  "az": "caseId tələb olunur",
+  "tr": "caseId gereklidir",
+  "ar": "caseId مطلوب"
+ },
+ {
+  "ru": "Нужен attemptId",
+  "code": "app.validation.attemptIdRequired",
+  "en": "attemptId is required",
+  "az": "attemptId tələb olunur",
+  "tr": "attemptId gereklidir",
+  "ar": "attemptId مطلوب"
+ },
+ {
+  "ru": "Это чужая попытка",
+  "code": "app.attempt.accessDenied",
+  "en": "This attempt belongs to another user",
+  "az": "Bu cəhd başqa istifadəçiyə aiddir",
+  "tr": "Bu deneme başka bir kullanıcıya ait",
+  "ar": "تعود هذه المحاولة لمستخدم آخر"
+ },
+ {
+  "ru": "Попытка ещё не сдана",
+  "code": "app.attempt.notSubmittedYet",
+  "en": "Attempt has not been submitted yet",
+  "az": "Cəhd hələ təqdim edilməyib",
+  "tr": "Deneme henüz gönderilmedi",
+  "ar": "لم يتم تقديم المحاولة بعد"
+ },
+ {
+  "ru": "Попытка не по кейсу этой дуэли",
+  "code": "app.duel.attemptCaseMismatch",
+  "en": "Attempt does not match the case for this duel",
+  "az": "Cəhd bu duel üçün uyğun gəlmir",
+  "tr": "Girişim bu düello vakası ile eşleşmiyor",
+  "ar": "المحاولة لا تتطابق مع الحالة لهذه المبارزة"
+ },
+ {
+  "ru": "Ваш результат уже засчитан",
+  "code": "app.attempt.alreadySubmitted",
+  "en": "Your result has already been recorded",
+  "az": "Nəticəniz artıq qeydə alınıb",
+  "tr": "Sonucunuz zaten kaydedildi",
+  "ar": "تم تسجيل نتيجتك بالفعل"
+ },
+ {
+  "ru": "Создатель ещё не прошёл кейс — дуэль пока недоступна",
+  "code": "app.duel.creatorNotCompleted",
+  "en": "Creator has not completed the case yet — duel is currently unavailable",
+  "az": "Yaradıcı hələ vakası tamamlamayıb — duel hələlik əlçatan deyil",
+  "tr": "Oluşturucu henüz vakayı tamamlamadı — düello şu anda mevcut değil",
+  "ar": "المنشئ لم يكمل الحالة بعد — المبارزة غير متاحة حالياً"
+ },
+ {
+  "ru": "Эту дуэль уже принял другой игрок",
+  "code": "app.duel.alreadyAccepted",
+  "en": "This duel has already been accepted by another player",
+  "az": "Bu duel artıq başqa oyunçu tərəfindən qəbul edilib",
+  "tr": "Bu düello zaten başka bir oyuncu tarafından kabul edildi",
+  "ar": "تم قبول هذه المبارزة بالفعل من قبل لاعب آخر"
+ },
+ {
+  "ru": "ИИ не вернул ни одного пригодного варианта — попробуйте ещё раз",
+  "code": "app.ai.noValidOptions",
+  "en": "AI did not return any valid options — please try again",
+  "az": "Süni intellekt heç bir uyğun variant qaytarmadı — yenidən cəhd edin",
+  "tr": "Yapay zeka geçerli bir seçenek döndürmedi — lütfen tekrar deneyin",
+  "ar": "لم يُرجع الذكاء الاصطناعي أي خيارات صالحة — يرجى المحاولة مرة أخرى"
+ },
+ {
+  "ru": "Архивный кейс редактировать нельзя",
+  "code": "app.case.archivedNotEditable",
+  "en": "Archived case cannot be edited",
+  "az": "Arxivləşdirilmiş vaka redaktə edilə bilməz",
+  "tr": "Arşivlenmiş vaka düzenlenemez",
+  "ar": "لا يمكن تحرير الحالة المؤرشفة"
+ },
+ {
+  "ru": "Опубликованный кейс машинной правке не подлежит: снимите его с публикации — по этой версии уже есть попытки врачей, разборы и переводы",
+  "code": "app.case.publishedNotAutoEditable",
+  "en": "Published case cannot be automatically edited: unpublish it first — this version already has physician attempts, reviews, and translations",
+  "az": "Dərc edilmiş vaka avtomatik redaktə edilə bilməz: əvvəlcə nəşrdən çıxarın — bu versiyada artıq həkimlərin cəhdləri, təhlilləri və tərcümələri var",
+  "tr": "Yayınlanmış vaka otomatik olarak düzenlenemez: önce yayından kaldırın — bu sürümde zaten doktor girişimleri, incelemeler ve çeviriler mevcut",
+  "ar": "لا يمكن تحرير الحالة المنشورة تلقائياً: قم بإلغاء نشرها أولاً — هذا الإصدار يحتوي بالفعل على محاولات الأطباء والمراجعات والترجمات"
+ },
+ {
+  "ru": "В исправленной панели меньше двух показателей — правки не применены",
+  "code": "app.panel.insufficientParameters",
+  "en": "The corrected panel has fewer than two parameters — changes not applied",
+  "az": "Düzəldilmiş paneldə iki göstəricidən az var — dəyişikliklər tətbiq edilməyib",
+  "tr": "Düzeltilmiş panelde iki parametreden az var — değişiklikler uygulanmadı",
+  "ar": "اللوحة المصححة تحتوي على أقل من معاملين — لم يتم تطبيق التغييرات"
+ },
+ {
+  "ru": "Неизвестный статус",
+  "code": "app.status.unknown",
+  "en": "Unknown status",
+  "az": "Naməlum status",
+  "tr": "Bilinmeyen durum",
+  "ar": "حالة غير معروفة"
+ },
+ {
+  "ru": "Опубликованный кейс сначала уберите в архив — удалять то, что видят врачи, нельзя",
+  "code": "app.case.publishedMustArchive",
+  "en": "Archive the published case first — cannot delete what physicians can see",
+  "az": "Dərc edilmiş vakası əvvəlcə arxivə göndərin — həkimlərin gördüyü şeyi silmək olmaz",
+  "tr": "Yayınlanmış vakayı önce arşivleyin — doktorların görebildiğini silemezsiniz",
+  "ar": "قم بأرشفة الحالة المنشورة أولاً — لا يمكن حذف ما يراه الأطباء"
+ },
+ {
+  "ru": "Попытка уже сдана",
+  "code": "app.attempt.alreadySubmitted2",
+  "en": "Attempt already submitted",
+  "az": "Cəhd artıq təqdim edilib",
+  "tr": "Girişim zaten gönderildi",
+  "ar": "تم تقديم المحاولة بالفعل"
+ },
+ {
+  "ru": "Попытка просрочена: лимит времени истёк",
+  "code": "app.attempt.timeExpired",
+  "en": "Attempt expired: time limit exceeded",
+  "az": "Cəhdin müddəti bitib: vaxt limiti keçilib",
+  "tr": "Girişim süresi doldu: zaman sınırı aşıldı",
+  "ar": "انتهت صلاحية المحاولة: تم تجاوز الحد الزمني"
+ },
+ {
+  "ru": "Нет системы чтения для этой модальности",
+  "code": "app.modality.viewerNotAvailable",
+  "en": "No viewer system available for this modality",
+  "az": "Bu modalitet üçün oxuma sistemi yoxdur",
+  "tr": "Bu modalite için görüntüleme sistemi mevcut değil",
+  "ar": "لا يوجد نظام عرض متاح لهذه الطريقة"
+ },
+ {
+  "ru": "Разбор доступен только после сдачи попытки",
+  "code": "app.review.availableAfterSubmission",
+  "en": "Review is available only after submitting the attempt",
+  "az": "Təhlil yalnız cəhd təqdim edildikdən sonra əlçatandır",
+  "tr": "İnceleme yalnızca deneme gönderildikten sonra kullanılabilir",
+  "ar": "المراجعة متاحة فقط بعد تقديم المحاولة"
+ },
+ {
+  "ru": "Неизвестный ярлык находки",
+  "code": "app.finding.labelUnknown",
+  "en": "Unknown finding label",
+  "az": "Naməlum tapıntı etiketi",
+  "tr": "Bilinmeyen bulgu etiketi",
+  "ar": "تسمية الموجودة غير معروفة"
+ },
+ {
+  "ru": "Нужны imageUrl и modality",
+  "code": "app.validation.imageUrlAndModalityRequired",
+  "en": "imageUrl and modality are required",
+  "az": "imageUrl və modality tələb olunur",
+  "tr": "imageUrl ve modality gereklidir",
+  "ar": "imageUrl و modality مطلوبان"
+ },
+ {
+  "ru": "Файл не передан (поле image)",
+  "code": "app.validation.imageFileNotProvided",
+  "en": "File not provided (image field)",
+  "az": "Fayl təqdim edilməyib (image sahəsi)",
+  "tr": "Dosya sağlanmadı (image alanı)",
+  "ar": "لم يتم تقديم الملف (حقل image)"
+ },
+ {
+  "ru": "Загрузите изображение (PNG, JPEG или WebP)",
+  "code": "app.validation.uploadValidImageFormat",
+  "en": "Upload an image (PNG, JPEG or WebP)",
+  "az": "Şəkil yükləyin (PNG, JPEG və ya WebP)",
+  "tr": "Bir resim yükleyin (PNG, JPEG veya WebP)",
+  "ar": "قم بتحميل صورة (PNG أو JPEG أو WebP)"
+ },
+ {
+  "ru": "Укажите причину отклонения — она вернётся автору",
+  "code": "app.validation.rejectionReasonRequired",
+  "en": "Specify the reason for rejection — it will be returned to the author",
+  "az": "Rədd səbəbini göstərin — müəllifə qaytarılacaq",
+  "tr": "Reddetme nedenini belirtin — yazara iletilecektir",
+  "ar": "حدد سبب الرفض — سيتم إرجاعه إلى المؤلف"
+ },
+ {
+  "ru": "Неизвестный ярлык находки (нет в словаре)",
+  "code": "app.finding.labelNotInDictionary",
+  "en": "Unknown finding label (not in dictionary)",
+  "az": "Naməlum tapıntı etiketi (lüğətdə yoxdur)",
+  "tr": "Bilinmeyen bulgu etiketi (sözlükte yok)",
+  "ar": "تسمية الموجودة غير معروفة (غير موجودة في القاموس)"
+ },
+ {
+  "ru": "Нужно передать хотя бы одно поле",
+  "code": "app.validation.atLeastOneFieldRequired2",
+  "en": "At least one field must be provided",
+  "az": "Ən azı bir sahə təqdim edilməlidir",
+  "tr": "En az bir alan sağlanmalıdır",
+  "ar": "يجب تقديم حقل واحد على الأقل"
+ },
+ {
+  "ru": "Перевод кейса не поместился в лимит ответа.",
+  "code": "app.case.translationExceedsLimit",
+  "en": "Case translation does not fit within response limit.",
+  "az": "Klinikanın tərcüməsi cavab limitinə sığmır.",
+  "tr": "Vaka çevirisi yanıt sınırına sığmıyor.",
+  "ar": "ترجمة الحالة لا تتناسب مع حد الاستجابة."
+ },
+ {
+  "ru": "Список принятых диагнозов не может быть пустым: иначе на этом языке балл за диагноз не получит никто",
+  "code": "app.validation.acceptedDiagnosesCannotBeEmpty",
+  "en": "The list of accepted diagnoses cannot be empty: otherwise no one will receive points for diagnosis in this language",
+  "az": "Qəbul edilmiş diaqnozların siyahısı boş ola bilməz: əks halda bu dildə heç kim diaqnoz üçün bal almayacaq",
+  "tr": "Kabul edilen tanılar listesi boş olamaz: aksi takdirde bu dilde hiç kimse tanı için puan alamaz",
+  "ar": "لا يمكن أن تكون قائمة التشخيصات المقبولة فارغة: وإلا لن يحصل أحد على نقاط للتشخيص بهذه اللغة"
+ },
+ {
+  "ru": "langs: ожидается массив языков",
+  "code": "app.validation.langsArrayExpected",
+  "en": "langs: array of languages expected",
+  "az": "langs: dillər massivi gözlənilir",
+  "tr": "langs: dil dizisi bekleniyor",
+  "ar": "langs: متوقع مصفوفة من اللغات"
+ },
+ {
+  "ru": "Опубликованный сценарий машинной правке не подлежит: снимите его с публикации — по этой версии уже есть попытки врачей, разборы и переводы",
+  "code": "app.scenario.publishedNotEditable",
+  "en": "Published scenario cannot be edited automatically: unpublish it first — this version already has doctor attempts, reviews and translations",
+  "az": "Dərc edilmiş ssenari avtomatik redaktə edilə bilməz: əvvəlcə dərcini ləğv edin — bu versiya üzrə artıq həkim cəhdləri, təhlillər və tərcümələr mövcuddur",
+  "tr": "Yayınlanmış senaryo otomatik olarak düzenlenemez: önce yayından kaldırın — bu sürümde zaten doktor denemeleri, incelemeler ve çeviriler mevcut",
+  "ar": "لا يمكن تعديل السيناريو المنشور تلقائياً: قم بإلغاء نشره أولاً — هذا الإصدار يحتوي بالفعل على محاولات الأطباء والمراجعات والترجمات"
+ },
+ {
+  "ru": "В исправленном сценарии меньше двух обследований — правки не применены",
+  "code": "app.scenario.insufficientExaminations",
+  "en": "Edited scenario contains fewer than two examinations — changes not applied",
+  "az": "Düzəldilmiş ssenaridə iki müayinədən az var — dəyişikliklər tətbiq edilməyib",
+  "tr": "Düzenlenen senaryoda ikiden az muayene var — değişiklikler uygulanmadı",
+  "ar": "السيناريو المعدل يحتوي على أقل من فحصين — لم يتم تطبيق التغييرات"
+ },
+ {
+  "ru": "Опубликованный сценарий сначала уберите в архив — удалять то, что видят врачи, нельзя",
+  "code": "app.scenario.archiveBeforeDelete",
+  "en": "Archive the published scenario first — cannot delete what doctors can see",
+  "az": "Dərc edilmiş ssenairi əvvəlcə arxivə göndərin — həkimlərin gördüyünü silmək olmaz",
+  "tr": "Yayınlanmış senaryoyu önce arşivleyin — doktorların görebildiğini silemezsiniz",
+  "ar": "قم بأرشفة السيناريو المنشور أولاً — لا يمكن حذف ما يراه الأطباء"
+ },
+ {
+  "ru": "Попытка уже закрыта",
+  "code": "app.attempt.alreadyClosed",
+  "en": "Attempt already closed",
+  "az": "Cəhd artıq bağlanıb",
+  "tr": "Deneme zaten kapatılmış",
+  "ar": "المحاولة مغلقة بالفعل"
+ },
+ {
+  "ru": "Время попытки истекло",
+  "code": "app.attempt.timeExpired2",
+  "en": "Attempt time expired",
+  "az": "Cəhd vaxtı bitib",
+  "tr": "Deneme süresi doldu",
+  "ar": "انتهى وقت المحاولة"
+ },
+ {
+  "ru": "Предварительный диагноз уже зафиксирован — менять его нельзя",
+  "code": "app.diagnosis.preliminary.alreadyFixed",
+  "en": "Preliminary diagnosis already fixed — cannot be changed",
+  "az": "İlkin diaqnoz artıq fiksə edilib — dəyişdirilə bilməz",
+  "tr": "Ön tanı zaten sabitlenmiş — değiştirilemez",
+  "ar": "التشخيص الأولي مثبت بالفعل — لا يمكن تغييره"
+ },
+ {
+  "ru": "Попытка просрочена",
+  "code": "app.attempt.overdue",
+  "en": "Attempt overdue",
+  "az": "Cəhd vaxtı keçib",
+  "tr": "Deneme süresi geçmiş",
+  "ar": "المحاولة متأخرة"
+ },
+ {
+  "ru": "Сначала зафиксируйте предварительный дифдиагноз по жалобе и анамнезу",
+  "code": "app.diagnosis.differential.fixPreliminaryFirst",
+  "en": "First fix preliminary differential diagnosis based on complaint and history",
+  "az": "Əvvəlcə şikayət və anamnezə əsasən ilkin diferensial diaqnozu fiksə edin",
+  "tr": "Önce şikayet ve anamneze dayalı ön ayırıcı tanıyı sabitleyin",
+  "ar": "قم أولاً بتثبيت التشخيص التفريقي الأولي بناءً على الشكوى والتاريخ المرضي"
+ },
+ {
+  "ru": "Пустая расшифровка",
+  "code": "app.transcription.empty",
+  "en": "Empty transcription",
+  "az": "Boş deşifrə",
+  "tr": "Boş transkripsiyon",
+  "ar": "نسخ فارغ"
+ },
+ {
+  "ru": "Кусок аудио не передан",
+  "code": "app.audio.chunkNotProvided",
+  "en": "Audio chunk not provided",
+  "az": "Audio fraqment təqdim edilməyib",
+  "tr": "Ses parçası sağlanmadı",
+  "ar": "لم يتم توفير مقطع الصوت"
+ },
+ {
+  "ru": "Сеанс записи не найден",
+  "code": "app.recording.sessionNotFound",
+  "en": "Recording session not found",
+  "az": "Qeyd seansı tapılmadı",
+  "tr": "Kayıt oturumu bulunamadı",
+  "ar": "جلسة التسجيل غير موجودة"
+ },
+ {
+  "ru": "Черновик приёма доступен только его врачу",
+  "code": "app.appointment.draftAccessRestricted",
+  "en": "Appointment draft accessible only to its doctor",
+  "az": "Qəbul qaralamaya yalnız öz həkimi daxil ola bilər",
+  "tr": "Randevu taslağına sadece kendi doktoru erişebilir",
+  "ar": "مسودة الموعد متاحة فقط للطبيب المسؤول"
+ },
+ {
+  "ru": "Перевод на этот язык не поддерживается",
+  "code": "app.translation.languageNotSupported",
+  "en": "Translation to this language is not supported",
+  "az": "Bu dilə tərcümə dəstəklənmir",
+  "tr": "Bu dile çeviri desteklenmiyor",
+  "ar": "الترجمة إلى هذه اللغة غير مدعومة"
+ },
+ {
+  "ru": "Вы не участник этого приёма",
+  "code": "app.appointment.notParticipant",
+  "en": "You are not a participant of this appointment",
+  "az": "Siz bu qəbulun iştirakçısı deyilsiniz",
+  "tr": "Bu muayenenin katılımcısı değilsiniz",
+  "ar": "لست مشاركًا في هذه الجلسة"
+ },
+ {
+  "ru": "Не указана комната приёма",
+  "code": "app.appointment.roomNotSpecified",
+  "en": "Appointment room not specified",
+  "az": "Qəbul otağı göstərilməyib",
+  "tr": "Muayene odası belirtilmemiş",
+  "ar": "غرفة الجلسة غير محددة"
+ },
+ {
+  "ru": "Не указан пациент",
+  "code": "app.patient.notSpecified",
+  "en": "Patient not specified",
+  "az": "Xəstə göstərilməyib",
+  "tr": "Hasta belirtilmemiş",
+  "ar": "المريض غير محدد"
+ },
+ {
+  "ru": "Завершить запись может только врач приёма",
+  "code": "app.recording.onlyDoctorCanFinalize",
+  "en": "Only the attending physician can finalize the record",
+  "az": "Qeydi yalnız qəbul aparan həkim tamamlaya bilər",
+  "tr": "Kaydı yalnızca muayeneyi yapan doktor sonlandırabilir",
+  "ar": "يمكن للطبيب المعالج فقط إنهاء السجل"
+ },
+ {
+  "ru": "Пациент не дал согласия на запись",
+  "code": "app.recording.patientConsentNotGiven",
+  "en": "Patient has not given consent for recording",
+  "az": "Xəstə qeyd üçün razılıq verməyib",
+  "tr": "Hasta kayıt için onay vermedi",
+  "ar": "لم يعط المريض موافقته على التسجيل"
+ },
+ {
+  "ru": "Речь не распознана. Проверьте, что микрофон был включён, ",
+  "code": "app.recording.speechNotRecognized",
+  "en": "Speech not recognized. Check that the microphone was on, ",
+  "az": "Nitq tanınmadı. Mikrofonun açıq olduğunu yoxlayın, ",
+  "tr": "Konuşma tanınmadı. Mikrofonun açık olduğunu kontrol edin, ",
+  "ar": "لم يتم التعرف على الكلام. تحقق من تشغيل الميكروفون، "
+ },
+ {
+  "ru": "Сохранить может только врач, ведший приём",
+  "code": "app.record.onlyAttendingDoctorCanSave",
+  "en": "Only the physician who conducted the appointment can save",
+  "az": "Yalnız qəbulu aparan həkim saxlaya bilər",
+  "tr": "Yalnızca muayeneyi yapan doktor kaydedebilir",
+  "ar": "يمكن للطبيب الذي أجرى الجلسة فقط الحفظ"
+ },
+ {
+  "ru": "Черновик этого приёма уже сохранён в карту",
+  "code": "app.draft.alreadySavedToChart",
+  "en": "Draft of this appointment has already been saved to the chart",
+  "az": "Bu qəbulun qaralması artıq karta saxlanılıb",
+  "tr": "Bu muayenenin taslağı zaten kartına kaydedildi",
+  "ar": "تم حفظ مسودة هذه الجلسة بالفعل في السجل"
+ },
+ {
+  "ru": "Неизвестный тип карты пациента",
+  "code": "app.patientChart.unknownType",
+  "en": "Unknown patient chart type",
+  "az": "Naməlum xəstə kartı növü",
+  "tr": "Bilinmeyen hasta kartı türü",
+  "ar": "نوع سجل المريض غير معروف"
+ },
+ {
+  "ru": "Карта пациента не найдена",
+  "code": "app.patientChart.notFound",
+  "en": "Patient chart not found",
+  "az": "Xəstə kartı tapılmadı",
+  "tr": "Hasta kartı bulunamadı",
+  "ar": "سجل المريض غير موجود"
+ },
+ {
+  "ru": "Это не ваш пациент",
+  "code": "app.patient.notYours",
+  "en": "This is not your patient",
+  "az": "Bu sizin xəstəniz deyil",
+  "tr": "Bu sizin hastanız değil",
+  "ar": "هذا ليس مريضك"
+ },
+ {
+  "ru": "Не выбрана карта пациента",
+  "code": "app.patient.notSelected",
+  "en": "Patient chart not selected",
+  "az": "Xəstə kartı seçilməyib",
+  "tr": "Hasta kartı seçilmedi",
+  "ar": "لم يتم اختيار بطاقة المريض"
+ },
+ {
+  "ru": "sourcePhotoFilename обязателен",
+  "code": "app.validation.sourcePhotoFilenameRequired",
+  "en": "sourcePhotoFilename is required",
+  "az": "sourcePhotoFilename tələb olunur",
+  "tr": "sourcePhotoFilename gereklidir",
+  "ar": "sourcePhotoFilename مطلوب"
+ },
+ {
+  "ru": "idx обязателен",
+  "code": "app.validation.idxRequired",
+  "en": "idx is required",
+  "az": "idx tələb olunur",
+  "tr": "idx gereklidir",
+  "ar": "idx مطلوب"
+ },
+ {
+  "ru": "Симуляция не найдена",
+  "code": "app.simulation.notFound",
+  "en": "Simulation not found",
+  "az": "Simulyasiya tapılmadı",
+  "tr": "Simülasyon bulunamadı",
+  "ar": "لم يتم العثور على المحاكاة"
+ },
+ {
+  "ru": "Необходимо принять дисклеймер перед симуляцией",
+  "code": "app.simulation.disclaimerRequired",
+  "en": "Disclaimer must be accepted before simulation",
+  "az": "Simulyasiyadan əvvəl imtina bəyanatı qəbul edilməlidir",
+  "tr": "Simülasyon öncesi sorumluluk reddi kabul edilmelidir",
+  "ar": "يجب قبول إخلاء المسؤولية قبل المحاكاة"
+ },
+ {
+  "ru": "Кейс не найден",
+  "code": "app.case.notFound2",
+  "en": "Case not found",
+  "az": "Klinik hal tapılmadı",
+  "tr": "Vaka bulunamadı",
+  "ar": "لم يتم العثور على الحالة"
+ },
+ {
+  "ru": "Неверный индекс",
+  "code": "app.validation.invalidIndex",
+  "en": "Invalid index",
+  "az": "Yanlış indeks",
+  "tr": "Geçersiz indeks",
+  "ar": "فهرس غير صالح"
+ },
+ {
+  "ru": "Отмечен след кисти, а не зона операции: линия слишком тонкая,",
+  "code": "app.marking.handTraceDetected",
+  "en": "Hand trace marked instead of surgical area: line too thin,",
+  "az": "Əməliyyat zonası deyil, əl izi qeyd edilib: xətt çox nazikdir,",
+  "tr": "Ameliyat bölgesi yerine el izi işaretlendi: çizgi çok ince,",
+  "ar": "تم تحديد أثر اليد بدلاً من منطقة الجراحة: الخط رفيع جداً،"
+ },
+ {
+  "ru": "type и id обязательны",
+  "code": "app.validation.typeAndIdRequired",
+  "en": "type and id are required",
+  "az": "type və id tələb olunur",
+  "tr": "type ve id gereklidir",
+  "ar": "type و id مطلوبان"
+ },
+ {
+  "ru": "fal: таймаут 3 минуты",
+  "code": "app.fal.timeoutThreeMinutes",
+  "en": "fal: 3 minute timeout",
+  "az": "fal: 3 dəqiqəlik vaxt aşımı",
+  "tr": "fal: 3 dakika zaman aşımı",
+  "ar": "fal: مهلة 3 دقائق"
+ },
+ {
+  "ru": "openai: в ответе нет ни b64_json, ни url",
+  "code": "app.openai.missingImageData",
+  "en": "openai: response contains neither b64_json nor url",
+  "az": "openai: cavabda nə b64_json, nə də url var",
+  "tr": "openai: yanıtta ne b64_json ne de url mevcut",
+  "ar": "openai: الاستجابة لا تحتوي على b64_json ولا url"
+ },
+ {
+  "ru": "План не соответствует схеме каталога",
+  "code": "app.plan.catalogSchemaMismatch",
+  "en": "Plan does not match catalog schema",
+  "az": "Plan kataloq sxeminə uyğun gəlmir",
+  "tr": "Plan katalog şemasıyla eşleşmiyor",
+  "ar": "الخطة لا تتطابق مع مخطط الكتالوج"
+ },
+ {
+  "ru": "Слишком часто. Подождите минуту.",
+  "code": "app.rateLimit.tooFrequent",
+  "en": "Too frequent. Please wait a minute.",
+  "az": "Çox tez-tez. Bir dəqiqə gözləyin.",
+  "tr": "Çok sık. Lütfen bir dakika bekleyin.",
+  "ar": "متكرر جداً. يرجى الانتظار دقيقة واحدة."
+ },
+ {
+  "ru": "Разбор плана недоступен: не задан ANTHROPIC_API_KEY",
+  "code": "app.aiService.apiKeyMissing",
+  "en": "Plan parsing unavailable: ANTHROPIC_API_KEY not configured",
+  "az": "Planın təhlili mümkün deyil: ANTHROPIC_API_KEY təyin edilməyib",
+  "tr": "Plan ayrıştırma kullanılamıyor: ANTHROPIC_API_KEY yapılandırılmamış",
+  "ar": "تحليل الخطة غير متاح: لم يتم تكوين ANTHROPIC_API_KEY"
+ },
+ {
+  "ru": "Пустой запрос врача",
+  "code": "app.request.empty",
+  "en": "Empty physician request",
+  "az": "Boş həkim sorğusu",
+  "tr": "Boş doktor talebi",
+  "ar": "طلب الطبيب فارغ"
+ },
+ {
+  "ru": "Модель вернула план вне схемы каталога. Переформулируйте запрос ближе к терминам операций.",
+  "code": "app.aiPlan.outsideCatalog",
+  "en": "Model returned a plan outside the catalog schema. Rephrase the request closer to procedure terms.",
+  "az": "Model kataloqun sxemindən kənar plan qaytardı. Sorğunu əməliyyat terminlərinə uyğun yenidən ifadə edin.",
+  "tr": "Model, katalog şeması dışında bir plan döndürdü. Talebi işlem terimlerine yakın şekilde yeniden ifade edin.",
+  "ar": "أعاد النموذج خطة خارج مخطط الكتالوج. أعد صياغة الطلب بما يتوافق مع مصطلحات الإجراءات."
+ },
+ {
+  "ru": "Запрос отклонён политикой безопасности модели. Переформулируйте.",
+  "code": "app.aiRequest.rejectedByPolicy",
+  "en": "Request rejected by model security policy. Please rephrase.",
+  "az": "Sorğu modelin təhlükəsizlik siyasəti tərəfindən rədd edildi. Yenidən ifadə edin.",
+  "tr": "İstek, model güvenlik politikası tarafından reddedildi. Lütfen yeniden ifade edin.",
+  "ar": "تم رفض الطلب بواسطة سياسة أمان النموذج. يرجى إعادة الصياغة."
+ },
+ {
+  "ru": "Модель вернула ответ, не соответствующий схеме плана",
+  "code": "app.aiPlan.schemaMismatch",
+  "en": "Model returned a response that does not match the plan schema",
+  "az": "Model plan sxeminə uyğun olmayan cavab qaytardı",
+  "tr": "Model, plan şemasıyla eşleşmeyen bir yanıt döndürdü",
+  "ar": "أعاد النموذج استجابة لا تتطابق مع مخطط الخطة"
+ },
+ {
+  "ru": "planSchema: пустой каталог операций",
+  "code": "app.planSchema.emptyCatalog",
+  "en": "planSchema: empty procedure catalog",
+  "az": "planSchema: boş əməliyyat kataloqu",
+  "tr": "planSchema: boş işlem kataloğu",
+  "ar": "planSchema: كتالوج إجراءات فارغ"
+ },
+ {
+  "ru": "В плане нет ни одной операции — исполнять нечего.",
+  "code": "app.plan.noProcedures",
+  "en": "The plan contains no procedures — nothing to execute.",
+  "az": "Planda heç bir əməliyyat yoxdur — icra ediləcək heç nə yoxdur.",
+  "tr": "Planda hiçbir işlem yok — yürütülecek bir şey yok.",
+  "ar": "الخطة لا تحتوي على أي إجراءات — لا يوجد ما ينفذ."
+ },
+ {
+  "ru": "Укажите тему статьи (минимум 3 символа)",
+  "code": "app.article.topicTooShort",
+  "en": "Specify article topic (minimum 3 characters)",
+  "az": "Məqalənin mövzusunu göstərin (minimum 3 simvol)",
+  "tr": "Makale konusunu belirtin (minimum 3 karakter)",
+  "ar": "حدد موضوع المقالة (3 أحرف كحد أدنى)"
+ },
+ {
+  "ru": "Тема слишком длинная (максимум 200 символов)",
+  "code": "app.article.topicTooLong",
+  "en": "Topic too long (maximum 200 characters)",
+  "az": "Mövzu çox uzundur (maksimum 200 simvol)",
+  "tr": "Konu çok uzun (maksimum 200 karakter)",
+  "ar": "الموضوع طويل جداً (200 حرف كحد أقصى)"
+ },
+ {
+  "ru": "Слишком много запросов на генерацию. Попробуйте через час или войдите в аккаунт.",
+  "code": "app.generation.rateLimitExceeded",
+  "en": "Too many generation requests. Try again in an hour or log in to your account.",
+  "az": "Çox sayda generasiya sorğusu. Bir saatdan sonra cəhd edin və ya hesabınıza daxil olun.",
+  "tr": "Çok fazla oluşturma isteği. Bir saat sonra tekrar deneyin veya hesabınıza giriş yapın.",
+  "ar": "عدد كبير جداً من طلبات التوليد. حاول مرة أخرى بعد ساعة أو قم بتسجيل الدخول إلى حسابك."
+ },
+ {
+  "ru": "Бесплатные генерации на сегодня закончились. Войдите в аккаунт — у зарегистрированных свой лимит.",
+  "code": "app.generation.freeQuotaExhausted",
+  "en": "Free generations for today are exhausted. Log in to your account — registered users have their own limit.",
+  "az": "Bu gün üçün pulsuz generasiyalar bitdi. Hesabınıza daxil olun — qeydiyyatlı istifadəçilərin öz limiti var.",
+  "tr": "Bugün için ücretsiz oluşturmalar tükendi. Hesabınıza giriş yapın — kayıtlı kullanıcıların kendi limiti vardır.",
+  "ar": "انتهت عمليات التوليد المجانية لليوم. قم بتسجيل الدخول إلى حسابك — المستخدمون المسجلون لديهم حد خاص بهم."
+ },
+ {
+  "ru": "Этот генератор пишет обзоры медицинской литературы для врачей. Для вопроса о своём здоровье воспользуйтесь AI-консультацией или запишитесь к врачу.",
+  "code": "app.literatureReview.purposeDisclaimer",
+  "en": "This generator writes medical literature reviews for doctors. For questions about your health, use AI consultation or book an appointment with a doctor.",
+  "az": "Bu generator həkimlər üçün tibbi ədəbiyyat icmalları yazır. Sağlamlığınızla bağlı suallar üçün AI konsultasiyasından istifadə edin və ya həkimə qeydiyyatdan keçin.",
+  "tr": "Bu araç doktorlar için tıbbi literatür incelemeleri yazar. Sağlığınızla ilgili sorular için AI danışmanlığını kullanın veya doktora randevu alın.",
+  "ar": "ينشئ هذا المولد مراجعات للأدبيات الطبية للأطباء. لأسئلة حول صحتك، استخدم الاستشارة بالذكاء الاصطناعي أو احجز موعداً مع الطبيب."
+ },
+ {
+  "ru": "Пустой ответ от AI. Попробуйте ещё раз.",
+  "code": "app.ai.emptyResponse4",
+  "en": "Empty response from AI. Please try again.",
+  "az": "AI-dan boş cavab. Zəhmət olmasa yenidən cəhd edin.",
+  "tr": "AI'dan boş yanıt. Lütfen tekrar deneyin.",
+  "ar": "استجابة فارغة من الذكاء الاصطناعي. يرجى المحاولة مرة أخرى."
+ },
+ {
+  "ru": "JSON не найден в ответе SEO",
+  "code": "app.seo.jsonNotFound",
+  "en": "JSON not found in SEO response",
+  "az": "SEO cavabında JSON tapılmadı",
+  "tr": "SEO yanıtında JSON bulunamadı",
+  "ar": "لم يتم العثور على JSON في استجابة SEO"
+ },
+ {
+  "ru": "Некорректный идентификатор встречи",
+  "code": "app.appointment.invalidId3",
+  "en": "Invalid appointment ID",
+  "az": "Yanlış görüş identifikatoru",
+  "tr": "Geçersiz randevu kimliği",
+  "ar": "معرّف الموعد غير صحيح"
+ },
+ {
+  "ru": "Встреча не найдена",
+  "code": "app.appointment.notFound4",
+  "en": "Appointment not found",
+  "az": "Görüş tapılmadı",
+  "tr": "Randevu bulunamadı",
+  "ar": "لم يتم العثور على الموعد"
+ },
+ {
+  "ru": "Менять встречу может только ведущий",
+  "code": "app.appointment.onlyHostCanModify",
+  "en": "Only the host can modify the appointment",
+  "az": "Görüşü yalnız aparıcı dəyişdirə bilər",
+  "tr": "Randevuyu yalnızca ev sahibi değiştirebilir",
+  "ar": "يمكن للمضيف فقط تعديل الموعد"
+ },
+ {
+  "ru": "Удалить встречу может только ведущий",
+  "code": "app.appointment.onlyHostCanDelete",
+  "en": "Only the host can delete the appointment",
+  "az": "Görüşü yalnız aparıcı silə bilər",
+  "tr": "Randevuyu yalnızca ev sahibi silebilir",
+  "ar": "يمكن للمضيف فقط حذف الموعد"
+ },
+ {
+  "ru": "Видеосвязь не настроена",
+  "code": "app.videoCall.notConfigured",
+  "en": "Video call not configured",
+  "az": "Video əlaqə konfiqurasiya edilməyib",
+  "tr": "Video görüşme yapılandırılmamış",
+  "ar": "لم يتم تكوين مكالمة الفيديو"
+ },
+ {
+  "ru": "Вас не пригласили на эту встречу",
+  "code": "app.appointment.notInvited",
+  "en": "You were not invited to this appointment",
+  "az": "Siz bu görüşə dəvət olunmamısınız",
+  "tr": "Bu randevuya davet edilmediniz",
+  "ar": "لم تتم دعوتك لهذا الموعد"
+ }
+]

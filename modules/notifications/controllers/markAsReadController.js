@@ -1,6 +1,7 @@
 // controllers/markAsReadController.js
 import Notification from "../../../common/models/Notification/notification.js";
 import mongoose from "mongoose";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * @desc Отметить одно или все уведомления как прочитанные
@@ -13,7 +14,7 @@ export const markAsReadController = async (req, res) => {
     if (!userId)
       return res.status(401).json({
         success: false,
-        message: "Неавторизованный доступ",
+        message: tReq(req, "app.access.unauthorized"),
       });
 
     const { notificationId } = req.body;
@@ -32,12 +33,12 @@ export const markAsReadController = async (req, res) => {
       if (!updated)
         return res.status(404).json({
           success: false,
-          message: "Уведомление не найдено или не принадлежит пользователю",
+          message: tReq(req, "app.notification.notFoundOrNotOwned"),
         });
 
       return res.json({
         success: true,
-        message: "✅ Уведомление помечено как прочитанное",
+        message: tReq(req, "app.notification.markReadSuccess"),
         notification: updated,
       });
     }
@@ -59,7 +60,7 @@ export const markAsReadController = async (req, res) => {
     console.error("❌ Ошибка при отметке уведомлений:", err);
     res.status(500).json({
       success: false,
-      message: "Ошибка сервера при обновлении уведомлений",
+      message: tReq(req, "app.notification.updateServerError"),
       error: err.message,
     });
   }

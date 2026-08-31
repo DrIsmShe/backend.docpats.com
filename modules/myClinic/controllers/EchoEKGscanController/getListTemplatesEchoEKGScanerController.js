@@ -2,6 +2,7 @@ import EchoEKGScanerTemplateNameofexam from "../../../../common/models/Polyclini
 import EchoEKGScanerTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/EchoEKGscanTemplates/EchoEKGScanTemplateReport.js";
 import EchoEKGScanerTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/EchoEKGscanTemplates/EchoEKGScanTemplateDiagnosis.js";
 import EchoEKGScanerTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/EchoEKGscanTemplates/EchoEKGScanTemplateRecomandation.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 // Получить список шаблонов отчёта (Report)
 const getListNameofexamTemplatesEchoEKGscanerController = async (req, res) => {
@@ -17,7 +18,7 @@ const getListNameofexamTemplatesEchoEKGscanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.reportTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.reportTemplate.fetchError"), error });
   }
 };
 
@@ -35,7 +36,7 @@ const getListReportTemplatesEchoEKGscanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.reportTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.reportTemplate.fetchError"), error });
   }
 };
 
@@ -53,7 +54,7 @@ const getListDiagnosisTemplatesEchoEKGscanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.diagnosisTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.diagnosisTemplate.fetchError"), error });
   }
 };
 
@@ -74,7 +75,7 @@ const getListRecomandationTemplatesEchoEKGscanerController = async (
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.recommendationTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.recommendationTemplate.fetchError"), error });
   }
 };
 

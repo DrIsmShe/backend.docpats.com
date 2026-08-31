@@ -33,12 +33,14 @@ import {
   nameOf,
 } from "../services/procedureNames.service.js";
 import { toProcedureDTO } from "../procedure.mapper.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 function fail(res, err) {
   if (err instanceof ProcedureError) {
     return res.status(err.status || 400).json({
       success: false,
-      message: err.message,
+      // Помощник видит только ответ — запрос достаём из него, ради языка.
+      message: err.i18n ? (res.req?.t?.(err.i18n) ?? err.message) : err.message,
       ...(err.code ? { code: err.code } : {}),
       ...(err.extra || {}),
     });
@@ -51,7 +53,9 @@ function fail(res, err) {
 async function loadOwn(id, doctorId) {
   const doc = await ProcedureBooking.findOne({ _id: id, doctorId });
   if (!doc) {
-    throw new ProcedureError("Запись не найдена", { status: 404 });
+    throw Object.assign(new ProcedureError("Запись не найдена", { status: 404 }), {
+      i18n: "app.appointment.notFound3",
+    });
   }
   return doc;
 }
@@ -67,7 +71,7 @@ export const updateProcedureStatusController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Требуется авторизация" });
+        .json({ success: false, message: tReq(req, "app.auth.required") });
     }
 
     let doc;
@@ -107,7 +111,7 @@ export const updateProcedureStatusController = async (req, res) => {
     console.error("❌ Ошибка updateProcedureStatus:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка сервера", error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
   }
 };
 
@@ -117,7 +121,7 @@ export const postponeProcedureController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Требуется авторизация" });
+        .json({ success: false, message: tReq(req, "app.auth.required") });
     }
 
     let ctx;
@@ -198,7 +202,7 @@ export const postponeProcedureController = async (req, res) => {
       if (err?.code === 11000) {
         return res.status(409).json({
           success: false,
-          message: "На это время уже есть запись",
+          message: tReq(req, "app.appointment.timeSlotAlreadyBooked"),
           code: "SLOT_TAKEN_PROCEDURE",
         });
       }
@@ -253,7 +257,7 @@ export const postponeProcedureController = async (req, res) => {
     console.error("❌ Ошибка postponeProcedure:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка сервера", error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
   }
 };
 
@@ -263,7 +267,7 @@ export const archiveProcedureController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Требуется авторизация" });
+        .json({ success: false, message: tReq(req, "app.auth.required") });
     }
 
     let doc;
@@ -281,7 +285,7 @@ export const archiveProcedureController = async (req, res) => {
       return res.status(409).json({
         success: false,
         message:
-          "Сначала завершите, отмените или перенесите запись — активную в архив убрать нельзя",
+          tReq(req, "app.appointment.cannotArchiveActive"),
         code: "STILL_ACTIVE",
       });
     }
@@ -295,6 +299,6 @@ export const archiveProcedureController = async (req, res) => {
     console.error("❌ Ошибка archiveProcedure:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка сервера", error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
   }
 };

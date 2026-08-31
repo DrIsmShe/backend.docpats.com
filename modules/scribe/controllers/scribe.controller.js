@@ -11,6 +11,7 @@ import {
   findPrivatePatientByUser,
 } from "../services/scribeSavePrivate.service.js";
 import ScribeSession from "../models/scribeSession.model.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   ValidationError,
   NotFoundError,
@@ -120,7 +121,7 @@ export async function chunkController(req, res) {
     if (!req.file?.buffer?.length) {
       return res
         .status(400)
-        .json({ success: false, message: "Кусок аудио не передан" });
+        .json({ success: false, message: tReq(req, "app.audio.chunkNotProvided") });
     }
     const out = await svc.ingestChunk({
       sessionId: req.params.id,
@@ -162,14 +163,14 @@ export async function finishController(req, res) {
 export async function translateController(req, res) {
   try {
     const session = await ScribeSession.findById(req.params.id).lean();
-    if (!session) throw new NotFoundError("Сеанс записи не найден");
+    if (!session) throw new NotFoundError(tReq(req, "app.recording.sessionNotFound"));
     if (String(session.doctorId) !== String(req.session.userId)) {
-      throw new ForbiddenError("Черновик приёма доступен только его врачу");
+      throw new ForbiddenError(tReq(req, "app.appointment.draftAccessRestricted"));
     }
 
     const to = String(req.body?.to || "").trim();
     if (!TRANSLATABLE[to]) {
-      throw new ValidationError("Перевод на этот язык не поддерживается");
+      throw new ValidationError(tReq(req, "app.translation.languageNotSupported"));
     }
 
     const out = await translateDraft({ fields: req.body?.fields || {}, to });
@@ -281,12 +282,12 @@ export async function byRoomController(req, res) {
 export async function statusController(req, res) {
   try {
     const session = await ScribeSession.findById(req.params.id).lean();
-    if (!session) throw new NotFoundError("Сеанс записи не найден");
+    if (!session) throw new NotFoundError(tReq(req, "app.recording.sessionNotFound"));
 
     const me = (session.participants || []).find(
       (p) => String(p.userId) === String(req.session.userId),
     );
-    if (!me) throw new ForbiddenError("Вы не участник этого приёма");
+    if (!me) throw new ForbiddenError(tReq(req, "app.appointment.notParticipant"));
 
     return res.json({
       success: true,

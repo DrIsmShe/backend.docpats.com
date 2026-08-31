@@ -3,6 +3,7 @@ import Article from "../../../common/models/Articles/articles.js";
 import ArticleScientific from "../../../common/models/Articles/articles-scince.js";
 import CommentDocpats from "../../../common/models/Comments/CommentDocpats.js";
 import User from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const AllDoctorArticlesController = async (req, res) => {
   try {
@@ -14,7 +15,7 @@ const AllDoctorArticlesController = async (req, res) => {
       console.warn("⚠️ Неавторизованный запрос");
       return res
         .status(401)
-        .json({ success: false, message: "Не авторизован" });
+        .json({ success: false, message: tReq(req, "app.auth.notAuthorized") });
     }
 
     // admin — на чтение (инспекция/модерация статей врачей из админ-панели).
@@ -22,7 +23,7 @@ const AllDoctorArticlesController = async (req, res) => {
       console.warn(`⚠️ Доступ запрещен! Роль: ${req.session.role}`);
       return res
         .status(403)
-        .json({ success: false, message: "Доступ запрещен" });
+        .json({ success: false, message: tReq(req, "app.access.forbidden") });
     }
 
     // Поиск профиля доктора
@@ -31,7 +32,7 @@ const AllDoctorArticlesController = async (req, res) => {
       console.warn(`❌ Доктор с ID ${doctorId} не найден`);
       return res
         .status(404)
-        .json({ success: false, message: "Доктор не найден" });
+        .json({ success: false, message: tReq(req, "app.doctor.notFound") });
     }
 
     console.log(`✅ Доктор найден`);
@@ -123,7 +124,7 @@ const AllDoctorArticlesController = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Ошибка при получении статей:", error);
-    return res.status(500).json({ success: false, message: "Ошибка сервера" });
+    return res.status(500).json({ success: false, message: tReq(req, "app.server.error") });
   }
 };
 

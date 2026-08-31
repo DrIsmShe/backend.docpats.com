@@ -2,6 +2,7 @@
 import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js";
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
 /**
@@ -17,7 +18,7 @@ export const getMySchedule = async (req, res) => {
     if (!profile) {
       return res
         .status(404)
-        .json({ success: false, message: "Профиль врача не найден" });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound") });
     }
 
     const doctorId = profile._id;
@@ -26,7 +27,7 @@ export const getMySchedule = async (req, res) => {
     if (!schedule) {
       return res.status(200).json({
         success: true,
-        message: "У вас пока нет расписания",
+        message: tReq(req, "app.schedule.notSet"),
         data: {
           doctorId,
           weekly: [],
@@ -59,7 +60,7 @@ export const createOrUpdateSchedule = async (req, res) => {
     if (!profile) {
       return res
         .status(404)
-        .json({ success: false, message: "Профиль врача не найден" });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound") });
     }
 
     const doctorId = profile._id;
@@ -80,7 +81,7 @@ export const createOrUpdateSchedule = async (req, res) => {
 
     res.json({
       success: true,
-      message: "✅ Расписание успешно сохранено",
+      message: tReq(req, "app.schedule.saveSuccess"),
       data: schedule,
     });
   } catch (err) {
@@ -104,7 +105,7 @@ export const getAvailableSlots = async (req, res) => {
     if (!profile)
       return res
         .status(404)
-        .json({ success: false, message: "Профиль врача не найден" });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound") });
 
     const doctorId = profile._id;
 
@@ -113,7 +114,7 @@ export const getAvailableSlots = async (req, res) => {
     if (!schedule)
       return res
         .status(404)
-        .json({ success: false, message: "Расписание не найдено" });
+        .json({ success: false, message: tReq(req, "app.schedule.notFound") });
 
     // 🔹 Генерируем доступные слоты
     const slots =
@@ -142,7 +143,7 @@ export const getDoctorAppointments = async (req, res) => {
     if (!profile)
       return res
         .status(404)
-        .json({ success: false, message: "Профиль врача не найден" });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound") });
 
     const doctorId = profile._id;
 
@@ -155,7 +156,7 @@ export const getDoctorAppointments = async (req, res) => {
     if (!appointments.length) {
       return res.status(200).json({
         success: true,
-        message: "У вас пока нет приёмов",
+        message: tReq(req, "app.appointments.noAppointments"),
         data: [],
       });
     }

@@ -3,6 +3,7 @@ import Appointment from "../../../common/models/Appointment/appointment.js";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
 import Specialization from "../../../common/models/DoctorProfile/specialityOfDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * Контроллер: Получение всех приёмов текущего пациента
@@ -14,7 +15,7 @@ export const getMyAppointmentsController = async (req, res) => {
     if (!patientId) {
       return res.status(403).json({
         success: false,
-        message: "Доступ запрещён: пациент не авторизован.",
+        message: tReq(req, "app.access.patientNotAuthorized"),
       });
     }
 
@@ -43,7 +44,7 @@ export const getMyAppointmentsController = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: [],
-        message: "У пациента пока нет записей на приём.",
+        message: tReq(req, "app.patient.noAppointments"),
       });
     }
 
@@ -107,7 +108,7 @@ export const getMyAppointmentsController = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера при загрузке списка приёмов.",
+      message: tReq(req, "app.appointments.loadServerError"),
       error: error.message,
     });
   }

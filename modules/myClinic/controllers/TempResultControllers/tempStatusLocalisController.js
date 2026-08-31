@@ -1,17 +1,18 @@
 import TempStatusLocalis from "../../../../common/models/Polyclinic/TempResults/tempStatusLocalis.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const tempStatusLocalisController = async (req, res) => {
   try {
     const { title, content, tags } = req.body;
     const userId = req.session.userId;
     if (!userId) {
-      return res.status(400).json({ message: req.t("myClinic.auth.userNotAuthorized") });
+      return res.status(400).json({ message: tReq(req, "myClinic.auth.userNotAuthorized") });
     }
     const existingTemplate = await TempStatusLocalis.findOne({ title });
     if (existingTemplate) {
       return res
         .status(400)
-        .json({ message: req.t("myClinic.template.nameAlreadyExists") });
+        .json({ message: tReq(req, "myClinic.template.nameAlreadyExists") });
     }
     let tagsArray = [];
     if (tags) {
@@ -27,14 +28,14 @@ const tempStatusLocalisController = async (req, res) => {
     });
     await newTemplate.save();
     res.status(201).json({
-      message: req.t("myClinic.anamnesisMorbi.templateCreatedSuccessfully"),
+      message: tReq(req, "myClinic.anamnesisMorbi.templateCreatedSuccessfully"),
       template: newTemplate,
     });
   } catch (error) {
     console.error("Ошибка при создании шаблона анамнеза morbi:", error);
     res
       .status(500)
-      .json({ message: req.t("myClinic.template.createError"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError"), error: error.message });
   }
 };
 

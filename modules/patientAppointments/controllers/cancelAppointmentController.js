@@ -6,6 +6,7 @@ import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPo
 import Notification from "../../../common/models/Notification/notification.js";
 import { eventBus } from "../../notifications/events/eventBus.js";
 import { emitNotification } from "../../../common/realtime/userChannel.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * PUT /appointment-for-patient/cancel/:id
@@ -24,7 +25,7 @@ export const cancelAppointmentByPatientController = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: "Приём не найден",
+        message: tReq(req, "app.appointment.notFound"),
       });
     }
 
@@ -49,7 +50,7 @@ export const cancelAppointmentByPatientController = async (req, res) => {
     if (appointment.status === "completed") {
       return res.status(400).json({
         success: false,
-        message: "Невозможно отменить завершённый приём",
+        message: tReq(req, "app.appointment.cannotCancelCompleted"),
       });
     }
 
@@ -141,7 +142,7 @@ export const cancelAppointmentByPatientController = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Приём успешно отменён",
+      message: tReq(req, "app.appointment.cancelledSuccessfully"),
       data: resultAppointment,
       audit: auditEntry,
     });
@@ -149,7 +150,7 @@ export const cancelAppointmentByPatientController = async (req, res) => {
     console.error("💥 Ошибка отмены приёма:", err);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера при отмене приёма",
+      message: tReq(req, "app.appointment.cancelServerError"),
     });
   }
 };

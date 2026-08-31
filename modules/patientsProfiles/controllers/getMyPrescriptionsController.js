@@ -15,12 +15,13 @@ import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivat
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import Clinic from "../../clinic/clinic-core/models/clinic.model.js";
 import { decryptPHI } from "../../../common/utils/phiCrypto.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const getMyPrescriptionsController = async (req, res) => {
   try {
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: req.t("app.auth.notAuthorized2") });
+      return res.status(401).json({ ok: false, error: tReq(req, "app.auth.notAuthorized2") });
     }
 
     // 1. Все карты пациента, привязанные к этому юзеру.

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import AppointmentAudit from "../../../common/models/Appointment/appointmentAudit.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const getAppointmentAudit = async (req, res) => {
   try {
@@ -9,7 +10,7 @@ export const getAppointmentAudit = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res
         .status(400)
-        .json({ success: false, message: "Некорректный ID приёма" });
+        .json({ success: false, message: tReq(req, "app.appointment.invalidId") });
     }
 
     // 🔹 Приводим к ObjectId
@@ -29,7 +30,7 @@ export const getAppointmentAudit = async (req, res) => {
     if (!history || history.length === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "История не найдена" });
+        .json({ success: false, message: tReq(req, "app.history.notFound") });
     }
 
     return res.status(200).json({ success: true, data: history });
@@ -37,6 +38,6 @@ export const getAppointmentAudit = async (req, res) => {
     console.error("❌ Ошибка getAppointmentAudit:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка сервера: " + err.message });
+      .json({ success: false, message: tReq(req, "app.server.error2") + err.message });
   }
 };

@@ -70,6 +70,7 @@ router.use("/clinic-reviews", clinicReviewRoute);
 import listConsentRequestsRoute from "./routes/listConsentRequestsRoute.js";
 import approveConsentRequestRoute from "./routes/approveConsentRequestRoute.js";
 import rejectConsentRequestRoute from "./routes/rejectConsentRequestRoute.js";
+import { tReq } from "../../common/i18n/index.js";
 
 // Sprint 3.2 — Pull Consent
 router.use("/consent-requests", listConsentRequestsRoute);
@@ -166,7 +167,7 @@ router.get("/patientprofilelayout", async (req, res) => {
     console.warn("⚠️ Пользователь не авторизован!");
     return res.status(401).json({
       authenticated: false,
-      message: req.t("app.user.notAuthorized"),
+      message: tReq(req, "app.user.notAuthorized"),
     });
   }
 
@@ -174,7 +175,7 @@ router.get("/patientprofilelayout", async (req, res) => {
     console.warn("⚠️ Доступ запрещен! Роль:", req.session.role);
     return res.status(403).json({
       authenticated: false,
-      message: req.t("app.access.patientsOnly"),
+      message: tReq(req, "app.access.patientsOnly"),
     });
   }
 

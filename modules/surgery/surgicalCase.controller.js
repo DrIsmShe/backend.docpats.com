@@ -1,5 +1,6 @@
 import * as caseService from "./surgicalCase.service.js";
 import SurgicalCase from "./surgicalCase.model.js";
+import { tReq } from "../../common/i18n/index.js";
 
 // ─── POST /api/surgery/cases ──────────────────────────────────────────────
 export async function createCase(req, res) {
@@ -240,7 +241,7 @@ export async function downloadPDF(req, res) {
 
     const cas = await SurgicalCase.findOne({ _id: id, surgeonId });
     if (!cas)
-      return res.status(404).json({ success: false, error: "Кейс не найден" });
+      return res.status(404).json({ success: false, error: tReq(req, "app.case.notFound2") });
 
     const { generateSurgeryPlanPDF } = await import("./pdf.service.js");
 
@@ -266,7 +267,7 @@ export async function getCasesByPatient(req, res) {
     if (!type || !id) {
       return res
         .status(400)
-        .json({ success: false, error: "type и id обязательны" });
+        .json({ success: false, error: tReq(req, "app.validation.typeAndIdRequired") });
     }
 
     const cases = await caseService.getCasesByPatient(surgeonId, type, id);

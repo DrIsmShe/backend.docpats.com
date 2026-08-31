@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import User from "../../../common/models/Auth/users.js";
 import PatientProfile from "../../../common/models/PatientProfile/patientProfile.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const getProfileUserPatientController = async (req, res) => {
   try {
@@ -11,14 +12,14 @@ const getProfileUserPatientController = async (req, res) => {
 
     // 1) Валидация ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: req.t("app.validation.invalidId2") });
+      return res.status(400).json({ message: tReq(req, "app.validation.invalidId2") });
     }
     const userObjectId = new mongoose.Types.ObjectId(id);
 
     // 2) Пользователь с ролью patient
     const user = await User.findOne({ _id: userObjectId, role: "patient" });
     if (!user) {
-      return res.status(404).json({ message: req.t("app.patient.notFound") });
+      return res.status(404).json({ message: tReq(req, "app.patient.notFound") });
     }
 
     // 3) Расшифровка полей пользователя
@@ -86,7 +87,7 @@ const getProfileUserPatientController = async (req, res) => {
     return res.status(200).json(userProfile);
   } catch (error) {
     console.error("❌ Ошибка при получении профиля пациента:", error);
-    return res.status(500).json({ message: req.t("app.server.error") });
+    return res.status(500).json({ message: tReq(req, "app.server.error") });
   }
 };
 

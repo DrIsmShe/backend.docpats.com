@@ -2,6 +2,7 @@ import AngiographyScanerTemplateNameofexam from "../../../../common/models/Exame
 import AngiographyScanerTemplateReport from "../../../../common/models/ExamenationsTemplates/AngiographyscanTemplates/AngiographyScanTemplateReport.js";
 import AngiographycanerTemplateDiagnosis from "../../../../common/models/ExamenationsTemplates/AngiographyscanTemplates/AngiographyScanTemplateDiagnosis.js";
 import AngiographyScanerTemplateRecomandation from "../../../../common/models/ExamenationsTemplates/AngiographyscanTemplates/AngiographyScanTemplateRecomandation.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 // Получить список шаблонов отчёта (Report)
 const getListNameofexamTemplatesAngiographyscanerController = async (
@@ -20,7 +21,7 @@ const getListNameofexamTemplatesAngiographyscanerController = async (
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.reportTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.reportTemplate.fetchError"), error });
   }
 };
 
@@ -38,7 +39,7 @@ const getListReportTemplatesAngiographyscanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.reportTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.reportTemplate.fetchError"), error });
   }
 };
 
@@ -59,7 +60,7 @@ const getListDiagnosisTemplatesAngiographyscanerController = async (
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.diagnosisTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.diagnosisTemplate.fetchError"), error });
   }
 };
 
@@ -80,7 +81,7 @@ const getListRecomandationTemplatesAngiographyscanerController = async (
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.recommendationTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.recommendationTemplate.fetchError"), error });
   }
 };
 

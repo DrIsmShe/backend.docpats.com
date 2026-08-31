@@ -4,6 +4,7 @@ import DoctorProfile from "../../../../common/models/DoctorProfile/profileDoctor
 import Notification from "../../../../common/models/Notification/notification.js";
 import Article from "../../../../common/models/Articles/articles.js";
 import { eventBus } from "../../../notifications/events/eventBus.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 export const createComment = async (req, res) => {
   try {
@@ -19,12 +20,12 @@ export const createComment = async (req, res) => {
     if (typeof content !== "string" || !content.trim()) {
       return res
         .status(400)
-        .json({ success: false, message: "Комментарий не может быть пустым" });
+        .json({ success: false, message: tReq(req, "app.comment.cannotBeEmpty") });
     }
     if (content.length > 1000) {
       return res.status(400).json({
         success: false,
-        message: "Комментарий слишком длинный (макс. 1000 символов)",
+        message: tReq(req, "app.comment.tooLong"),
       });
     }
 
@@ -52,18 +53,18 @@ export const createComment = async (req, res) => {
         await user.save();
         return res
           .status(403)
-          .json({ success: false, message: "Вы навсегда заблокированы" });
+          .json({ success: false, message: tReq(req, "app.user.bannedPermanently") });
       }
       if (user.offenseCount === 2) {
         user.blockedUntil = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
         await user.save();
         return res
           .status(403)
-          .json({ success: false, message: "Вы временно заблокированы" });
+          .json({ success: false, message: tReq(req, "app.user.bannedTemporarily") });
       }
       return res
         .status(400)
-        .json({ success: false, message: "Обнаружен оскорбительный текст" });
+        .json({ success: false, message: tReq(req, "app.content.offensiveDetected") });
     }
 
     // ✅ Создаём комментарий
@@ -329,7 +330,7 @@ export const createComment = async (req, res) => {
     console.error("💥 Ошибка создания комментария:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка при создании комментария" });
+      .json({ success: false, message: tReq(req, "app.comment.createError") });
   }
 };
 
@@ -406,7 +407,7 @@ export const getCommentsByRef = async (req, res) => {
     console.error("❌ Ошибка при получении комментариев:", err);
     res.status(500).json({
       success: false,
-      message: "Ошибка при получении комментариев",
+      message: tReq(req, "app.comment.fetchError"),
     });
   }
 };
@@ -421,12 +422,12 @@ export const updateComment = async (req, res) => {
     if (typeof content !== "string" || !content.trim()) {
       return res
         .status(400)
-        .json({ success: false, message: "Комментарий не может быть пустым" });
+        .json({ success: false, message: tReq(req, "app.comment.cannotBeEmpty") });
     }
     if (content.length > 1000) {
       return res.status(400).json({
         success: false,
-        message: "Комментарий слишком длинный (макс. 1000 символов)",
+        message: tReq(req, "app.comment.tooLong"),
       });
     }
 
@@ -434,7 +435,7 @@ export const updateComment = async (req, res) => {
     if (!comment)
       return res
         .status(404)
-        .json({ success: false, message: "Комментарий не найден" });
+        .json({ success: false, message: tReq(req, "app.comment.notFound") });
 
     const maxEditTime = 15 * 60 * 1000;
     if (
@@ -443,7 +444,7 @@ export const updateComment = async (req, res) => {
     ) {
       return res
         .status(403)
-        .json({ success: false, message: "Редактирование недоступно" });
+        .json({ success: false, message: tReq(req, "app.comment.editNotAllowed") });
     }
 
     comment.content = content;
@@ -455,7 +456,7 @@ export const updateComment = async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: "Ошибка при редактировании",
+      message: tReq(req, "app.comment.editError"),
     });
   }
 };
@@ -470,23 +471,23 @@ export const deleteComment = async (req, res) => {
     if (!comment)
       return res
         .status(404)
-        .json({ success: false, message: "Комментарий не найден" });
+        .json({ success: false, message: tReq(req, "app.comment.notFound") });
 
     if (comment.author.toString() !== userId.toString()) {
       return res.status(403).json({
         success: false,
-        message: "Вы не можете удалить этот комментарий",
+        message: tReq(req, "app.comment.deleteNotAllowed"),
       });
     }
 
     await comment.deleteOne();
     return res
       .status(200)
-      .json({ success: true, message: "Комментарий удален" });
+      .json({ success: true, message: tReq(req, "app.comment.deleted") });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: "Ошибка при удалении",
+      message: tReq(req, "app.comment.deleteError"),
     });
   }
 };
@@ -501,7 +502,7 @@ export const toggleLike = async (req, res) => {
     if (!comment)
       return res
         .status(404)
-        .json({ success: false, message: "Комментарий не найден" });
+        .json({ success: false, message: tReq(req, "app.comment.notFound") });
 
     const index = comment.likes.indexOf(userId);
     if (index === -1) {
@@ -515,7 +516,7 @@ export const toggleLike = async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: "Ошибка при лайке",
+      message: tReq(req, "app.like.error"),
     });
   }
 };
@@ -527,7 +528,7 @@ export const getCommentCountBulk = async (req, res) => {
     if (!Array.isArray(ids)) {
       return res
         .status(400)
-        .json({ success: false, message: "ids должен быть массивом" });
+        .json({ success: false, message: tReq(req, "app.validation.idsMustBeArray") });
     }
 
     const counts = {};
@@ -542,7 +543,7 @@ export const getCommentCountBulk = async (req, res) => {
     console.error("❌ Ошибка при получении количества комментариев:", err);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера",
+      message: tReq(req, "app.server.error"),
     });
   }
 };
@@ -554,6 +555,6 @@ export const getCommentCountDetail = async (req, res) => {
     const count = await Comment.countDocuments({ targetId });
     return res.status(200).json({ count }); // ✅ важно, чтобы возвращался именно объект { count }
   } catch (err) {
-    return res.status(500).json({ message: "Ошибка сервера" });
+    return res.status(500).json({ message: tReq(req, "app.server.error") });
   }
 };

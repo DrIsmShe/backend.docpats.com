@@ -1,4 +1,5 @@
 import Appointment from "../../../common/models/Appointment/appointment.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const updateVideoSessionController = async (req, res) => {
   try {
@@ -9,14 +10,14 @@ export const updateVideoSessionController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
 
     const appointment = await Appointment.findById(appointmentId);
     if (!appointment) {
       return res
         .status(404)
-        .json({ success: false, message: "Приём не найден" });
+        .json({ success: false, message: tReq(req, "app.appointment.notFound") });
     }
 
     appointment.callSession = {
@@ -32,11 +33,11 @@ export const updateVideoSessionController = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Отчёт о видеосессии сохранён",
+      message: tReq(req, "app.videoSession.reportSaved"),
       appointment,
     });
   } catch (err) {
     console.error("Ошибка при обновлении видеосессии:", err);
-    res.status(500).json({ success: false, message: "Ошибка сервера" });
+    res.status(500).json({ success: false, message: tReq(req, "app.server.error") });
   }
 };

@@ -3,6 +3,7 @@ import XRAYScan from "../../../../common/models/Polyclinic/ExamenationsTemplates
 import User from "../../../../common/models/Auth/users.js";
 import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 /* ========================== CONTROLLER ========================== */
 
@@ -31,7 +32,7 @@ const addXRAYscanController = async (req, res) => {
     const doctorId = req.session?.userId;
 
     if (!doctorId) {
-      return res.status(401).json({ message: req.t("myClinic.auth.notAuthorized") });
+      return res.status(401).json({ message: tReq(req, "myClinic.auth.notAuthorized") });
     }
 
     /* ================= DOCTOR ================= */
@@ -55,7 +56,7 @@ const addXRAYscanController = async (req, res) => {
     const patient = req.patient;
 
     if (!patient) {
-      return res.status(404).json({ message: req.t("myClinic.patient.notFound2") });
+      return res.status(404).json({ message: tReq(req, "myClinic.patient.notFound2") });
     }
 
     const patientModelName = patient.constructor.modelName;

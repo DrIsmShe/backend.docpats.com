@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as dialogService from "./dialog.service.js";
 import authMiddleware from "../../../common/middlewares/authvalidateMiddleware/authMiddleware.js";
 import auditMiddleware from "../../audit/middleware/auditMiddleware.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const router = Router();
 
@@ -158,7 +159,7 @@ router.post(
       const { peerUserId } = req.body;
 
       if (!peerUserId) {
-        return res.status(400).json({ message: "peerUserId обязателен" });
+        return res.status(400).json({ message: tReq(req, "app.validation.peerUserIdRequired") });
       }
 
       const dialog = await dialogService.getOrCreatePrivateDialog({

@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import ProfilePatient from "../../../common/models/PatientProfile/patientProfile.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 dotenv.config();
 
@@ -97,7 +98,7 @@ const patientDetailsController = async (req, res) => {
     const { id } = req.params;
 
     if (!id || !mongoose.isValidObjectId(id)) {
-      return res.status(400).json({ message: req.t("myClinic.patient.invalidId") });
+      return res.status(400).json({ message: tReq(req, "myClinic.patient.invalidId") });
     }
 
     // Загружаем карточку пациента
@@ -106,7 +107,7 @@ const patientDetailsController = async (req, res) => {
       .exec();
 
     if (!doc) {
-      return res.status(404).json({ message: req.t("myClinic.patient.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.patient.notFound") });
     }
 
     const p = doc.toObject({ getters: true, virtuals: true });

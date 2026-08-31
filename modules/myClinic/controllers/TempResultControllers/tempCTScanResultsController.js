@@ -1,17 +1,18 @@
 import TempCTScanResults from "../../../../common/models/Polyclinic/TempResults/tempCTScanResults.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const tempCTScanResultsController = async (req, res) => {
   try {
     const { title, content, tags } = req.body;
     const userId = req.session.userId;
     if (!userId) {
-      return res.status(400).json({ message: req.t("myClinic.auth.userNotAuthorized") });
+      return res.status(400).json({ message: tReq(req, "myClinic.auth.userNotAuthorized") });
     }
     const existingTemplate = await TempCTScanResults.findOne({ title });
     if (existingTemplate) {
       return res
         .status(400)
-        .json({ message: req.t("myClinic.template.nameAlreadyExists") });
+        .json({ message: tReq(req, "myClinic.template.nameAlreadyExists") });
     }
     let tagsArray = [];
     if (tags) {
@@ -27,14 +28,14 @@ const tempCTScanResultsController = async (req, res) => {
     });
     await newTemplate.save();
     res.status(201).json({
-      message: req.t("myClinic.ctTemplate.createSuccess"),
+      message: tReq(req, "myClinic.ctTemplate.createSuccess"),
       template: newTemplate,
     });
   } catch (error) {
     console.error("Ошибка при создании шаблона CT:", error);
     res
       .status(500)
-      .json({ message: req.t("myClinic.template.createError2"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError2"), error: error.message });
   }
 };
 

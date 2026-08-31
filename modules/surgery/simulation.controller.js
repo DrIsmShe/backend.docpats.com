@@ -1,6 +1,7 @@
 import * as service from "./simulation.service.js";
 import { maxPaintedPct, isFaceProcedure } from "./procedureZones.js";
 import { simulationQuotaLeft } from "./simulationQuota.service.js";
+import { tReq } from "../../common/i18n/index.js";
 
 // POST /api/surgery/cases/:id/simulate
 export async function startSimulation(req, res) {
@@ -18,7 +19,7 @@ export async function startSimulation(req, res) {
     if (!sourcePhotoFilename) {
       return res
         .status(400)
-        .json({ success: false, error: "sourcePhotoFilename обязателен" });
+        .json({ success: false, error: tReq(req, "app.validation.sourcePhotoFilenameRequired") });
     }
 
     const maskFilename = req.file?.filename || null;
@@ -103,7 +104,7 @@ export async function selectResult(req, res) {
     const { idx } = req.body;
 
     if (idx === undefined || idx === null) {
-      return res.status(400).json({ success: false, error: "idx обязателен" });
+      return res.status(400).json({ success: false, error: tReq(req, "app.validation.idxRequired") });
     }
 
     const sim = await service.selectResult(simId, surgeonId, Number(idx));
@@ -123,7 +124,7 @@ export async function deleteSimulation(req, res) {
     if (!ok)
       return res
         .status(404)
-        .json({ success: false, error: "Симуляция не найдена" });
+        .json({ success: false, error: tReq(req, "app.simulation.notFound") });
     res.json({ success: true });
   } catch (err) {
     console.error("[simulation] deleteSimulation error:", err);

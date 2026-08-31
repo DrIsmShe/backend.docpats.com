@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import crypto from "crypto";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   isValidPhoneInput,
   INVALID_PHONE_MESSAGE,
@@ -102,7 +103,7 @@ export async function updatePatientChangePhoneController(req, res) {
         ok: false,
         error: "CLINIC_CARD_NOT_FOUND",
         message:
-          req.t("app.patient.noRecordPleaseRegister"),
+          tReq(req, "app.patient.noRecordPleaseRegister"),
       });
     }
 
@@ -148,7 +149,7 @@ export async function updatePatientChangePhoneController(req, res) {
       return res.status(400).json({
         ok: false,
         error: "VALIDATION_ERROR",
-        message: req.t("app.validation.invalidPhoneFormat"),
+        message: tReq(req, "app.validation.invalidPhoneFormat"),
       });
     }
 
@@ -173,7 +174,7 @@ export async function updatePatientChangePhoneController(req, res) {
       return res.status(409).json({
         ok: false,
         error: "PHONE_IN_USE",
-        message: req.t("app.validation.phoneUsedByOtherPatient"),
+        message: tReq(req, "app.validation.phoneUsedByOtherPatient"),
       });
     }
 
@@ -208,7 +209,7 @@ export async function updatePatientChangePhoneController(req, res) {
       return res.status(409).json({
         ok: false,
         error: "PHONE_IN_USE",
-        message: req.t("app.validation.phoneAlreadyInUse"),
+        message: tReq(req, "app.validation.phoneAlreadyInUse"),
       });
     }
     if (err?.name === "ValidationError") {

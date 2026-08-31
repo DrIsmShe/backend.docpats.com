@@ -8,6 +8,7 @@ import DoctorReview from "../../../common/models/DoctorProfile/doctorReview.js";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import { decrypt } from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const safeDecrypt = (v) => {
   if (!v) return null;
@@ -34,26 +35,26 @@ export async function submitDoctorReview(req, res) {
     const { rating, text } = req.body || {};
 
     if (!patientId) {
-      return res.status(401).json({ success: false, message: "Требуется авторизация." });
+      return res.status(401).json({ success: false, message: tReq(req, "app.auth.required2") });
     }
     if (!mongoose.Types.ObjectId.isValid(doctorProfileId)) {
-      return res.status(400).json({ success: false, message: "Некорректный ID врача." });
+      return res.status(400).json({ success: false, message: tReq(req, "app.doctor.invalidId") });
     }
     const r = Number(rating);
     if (!Number.isInteger(r) || r < 1 || r > 5) {
-      return res.status(400).json({ success: false, message: "Оценка должна быть от 1 до 5." });
+      return res.status(400).json({ success: false, message: tReq(req, "app.rating.outOfRange") });
     }
     if (text && String(text).length > 1000) {
-      return res.status(400).json({ success: false, message: "Отзыв слишком длинный (макс. 1000)." });
+      return res.status(400).json({ success: false, message: tReq(req, "app.review.tooLong") });
     }
 
     const doctor = await DoctorProfile.findById(doctorProfileId).select("userId");
     if (!doctor) {
-      return res.status(404).json({ success: false, message: "Врач не найден." });
+      return res.status(404).json({ success: false, message: tReq(req, "app.doctor.notFound2") });
     }
     // нельзя оставить отзыв самому себе
     if (doctor.userId && String(doctor.userId) === String(patientId)) {
-      return res.status(400).json({ success: false, message: "Нельзя оценивать свой профиль." });
+      return res.status(400).json({ success: false, message: tReq(req, "app.review.cannotReviewSelf") });
     }
 
     const review = await DoctorReview.findOneAndUpdate(
@@ -74,7 +75,7 @@ export async function getDoctorReviews(req, res) {
   try {
     const { doctorProfileId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(doctorProfileId)) {
-      return res.status(400).json({ success: false, message: "Некорректный ID врача." });
+      return res.status(400).json({ success: false, message: tReq(req, "app.doctor.invalidId") });
     }
 
     const docs = await DoctorReview.find({ doctorProfileId, status: "visible" })
@@ -160,41 +161,41 @@ export async function replyToDoctorReview(req, res) {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Требуется авторизация." });
+        .json({ success: false, message: tReq(req, "app.auth.required2") });
     }
     if (!mongoose.Types.ObjectId.isValid(reviewId)) {
       return res
         .status(400)
-        .json({ success: false, message: "Некорректный ID отзыва." });
+        .json({ success: false, message: tReq(req, "app.review.invalidId") });
     }
     const text = String(reply || "").trim();
     if (!text) {
       return res
         .status(400)
-        .json({ success: false, message: "Ответ не может быть пустым." });
+        .json({ success: false, message: tReq(req, "app.reply.empty") });
     }
     if (text.length > 1000) {
       return res
         .status(400)
-        .json({ success: false, message: "Ответ слишком длинный (макс. 1000)." });
+        .json({ success: false, message: tReq(req, "app.reply.tooLong") });
     }
 
     const review = await DoctorReview.findById(reviewId);
     if (!review) {
       return res
         .status(404)
-        .json({ success: false, message: "Отзыв не найден." });
+        .json({ success: false, message: tReq(req, "app.review.notFound") });
     }
     const profile = await DoctorProfile.findById(review.doctorProfileId).select(
       "userId",
     );
     if (!profile) {
-      return res.status(404).json({ success: false, message: "Врач не найден." });
+      return res.status(404).json({ success: false, message: tReq(req, "app.doctor.notFound2") });
     }
     if (String(profile.userId) !== String(userId)) {
       return res.status(403).json({
         success: false,
-        message: "Отвечать можно только на отзывы о своём профиле.",
+        message: tReq(req, "app.review.canOnlyReplyToOwnProfile"),
       });
     }
 
@@ -222,14 +223,14 @@ export async function getDoctorTrustStats(req, res) {
     if (!mongoose.Types.ObjectId.isValid(doctorProfileId)) {
       return res
         .status(400)
-        .json({ success: false, message: "Некорректный ID врача." });
+        .json({ success: false, message: tReq(req, "app.doctor.invalidId") });
     }
 
     const profile = await DoctorProfile.findById(doctorProfileId)
       .select("verificationStatus isVerified createdAt")
       .lean();
     if (!profile) {
-      return res.status(404).json({ success: false, message: "Врач не найден." });
+      return res.status(404).json({ success: false, message: tReq(req, "app.doctor.notFound2") });
     }
 
     const oid = new mongoose.Types.ObjectId(doctorProfileId);

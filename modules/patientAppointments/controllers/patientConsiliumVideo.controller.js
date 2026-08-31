@@ -12,6 +12,7 @@
 
 import Consilium from "../../clinic/clinic-consilium/models/consilium.model.js";
 import { issueConsiliumRoomToken } from "../../clinic/clinic-consilium/services/consiliumVideo.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const issuePatientConsiliumVideoTokenController = async (req, res) => {
   try {
@@ -19,7 +20,7 @@ export const issuePatientConsiliumVideoTokenController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
 
     const consiliumId = req.params.consiliumId;

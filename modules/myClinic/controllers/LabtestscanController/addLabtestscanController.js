@@ -5,6 +5,7 @@ import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
 import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 /* ---------- допускаемые специализации ---------- */
 
@@ -190,18 +191,18 @@ const addLabtestscanController = async (req, res) => {
     const { patient } = req; // 👈 resolvePatient
 
     if (!doctorId) {
-      return res.status(401).json({ message: req.t("myClinic.auth.notAuthorized2") });
+      return res.status(401).json({ message: tReq(req, "myClinic.auth.notAuthorized2") });
     }
 
     if (!patient) {
-      return res.status(404).json({ message: req.t("myClinic.patient.notFound2") });
+      return res.status(404).json({ message: tReq(req, "myClinic.patient.notFound2") });
     }
 
     const doctor = await User.findById(doctorId).populate("specialization");
     if (!doctor || !doctor.specialization) {
       return res
         .status(403)
-        .json({ message: req.t("myClinic.doctor.specializationNotDefined") });
+        .json({ message: tReq(req, "myClinic.doctor.specializationNotDefined") });
     }
 
     const patientModelName = patient.constructor?.modelName;
@@ -251,14 +252,14 @@ const addLabtestscanController = async (req, res) => {
     if (!testType) {
       return res
         .status(400)
-        .json({ message: req.t("myClinic.labTest.testTypeNotSpecified") });
+        .json({ message: tReq(req, "myClinic.labTest.testTypeNotSpecified") });
     }
 
     const normalizedParams = normalizeTestParameters(testParameters);
     if (!normalizedParams.length) {
       return res.status(400).json({
         message:
-          req.t("myClinic.labTest.parametersInvalidOrMissing"),
+          tReq(req, "myClinic.labTest.parametersInvalidOrMissing"),
       });
     }
 

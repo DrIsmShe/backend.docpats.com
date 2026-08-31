@@ -1,6 +1,7 @@
 import LabTest from "../../../../common/models/Polyclinic/ExamenationsTemplates/Labtest/LabTest.js";
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getDetailExaminationsControllerLabtest = async (req, res) => {
   const { id } = req.params;
@@ -21,7 +22,7 @@ const getDetailExaminationsControllerLabtest = async (req, res) => {
       );
 
     if (!labTest) {
-      return res.status(404).json({ message: req.t("myClinic.labTest.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.labTest.notFound") });
     }
 
     const labTestObj = labTest.toObject();
@@ -60,7 +61,7 @@ const getDetailExaminationsControllerLabtest = async (req, res) => {
     res.status(200).json({
       success: true,
       data: labTestObj,
-      message: req.t("myClinic.labTest.detailsFetchedSuccessfully"),
+      message: tReq(req, "myClinic.labTest.detailsFetchedSuccessfully"),
     });
   } catch (error) {
     console.error(
@@ -68,7 +69,7 @@ const getDetailExaminationsControllerLabtest = async (req, res) => {
     );
     res.status(500).json({
       success: false,
-      message: req.t("myClinic.labTest.serverFetchError"),
+      message: tReq(req, "myClinic.labTest.serverFetchError"),
       error: error.message,
     });
   }

@@ -1,4 +1,5 @@
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const restorePrivatePatientController = async (req, res) => {
   try {
@@ -8,24 +9,24 @@ const restorePrivatePatientController = async (req, res) => {
     if (!doctorUserId) {
       return res
         .status(403)
-        .json({ message: req.t("myClinic.auth.pleaseLogin") });
+        .json({ message: tReq(req, "myClinic.auth.pleaseLogin") });
     }
 
     const patient = await DoctorPrivatePatient.findById(id);
 
     if (!patient) {
-      return res.status(404).json({ message: req.t("myClinic.patient.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.patient.notFound") });
     }
 
     if (String(patient.doctorUserId) !== String(doctorUserId)) {
       return res.status(403).json({
-        message: req.t("myClinic.patient.accessDenied"),
+        message: tReq(req, "myClinic.patient.accessDenied"),
       });
     }
 
     if (!patient.isArchived) {
       return res.status(400).json({
-        message: req.t("myClinic.patient.alreadyActive"),
+        message: tReq(req, "myClinic.patient.alreadyActive"),
       });
     }
 
@@ -37,13 +38,13 @@ const restorePrivatePatientController = async (req, res) => {
     await patient.save();
 
     return res.status(200).json({
-      message: req.t("myClinic.patient.restoredFromArchive"),
+      message: tReq(req, "myClinic.patient.restoredFromArchive"),
       patientId: id,
     });
   } catch (error) {
     console.error("❌ Ошибка восстановления пациента:", error);
     return res.status(500).json({
-      message: req.t("myClinic.patient.restorationError"),
+      message: tReq(req, "myClinic.patient.restorationError"),
     });
   }
 };

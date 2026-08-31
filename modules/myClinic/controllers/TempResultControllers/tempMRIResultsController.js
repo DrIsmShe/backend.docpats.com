@@ -1,4 +1,5 @@
 import TempMRIResult from "../../../../common/models/Polyclinic/TempResults/tempMRIResults.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const TempMRIResultController = async (req, res) => {
   try {
@@ -6,7 +7,7 @@ const TempMRIResultController = async (req, res) => {
     const userId = req.session.userId;
 
     if (!userId) {
-      return res.status(400).json({ message: req.t("myClinic.auth.userNotAuthorized") });
+      return res.status(400).json({ message: tReq(req, "myClinic.auth.userNotAuthorized") });
     }
 
     console.log("Полученные данные:", { title, content, tags });
@@ -15,7 +16,7 @@ const TempMRIResultController = async (req, res) => {
     if (existingTemplate) {
       return res
         .status(400)
-        .json({ message: req.t("myClinic.template.nameAlreadyExists") });
+        .json({ message: tReq(req, "myClinic.template.nameAlreadyExists") });
     }
 
     let tagsArray = [];
@@ -39,14 +40,14 @@ const TempMRIResultController = async (req, res) => {
     console.log("Шаблон успешно сохранен!");
 
     res.status(201).json({
-      message: req.t("myClinic.mriResultTemplate.createSuccess"),
+      message: tReq(req, "myClinic.mriResultTemplate.createSuccess"),
       template: newTemplate,
     });
   } catch (error) {
     console.error("Ошибка при создании шаблона результатов МРТ:", error);
     res
       .status(500)
-      .json({ message: req.t("myClinic.template.createError"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError"), error: error.message });
   }
 };
 

@@ -1,17 +1,18 @@
 import TempRecommendations from "../../../../common/models/Polyclinic/TempResults/tempRecommendations.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const TempRecommendationsController = async (req, res) => {
   try {
     const { title, content, tags } = req.body;
     const userId = req.session.userId;
     if (!userId) {
-      return res.status(400).json({ message: req.t("myClinic.auth.userNotAuthorized") });
+      return res.status(400).json({ message: tReq(req, "myClinic.auth.userNotAuthorized") });
     }
     const existingTemplate = await TempRecommendations.findOne({ title });
     if (existingTemplate) {
       return res
         .status(400)
-        .json({ message: req.t("myClinic.template.nameAlreadyExists") });
+        .json({ message: tReq(req, "myClinic.template.nameAlreadyExists") });
     }
     let tagsArray = [];
     if (tags) {
@@ -27,14 +28,14 @@ const TempRecommendationsController = async (req, res) => {
     });
     await newTemplate.save();
     res.status(201).json({
-      message: req.t("myClinic.recommendationTemplate.createSuccess"),
+      message: tReq(req, "myClinic.recommendationTemplate.createSuccess"),
       template: newTemplate,
     });
   } catch (error) {
     console.error("Ошибка при создании шаблона рекомендаций :", error);
     res
       .status(500)
-      .json({ message: req.t("myClinic.template.createError"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError"), error: error.message });
   }
 };
 

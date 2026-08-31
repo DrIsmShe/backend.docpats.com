@@ -6,6 +6,7 @@ import DialogParticipant from "../dialogs/dialogParticipant.model.js";
 import Notification from "../../../common/models/Notification/notification.js";
 import ChatMessageModel from "../messages/message.model.js";
 import mongoose from "mongoose";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   upload,
   uploadFile,
@@ -167,11 +168,11 @@ router.post(
         if (!trimmedText && (!attachments || attachments.length === 0)) {
           return res
             .status(400)
-            .json({ error: "Сообщение не может быть пустым" });
+            .json({ error: tReq(req, "app.validation.messageEmpty") });
         }
         if (trimmedText.length > 5000) {
           return res.status(400).json({
-            error: "Сообщение слишком длинное (максимум 5000 символов)",
+            error: tReq(req, "app.validation.messageTooLong"),
           });
         }
       }
@@ -180,10 +181,10 @@ router.post(
       if (attachments && !Array.isArray(attachments)) {
         return res
           .status(400)
-          .json({ error: "attachments должен быть массивом" });
+          .json({ error: tReq(req, "app.validation.attachmentsMustBeArray") });
       }
       if (attachments && attachments.length > 10) {
-        return res.status(400).json({ error: "Максимум 10 вложений за раз" });
+        return res.status(400).json({ error: tReq(req, "app.validation.attachmentsLimit") });
       }
 
       const message = await messageService.sendMessage({
@@ -296,7 +297,7 @@ router.post(
   async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: "Файл не передан" });
+        return res.status(400).json({ error: tReq(req, "app.file.notProvided") });
       }
       const fileUrl = await uploadFile(req.file);
       const mimeCategory = req.file.mimetype.split("/")[0];

@@ -2,6 +2,7 @@ import EEGScanTemplateNameofexam from "../../../../common/models/Polyclinic/Exam
 import EEGScanTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/EEGScansTemplates/EEGScanTemplateReport.js";
 import EEGScanTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/EEGScansTemplates/EEGScanTemplateDiagnosis.js";
 import EEGScanTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/EEGScansTemplates/EEGScanTemplateRecomandation.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 // Обновление шаблона отчёта
 const updateNameofexamTemplatesEEGScanerController = async (req, res) => {
@@ -16,15 +17,15 @@ const updateNameofexamTemplatesEEGScanerController = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.reportTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.reportTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.reportTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.reportTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.reportTemplate.updateError"),
+      message: tReq(req, "myClinic.reportTemplate.updateError"),
       error: error.message,
     });
   }
@@ -43,15 +44,15 @@ const updateReportTemplatesEEGScanerController = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.reportTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.reportTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.reportTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.reportTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.reportTemplate.updateError"),
+      message: tReq(req, "myClinic.reportTemplate.updateError"),
       error: error.message,
     });
   }
@@ -70,15 +71,15 @@ const updateDiagnosisTemplatesEEGScanerController = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.diagnosisTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.diagnosisTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.diagnosisTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.diagnosisTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.diagnosisTemplate.updateError"),
+      message: tReq(req, "myClinic.diagnosisTemplate.updateError"),
       error: error.message,
     });
   }
@@ -97,15 +98,15 @@ const updateRecomandationTemplatesEEGScanerController = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.recommendationTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.recommendationTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.recommendationTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.recommendationTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.recommendationTemplate.updateError"),
+      message: tReq(req, "myClinic.recommendationTemplate.updateError"),
       error: error.message,
     });
   }

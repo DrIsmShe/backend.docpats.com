@@ -4,6 +4,7 @@ import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPo
 // PHI хранится зашифрованным; после .lean() геттеры не работают, поэтому
 // расшифровка нужна в каждом месте чтения. Открытый текст проходит насквозь.
 import { decryptPHI } from "../../../common/utils/phiCrypto.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /* ===================== HELPERS ===================== */
 
@@ -144,7 +145,7 @@ export default async function getSPECTScanFilesDetailController(req, res) {
       return res.status(403).json({
         ok: false,
         error: "FORBIDDEN",
-        message: req.t("app.access.forbidden2"),
+        message: tReq(req, "app.access.forbidden2"),
       });
     }
 

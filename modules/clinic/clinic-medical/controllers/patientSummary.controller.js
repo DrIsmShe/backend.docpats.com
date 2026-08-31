@@ -12,6 +12,7 @@ import ClinicPatient, {
   decryptValue,
 } from "../../clinic-patients/models/clinicPatient.model.js";
 import { getCurrentClinicId } from "../../../../common/context/tenantContext.js";
+import { tReq } from "../../../../common/i18n/index.js";
 import {
   ForbiddenError,
   NotFoundError,
@@ -86,7 +87,7 @@ export async function saveFromScribeController(req, res) {
 export async function findPatientByUserController(req, res) {
   try {
     const clinicId = getCurrentClinicId();
-    if (!clinicId) throw new ForbiddenError("Нет активной клиники");
+    if (!clinicId) throw new ForbiddenError(tReq(req, "app.clinic.noActiveClinic"));
 
     const doc = await ClinicPatient.findOne({
       clinicId,

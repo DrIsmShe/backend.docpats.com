@@ -1,33 +1,34 @@
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
 import Article from "../../../common/models/Articles/articles-scince.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const DoctorDetailsForPatientController = async (req, res) => {
   try {
     const { id } = req.params; // профайл врача
     const sessionUserId = req.session.userId;
 
-    if (!id) return res.status(400).json({ error: req.t("app.doctor.idNotProvided") });
+    if (!id) return res.status(400).json({ error: tReq(req, "app.doctor.idNotProvided") });
     if (!sessionUserId)
       return res
         .status(403)
-        .json({ error: req.t("app.access.deniedNoAuth") });
+        .json({ error: tReq(req, "app.access.deniedNoAuth") });
 
     const doctorProfile = await DoctorProfile.findById(id).lean();
     if (!doctorProfile)
-      return res.status(404).json({ error: req.t("app.doctor.profileNotFound2") });
+      return res.status(404).json({ error: tReq(req, "app.doctor.profileNotFound2") });
 
     const doctorUser = await User.findById(doctorProfile.userId)
       .populate({ path: "specialization", select: "name" })
       .lean();
-    if (!doctorUser) return res.status(404).json({ error: req.t("app.doctor.notFound") });
+    if (!doctorUser) return res.status(404).json({ error: tReq(req, "app.doctor.notFound") });
 
     // Кто запрашивает — пускаем пациентов и врачей (как раньше)
     const requestingUser = await User.findById(sessionUserId).lean();
     if (!requestingUser || !["patient", "doctor"].includes(requestingUser.role))
       return res
         .status(403)
-        .json({ error: req.t("app.access.deniedInsufficientPermissions") });
+        .json({ error: tReq(req, "app.access.deniedInsufficientPermissions") });
 
     // Статьи доктора
     const doctorArticles = await Article.find({
@@ -72,7 +73,7 @@ const DoctorDetailsForPatientController = async (req, res) => {
     return res.status(200).json(doctorDetails);
   } catch (error) {
     console.error("❌ Ошибка профиля врача:", error);
-    return res.status(500).json({ error: req.t("app.server.internalError") });
+    return res.status(500).json({ error: tReq(req, "app.server.internalError") });
   }
 };
 

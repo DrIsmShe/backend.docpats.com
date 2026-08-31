@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 // 🔍 Контроллер получения данных пациента (для фронта /patient-profile/patient-details/:id)
 const patientDetailsController = async (req, res) => {
@@ -9,7 +10,7 @@ const patientDetailsController = async (req, res) => {
 
     // ✅ Проверка ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: req.t("app.validation.invalidPatientId") });
+      return res.status(400).json({ message: tReq(req, "app.validation.invalidPatientId") });
     }
     const objId = new mongoose.Types.ObjectId(id);
 
@@ -65,7 +66,7 @@ const patientDetailsController = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     console.error("💥 Ошибка в контроллере patientDetails:", error);
-    return res.status(500).json({ message: req.t("app.server.internalError") });
+    return res.status(500).json({ message: tReq(req, "app.server.internalError") });
   }
 };
 

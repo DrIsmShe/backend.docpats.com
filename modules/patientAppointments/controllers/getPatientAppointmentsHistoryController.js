@@ -1,6 +1,7 @@
 // modules/patientAppointments/controllers/getPatientAppointmentsHistoryController.js
 
 import Appointment from "../../../common/models/Appointment/appointment.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const getPatientAppointmentsHistoryController = async (req, res) => {
   try {
@@ -28,14 +29,14 @@ export const getPatientAppointmentsHistoryController = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "История приёмов успешно получена",
+      message: tReq(req, "app.appointments.historyLoadedSuccessfully"),
       data: appointments,
     });
   } catch (error) {
     console.error("Ошибка при получении истории:", error);
     res.status(500).json({
       success: false,
-      message: "Ошибка сервера",
+      message: tReq(req, "app.server.error"),
     });
   }
 };

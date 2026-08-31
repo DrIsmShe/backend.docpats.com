@@ -49,6 +49,7 @@ import { assertAnalyzeAllowed, assertExtractAllowed, analyzeQuotaLeft } from "..
 import HIPAAAuditLog from "../../../audit/models/AuditLog.model.js";
 import { enqueueAnalysis } from "../../jobs/analysis.queue.js";
 import { renderCaseDocument } from "../services/export.service.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 function throwZod(parsed) {
   throw new ValidationError("Validation failed", {
@@ -242,7 +243,7 @@ export const analyzeController = asyncHandler(async (req, res) => {
     advisoryNotice: ADVISORY_NOTICE,
     quota: await analyzeQuotaLeft(req.diagnosticsActor.userId),
     queued,
-    message: "Разбор запущен. Результаты появятся в деле по мере готовности.",
+    message: tReq(req, "app.analysis.started"),
   });
 });
 
@@ -297,16 +298,16 @@ export const statsController = asyncHandler(async (req, res) => {
  */
 export const extractDocumentController = asyncHandler(async (req, res) => {
   if (!req.file) {
-    throw new ValidationError("Файл не приложен");
+    throw new ValidationError(tReq(req, "app.file.notAttached"));
   }
 
   const caseDoc = await DiagnosticCase.findOne({
     _id: req.params.id,
     ownerId: req.diagnosticsActor.userId,
   }).lean();
-  if (!caseDoc) throw new NotFoundError("Дело не найдено");
+  if (!caseDoc) throw new NotFoundError(tReq(req, "app.case.notFound"));
   if (caseDoc.status === "closed") {
-    throw new ValidationError("Дело закрыто — переоткройте его, чтобы добавить материалы");
+    throw new ValidationError(tReq(req, "app.case.closedReopenToAddMaterials"));
   }
 
   const blockers = [];

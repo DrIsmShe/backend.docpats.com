@@ -20,6 +20,7 @@ import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const HARD_LIMIT = 400; // потолок на источник — защита от выгрузки всей базы
 const RESULT_LIMIT = 30;
@@ -37,7 +38,7 @@ export const searchMyPatientsController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Требуется авторизация" });
+        .json({ success: false, message: tReq(req, "app.auth.required") });
     }
 
     const q = String(req.query.q || "")
@@ -48,7 +49,7 @@ export const searchMyPatientsController = async (req, res) => {
     if (!profile) {
       return res
         .status(404)
-        .json({ success: false, message: "Профиль врача не найден" });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound") });
     }
 
     const [accounts, cards, privates] = await Promise.all([
@@ -138,7 +139,7 @@ export const searchMyPatientsController = async (req, res) => {
     console.error("❌ Ошибка searchMyPatients:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка сервера", error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
   }
 };
 

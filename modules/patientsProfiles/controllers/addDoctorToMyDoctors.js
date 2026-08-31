@@ -1,5 +1,6 @@
 import User from "../../../common/models/Auth/users.js";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 // ✅ Добавление доктора в "Мои Доктора"
 export const addDoctorToMyDoctors = async (req, res) => {
   try {
@@ -13,7 +14,7 @@ export const addDoctorToMyDoctors = async (req, res) => {
     if (!profile) {
       return res
         .status(404)
-        .json({ success: false, message: req.t("app.doctor.profileNotFound") });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound") });
     }
 
     const doctorId = profile.userId; // Берём userId через профиль
@@ -23,7 +24,7 @@ export const addDoctorToMyDoctors = async (req, res) => {
     if (!patient || !doctor || doctor.role !== "doctor") {
       return res
         .status(404)
-        .json({ success: false, message: req.t("app.patientOrDoctor.notFound") });
+        .json({ success: false, message: tReq(req, "app.patientOrDoctor.notFound") });
     }
 
     // Добавляем ОДНИМ атомарным обновлением, а не load-modify-save.
@@ -52,7 +53,7 @@ export const addDoctorToMyDoctors = async (req, res) => {
     if (already) {
       return res
         .status(400)
-        .json({ success: false, message: req.t("app.doctor.alreadyAdded") });
+        .json({ success: false, message: tReq(req, "app.doctor.alreadyAdded") });
     }
 
     const result = await User.updateOne(
@@ -63,18 +64,18 @@ export const addDoctorToMyDoctors = async (req, res) => {
     if (result.matchedCount === 0) {
       return res
         .status(404)
-        .json({ success: false, message: req.t("app.patientOrDoctor.notFound") });
+        .json({ success: false, message: tReq(req, "app.patientOrDoctor.notFound") });
     }
 
     return res.status(200).json({
       success: true,
-      message: req.t("app.doctor.addedToMyDoctors"),
+      message: tReq(req, "app.doctor.addedToMyDoctors"),
     });
   } catch (error) {
     console.error("❌ Ошибка при добавлении доктора:", error);
     return res.status(500).json({
       success: false,
-      message: req.t("app.doctor.addServerError"),
+      message: tReq(req, "app.doctor.addServerError"),
     });
   }
 };
@@ -89,7 +90,7 @@ export const checkIfDoctorInMyDoctors = async (req, res) => {
     if (!patientId) {
       return res
         .status(401)
-        .json({ success: false, message: req.t("app.patient.notAuthorized") });
+        .json({ success: false, message: tReq(req, "app.patient.notAuthorized") });
     }
 
     // 1) пробуем как userId
@@ -99,7 +100,7 @@ export const checkIfDoctorInMyDoctors = async (req, res) => {
     if (!/^[0-9a-fA-F]{24}$/.test(String(doctorId))) {
       return res
         .status(400)
-        .json({ success: false, message: req.t("app.validation.invalidId") });
+        .json({ success: false, message: tReq(req, "app.validation.invalidId") });
     }
 
     // пробуем найти профиль по этому id
@@ -112,7 +113,7 @@ export const checkIfDoctorInMyDoctors = async (req, res) => {
     if (!patient) {
       return res
         .status(404)
-        .json({ success: false, message: req.t("app.patient.notFound2") });
+        .json({ success: false, message: tReq(req, "app.patient.notFound2") });
     }
 
     const isAdded = Array.isArray(patient.myDoctors)
@@ -129,6 +130,6 @@ export const checkIfDoctorInMyDoctors = async (req, res) => {
     );
     return res
       .status(500)
-      .json({ success: false, message: req.t("app.validation.serverError") });
+      .json({ success: false, message: tReq(req, "app.validation.serverError") });
   }
 };

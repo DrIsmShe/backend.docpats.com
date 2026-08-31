@@ -3,6 +3,7 @@ import CTScanTemplateNameofexam from "../../../../common/models/Polyclinic/Exame
 import CTScanTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScanTemplateReport.js";
 import CTScanTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScanTemplateDiagnosis.js";
 import CTScanTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScanTemplateRecomandation.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 // Получить список шаблонов отчёта (Report)
 const getListNameofexamTemplatesCTScanerController = async (req, res) => {
@@ -16,7 +17,7 @@ const getListNameofexamTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.reportTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.reportTemplate.fetchError"), error });
   }
 };
 
@@ -32,7 +33,7 @@ const getListReportTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.reportTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.reportTemplate.fetchError"), error });
   }
 };
 
@@ -48,7 +49,7 @@ const getListDiagnosisTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.diagnosisTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.diagnosisTemplate.fetchError"), error });
   }
 };
 
@@ -66,7 +67,7 @@ const getListRecomandationTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: req.t("myClinic.recommendationTemplate.fetchError"), error });
+      .json({ message: tReq(req, "myClinic.recommendationTemplate.fetchError"), error });
   }
 };
 

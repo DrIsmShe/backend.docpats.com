@@ -4,6 +4,7 @@ import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
 import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 // 🔍 MIME → fileType
 function resolveFileType(mimetype) {
@@ -30,7 +31,7 @@ const addUSMscanController = async (req, res) => {
     const userId = req.session?.userId;
 
     if (!userId) {
-      return res.status(401).json({ message: req.t("myClinic.auth.notAuthorized") });
+      return res.status(401).json({ message: tReq(req, "myClinic.auth.notAuthorized") });
     }
 
     /* ================= DOCTOR ================= */
@@ -38,7 +39,7 @@ const addUSMscanController = async (req, res) => {
     const doctor = await User.findById(userId).populate("specialization");
 
     if (!doctor) {
-      return res.status(404).json({ message: req.t("myClinic.doctor.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.doctor.notFound") });
     }
 
     const doctorSpecName = doctor.specialization?.name || null;
@@ -63,7 +64,7 @@ const addUSMscanController = async (req, res) => {
     const { patient } = req;
 
     if (!patient) {
-      return res.status(404).json({ message: req.t("myClinic.patient.notFound3") });
+      return res.status(404).json({ message: tReq(req, "myClinic.patient.notFound3") });
     }
 
     const patientModelName = patient.constructor.modelName;
@@ -80,7 +81,7 @@ const addUSMscanController = async (req, res) => {
       if (!doctorSpecName || !allowedSpecializations.includes(doctorSpecName)) {
         return res.status(403).json({
           message:
-            req.t("myClinic.study.insufficientPermissions"),
+            tReq(req, "myClinic.study.insufficientPermissions"),
         });
       }
     } else {

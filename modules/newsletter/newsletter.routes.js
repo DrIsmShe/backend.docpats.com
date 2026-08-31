@@ -10,6 +10,7 @@
 
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import { tReq } from "../../common/i18n/index.js";
 import {
   subscribe,
   confirm,
@@ -26,7 +27,13 @@ const subscribeLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { ok: false, error: "Слишком много попыток. Попробуйте позже." },
+  // Сообщение ограничителя — ФУНКЦИЕЙ, а не готовым объектом.
+  //
+  // Настройка вычисляется при загрузке модуля, где запроса ещё нет: любое
+  // обращение к req там роняет весь файл маршрутов. Функция вызывается на
+  // каждый отказ — вот там запрос и появляется, а с ним язык того, кого
+  // ограничили.
+  message: (req) => ({ ok: false,  error: typeof req.t === "function" ? tReq(req, "app.rateLimit.tooManyAttempts") : "Слишком много попыток, попробуйте позже" }),
 });
 
 const confirmLimiter = rateLimit({

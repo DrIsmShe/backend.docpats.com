@@ -1,5 +1,6 @@
 import ArticleScientific from "../../../../common/models/Articles/articles-scince.js";
 import User from "../../../../common/models/Auth/users.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 // === Лайк или дизлайк статьи ===
 export const toggleArticleScientificLike = async (req, res) => {
@@ -8,7 +9,7 @@ export const toggleArticleScientificLike = async (req, res) => {
     const { articleId } = req.params;
 
     const article = await ArticleScientific.findById(articleId);
-    if (!article) return res.status(404).json({ message: "Статья не найдена" });
+    if (!article) return res.status(404).json({ message: tReq(req, "app.article.notFound") });
 
     const index = article.likes.indexOf(userId);
 
@@ -22,7 +23,7 @@ export const toggleArticleScientificLike = async (req, res) => {
     return res.json({ likesCount: article.likes.length, liked: index === -1 });
   } catch (err) {
     console.error("❌ Ошибка лайка статьи:", err.message);
-    res.status(500).json({ message: "Ошибка сервера" });
+    res.status(500).json({ message: tReq(req, "app.server.error") });
   }
 };
 
@@ -34,7 +35,7 @@ export const toggleDoctorScientificLike = async (req, res) => {
 
     const doctor = await User.findById(doctorId);
     if (!doctor || doctor.role !== "doctor") {
-      return res.status(404).json({ message: "Доктор не найден" });
+      return res.status(404).json({ message: tReq(req, "app.doctor.notFound") });
     }
 
     if (!doctor.likes) doctor.likes = [];
@@ -51,7 +52,7 @@ export const toggleDoctorScientificLike = async (req, res) => {
     return res.json({ likesCount: doctor.likes.length, liked: index === -1 });
   } catch (err) {
     console.error("❌ Ошибка лайка доктора:", err.message);
-    res.status(500).json({ message: "Ошибка сервера" });
+    res.status(500).json({ message: tReq(req, "app.server.error") });
   }
 };
 export const getLikeScientificStatus = async (req, res) => {
@@ -70,7 +71,7 @@ export const getLikeScientificStatus = async (req, res) => {
 
     if (!doc) {
       console.warn("❌ Не найден объект для лайка:", targetType, targetId);
-      return res.status(404).json({ message: "Не найдено" });
+      return res.status(404).json({ message: tReq(req, "app.general.notFound") });
     }
 
     const likes = doc.likes || [];
@@ -78,6 +79,6 @@ export const getLikeScientificStatus = async (req, res) => {
     return res.json({ likesCount: likes.length, liked });
   } catch (err) {
     console.error("❌ Ошибка получения статуса лайка:", err.message);
-    res.status(500).json({ message: "Ошибка сервера" });
+    res.status(500).json({ message: tReq(req, "app.server.error") });
   }
 };

@@ -4,6 +4,7 @@ import fs from "fs";
 import sharp from "sharp";
 import multer from "multer";
 import { uploadFile as uploadToR2 } from "../middlewares/uploadMiddleware.js";
+import { tReq } from "../i18n/index.js";
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ router.post("/uploads", upload.single("upload"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         uploaded: false,
-        error: { message: req.t("app.file.notFound") },
+        error: { message: tReq(req, "app.file.notFound") },
       });
     }
 

@@ -3,6 +3,7 @@ import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import Notification from "../../../common/models/Notification/notification.js";
 import { emitNotification } from "../../../common/realtime/userChannel.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 // Допуск на запись «в прошлое» — тот же, что у врача
 // (doctorSchedule/bookByDoctorController.js): расхождение часов клиента с
@@ -34,7 +35,7 @@ export const bookAppointment = async (req, res) => {
     if (!doctorId || !startsAt || !endsAt) {
       return res.status(400).json({
         success: false,
-        message: "Необходимо указать doctorId, startsAt и endsAt",
+        message: tReq(req, "app.appointment.requiredFieldsMissing"),
       });
     }
 
@@ -54,21 +55,21 @@ export const bookAppointment = async (req, res) => {
     if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
       return res.status(400).json({
         success: false,
-        message: "Некорректные дата и время приёма",
+        message: tReq(req, "app.appointment.invalidDateTime"),
       });
     }
 
     if (endMs <= startMs) {
       return res.status(400).json({
         success: false,
-        message: "Конец приёма должен быть позже его начала",
+        message: tReq(req, "app.appointment.endBeforeStart"),
       });
     }
 
     if (startMs < Date.now() - PAST_GRACE_MS) {
       return res.status(400).json({
         success: false,
-        message: "Нельзя записаться на прошедшее время. Выберите другую дату.",
+        message: tReq(req, "app.appointment.pastTimeNotAllowed"),
         code: "PAST_TIME",
       });
     }
@@ -81,7 +82,7 @@ export const bookAppointment = async (req, res) => {
     if (!doctorProfile) {
       return res
         .status(404)
-        .json({ success: false, message: "Профиль врача не найден" });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound") });
     }
 
     // 🔥 ВАЖНО — вытаскиваем userId врача
@@ -93,7 +94,7 @@ export const bookAppointment = async (req, res) => {
     if (String(patientId) === String(doctorProfile.userId)) {
       return res.status(400).json({
         success: false,
-        message: "Врач не может записаться сам к себе.",
+        message: tReq(req, "app.appointment.selfBookingNotAllowed"),
       });
     }
 
@@ -108,7 +109,7 @@ export const bookAppointment = async (req, res) => {
     if (overlap) {
       return res.status(400).json({
         success: false,
-        message: "Этот временной слот уже занят. Выберите другое время.",
+        message: tReq(req, "app.appointment.timeSlotOccupied"),
       });
     }
 
@@ -220,7 +221,7 @@ export const bookAppointment = async (req, res) => {
     ============================================================ */
     return res.status(201).json({
       success: true,
-      message: "Запись успешно создана!",
+      message: tReq(req, "app.appointment.createdSuccessfully"),
       appointment: newAppointment,
       notifications: {
         doctor: doctorNotification._id,
@@ -231,7 +232,7 @@ export const bookAppointment = async (req, res) => {
     console.error("❌ Ошибка бронирования:", err);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера при создании записи",
+      message: tReq(req, "app.appointment.serverErrorOnCreate"),
       error: err.message,
     });
   }

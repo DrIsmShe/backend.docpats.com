@@ -1,3 +1,4 @@
+import { tReq } from "../i18n/index.js";
 // ─────────────────────────────────────────────────────────────────────
 //   Минимальная проверка «запрос идёт от вошедшего в систему».
 //
@@ -19,7 +20,7 @@ export const requireSession = (req, res, next) => {
   if (!actorId) {
     return res
       .status(401)
-      .json({ authenticated: false, message: req.t("app.auth.notAuthorized") });
+      .json({ authenticated: false, message: tReq(req, "app.auth.notAuthorized") });
   }
 
   next();

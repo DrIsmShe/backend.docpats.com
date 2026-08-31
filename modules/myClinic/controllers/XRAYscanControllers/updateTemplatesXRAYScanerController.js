@@ -2,6 +2,7 @@ import XRAYScanTemplateNameofexam from "../../../../common/models/Polyclinic/Exa
 import XRAYScanTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/XRayScansTemplates/XRayScanTemplateReports.js";
 import XRAYScanTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/XRayScansTemplates/XRayScanTemplateDiagnos.js";
 import XRAYScanTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/XRayScansTemplates/XRayScanTemplateRecomandations.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 // Обновление шаблона отчёта
 const updateNameofexamTemplatesXRAYScanerController = async (req, res) => {
@@ -16,15 +17,15 @@ const updateNameofexamTemplatesXRAYScanerController = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.reportTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.reportTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.reportTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.reportTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.reportTemplate.updateError"),
+      message: tReq(req, "myClinic.reportTemplate.updateError"),
       error: error.message,
     });
   }
@@ -43,15 +44,15 @@ const updateReportTemplatesXRAYScanerController = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.reportTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.reportTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.reportTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.reportTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.reportTemplate.updateError"),
+      message: tReq(req, "myClinic.reportTemplate.updateError"),
       error: error.message,
     });
   }
@@ -70,15 +71,15 @@ const updateDiagnosisTemplatesXRAYScanerController = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.diagnosisTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.diagnosisTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.diagnosisTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.diagnosisTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.diagnosisTemplate.updateError"),
+      message: tReq(req, "myClinic.diagnosisTemplate.updateError"),
       error: error.message,
     });
   }
@@ -97,15 +98,15 @@ const updateRecomandationTemplatesXRAYScanerController = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.recommendationTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.recommendationTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.recommendationTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.recommendationTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.recommendationTemplate.updateError"),
+      message: tReq(req, "myClinic.recommendationTemplate.updateError"),
       error: error.message,
     });
   }

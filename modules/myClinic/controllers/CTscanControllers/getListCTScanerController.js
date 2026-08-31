@@ -1,6 +1,7 @@
 import CTScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScan.js";
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getListCTScanerController = async (req, res) => {
   const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -9,7 +10,7 @@ const getListCTScanerController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: req.t("myClinic.patient.notFound2"),
+      message: tReq(req, "myClinic.patient.notFound2"),
     });
   }
 
@@ -59,7 +60,7 @@ const getListCTScanerController = async (req, res) => {
     console.error(`[${timestamp}] ❌ Ошибка получения КТ:`, error);
     res.status(500).json({
       success: false,
-      message: req.t("myClinic.study.ct.fetchError"),
+      message: tReq(req, "myClinic.study.ct.fetchError"),
       error: error.message,
     });
   }

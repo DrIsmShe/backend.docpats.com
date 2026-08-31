@@ -8,6 +8,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import { asyncHandler } from "../../../common/middlewares/errorHandler.js";
 import { langOf } from "../../../common/utils/requestLang.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   searchCodes,
   getCode,
@@ -24,7 +25,18 @@ const searchLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => process.env.NODE_ENV === "test",
-  message: { error: "Слишком много запросов к справочнику. Подождите минуту." },
+  // Сообщение ограничителя — ФУНКЦИЕЙ, а не готовым объектом.
+  //
+  // Настройка вычисляется при загрузке модуля, где запроса ещё нет: любое
+  // обращение к req там роняет весь файл маршрутов. Функция вызывается на
+  // каждый отказ — вот там запрос и появляется, а с ним язык того, кого
+  // ограничили.
+  message: (req) => ({
+    error:
+      typeof req.t === "function"
+        ? tReq(req, "app.codeDirectory.rateLimitExceeded")
+        : "Слишком много запросов к справочнику. Подождите минуту.",
+  }),
 });
 
 /**
@@ -79,7 +91,7 @@ router.get(
     });
 
     if (!item) {
-      return res.status(404).json({ error: "Код не найден в справочнике" });
+      return res.status(404).json({ error: tReq(req, "app.codeDirectory.codeNotFound") });
     }
 
     res.json(item);

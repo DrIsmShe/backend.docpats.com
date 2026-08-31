@@ -2,6 +2,7 @@ import CapsuleEndoscopyScannerTemplateNameofexam from "../../../../common/models
 import CapsuleEndoscopyScannerTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateReport.js";
 import CapsuleEndoscopyScannerTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateDiagnosis.js";
 import CapsuleEndoscopyScannerTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateRecomandation.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 // Обновление шаблона отчёта
 const updateNameofexamTemplatesCapsuleEndoscopyScanerController = async (
@@ -20,15 +21,15 @@ const updateNameofexamTemplatesCapsuleEndoscopyScanerController = async (
       );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.reportTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.reportTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.reportTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.reportTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.reportTemplate.updateError"),
+      message: tReq(req, "myClinic.reportTemplate.updateError"),
       error: error.message,
     });
   }
@@ -51,15 +52,15 @@ const updateReportTemplatesCapsuleEndoscopyScanerController = async (
       );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.reportTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.reportTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.reportTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.reportTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.reportTemplate.updateError"),
+      message: tReq(req, "myClinic.reportTemplate.updateError"),
       error: error.message,
     });
   }
@@ -82,15 +83,15 @@ const updateDiagnosisTemplatesCapsuleEndoscopyScanerController = async (
       );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.diagnosisTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.diagnosisTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.diagnosisTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.diagnosisTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.diagnosisTemplate.updateError"),
+      message: tReq(req, "myClinic.diagnosisTemplate.updateError"),
       error: error.message,
     });
   }
@@ -113,15 +114,15 @@ const updateRecomandationTemplatesCapsuleEndoscopyScanerController = async (
       );
 
     if (!updated) {
-      return res.status(404).json({ message: req.t("myClinic.recommendationTemplate.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.recommendationTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: req.t("myClinic.recommendationTemplate.updateSuccess"), updated });
+      .json({ message: tReq(req, "myClinic.recommendationTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: req.t("myClinic.recommendationTemplate.updateError"),
+      message: tReq(req, "myClinic.recommendationTemplate.updateError"),
       error: error.message,
     });
   }

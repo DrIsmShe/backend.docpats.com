@@ -1,6 +1,7 @@
 import Chat from "../../../common/models/Communication/message.js"; // создашь позже
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const openChatForAppointment = async (req, res) => {
   try {
@@ -11,18 +12,18 @@ export const openChatForAppointment = async (req, res) => {
     if (!profile)
       return res
         .status(404)
-        .json({ success: false, message: "Профиль врача не найден" });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound") });
 
     const appointment = await Appointment.findById(appointmentId);
     if (!appointment)
       return res
         .status(404)
-        .json({ success: false, message: "Приём не найден" });
+        .json({ success: false, message: tReq(req, "app.appointment.notFound") });
 
     if (appointment.type !== "video") {
       return res.status(400).json({
         success: false,
-        message: "Чат создаётся только для видео-приёмов",
+        message: tReq(req, "app.chat.videoAppointmentsOnly"),
       });
     }
 

@@ -3,6 +3,7 @@
 
 import { upload, uploadFile } from "../middleware/uploadMiddleware.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 // POST /api/communication/upload
 router.post(
@@ -12,7 +13,7 @@ router.post(
   async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ message: "Файл не передан" });
+        return res.status(400).json({ message: tReq(req, "app.file.notProvided") });
       }
 
       // uploadFile уже делает: compress images, upload to R2 or local, returns URL

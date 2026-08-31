@@ -1,5 +1,6 @@
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * @desc Получение архивированных приёмов врача
@@ -13,7 +14,7 @@ const getArchivedAppointmentsController = async (req, res) => {
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: "Неавторизованный доступ.",
+        message: tReq(req, "app.auth.unauthorized2"),
       });
     }
 
@@ -22,7 +23,7 @@ const getArchivedAppointmentsController = async (req, res) => {
     if (!doctorProfile) {
       return res.status(404).json({
         success: false,
-        message: "Профиль врача не найден.",
+        message: tReq(req, "app.doctor.profile.notFound"),
       });
     }
 
@@ -44,7 +45,7 @@ const getArchivedAppointmentsController = async (req, res) => {
     console.error("❌ Ошибка при получении архивированных приёмов:", error);
     return res.status(500).json({
       success: false,
-      message: "Внутренняя ошибка сервера при получении архива.",
+      message: tReq(req, "app.archive.serverError"),
       error: error.message,
     });
   }

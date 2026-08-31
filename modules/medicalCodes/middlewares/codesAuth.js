@@ -24,18 +24,19 @@ import {
   ForbiddenError,
 } from "../../../common/utils/errors.js";
 import { asyncHandler } from "../../../common/middlewares/errorHandler.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const MEDICAL_ROLES = ["doctor", "admin", "clinic_admin", "clinic_staff"];
 
 export const requireMedicalStaff = asyncHandler(async (req, res, next) => {
   const userId = req.session?.userId;
-  if (!userId) throw new UnauthorizedError("Требуется авторизация");
+  if (!userId) throw new UnauthorizedError(tReq(req, "app.auth.required"));
 
   const user = await User.findById(userId).select("_id role isBlocked").lean();
-  if (!user) throw new UnauthorizedError("Пользователь не найден");
-  if (user.isBlocked) throw new ForbiddenError("Аккаунт заблокирован");
+  if (!user) throw new UnauthorizedError(tReq(req, "app.user.notFound"));
+  if (user.isBlocked) throw new ForbiddenError(tReq(req, "app.account.blocked"));
   if (!MEDICAL_ROLES.includes(user.role)) {
-    throw new ForbiddenError("Справочник кодов доступен медицинскому персоналу");
+    throw new ForbiddenError(tReq(req, "app.codeDirectory.medicalStaffOnly"));
   }
 
   req.codesActor = { userId: user._id, role: user.role };

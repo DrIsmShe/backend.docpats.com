@@ -2,6 +2,7 @@ import crypto from "crypto";
 import AppointmentAudit from "../../../common/models/Appointment/appointmentAudit.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import User from "../../../common/models/Auth/users.js"; // нужен только чтобы корректно populate-нуть byUserId по ref:"User"
+import { tReq } from "../../../common/i18n/index.js";
 
 // --- локальные помощники (совместимы с вашей моделью пациента) ---
 const RAW_KEY = process.env.ENCRYPTION_KEY || "default_secret_key";
@@ -68,7 +69,7 @@ export const getAppointmentAuditController = async (req, res) => {
   try {
     const { appointmentId } = req.params;
     if (!appointmentId) {
-      return res.status(400).json({ success: false, message: "Нет ID приёма" });
+      return res.status(400).json({ success: false, message: tReq(req, "app.appointment.idMissing") });
     }
 
     console.log("📥 Получен запрос аудита:", appointmentId);
@@ -112,7 +113,7 @@ export const getAppointmentAuditController = async (req, res) => {
     console.error("❌ Ошибка получения аудита:", error);
     return res.status(500).json({
       success: false,
-      message: "Ошибка при получении истории действий: " + error.message,
+      message: tReq(req, "app.actionHistory.fetchError") + error.message,
     });
   }
 };

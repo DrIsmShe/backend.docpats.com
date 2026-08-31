@@ -2,6 +2,7 @@ import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js
 import Article from "../../../common/models/Articles/articles.js";
 import CommentDocpats from "../../../common/models/Comments/CommentDocpats.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const AllDoctorArticlesController = async (req, res) => {
   try {
@@ -11,27 +12,27 @@ const AllDoctorArticlesController = async (req, res) => {
     if (!req.session.userId) {
       return res
         .status(401)
-        .json({ success: false, message: req.t("app.auth.notAuthorized2") });
+        .json({ success: false, message: tReq(req, "app.auth.notAuthorized2") });
     }
 
     if (!["doctor", "patient"].includes(req.session.role)) {
       return res
         .status(403)
-        .json({ success: false, message: req.t("app.access.forbidden") });
+        .json({ success: false, message: tReq(req, "app.access.forbidden") });
     }
 
     const doctorProfile = await DoctorProfile.findById(profileId).lean();
     if (!doctorProfile) {
       return res
         .status(404)
-        .json({ success: false, message: req.t("app.doctor.profileNotFound2") });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound2") });
     }
 
     const user = await User.findById(doctorProfile.userId).lean();
     if (!user) {
       return res
         .status(404)
-        .json({ success: false, message: req.t("app.doctor.notFound") });
+        .json({ success: false, message: tReq(req, "app.doctor.notFound") });
     }
 
     const doctorInfo = {
@@ -77,7 +78,7 @@ const AllDoctorArticlesController = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Ошибка при получении статей доктора:", error);
-    return res.status(500).json({ success: false, message: req.t("app.server.error") });
+    return res.status(500).json({ success: false, message: tReq(req, "app.server.error") });
   }
 };
 

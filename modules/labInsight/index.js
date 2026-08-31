@@ -20,6 +20,7 @@ import {
   MAX_FILE_BYTES,
 } from "../diagnostics/ai/documentReader.js";
 import * as ctrl from "./controllers/labInsight.controller.js";
+import { tReq } from "../../common/i18n/index.js";
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ function requireUser(req, res, next) {
   if (!req.session?.userId) {
     return res
       .status(401)
-      .json({ success: false, message: "Требуется вход в аккаунт" });
+      .json({ success: false, message: tReq(req, "app.auth.loginRequired") });
   }
   next();
 }

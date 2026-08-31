@@ -18,6 +18,7 @@ import { startRadiologyCaseAgent } from "../../ai/caseAgent.js";
 import { MODEL } from "../../ai/aiRunner.js";
 import { generateBaselineAnswer } from "../../ai/baselineAnswer.js";
 import { saveAiReview, setAiReviewDismissed } from "../../ai/aiReviewStore.js";
+import { tReq } from "../../../../common/i18n/index.js";
 import {
   createCase,
   updateCase,
@@ -66,7 +67,7 @@ export const listReadingSystemsController = asyncHandler(async (req, res) => {
 export const aiDraftController = asyncHandler(async (req, res) => {
   const { imageUrl, modality, hint, imageIndex } = req.body ?? {};
   if (!imageUrl || !modality) {
-    throw new ValidationError("Нужны imageUrl и modality");
+    throw new ValidationError(tReq(req, "app.validation.imageUrlAndModalityRequired"));
   }
   const draft = await draftCase({
     imageUrl,
@@ -245,9 +246,9 @@ export const aiBaselineController = asyncHandler(async (req, res) => {
 // снимаем до переэнкодинга — они опциональны, нужны для аспект-отношения
 // и будущих замеров.
 export const uploadImageController = asyncHandler(async (req, res) => {
-  if (!req.file) throw new ValidationError("Файл не передан (поле image)");
+  if (!req.file) throw new ValidationError(tReq(req, "app.validation.imageFileNotProvided"));
   if (!/^image\//.test(req.file.mimetype || "")) {
-    throw new ValidationError("Загрузите изображение (PNG, JPEG или WebP)");
+    throw new ValidationError(tReq(req, "app.validation.uploadValidImageFormat"));
   }
 
   let width = null;

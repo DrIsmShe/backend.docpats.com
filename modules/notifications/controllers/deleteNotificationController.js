@@ -1,4 +1,5 @@
 import Notification from "../../../common/models/Notification/notification.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const deleteNotificationController = async (req, res) => {
   try {
@@ -13,7 +14,7 @@ export const deleteNotificationController = async (req, res) => {
     if (!notification) {
       return res.status(404).json({
         success: false,
-        message: "Уведомление не найдено или доступ запрещён",
+        message: tReq(req, "app.notification.notFoundOrForbidden"),
       });
     }
 
@@ -21,12 +22,12 @@ export const deleteNotificationController = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Уведомление успешно удалено",
+      message: tReq(req, "app.notification.deleteSuccess"),
     });
   } catch (err) {
     console.error("Ошибка при удалении уведомления:", err);
     res
       .status(500)
-      .json({ success: false, message: "Ошибка при удалении уведомления" });
+      .json({ success: false, message: tReq(req, "app.notification.deleteError") });
   }
 };

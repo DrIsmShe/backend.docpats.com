@@ -3,6 +3,7 @@ import ArticleScine from "../../../common/models/Articles/articles-scince.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
 import { getOrCreateTranslation } from "../../../modules/translation/translation.service.js";
 import ContentTranslation from "../../../common/models/Articles/contentTranslation.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const USERS = "users";
 const CATEGORIES = "categories";
@@ -572,7 +573,7 @@ const articlesScientificAllController = async (req, res) => {
     console.error("❌ Ошибка при получении статей:", err);
     return res
       .status(500)
-      .json({ message: "Ошибка сервера при получении статей" });
+      .json({ message: tReq(req, "app.articles.fetchError") });
   }
 };
 

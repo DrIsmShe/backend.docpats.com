@@ -1,4 +1,5 @@
 import Notification from "../../../common/models/Notification/notification.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const markAllPatientNotificationsAsRead = async (req, res) => {
   try {
@@ -16,6 +17,6 @@ export const markAllPatientNotificationsAsRead = async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error("Ошибка при отметке всех уведомлений:", err);
-    res.status(500).json({ success: false, message: "Ошибка сервера" });
+    res.status(500).json({ success: false, message: tReq(req, "app.server.error") });
   }
 };

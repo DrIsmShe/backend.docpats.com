@@ -13,6 +13,7 @@ import ClinicPatient from "../../clinic/clinic-patients/models/clinicPatient.mod
 import Clinic from "../../clinic/clinic-core/models/clinic.model.js";
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   buildPatientForPdf,
   decryptPrescriptionDoc,
@@ -37,18 +38,18 @@ const getMyPrescriptionPdfController = async (req, res, next) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ ok: false, error: req.t("app.validation.invalidIdFormat") });
+      return res.status(400).json({ ok: false, error: tReq(req, "app.validation.invalidIdFormat") });
     }
 
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: req.t("app.auth.notAuthorized2") });
+      return res.status(401).json({ ok: false, error: tReq(req, "app.auth.notAuthorized2") });
     }
 
     // 1. Рецепт.
     const rx = await Prescription.findById(id).lean();
     if (!rx || !rx.patientRef) {
-      return res.status(404).json({ ok: false, error: req.t("app.prescription.notFound") });
+      return res.status(404).json({ ok: false, error: tReq(req, "app.prescription.notFound") });
     }
 
     // 2. Владение: карта рецепта привязана к этому пользователю.
@@ -60,7 +61,7 @@ const getMyPrescriptionPdfController = async (req, res, next) => {
     const card = await loadCard(rx.patientTypeModel, rx.patientRef);
 
     if (!card || String(card.linkedUserId || "") !== String(userId)) {
-      return res.status(403).json({ ok: false, error: req.t("app.access.forbidden2") });
+      return res.status(403).json({ ok: false, error: tReq(req, "app.access.forbidden2") });
     }
 
     // 3. Клиника-автор (для шапки бланка).

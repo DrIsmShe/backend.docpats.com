@@ -1,4 +1,5 @@
 import rateLimit from "express-rate-limit";
+import { tReq } from "../i18n/index.js";
 
 const emailLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 минута
@@ -7,7 +8,7 @@ const emailLimiter = rateLimit({
   // только там доступен запрос — а с ним и язык того, кого ограничили.
   message: (req) =>
     typeof req.t === "function"
-      ? req.t("app.rateLimit.tooManyAttempts")
+      ? tReq(req, "app.rateLimit.tooManyAttempts")
       : "Слишком много попыток, попробуйте позже",
 });
 

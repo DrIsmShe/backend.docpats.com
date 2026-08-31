@@ -22,6 +22,7 @@ import {
   nameOf,
 } from "../services/procedureNames.service.js";
 import { toProcedureDTO } from "../procedure.mapper.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const ACTIVE_APPOINTMENT_STATUSES = ["pending", "confirmed"];
 
@@ -49,7 +50,7 @@ export const listProceduresController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Требуется авторизация" });
+        .json({ success: false, message: tReq(req, "app.auth.required") });
     }
 
     let ctx;
@@ -74,7 +75,7 @@ export const listProceduresController = async (req, res) => {
     if ((from && isNaN(+from)) || (to && isNaN(+to))) {
       return res
         .status(400)
-        .json({ success: false, message: "Некорректный интервал дат" });
+        .json({ success: false, message: tReq(req, "app.dateRange.invalid") });
     }
     if (from || to) {
       query.startsAt = {
@@ -99,7 +100,7 @@ export const listProceduresController = async (req, res) => {
     console.error("❌ Ошибка listProcedures:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка сервера", error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
   }
 };
 
@@ -109,7 +110,7 @@ export const getProcedureDayController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Требуется авторизация" });
+        .json({ success: false, message: tReq(req, "app.auth.required") });
     }
 
     let ctx;
@@ -160,7 +161,7 @@ export const getProcedureDayController = async (req, res) => {
     console.error("❌ Ошибка getProcedureDay:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка сервера", error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
   }
 };
 

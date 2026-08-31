@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import NewPatientPolyclinicMedical from "../../../common/models/Polyclinic/MedicalHistory/newPatientMedicalHistory.js";
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * UMR rewrite (Sprint 2 Phase 1):
@@ -26,7 +27,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
   if (!req.session?.userId) {
     return res.status(403).json({
       success: false,
-      message: req.t("myClinic.auth.pleaseLogin"),
+      message: tReq(req, "myClinic.auth.pleaseLogin"),
     });
   }
 
@@ -38,14 +39,14 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
   if (!patient || !patientType) {
     return res.status(404).json({
       success: false,
-      message: req.t("myClinic.patient.notFound"),
+      message: tReq(req, "myClinic.patient.notFound"),
     });
   }
 
   if (!mongoose.Types.ObjectId.isValid(patient._id)) {
     return res.status(400).json({
       success: false,
-      message: req.t("myClinic.patient.invalidId"),
+      message: tReq(req, "myClinic.patient.invalidId"),
     });
   }
 
@@ -60,7 +61,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     if (!checkPrivate) {
       return res.status(403).json({
         success: false,
-        message: req.t("myClinic.patient.notOwnedByDoctor"),
+        message: tReq(req, "myClinic.patient.notOwnedByDoctor"),
       });
     }
   }
@@ -75,7 +76,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     if (!checkRegistered) {
       return res.status(403).json({
         success: false,
-        message: req.t("myClinic.patient.notLinkedToDoctor"),
+        message: tReq(req, "myClinic.patient.notLinkedToDoctor"),
       });
     }
   }
@@ -114,7 +115,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
       } catch (e) {
         return res.status(400).json({
           success: false,
-          message: req.t("myClinic.diagnosis.main.invalidFormat"),
+          message: tReq(req, "myClinic.diagnosis.main.invalidFormat"),
         });
       }
     } else if (typeof rawMainDiagnosis === "object") {
@@ -130,7 +131,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     return res.status(400).json({
       success: false,
       message:
-        req.t("myClinic.diagnosis.main.required"),
+        tReq(req, "myClinic.diagnosis.main.required"),
     });
   }
 
@@ -193,7 +194,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: req.t("myClinic.medicalHistory.addSuccess"),
+      message: tReq(req, "myClinic.medicalHistory.addSuccess"),
       medicalHistory: history,
     });
   } catch (err) {
@@ -221,7 +222,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: req.t("myClinic.medicalHistory.saveError"),
+      message: tReq(req, "myClinic.medicalHistory.saveError"),
     });
   }
 };

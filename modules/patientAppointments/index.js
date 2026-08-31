@@ -7,6 +7,7 @@ import cancelAppointmentByPatientRoutes from "../../modules/patientAppointments/
 import appointmentVideoRoutes from "../../modules/patientAppointments/routes/appointmentVideoRoutes.js";
 import patientTelemedVideoRoutes from "../../modules/patientAppointments/routes/patientTelemedVideoRoutes.js";
 import patientConsiliumVideoRoutes from "../../modules/patientAppointments/routes/patientConsiliumVideoRoutes.js";
+import { tReq } from "../../common/i18n/index.js";
 router.use("/book", patientAppointmentRoutes);
 router.use("/my", getMyAppointmentsRoutes);
 router.use("/my-history", getPatientAppointmentsHistoryRoutes);
@@ -26,14 +27,14 @@ router.get("/patientprofilelayout", async (req, res) => {
     console.warn("⚠️ Пользователь не авторизован!");
     return res.status(401).json({
       authenticated: false,
-      message: "Пользователь не авторизован",
+      message: tReq(req, "app.user.notAuthorized"),
     });
   }
   if (req.session.role !== "patient") {
     console.warn("⚠️ Доступ запрещен! Роль:", req.session.role);
     return res.status(403).json({
       authenticated: false,
-      message: "Доступ разрешен только для пациентов",
+      message: tReq(req, "app.access.patientsOnly"),
     });
   }
   console.log("✅ Доступ разрешен");

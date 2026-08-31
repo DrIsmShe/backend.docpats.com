@@ -12,6 +12,7 @@
 
 import TelemedSession from "../../clinic/clinic-telemed/models/telemedSession.model.js";
 import { issueTelemedRoomToken } from "../../clinic/clinic-telemed/services/telemedVideo.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const issuePatientTelemedVideoTokenController = async (req, res) => {
   try {
@@ -19,7 +20,7 @@ export const issuePatientTelemedVideoTokenController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
 
     const sessionId = req.params.sessionId;

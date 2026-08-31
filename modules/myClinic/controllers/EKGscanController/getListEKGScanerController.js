@@ -1,6 +1,7 @@
 import EKGScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/EKGscanTemplates/EKGscan.js";
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getListEKGScanController = async (req, res) => {
   const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -9,7 +10,7 @@ const getListEKGScanController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: req.t("myClinic.patient.notFound2"),
+      message: tReq(req, "myClinic.patient.notFound2"),
     });
   }
 
@@ -62,7 +63,7 @@ const getListEKGScanController = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: req.t("myClinic.study.ekg.fetchError"),
+      message: tReq(req, "myClinic.study.ekg.fetchError"),
       error: error.message,
     });
   }

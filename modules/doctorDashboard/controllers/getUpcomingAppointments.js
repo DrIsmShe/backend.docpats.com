@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const getUpcomingAppointments = async (req, res) => {
   try {
@@ -10,7 +11,7 @@ export const getUpcomingAppointments = async (req, res) => {
     if (!profile)
       return res.status(404).json({
         success: false,
-        message: "Профиль врача не найден",
+        message: tReq(req, "app.doctor.profileNotFound"),
       });
 
     const doctorObjectId = new mongoose.Types.ObjectId(profile._id);

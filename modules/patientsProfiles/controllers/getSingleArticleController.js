@@ -1,5 +1,6 @@
 import Article from "../../../common/models/Articles/articles.js";
 import mongoose from "mongoose";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * Контроллер для получения одной статьи по ID
@@ -13,7 +14,7 @@ export const getSingleArticle = async (req, res) => {
     console.warn(`⛔ Неверный формат ID статьи: ${articleId}`);
     return res.status(400).json({
       success: false,
-      message: req.t("app.validation.invalidArticleIdFormat"),
+      message: tReq(req, "app.validation.invalidArticleIdFormat"),
     });
   }
 
@@ -25,7 +26,7 @@ export const getSingleArticle = async (req, res) => {
       console.warn(`📭 Статья не найдена: ID = ${articleId}`);
       return res.status(404).json({
         success: false,
-        message: req.t("app.article.notFound"),
+        message: tReq(req, "app.article.notFound"),
       });
     }
 
@@ -39,7 +40,7 @@ export const getSingleArticle = async (req, res) => {
     console.error("🔥 Ошибка сервера при получении статьи:", error.message);
     return res.status(500).json({
       success: false,
-      message: req.t("app.article.fetchError"),
+      message: tReq(req, "app.article.fetchError"),
     });
   }
 };

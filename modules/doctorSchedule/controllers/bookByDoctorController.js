@@ -36,6 +36,7 @@ import {
   DEFAULT_TZ,
 } from "../../../common/services/daySlots.service.js";
 import { DateTime } from "luxon";
+import { tReq } from "../../../common/i18n/index.js";
 
 const DEFAULT_SLOT_MIN = 20;
 // Допуск на запись «в прошлое»: только что начавшийся слот и расхождение часов.
@@ -281,7 +282,7 @@ export const bookByDoctorController = async (req, res) => {
     console.error("❌ Ошибка bookByDoctor:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка сервера", error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
   }
 };
 

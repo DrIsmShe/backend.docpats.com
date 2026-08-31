@@ -1,3 +1,4 @@
+import { tReq } from "../../common/i18n/index.js";
 import {
   generateUserSynthesis,
   checkUserLimit,
@@ -57,14 +58,14 @@ export async function generate(req, res) {
     if (!topic || topic.trim().length < 3) {
       return res.status(400).json({
         success: false,
-        message: "Укажите тему статьи (минимум 3 символа)",
+        message: tReq(req, "app.article.topicTooShort"),
       });
     }
 
     if (topic.length > 200) {
       return res.status(400).json({
         success: false,
-        message: "Тема слишком длинная (максимум 200 символов)",
+        message: tReq(req, "app.article.topicTooLong"),
       });
     }
 
@@ -124,7 +125,7 @@ export async function getMy(req, res) {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Не авторизован" });
+        .json({ success: false, message: tReq(req, "app.auth.notAuthorized") });
     }
     const { page, limit } = req.query;
     const result = await getUserArticles(userId, { page, limit });
@@ -141,7 +142,7 @@ export async function getMyOne(req, res) {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Не авторизован" });
+        .json({ success: false, message: tReq(req, "app.auth.notAuthorized") });
     }
     const article = await getUserArticle(userId, req.params.id);
     res.json({ success: true, article });

@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import User from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   isValidPhoneInput,
   INVALID_PHONE_MESSAGE,
@@ -86,13 +87,13 @@ export default async function addPatientPolyclinicController(req, res) {
     /* 1) Авторизация */
     const rawUserId = req.user?._id || req.session?.userId;
     if (!rawUserId || !mongoose.Types.ObjectId.isValid(rawUserId)) {
-      return res.status(403).json({ message: req.t("app.user.notAuthorized2") });
+      return res.status(403).json({ message: tReq(req, "app.user.notAuthorized2") });
     }
     const linkedUserId = new mongoose.Types.ObjectId(rawUserId);
 
     const user = await User.findById(linkedUserId);
     if (!user) {
-      return res.status(404).json({ message: req.t("app.user.notFound2") });
+      return res.status(404).json({ message: tReq(req, "app.user.notFound2") });
     }
 
     /* 2) Извлекаем вход (корректно работает и для JSON, и для multipart/form-data) */
@@ -135,13 +136,13 @@ export default async function addPatientPolyclinicController(req, res) {
     ) {
       return res
         .status(400)
-        .json({ message: req.t("app.validation.requiredFieldsMissing") });
+        .json({ message: tReq(req, "app.validation.requiredFieldsMissing") });
     }
 
     /* 4) Дата рождения */
     const birthDate = parseBirthDate(birthDateRaw);
     if (!birthDate) {
-      return res.status(400).json({ message: req.t("app.validation.invalidBirthDate") });
+      return res.status(400).json({ message: tReq(req, "app.validation.invalidBirthDate") });
     }
 
     /* 5) Проверки дублей */
@@ -152,7 +153,7 @@ export default async function addPatientPolyclinicController(req, res) {
 
     if (exists) {
       return res.status(409).json({
-        message: req.t("app.patient.alreadyRegistered"),
+        message: tReq(req, "app.patient.alreadyRegistered"),
         patientUUID: exists.patientUUID,
       });
     }
@@ -165,7 +166,7 @@ export default async function addPatientPolyclinicController(req, res) {
       if (dup) {
         return res
           .status(409)
-          .json({ message: req.t("app.patient.phoneAlreadyExists") });
+          .json({ message: tReq(req, "app.patient.phoneAlreadyExists") });
       }
     }
 
@@ -212,7 +213,7 @@ export default async function addPatientPolyclinicController(req, res) {
     const rawEncrypted = doc.get("phoneEncrypted", null, { getters: false });
 
     return res.status(201).json({
-      message: req.t("app.medicalRecord.createdSuccessfully"),
+      message: tReq(req, "app.medicalRecord.createdSuccessfully"),
       patientUUID: out.patientUUID,
       phoneNumber: out.phoneNumber || null, // геттер вернёт плейн
       phoneEncrypted: rawEncrypted || null, // физическое поле в БД (для проверки)
@@ -221,11 +222,11 @@ export default async function addPatientPolyclinicController(req, res) {
   } catch (error) {
     if (error?.code === 11000) {
       const field = Object.keys(error?.keyPattern || {})[0] || "unknown";
-      return res.status(409).json({ message: req.t("app.database.uniquenessConflict"), field });
+      return res.status(409).json({ message: tReq(req, "app.database.uniquenessConflict"), field });
     }
     console.error("❌ Ошибка при создании медкарты:", error);
     return res
       .status(500)
-      .json({ message: req.t("app.patient.addServerError") });
+      .json({ message: tReq(req, "app.patient.addServerError") });
   }
 }

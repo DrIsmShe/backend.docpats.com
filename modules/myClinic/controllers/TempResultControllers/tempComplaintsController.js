@@ -1,4 +1,5 @@
 import TempComplaints from "../../../../common/models/Polyclinic/TempResults/tempComplaints.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const tempComplaintsController = async (req, res) => {
   try {
@@ -7,7 +8,7 @@ const tempComplaintsController = async (req, res) => {
     // Получите userId из сессии
     const userId = req.session.userId; // Это должно быть записано в сессии
     if (!userId) {
-      return res.status(400).json({ message: req.t("myClinic.auth.userNotAuthorized") });
+      return res.status(400).json({ message: tReq(req, "myClinic.auth.userNotAuthorized") });
     }
 
     // Проверка на существование шаблона с таким же названием
@@ -15,7 +16,7 @@ const tempComplaintsController = async (req, res) => {
     if (existingComplaint) {
       return res
         .status(400)
-        .json({ message: req.t("myClinic.template.nameAlreadyExists") });
+        .json({ message: tReq(req, "myClinic.template.nameAlreadyExists") });
     }
 
     // Обработка тегов
@@ -36,14 +37,14 @@ const tempComplaintsController = async (req, res) => {
 
     await newComplaint.save();
     res.status(201).json({
-      message: req.t("myClinic.complaintTemplate.createSuccess"),
+      message: tReq(req, "myClinic.complaintTemplate.createSuccess"),
       complaint: newComplaint,
     });
   } catch (error) {
     console.error("Ошибка при создании шаблона:", error);
     res
       .status(500)
-      .json({ message: req.t("myClinic.template.createError"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError"), error: error.message });
   }
 };
 

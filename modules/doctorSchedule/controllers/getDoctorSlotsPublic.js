@@ -1,6 +1,7 @@
 import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js";
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   buildDaySlots,
   dayBoundsUtc,
@@ -24,7 +25,7 @@ export const getDoctorSlotsPublic = async (req, res) => {
     if (!doctorId || !date || !type) {
       return res.status(400).json({
         success: false,
-        message: "Необходимо передать doctorId, date и type",
+        message: tReq(req, "app.parameters.required"),
       });
     }
 
@@ -46,7 +47,7 @@ export const getDoctorSlotsPublic = async (req, res) => {
     if (!schedule) {
       return res.status(404).json({
         success: false,
-        message: "Расписание врача не найдено",
+        message: tReq(req, "app.doctor.scheduleNotFound"),
         slots: [],
       });
     }
@@ -122,7 +123,7 @@ export const getDoctorSlotsPublic = async (req, res) => {
     console.error("❌ Ошибка при получении слотов врача:", error);
     res.status(500).json({
       success: false,
-      message: "Ошибка сервера при загрузке слотов",
+      message: tReq(req, "app.slots.loadError"),
       error: error.message,
     });
   }

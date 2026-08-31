@@ -1,3 +1,4 @@
+import { tReq } from "../../../common/i18n/index.js";
 // server/modules/payments/controllers/requisites.controller.js
 // ─────────────────────────────────────────────────────────────────────
 //   Реквизиты для оплаты: справочник, которым администратор управляет
@@ -107,7 +108,7 @@ export async function createRequisite(req, res) {
     if (data.title.length < 2 || data.details.length < 4) {
       return res.status(400).json({
         success: false,
-        message: "Нужны название и сами реквизиты",
+        message: tReq(req, "app.paymentDetails.nameAndDetailsRequired"),
       });
     }
 
@@ -129,7 +130,7 @@ export async function updateRequisite(req, res) {
     if (!doc) {
       return res
         .status(404)
-        .json({ success: false, message: "Реквизит не найден" });
+        .json({ success: false, message: tReq(req, "app.paymentDetails.notFound") });
     }
 
     // Правим только присланные поля: частичное обновление не должно
@@ -150,7 +151,7 @@ export async function updateRequisite(req, res) {
     if (!doc.title || !doc.details) {
       return res.status(400).json({
         success: false,
-        message: "Название и реквизиты не могут быть пустыми",
+        message: tReq(req, "app.paymentDetails.cannotBeEmpty"),
       });
     }
 
@@ -175,7 +176,7 @@ export async function deactivateRequisite(req, res) {
     if (!doc) {
       return res
         .status(404)
-        .json({ success: false, message: "Реквизит не найден" });
+        .json({ success: false, message: tReq(req, "app.paymentDetails.notFound") });
     }
     doc.isActive = false;
     doc.updatedBy = req.session.userId;

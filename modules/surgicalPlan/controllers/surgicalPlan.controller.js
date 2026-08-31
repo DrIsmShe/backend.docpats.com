@@ -6,6 +6,7 @@ import { getCatalog, PROCEDURE_CODES } from "../catalog/index.js";
 import { parsePrompt } from "../services/planParser.service.js";
 import { getPlanSchema } from "../services/planSchema.service.js";
 import { validatePlan } from "../services/planValidator.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /* ============================================================
    POST /api/surgical-plan/parse
@@ -65,7 +66,7 @@ export const validate = asyncHandler(async (req, res) => {
     for (const issue of parsed.error.issues) {
       fields[issue.path.join(".") || "_root"] = issue.message;
     }
-    throw new ValidationError("План не соответствует схеме каталога", { fields });
+    throw new ValidationError(tReq(req, "app.plan.catalogSchemaMismatch"), { fields });
   }
 
   const validation = validatePlan({

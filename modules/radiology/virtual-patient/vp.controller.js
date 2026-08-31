@@ -59,6 +59,7 @@ function throwZod(parsed) {
 // (translation/requestLang.js).
 import { langOf } from "../translation/requestLang.js";
 import { translatedCaseFor } from "../translation/translatedCase.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const listVpController = asyncHandler(async (req, res) => {
   const parsed = listVpQuerySchema.safeParse(req.query);
@@ -249,7 +250,7 @@ export const aiVariantsVpController = asyncHandler(async (req, res) => {
   const variants = await generateVpVariants(doc, parsed.data.count ?? 2);
   if (!variants.length) {
     throw new ValidationError(
-      "ИИ не вернул ни одного пригодного варианта — попробуйте ещё раз",
+      tReq(req, "app.ai.noValidOptions"),
     );
   }
   doc.variants = variants;

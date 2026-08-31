@@ -1,5 +1,6 @@
 import Notification from "../../../common/models/Notification/notification.js";
 import { emitNotification } from "../../../common/realtime/userChannel.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const createNotificationController = async (req, res) => {
   try {
@@ -21,6 +22,6 @@ export const createNotificationController = async (req, res) => {
     console.error("Error creating notification:", err);
     res
       .status(500)
-      .json({ success: false, message: "Ошибка при создании уведомления" });
+      .json({ success: false, message: tReq(req, "app.notification.createError") });
   }
 };

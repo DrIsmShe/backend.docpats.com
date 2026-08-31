@@ -1,6 +1,7 @@
 import EEGScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/EEGScansTemplates/EEGScan.js";
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getListEEGScanerController = async (req, res) => {
   const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -9,7 +10,7 @@ const getListEEGScanerController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: req.t("myClinic.patient.notFound2"),
+      message: tReq(req, "myClinic.patient.notFound2"),
     });
   }
 
@@ -55,13 +56,13 @@ const getListEEGScanerController = async (req, res) => {
       success: true,
       count: eegScans.length,
       data: eegScans,
-      message: req.t("myClinic.study.eeg.fetchSuccess"),
+      message: tReq(req, "myClinic.study.eeg.fetchSuccess"),
     });
   } catch (error) {
     console.error(`[${timestamp}] ❌ Ошибка получения EEG:`, error);
     res.status(500).json({
       success: false,
-      message: req.t("myClinic.study.eeg.fetchError"),
+      message: tReq(req, "myClinic.study.eeg.fetchError"),
       error: error.message,
     });
   }

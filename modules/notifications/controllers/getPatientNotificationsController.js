@@ -1,4 +1,5 @@
 import Notification from "../../../common/models/Notification/notification.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const getPatientNotificationsController = async (req, res) => {
   try {
@@ -23,7 +24,7 @@ export const getPatientNotificationsController = async (req, res) => {
     console.error("❌ Ошибка при получении уведомлений:", err);
     return res.status(500).json({
       success: false,
-      message: "Ошибка при загрузке уведомлений",
+      message: tReq(req, "app.notification.fetchError"),
     });
   }
 };

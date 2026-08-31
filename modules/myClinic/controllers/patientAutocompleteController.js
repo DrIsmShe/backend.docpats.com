@@ -2,6 +2,7 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 import User from "../../../common/models/users.js";
 import NewPatientPolyclinic from "../../../common/models/newPatientPolyclinic.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 dotenv.config();
 
@@ -25,12 +26,12 @@ const patientAutocompleteController = async (req, res) => {
     if (!req.session.userId) {
       return res
         .status(403)
-        .json({ message: req.t("myClinic.auth.pleaseLogin") });
+        .json({ message: tReq(req, "myClinic.auth.pleaseLogin") });
     }
 
     const { query } = req.query;
     if (!query?.trim()) {
-      return res.status(400).json({ message: req.t("myClinic.search.enterSearchData") });
+      return res.status(400).json({ message: tReq(req, "myClinic.search.enterSearchData") });
     }
 
     console.log("🔍 Выполняем поиск:", query);
@@ -56,10 +57,10 @@ const patientAutocompleteController = async (req, res) => {
 
     return res
       .status(200)
-      .json({ found: false, message: req.t("myClinic.patient.noPatientsFound") });
+      .json({ found: false, message: tReq(req, "myClinic.patient.noPatientsFound") });
   } catch (error) {
     console.error("❌ Ошибка при поиске пациента:", error);
-    res.status(500).json({ message: req.t("myClinic.patient.searchError") });
+    res.status(500).json({ message: tReq(req, "myClinic.patient.searchError") });
   }
 };
 

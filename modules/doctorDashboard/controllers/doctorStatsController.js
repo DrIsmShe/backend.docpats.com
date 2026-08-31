@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import AppointmentAudit from "../../../common/models/Appointment/appointmentAudit.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const getDoctorStats = async (req, res) => {
   try {
@@ -10,7 +11,7 @@ export const getDoctorStats = async (req, res) => {
     if (!profile) {
       return res.status(404).json({
         success: false,
-        message: "Профиль врача не найден",
+        message: tReq(req, "app.doctor.profileNotFound"),
       });
     }
 

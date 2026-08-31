@@ -38,6 +38,7 @@ import {
 } from "../services/procedure.service.js";
 import { validateCreate } from "../validators/procedure.validator.js";
 import { toProcedureDTO } from "../procedure.mapper.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 function fail(res, err) {
   if (err instanceof ProcedureError || err instanceof BookingPatientError) {
@@ -57,7 +58,7 @@ export const createProcedureController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Требуется авторизация" });
+        .json({ success: false, message: tReq(req, "app.auth.required") });
     }
 
     let payload;
@@ -116,7 +117,7 @@ export const createProcedureController = async (req, res) => {
       if (err?.code === 11000) {
         return res.status(409).json({
           success: false,
-          message: "На это время уже есть запись",
+          message: tReq(req, "app.appointment.timeSlotAlreadyBooked"),
           code: "SLOT_TAKEN_PROCEDURE",
         });
       }
@@ -203,7 +204,7 @@ export const createProcedureController = async (req, res) => {
     console.error("❌ Ошибка createProcedure:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка сервера", error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
   }
 };
 

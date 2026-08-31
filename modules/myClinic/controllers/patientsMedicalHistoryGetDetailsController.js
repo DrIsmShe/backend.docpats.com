@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import NewPatientMedicalHistory from "../../../common/models/Polyclinic/MedicalHistory/newPatientMedicalHistory.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /* ======================== R2 helpers ======================== */
 
@@ -62,7 +63,7 @@ const patientsMedicalHistoryGetDetailsController = async (req, res) => {
     if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
       return res.status(400).json({
         message:
-          req.t("myClinic.medicalHistory.invalidOrMissingId"),
+          tReq(req, "myClinic.medicalHistory.invalidOrMissingId"),
       });
     }
 
@@ -87,11 +88,11 @@ const patientsMedicalHistoryGetDetailsController = async (req, res) => {
       .lean();
 
     if (!mh) {
-      return res.status(404).json({ message: req.t("myClinic.medicalHistory.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.medicalHistory.notFound") });
     }
     if (!mh.patientRef) {
       console.warn("⚠️ История без пациента:", mh._id);
-      return res.status(404).json({ message: req.t("myClinic.medicalHistory.patientNotLinked") });
+      return res.status(404).json({ message: tReq(req, "myClinic.medicalHistory.patientNotLinked") });
     }
     // Врач
     let doctor = null;
@@ -135,7 +136,7 @@ const patientsMedicalHistoryGetDetailsController = async (req, res) => {
     return res.status(200).json(out);
   } catch (err) {
     console.error("❌ Ошибка при получении истории болезни пациента:", err);
-    return res.status(500).json({ message: req.t("myClinic.server.error2") });
+    return res.status(500).json({ message: tReq(req, "myClinic.server.error2") });
   }
 };
 

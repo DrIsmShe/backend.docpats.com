@@ -8,13 +8,14 @@ import User from "../../../common/models/Auth/users.js";
 import { eventBus } from "../../notifications/events/eventBus.js"; // ✅ добавлено
 import Notification from "../../../common/models/Notification/notification.js"; // ✅ добавлено
 import { emitNotification } from "../../../common/realtime/userChannel.js";
+import { tReq } from "../../../common/i18n/index.js";
 export const getMyAppointments = async (req, res) => {
   try {
     const userId = req.userId;
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: "Требуется авторизация",
+        message: tReq(req, "app.auth.required"),
       });
     }
 
@@ -24,7 +25,7 @@ export const getMyAppointments = async (req, res) => {
     if (!doctorProfile) {
       return res.status(404).json({
         success: false,
-        message: "Профиль врача не найден",
+        message: tReq(req, "app.doctor.profileNotFound"),
       });
     }
 
@@ -38,7 +39,7 @@ export const getMyAppointments = async (req, res) => {
     if (!appointments.length) {
       return res.status(200).json({
         success: true,
-        message: "У вас пока нет назначенных приёмов.",
+        message: tReq(req, "app.appointment.noScheduled"),
         data: [],
       });
     }
@@ -160,7 +161,7 @@ export const getMyAppointments = async (req, res) => {
     console.error("❌ Ошибка getMyAppointments:", err);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера при получении приёмов.",
+      message: tReq(req, "app.appointment.fetchServerError"),
       error: err.message,
     });
   }
@@ -175,7 +176,7 @@ export const updateAppointmentStatus = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
 
     // 🔹 Проверяем допустимость статуса
@@ -183,7 +184,7 @@ export const updateAppointmentStatus = async (req, res) => {
     if (!validStatuses.includes(status)) {
       return res
         .status(400)
-        .json({ success: false, message: "Недопустимый статус" });
+        .json({ success: false, message: tReq(req, "app.appointment.status.invalid") });
     }
 
     // 🔹 Находим профиль врача
@@ -191,7 +192,7 @@ export const updateAppointmentStatus = async (req, res) => {
     if (!doctorProfile) {
       return res.status(404).json({
         success: false,
-        message: "Профиль врача не найден",
+        message: tReq(req, "app.doctor.profileNotFound"),
       });
     }
 
@@ -205,7 +206,7 @@ export const updateAppointmentStatus = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: "Приём не найден для этого врача",
+        message: tReq(req, "app.appointment.notFoundForDoctor"),
       });
     }
 
@@ -311,7 +312,7 @@ export const updateAppointmentStatus = async (req, res) => {
     console.error("❌ Ошибка updateAppointmentStatus:", err);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера при обновлении статуса.",
+      message: tReq(req, "app.status.updateServerError"),
       error: err.message,
     });
   }

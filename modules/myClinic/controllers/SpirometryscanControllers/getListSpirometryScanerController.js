@@ -1,6 +1,7 @@
 import SpirometryScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/SpirometryScansTemplates/SpirometryScan.js";
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getListSpirometryScanerController = async (req, res) => {
   const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -9,7 +10,7 @@ const getListSpirometryScanerController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: req.t("myClinic.patient.notFound2"),
+      message: tReq(req, "myClinic.patient.notFound2"),
     });
   }
 
@@ -64,7 +65,7 @@ const getListSpirometryScanerController = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: req.t("myClinic.spirometryStudies.fetchError"),
+      message: tReq(req, "myClinic.spirometryStudies.fetchError"),
       error: error.message,
     });
   }

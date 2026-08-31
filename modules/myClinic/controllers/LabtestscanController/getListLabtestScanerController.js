@@ -1,6 +1,7 @@
 import LabTest from "../../../../common/models/Polyclinic/ExamenationsTemplates/Labtest/LabTest.js";
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getListLabtestScanerController = async (req, res) => {
   const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -9,7 +10,7 @@ const getListLabtestScanerController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: req.t("myClinic.patient.notFound2"),
+      message: tReq(req, "myClinic.patient.notFound2"),
     });
   }
 
@@ -58,7 +59,7 @@ const getListLabtestScanerController = async (req, res) => {
     console.error(`[${timestamp}] ❌ Ошибка получения LabTest:`, error);
     res.status(500).json({
       success: false,
-      message: req.t("myClinic.labTests.fetchError"),
+      message: tReq(req, "myClinic.labTests.fetchError"),
       error: error.message,
     });
   }

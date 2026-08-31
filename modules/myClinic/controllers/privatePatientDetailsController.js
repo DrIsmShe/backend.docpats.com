@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /* ======================== R2 helpers ======================== */
 
@@ -63,7 +64,7 @@ const privatePatientDetailsController = async (req, res) => {
 
     if (patientType !== "private") {
       return res.status(400).json({
-        message: req.t("myClinic.patient.notPrivate"),
+        message: tReq(req, "myClinic.patient.notPrivate"),
       });
     }
 

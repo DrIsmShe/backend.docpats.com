@@ -47,7 +47,7 @@ const upload = multer({
  * 📌 Функция загрузки файла
  */
 const uploadFile = async (file) => {
-  if (!file) throw new Error(req.t("app.file.notUploaded"));
+  if (!file) throw Object.assign(new Error("Файл не был загружен."), { i18n: "app.file.notUploaded" });
 
   try {
     const ext = path.extname(file.originalname).toLowerCase();

@@ -48,6 +48,7 @@ import { NotFoundError } from "../../../common/utils/errors.js";
 // (translation/requestLang.js).
 import { langOf } from "../translation/requestLang.js";
 import { translatedCaseFor } from "../translation/translatedCase.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 
 function throwZod(parsed) {
@@ -261,7 +262,7 @@ export const aiVariantsLabController = asyncHandler(async (req, res) => {
   const variants = await generateLabVariants(doc, parsed.data.count ?? 2);
   if (!variants.length) {
     throw new ValidationError(
-      "ИИ не вернул ни одного пригодного варианта — попробуйте ещё раз",
+      tReq(req, "app.ai.noValidOptions"),
     );
   }
   doc.variants = variants;

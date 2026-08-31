@@ -18,6 +18,7 @@ import Prescription from "../../../common/models/Polyclinic/Prescription.js";
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import { encryptPHI } from "../../../common/utils/phiCrypto.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   normalizeItems,
   normalizeRefills,
@@ -100,12 +101,12 @@ export async function createDoctorPrescription(req, res, next) {
   try {
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: req.t("myClinic.auth.unauthorized") });
+      return res.status(401).json({ ok: false, error: tReq(req, "myClinic.auth.unauthorized") });
     }
 
     const patient = await ownedPatient(req.params.patientId, userId);
     if (!patient) {
-      return res.status(404).json({ ok: false, error: req.t("myClinic.patient.notFound2") });
+      return res.status(404).json({ ok: false, error: tReq(req, "myClinic.patient.notFound2") });
     }
 
     const body = req.body || {};
@@ -113,7 +114,7 @@ export async function createDoctorPrescription(req, res, next) {
     if (items.length === 0) {
       return res.status(422).json({
         ok: false,
-        error: req.t("myClinic.prescription.innRequired"),
+        error: tReq(req, "myClinic.prescription.innRequired"),
       });
     }
 
@@ -164,12 +165,12 @@ export async function listDoctorPrescriptions(req, res, next) {
   try {
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: req.t("myClinic.auth.unauthorized") });
+      return res.status(401).json({ ok: false, error: tReq(req, "myClinic.auth.unauthorized") });
     }
 
     const patient = await ownedPatient(req.params.patientId, userId);
     if (!patient) {
-      return res.status(404).json({ ok: false, error: req.t("myClinic.patient.notFound2") });
+      return res.status(404).json({ ok: false, error: tReq(req, "myClinic.patient.notFound2") });
     }
 
     // Что показываем в кабинете врача.
@@ -220,25 +221,25 @@ export async function updateDoctorPrescription(req, res, next) {
   try {
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: req.t("myClinic.auth.unauthorized") });
+      return res.status(401).json({ ok: false, error: tReq(req, "myClinic.auth.unauthorized") });
     }
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ ok: false, error: req.t("myClinic.validation.invalidIdFormat") });
+      return res.status(400).json({ ok: false, error: tReq(req, "myClinic.validation.invalidIdFormat") });
     }
 
     const rx = await Prescription.findById(req.params.id);
     if (!rx) {
-      return res.status(404).json({ ok: false, error: req.t("myClinic.prescription.notFound") });
+      return res.status(404).json({ ok: false, error: tReq(req, "myClinic.prescription.notFound") });
     }
     // Править может только автор: рецепт — документ с его именем.
     if (String(rx.createdBy || "") !== String(userId)) {
-      return res.status(403).json({ ok: false, error: req.t("myClinic.access.denied") });
+      return res.status(403).json({ ok: false, error: tReq(req, "myClinic.access.denied") });
     }
     if (rx.status !== "active") {
       return res.status(409).json({
         ok: false,
         error:
-          req.t("myClinic.prescription.cannotEditInactive"),
+          tReq(req, "myClinic.prescription.cannotEditInactive"),
       });
     }
 
@@ -253,7 +254,7 @@ export async function updateDoctorPrescription(req, res, next) {
         return res.status(409).json({
           ok: false,
           error:
-            req.t("myClinic.prescription.cannotEditDispensed"),
+            tReq(req, "myClinic.prescription.cannotEditDispensed"),
         });
       }
     } catch (e) {
@@ -268,7 +269,7 @@ export async function updateDoctorPrescription(req, res, next) {
       if (items.length === 0) {
         return res.status(422).json({
           ok: false,
-          error: req.t("myClinic.prescription.innRequired"),
+          error: tReq(req, "myClinic.prescription.innRequired"),
         });
       }
       next_.items = items;
@@ -329,19 +330,19 @@ export async function doctorPrescriptionPdf(req, res, next) {
   try {
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: req.t("myClinic.auth.unauthorized") });
+      return res.status(401).json({ ok: false, error: tReq(req, "myClinic.auth.unauthorized") });
     }
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ ok: false, error: req.t("myClinic.validation.invalidIdFormat") });
+      return res.status(400).json({ ok: false, error: tReq(req, "myClinic.validation.invalidIdFormat") });
     }
 
     const rx = await Prescription.findById(req.params.id).lean();
     if (!rx) {
-      return res.status(404).json({ ok: false, error: req.t("myClinic.prescription.notFound") });
+      return res.status(404).json({ ok: false, error: tReq(req, "myClinic.prescription.notFound") });
     }
     // Печатать может только тот, кто выписал: рецепт — документ с именем.
     if (String(rx.createdBy || "") !== String(userId)) {
-      return res.status(403).json({ ok: false, error: req.t("myClinic.access.denied") });
+      return res.status(403).json({ ok: false, error: tReq(req, "myClinic.access.denied") });
     }
 
     // Карта может быть любой из трёх: врач печатает и свой рецепт,

@@ -1,6 +1,7 @@
 import SPECTScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/SPECTScansTemplates/SPECTScan.js";
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getListSPECTScanerController = async (req, res) => {
   const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -9,7 +10,7 @@ const getListSPECTScanerController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: req.t("myClinic.patient.notFound2"),
+      message: tReq(req, "myClinic.patient.notFound2"),
     });
   }
 
@@ -61,7 +62,7 @@ const getListSPECTScanerController = async (req, res) => {
     console.error(`[${timestamp}] ❌ Ошибка получения SPECT:`, error);
     res.status(500).json({
       success: false,
-      message: req.t("myClinic.spectStudies.fetchError"),
+      message: tReq(req, "myClinic.spectStudies.fetchError"),
       error: error.message,
     });
   }

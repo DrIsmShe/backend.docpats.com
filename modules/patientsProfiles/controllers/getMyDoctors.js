@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const toOID = (v) =>
   mongoose.isValidObjectId(v) ? new mongoose.Types.ObjectId(v) : null;
@@ -37,14 +38,14 @@ const getMyDoctors = async (req, res) => {
   try {
     const patientId = getCurrentPatientId(req);
     if (!patientId) {
-      return res.status(401).json({ message: req.t("app.user.notAuthorized2") });
+      return res.status(401).json({ message: tReq(req, "app.user.notAuthorized2") });
     }
 
     // Берём только массив myDoctors у пользователя
     const patient = await User.findById(patientId).select("myDoctors").lean();
 
     if (!patient) {
-      return res.status(404).json({ message: req.t("app.patient.notFound2") });
+      return res.status(404).json({ message: tReq(req, "app.patient.notFound2") });
     }
 
     if (!Array.isArray(patient.myDoctors) || patient.myDoctors.length === 0) {
@@ -127,7 +128,7 @@ const getMyDoctors = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     console.error("❌ Ошибка при получении списка моих докторов:", error);
-    return res.status(500).json({ message: req.t("app.server.internalError2") });
+    return res.status(500).json({ message: tReq(req, "app.server.internalError2") });
   }
 };
 

@@ -7,6 +7,7 @@ import express from "express";
 import { asyncHandler } from "../../../common/middlewares/errorHandler.js";
 import { ValidationError } from "../../../common/utils/errors.js";
 import { createDuel, submitResult, listDuels } from "./duel.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ router.get(
 router.post(
   "/duels",
   asyncHandler(async (req, res) => {
-    if (!req.body?.caseId) throw new ValidationError("Нужен caseId");
+    if (!req.body?.caseId) throw new ValidationError(tReq(req, "app.validation.caseIdRequired"));
     const duel = await createDuel(req.body.caseId, req.radiologyActor.userId);
     res.status(201).json({ duel });
   }),
@@ -30,7 +31,7 @@ router.post(
 router.post(
   "/duels/:id/result",
   asyncHandler(async (req, res) => {
-    if (!req.body?.attemptId) throw new ValidationError("Нужен attemptId");
+    if (!req.body?.attemptId) throw new ValidationError(tReq(req, "app.validation.attemptIdRequired"));
     const duel = await submitResult(req.params.id, req.radiologyActor.userId, req.body.attemptId);
     res.json({ duel });
   }),

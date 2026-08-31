@@ -1,6 +1,7 @@
 import DoctorProfile from "../../models/profileDoctor.js";
 import User from "../../models/users.js";
 import Article from "../../models/articles.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const DoctorDetailController = async (req, res) => {
   try {
@@ -13,21 +14,21 @@ const DoctorDetailController = async (req, res) => {
 
     if (!id) {
       console.error("❌ Ошибка: ID доктора не указан");
-      return res.status(400).json({ error: req.t("app.doctor.idNotSpecified") });
+      return res.status(400).json({ error: tReq(req, "app.doctor.idNotSpecified") });
     }
 
     if (!userId) {
       console.error("❌ Ошибка: userId отсутствует в сессии");
       return res
         .status(403)
-        .json({ error: req.t("app.access.deniedNoUserId") });
+        .json({ error: tReq(req, "app.access.deniedNoUserId") });
     }
 
     // Получаем профиль доктора
     const doctor = await DoctorProfile.findById(id).lean();
     if (!doctor) {
       console.error("❌ Ошибка: Доктор не найден");
-      return res.status(404).json({ error: req.t("app.doctor.notFound") });
+      return res.status(404).json({ error: tReq(req, "app.doctor.notFound") });
     }
 
     // Получаем данные пользователя, связанного с доктором
@@ -46,7 +47,7 @@ const DoctorDetailController = async (req, res) => {
       );
       return res
         .status(403)
-        .json({ error: req.t("app.access.deniedInsufficientPermissions") });
+        .json({ error: tReq(req, "app.access.deniedInsufficientPermissions") });
     }
 
     // Получаем статьи, написанные доктором
@@ -63,7 +64,7 @@ const DoctorDetailController = async (req, res) => {
     return res.status(200).json(doctorDetails);
   } catch (error) {
     console.error("❌ Ошибка при получении данных доктора:", error);
-    return res.status(500).json({ error: req.t("app.server.internalError") });
+    return res.status(500).json({ error: tReq(req, "app.server.internalError") });
   }
 };
 

@@ -1,6 +1,7 @@
+import { tReq } from "../../i18n/index.js";
 const checkIfBlocked = (req, res, next) => {
   if (req.user && req.user.isBlocked) {
-    return res.status(403).json({ message: req.t("app.account.blocked") });
+    return res.status(403).json({ message: tReq(req, "app.account.blocked") });
   }
   next();
 };

@@ -16,6 +16,7 @@
 import User from "../../../common/models/Auth/users.js";
 import PaymentTransaction from "../models/paymentTransaction.js";
 import { grantPlan } from "../services/subscription.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * POST /api/payments/admin/grant
@@ -28,7 +29,7 @@ export async function grantPlanByAdmin(req, res) {
     if (!userId || !planKey) {
       return res
         .status(400)
-        .json({ success: false, message: "userId и planKey обязательны" });
+        .json({ success: false, message: tReq(req, "app.validation.userIdAndPlanKeyRequired") });
     }
     // Причина обязательна намеренно: запись без объяснения через полгода
     // читается как «непонятно откуда у него Pro».
@@ -36,7 +37,7 @@ export async function grantPlanByAdmin(req, res) {
     if (cleanReason.length < 3) {
       return res.status(400).json({
         success: false,
-        message: "Укажите причину выдачи — она попадёт в журнал",
+        message: tReq(req, "app.validation.reasonRequired"),
       });
     }
 
@@ -44,7 +45,7 @@ export async function grantPlanByAdmin(req, res) {
     if (!user) {
       return res
         .status(404)
-        .json({ success: false, message: "Пользователь не найден" });
+        .json({ success: false, message: tReq(req, "app.user.notFound") });
     }
 
     const count = Number(months ?? 1);

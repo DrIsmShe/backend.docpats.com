@@ -54,7 +54,7 @@ function langOfParam(req) {
 function langsFromBody(body) {
   const raw = body?.langs;
   if (raw == null) return null;
-  if (!Array.isArray(raw)) throw new ValidationError("langs: ожидается массив языков");
+  if (!Array.isArray(raw)) throw new ValidationError("langs: ожидается массив языков", { i18n: "app.validation.langsArrayExpected" });
   const list = raw.map((l) => String(l).trim()).filter(Boolean);
   const bad = list.filter((l) => !ARENA_LANGUAGES.includes(l));
   if (bad.length) throw new ValidationError(`langs: неизвестные языки: ${bad.join(", ")}`);

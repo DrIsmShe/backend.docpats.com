@@ -13,6 +13,7 @@ import NewPatientPolyclinic from "../../common/models/Polyclinic/newPatientPolyc
 import * as service from "./dictation.service.js";
 import * as stt from "./providers/stt.provider.js";
 import * as structure from "./providers/structure.provider.js";
+import { tReq } from "../../common/i18n/index.js";
 
 /**
  * Врач владеет пациентом?
@@ -29,7 +30,7 @@ async function assertOwnsPatient(patientType, patientId, doctorUserId) {
       doctorUserId,
     }).select("_id");
     if (!found) {
-      throw new ForbiddenError("Этот приватный пациент не принадлежит текущему врачу");
+      throw new ForbiddenError("Этот приватный пациент не принадлежит текущему врачу", { i18n: "app.privatePatient.notOwnedByCurrentDoctor" });
     }
     return "DoctorPrivatePatient";
   }
@@ -39,7 +40,7 @@ async function assertOwnsPatient(patientType, patientId, doctorUserId) {
       doctorId: doctorUserId,
     }).select("_id");
     if (!found) {
-      throw new ForbiddenError("Этот пациент не принадлежит текущему врачу");
+      throw new ForbiddenError("Этот пациент не принадлежит текущему врачу", { i18n: "app.patient.notOwnedByCurrentDoctor" });
     }
     return "NewPatientPolyclinic";
   }
@@ -48,7 +49,7 @@ async function assertOwnsPatient(patientType, patientId, doctorUserId) {
 
 function doctorIdOf(req) {
   const id = req.session?.userId;
-  if (!id) throw new UnauthorizedError("Пожалуйста, войдите в систему");
+  if (!id) throw new UnauthorizedError(tReq(req, "app.auth.pleaseLogin"));
   return id;
 }
 
@@ -66,15 +67,15 @@ export const statusController = asyncHandler(async (req, res) => {
 export const uploadController = asyncHandler(async (req, res) => {
   const doctorId = doctorIdOf(req);
 
-  if (!req.file) throw new ValidationError("Аудиофайл не передан (поле audio)");
+  if (!req.file) throw new ValidationError(tReq(req, "app.audio.fileNotProvided"));
   if (!/^audio\//.test(req.file.mimetype || "")) {
-    throw new ValidationError("Ожидается аудиофайл (webm, ogg, mp4, wav)");
+    throw new ValidationError(tReq(req, "app.audio.invalidFormat"));
   }
 
   const { patient, patientType } = req;
-  if (!patient || !patientType) throw new NotFoundError("Пациент");
+  if (!patient || !patientType) throw new NotFoundError(tReq(req, "app.patient.label"));
   if (!mongoose.Types.ObjectId.isValid(patient._id)) {
-    throw new ValidationError("Некорректный ID пациента");
+    throw new ValidationError(tReq(req, "app.patient.invalidId"));
   }
 
   const patientTypeModel = await assertOwnsPatient(
@@ -111,7 +112,7 @@ export const updateDraftController = asyncHandler(async (req, res) => {
   const doctorId = doctorIdOf(req);
   const patch = req.body?.draft;
   if (!patch || typeof patch !== "object") {
-    throw new ValidationError("Ожидается объект draft с полями черновика");
+    throw new ValidationError(tReq(req, "app.draft.objectExpected"));
   }
   res.json({ job: await service.updateDraft(req.params.id, doctorId, patch) });
 });

@@ -11,6 +11,7 @@ import {
 } from "@aws-sdk/client-s3";
 import r2 from "../services/r2Client.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { tReq } from "../i18n/index.js";
 import {
   assertStorageAllowed,
   recordStoredFiles,
@@ -125,11 +126,11 @@ const resolvePublicURL = () => {
 
 export const uploadFile = async (file) => {
   if (!file || !file.buffer) {
-    throw new Error(req.t("app.file.corruptedOrEmpty"));
+    throw Object.assign(new Error("Файл повреждён или пустой"), { i18n: "app.file.corruptedOrEmpty" });
   }
 
   if (!file.mimetype) {
-    throw new Error(req.t("app.file.contentTypeMissing"));
+    throw Object.assign(new Error("Не указан ContentType"), { i18n: "app.file.contentTypeMissing" });
   }
 
   const PUBLIC_URL = resolvePublicURL();
@@ -268,7 +269,7 @@ export const getPDF = async (req, res) => {
   const fileName = req.params.fileName;
 
   if (!SAFE_FILE_NAME.test(fileName) || fileName.includes("..")) {
-    return res.status(400).json({ message: req.t("app.file.invalidName") });
+    return res.status(400).json({ message: tReq(req, "app.file.invalidName") });
   }
 
   if (IS_R2) {
@@ -288,7 +289,7 @@ export const getPDF = async (req, res) => {
   const filePath = path.join(LOCAL_DIR, fileName);
   if (fs.existsSync(filePath)) return res.sendFile(path.resolve(filePath));
 
-  res.status(404).json({ message: req.t("app.file.notFound") });
+  res.status(404).json({ message: tReq(req, "app.file.notFound") });
 };
 
 //                Image Resize (unused but kept)
@@ -322,7 +323,7 @@ export const resizeImage = async (req, res, next) => {
     return next();
   } catch (error) {
     console.error("Ошибка при обработке изображения:", error);
-    return res.status(500).json({ message: req.t("app.image.processingError") });
+    return res.status(500).json({ message: tReq(req, "app.image.processingError") });
   }
 };
 

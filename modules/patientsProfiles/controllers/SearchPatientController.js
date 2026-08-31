@@ -3,12 +3,13 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import User from "../../../common/models/Auth/users.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 dotenv.config();
 
 const SECRET_KEY = process.env.ENCRYPTION_KEY?.padEnd(32, "0");
 if (!SECRET_KEY || SECRET_KEY.length !== 32) {
-  throw new Error(req.t("app.config.encryptionKeyInvalid"));
+  throw new Error("❌ Ошибка: ENCRYPTION_KEY не найден или некорректен!");
 }
 
 // 🔐 Функции шифрования и дешифрования
@@ -49,14 +50,14 @@ const patientSearchPolyclinicController = async (req, res) => {
     if (!req.session.userId) {
       return res
         .status(403)
-        .json({ message: req.t("app.auth.pleaseLogin") });
+        .json({ message: tReq(req, "app.auth.pleaseLogin") });
     }
 
     const { query } = req.query;
     if (!query?.trim()) {
       return res
         .status(400)
-        .json({ message: req.t("app.validation.searchCriteriaMissing") });
+        .json({ message: tReq(req, "app.validation.searchCriteriaMissing") });
     }
 
     console.log(`🔍 Поиск пациента по запросу: ${query}`);
@@ -80,7 +81,7 @@ const patientSearchPolyclinicController = async (req, res) => {
 
       return res.status(200).json({
         found: true,
-        message: req.t("app.patient.foundAndLinked"),
+        message: tReq(req, "app.patient.foundAndLinked"),
         patient: {
           ...foundPatient.toObject(),
           email: decrypt(foundPatient.emailEncrypted),
@@ -129,7 +130,7 @@ const patientSearchPolyclinicController = async (req, res) => {
 
       return res.status(201).json({
         found: true,
-        message: req.t("app.patient.foundAndAddedToClinic"),
+        message: tReq(req, "app.patient.foundAndAddedToClinic"),
         patient: {
           ...newPatient.toObject(),
           email: decrypt(newPatient.emailEncrypted),
@@ -142,10 +143,10 @@ const patientSearchPolyclinicController = async (req, res) => {
     console.log("❌ Пациент не найден.");
     return res
       .status(404)
-      .json({ found: false, message: req.t("app.patient.notFound2") });
+      .json({ found: false, message: tReq(req, "app.patient.notFound2") });
   } catch (error) {
     console.error("❌ Ошибка при поиске пациента:", error);
-    res.status(500).json({ message: req.t("app.patient.searchError") });
+    res.status(500).json({ message: tReq(req, "app.patient.searchError") });
   }
 };
 

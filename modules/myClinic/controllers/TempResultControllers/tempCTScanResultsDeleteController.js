@@ -1,4 +1,5 @@
 import TempCTScanResults from "../../../../common/models/Polyclinic/TempResults/tempCTScanResults.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const tempCTScanResultsDeleteController = async (req, res) => {
   try {
@@ -7,16 +8,16 @@ const tempCTScanResultsDeleteController = async (req, res) => {
     // Проверяем, существует ли шаблон жалобы
     const template = await TempCTScanResults.findById(id);
     if (!template) {
-      return res.status(404).json({ message: req.t("myClinic.template.notFound") });
+      return res.status(404).json({ message: tReq(req, "myClinic.template.notFound") });
     }
 
     // Удаляем шаблон
     await TempCTScanResults.findByIdAndDelete(id); // исправленный вызов
 
-    return res.status(200).json({ message: req.t("myClinic.template.deletedSuccessfully") });
+    return res.status(200).json({ message: tReq(req, "myClinic.template.deletedSuccessfully") });
   } catch (error) {
     console.error("Ошибка при удалении шаблона :", error);
-    return res.status(500).json({ message: req.t("myClinic.server.internalError") });
+    return res.status(500).json({ message: tReq(req, "myClinic.server.internalError") });
   }
 };
 

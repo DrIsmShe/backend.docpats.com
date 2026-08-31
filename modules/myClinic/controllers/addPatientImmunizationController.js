@@ -1,5 +1,6 @@
 import ImmunizationPatient from "../../../common/models/Polyclinic/MedicalHistory/immunizationPatient.js";
 import path from "path";
+import { tReq } from "../../../common/i18n/index.js";
 
 // Контроллер для создания нового пациента
 const addImmunizationPatientController = async (req, res) => {
@@ -9,7 +10,7 @@ const addImmunizationPatientController = async (req, res) => {
       console.log("Ошибка: пользователь не аутентифицирован.");
       return res
         .status(403)
-        .json({ message: req.t("myClinic.auth.pleaseLogin") });
+        .json({ message: tReq(req, "myClinic.auth.pleaseLogin") });
     }
 
     const patientId = req.params.id;
@@ -21,7 +22,7 @@ const addImmunizationPatientController = async (req, res) => {
     // Проверка на наличие данных
     if (!immunization || immunization.trim() === "") {
       return res.status(400).json({
-        message: req.t("myClinic.field.immunization.required"),
+        message: tReq(req, "myClinic.field.immunization.required"),
       });
     }
 
@@ -38,13 +39,13 @@ const addImmunizationPatientController = async (req, res) => {
     console.log("Пациент успешно добавлен:", newImmunizationPatient);
 
     return res.status(201).json({
-      message: req.t("myClinic.patient.addSuccess"),
+      message: tReq(req, "myClinic.patient.addSuccess"),
       patient: newImmunizationPatient,
     });
   } catch (error) {
     console.error("Ошибка при добавлении пациента:", error);
     return res.status(500).json({
-      message: req.t("myClinic.patient.addError"),
+      message: tReq(req, "myClinic.patient.addError"),
       error: error.message,
     });
   }

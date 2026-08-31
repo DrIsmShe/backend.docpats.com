@@ -19,6 +19,7 @@ import { behaviorQueries } from "../queries/behavior.js";
 import { performanceQueries } from "../queries/performance.js";
 import { liveQueries, eventLogQuery } from "../queries/live.js";
 import { eventDetailQueries, allCustomEventPropsQuery } from "../queries/eventDetail.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * Выполнить набор блоков и вернуть { имя: [{колонка: значение}, …] }.
@@ -44,7 +45,7 @@ function handler(fn) {
       return res.status(503).json({
         configured: false,
         message:
-          "Аналитика не настроена: задайте POSTHOG_API_KEY и POSTHOG_PROJECT_ID в .env сервера " +
+          tReq(req, "app.analytics.notConfigured") +
           "и перезапустите процесс через pm2 restart all --update-env",
       });
     }

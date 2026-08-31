@@ -9,6 +9,7 @@ import ChronicDiseasesPatient from "../../../common/models/Polyclinic/MedicalHis
 import AllergiesPatient from "../../../common/models/Polyclinic/MedicalHistory/allergiesPatient.js";
 import FamilyHistoryOfDiseasePatient from "../../../common/models/Polyclinic/MedicalHistory/familyHistoryOfDiseasePatient.js";
 import ImmunizationPatient from "../../../common/models/Polyclinic/MedicalHistory/immunizationPatient.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /* ========== подстрахуемся пустыми схемами (чтобы populate не падал) ========== */
 const safeModel = (name) => {
@@ -204,7 +205,7 @@ const getMyMedicalHistoryDetailsController = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: req.t("app.validation.invalidMedicalHistoryIdFormat"),
+        message: tReq(req, "app.validation.invalidMedicalHistoryIdFormat"),
       });
     }
 
@@ -249,14 +250,14 @@ const getMyMedicalHistoryDetailsController = async (req, res) => {
     if (!history) {
       return res
         .status(404)
-        .json({ success: false, message: req.t("app.medicalHistory.notFound") });
+        .json({ success: false, message: tReq(req, "app.medicalHistory.notFound") });
     }
 
     // 🔒 PHI-доступ: только владелец-пациент, врач-создатель или админ.
     if (!canAccessPatientRecord(req, history)) {
       return res
         .status(403)
-        .json({ success: false, message: req.t("app.access.forbidden2") });
+        .json({ success: false, message: tReq(req, "app.access.forbidden2") });
     }
 
     /* ───── врач ───── */
@@ -378,7 +379,7 @@ const getMyMedicalHistoryDetailsController = async (req, res) => {
     console.error("❌ Ошибка при получении детальной истории болезни:", error);
     return res.status(500).json({
       success: false,
-      message: req.t("app.medicalHistory.fetchError"),
+      message: tReq(req, "app.medicalHistory.fetchError"),
     });
   }
 };

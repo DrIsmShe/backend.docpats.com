@@ -26,6 +26,7 @@
 
 import { getCurrentClinicId } from "../../../../common/context/tenantContext.js";
 import { resolveClinicAccess } from "../services/clinicPlan.service.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -51,7 +52,7 @@ export default async function clinicWriteGate(req, res, next) {
       success: false,
       error: "CLINIC_SUBSCRIPTION_REQUIRED",
       message:
-        "Пробный период клиники закончился. Данные и выгрузка доступны, " +
+        tReq(req, "app.clinic.trialExpired") +
         "добавление новых записей — после оплаты тарифа.",
       trialEndedAt: access.until,
     });

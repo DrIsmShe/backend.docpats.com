@@ -4,6 +4,7 @@
 // Session-authenticated (authMiddleware sets req.userId). No tenant context.
 
 import { getMyJoinableConsilia } from "../services/patientConsiliumList.service.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const getMyConsiliaController = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ export const getMyConsiliaController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Неавторизованный доступ" });
+        .json({ success: false, message: tReq(req, "app.access.unauthorized") });
     }
 
     const items = await getMyJoinableConsilia(userId);

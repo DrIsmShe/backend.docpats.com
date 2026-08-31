@@ -1,6 +1,7 @@
 // server/modules/patientProfile/controllers/checkMyDoctorController.js
 import mongoose from "mongoose";
 import User from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 const toOID = (v) =>
   mongoose.isValidObjectId(v) ? new mongoose.Types.ObjectId(v) : null;
@@ -20,7 +21,7 @@ export async function checkMyDoctor(req, res) {
     if (!patientId) {
       return res
         .status(401)
-        .json({ isAdded: false, message: req.t("app.patient.notAuthorized") });
+        .json({ isAdded: false, message: tReq(req, "app.patient.notAuthorized") });
     }
     if (!doctorId && !alt) {
       return res.status(200).json({ isAdded: false });

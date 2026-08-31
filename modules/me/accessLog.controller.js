@@ -7,6 +7,7 @@
 // вовсе — там, где нет параметра, нечего подделывать.
 
 import { getPatientAccessLog } from "../audit/services/patientAccessLog.service.js";
+import { tReq } from "../../common/i18n/index.js";
 
 export async function getMyAccessLog(req, res) {
   try {
@@ -21,7 +22,7 @@ export async function getMyAccessLog(req, res) {
     console.error("accessLog:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Не удалось загрузить журнал доступа" });
+      .json({ success: false, message: tReq(req, "app.accessLog.loadFailed") });
   }
 }
 

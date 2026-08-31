@@ -18,6 +18,7 @@ import { langOf } from "../../common/utils/requestLang.js";
 import { askGuide } from "./guide.service.js";
 import User from "../../common/models/Auth/users.js";
 import logger from "../../common/logger.js";
+import { tReq } from "../../common/i18n/index.js";
 
 const KNOWN_ROLES = ["doctor", "patient", "admin", "clinic_admin", "clinic_staff"];
 
@@ -57,7 +58,18 @@ const guestLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipInTests,
-  message: { error: "Слишком много вопросов подряд. Попробуйте через минуту." },
+  // Сообщение ограничителя — ФУНКЦИЕЙ, а не готовым объектом.
+  //
+  // Настройка вычисляется при загрузке модуля, где запроса ещё нет: любое
+  // обращение к req там роняет весь файл маршрутов. Функция вызывается на
+  // каждый отказ — вот там запрос и появляется, а с ним язык того, кого
+  // ограничили.
+  message: (req) => ({
+    error:
+      typeof req.t === "function"
+        ? tReq(req, "app.rateLimit.tooManyQuestions")
+        : "Слишком много вопросов подряд. Попробуйте через минуту.",
+  }),
 });
 
 const authedLimiter = rateLimit({
@@ -66,7 +78,12 @@ const authedLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipInTests,
-  message: { error: "Слишком много вопросов подряд. Попробуйте через минуту." },
+  message: (req) => ({
+    error:
+      typeof req.t === "function"
+        ? tReq(req, "app.rateLimit.tooManyQuestions")
+        : "Слишком много вопросов подряд. Попробуйте через минуту.",
+  }),
 });
 
 function sectionOf(req) {

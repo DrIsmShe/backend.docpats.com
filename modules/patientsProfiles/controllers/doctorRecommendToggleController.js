@@ -1,5 +1,6 @@
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import User from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * POST /patient-profile/doctor/:id/recommend
@@ -12,27 +13,27 @@ const doctorRecommendToggleController = async (req, res) => {
     const sessionUserId = req.session.userId;
 
     if (!id)
-      return res.status(400).json({ ok: false, message: req.t("app.profile.idMissing") });
+      return res.status(400).json({ ok: false, message: tReq(req, "app.profile.idMissing") });
     if (!sessionUserId)
-      return res.status(403).json({ ok: false, message: req.t("app.auth.notAuthenticated") });
+      return res.status(403).json({ ok: false, message: tReq(req, "app.auth.notAuthenticated") });
 
     const me = await User.findById(sessionUserId).lean();
     if (!me || me.role !== "patient")
       return res
         .status(403)
-        .json({ ok: false, message: req.t("app.recommendation.patientsOnly") });
+        .json({ ok: false, message: tReq(req, "app.recommendation.patientsOnly") });
 
     const profile = await DoctorProfile.findById(id)
       .select("recommendations userId")
       .lean();
     if (!profile)
-      return res.status(404).json({ ok: false, message: req.t("app.profile.notFound") });
+      return res.status(404).json({ ok: false, message: tReq(req, "app.profile.notFound") });
 
     // Не даем рекомендовать самого себя, если пациент = врач (на всякий случай)
     if (String(profile.userId) === String(sessionUserId)) {
       return res
         .status(400)
-        .json({ ok: false, message: req.t("app.recommendation.cannotRecommendSelf") });
+        .json({ ok: false, message: tReq(req, "app.recommendation.cannotRecommendSelf") });
     }
 
     const already = await DoctorProfile.exists({

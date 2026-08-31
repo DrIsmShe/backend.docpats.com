@@ -11,6 +11,7 @@
 // клиенту нужно различать «предложи войти» и «этот раздел не для тебя».
 
 import User from "../models/Auth/users.js";
+import { tReq } from "../i18n/index.js";
 
 const DOCTOR_ROLES = new Set(["doctor", "admin", "superadmin"]);
 
@@ -21,7 +22,7 @@ export default async function requireDoctorRole(req, res, next) {
       return res.status(401).json({
         success: false,
         code: "AUTH_REQUIRED",
-        message: req.t("app.access.doctorsOnlyPleaseLogin"),
+        message: tReq(req, "app.access.doctorsOnlyPleaseLogin"),
       });
     }
 
@@ -33,7 +34,7 @@ export default async function requireDoctorRole(req, res, next) {
       return res.status(403).json({
         success: false,
         code: "DOCTORS_ONLY",
-        message: req.t("app.access.doctorsOnly"),
+        message: tReq(req, "app.access.doctorsOnly"),
       });
     }
 

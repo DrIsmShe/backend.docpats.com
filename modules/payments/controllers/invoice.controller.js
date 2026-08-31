@@ -25,6 +25,7 @@ import {
 // доходят. Здесь from резолвится в проверенный отправитель.
 import { sendEmail } from "../../auth/services/emailService.js";
 import { requisitesAsText } from "./requisites.controller.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   createSignedToken,
   verifySignedToken,
@@ -131,14 +132,14 @@ export async function createInvoiceRequest(req, res) {
     if (!EMAIL_RE.test(cleanEmail)) {
       return res
         .status(400)
-        .json({ success: false, message: "Укажите корректный email" });
+        .json({ success: false, message: tReq(req, "app.validation.validEmailRequired") });
     }
 
     const cleanCompany = String(companyName ?? "").trim();
     if (cleanCompany.length < 2) {
       return res.status(400).json({
         success: false,
-        message: "Укажите название организации или своё имя",
+        message: tReq(req, "app.validation.organizationOrNameRequired"),
       });
     }
 
@@ -148,7 +149,7 @@ export async function createInvoiceRequest(req, res) {
     if (!PLAN_PRICES[planKey]) {
       return res
         .status(400)
-        .json({ success: false, message: "Неизвестный тариф" });
+        .json({ success: false, message: tReq(req, "app.subscription.unknownPlan") });
     }
 
     const cleanPeriod = period === "monthly" ? "monthly" : "yearly";
@@ -431,7 +432,7 @@ export async function claimInvoicePayment(req, res) {
     } catch {
       return res.status(400).json({
         success: false,
-        message: "Ссылка недействительна или устарела. Напишите нам в ответ на письмо.",
+        message: tReq(req, "app.link.invalidOrExpired"),
       });
     }
 
@@ -439,14 +440,14 @@ export async function claimInvoicePayment(req, res) {
     if (!request) {
       return res
         .status(404)
-        .json({ success: false, message: "Заявка не найдена" });
+        .json({ success: false, message: tReq(req, "app.request.notFound") });
     }
 
     if (request.status === "paid") {
       return res.status(200).json({
         success: true,
         alreadyPaid: true,
-        message: "Оплата уже подтверждена, тариф подключён.",
+        message: tReq(req, "app.payment.alreadyConfirmedAndActivated"),
       });
     }
 
@@ -487,7 +488,7 @@ export async function claimInvoicePayment(req, res) {
     return res.status(200).json({
       success: true,
       message:
-        "Спасибо, мы проверим поступление и подключим тариф в течение рабочего дня.",
+        tReq(req, "app.payment.willVerifyAndActivate"),
     });
   } catch (err) {
     console.error("claimInvoicePayment error:", err.message);
@@ -522,7 +523,7 @@ export async function archiveInvoiceRequest(req, res) {
     if (!request) {
       return res
         .status(404)
-        .json({ success: false, message: "Заявка не найдена" });
+        .json({ success: false, message: tReq(req, "app.request.notFound") });
     }
 
     if (request.archivedAt) {
@@ -561,7 +562,7 @@ export async function restoreInvoiceRequest(req, res) {
     if (!request) {
       return res
         .status(404)
-        .json({ success: false, message: "Заявка не найдена" });
+        .json({ success: false, message: tReq(req, "app.request.notFound") });
     }
 
     request.archivedAt = null;
@@ -597,14 +598,14 @@ export async function deleteInvoiceRequest(req, res) {
     if (!request) {
       return res
         .status(404)
-        .json({ success: false, message: "Заявка не найдена" });
+        .json({ success: false, message: tReq(req, "app.request.notFound") });
     }
 
     if (request.status === "paid") {
       return res.status(409).json({
         success: false,
         message:
-          "Заявка оплачена: на ней транзакция, удаление разорвало бы связь с деньгами",
+          tReq(req, "app.request.cannotDeleteHasTransaction"),
         transactionId: request.transactionId,
       });
     }
@@ -613,7 +614,7 @@ export async function deleteInvoiceRequest(req, res) {
       return res.status(409).json({
         success: false,
         message:
-          "Сначала отправьте заявку в архив — оттуда её можно вернуть, а удаление необратимо",
+          tReq(req, "app.request.archiveBeforeDelete"),
       });
     }
 
@@ -643,12 +644,12 @@ export async function markInvoicePaid(req, res) {
     if (!request) {
       return res
         .status(404)
-        .json({ success: false, message: "Заявка не найдена" });
+        .json({ success: false, message: tReq(req, "app.request.notFound") });
     }
     if (request.status === "paid") {
       return res
         .status(409)
-        .json({ success: false, message: "Заявка уже оплачена" });
+        .json({ success: false, message: tReq(req, "app.request.alreadyPaid") });
     }
 
     const targetId = req.body?.userId || request.userId;
@@ -656,7 +657,7 @@ export async function markInvoicePaid(req, res) {
       return res.status(400).json({
         success: false,
         message:
-          "Укажите userId, кому выдать тариф: в заявке аккаунт не привязан",
+          tReq(req, "app.request.userIdRequiredNoAccount"),
       });
     }
 
@@ -664,7 +665,7 @@ export async function markInvoicePaid(req, res) {
     if (!user) {
       return res
         .status(404)
-        .json({ success: false, message: "Пользователь не найден" });
+        .json({ success: false, message: tReq(req, "app.user.notFound") });
     }
 
     let result;

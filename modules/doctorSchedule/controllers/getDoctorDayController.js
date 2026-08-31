@@ -17,6 +17,7 @@ import Appointment from "../../../common/models/Appointment/appointment.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   buildDaySlots,
   dayBoundsUtc,
@@ -94,7 +95,7 @@ export const getDoctorDayController = async (req, res) => {
     if (!userId) {
       return res
         .status(401)
-        .json({ success: false, message: "Требуется авторизация" });
+        .json({ success: false, message: tReq(req, "app.auth.required") });
     }
 
     const { date } = req.params;
@@ -104,7 +105,7 @@ export const getDoctorDayController = async (req, res) => {
     if (!profile) {
       return res
         .status(404)
-        .json({ success: false, message: "Профиль врача не найден" });
+        .json({ success: false, message: tReq(req, "app.doctor.profileNotFound") });
     }
 
     const schedule = await DoctorSchedule.findOne({ doctorId: profile._id });
@@ -149,7 +150,7 @@ export const getDoctorDayController = async (req, res) => {
     if (!built.ok && built.reason === "invalid_date") {
       return res
         .status(400)
-        .json({ success: false, message: "Некорректная дата" });
+        .json({ success: false, message: tReq(req, "app.date.invalid") });
     }
 
     const slots = built.slots.map((s) => {
@@ -192,7 +193,7 @@ export const getDoctorDayController = async (req, res) => {
     console.error("❌ Ошибка getDoctorDay:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Ошибка сервера", error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
   }
 };
 

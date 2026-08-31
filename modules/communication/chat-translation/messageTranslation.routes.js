@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import authMiddleware from "../../../common/middlewares/authvalidateMiddleware/authMiddleware.js";
 import DialogParticipant from "../dialogs/dialogParticipant.model.js";
 import ChatMessageModel from "../messages/message.model.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   translateMessage,
   getMessageTranslations,
@@ -42,7 +43,7 @@ router.post("/:messageId", authMiddleware, async (req, res, next) => {
     const userId = req.user._id;
 
     if (!targetLang) {
-      return res.status(400).json({ error: "targetLang обязателен" });
+      return res.status(400).json({ error: tReq(req, "app.validation.targetLangRequired") });
     }
     // Принимаем любой ISO-код, не только из списка
     if (!isValidLangCode(targetLang)) {
@@ -51,7 +52,7 @@ router.post("/:messageId", authMiddleware, async (req, res, next) => {
       });
     }
     if (!mongoose.Types.ObjectId.isValid(messageId)) {
-      return res.status(400).json({ error: "Неверный messageId" });
+      return res.status(400).json({ error: tReq(req, "app.validation.invalidMessageId") });
     }
 
     const message = await ChatMessageModel.findById(messageId).select(
@@ -59,13 +60,13 @@ router.post("/:messageId", authMiddleware, async (req, res, next) => {
     );
 
     if (!message)
-      return res.status(404).json({ error: "Сообщение не найдено" });
+      return res.status(404).json({ error: tReq(req, "app.message.notFound") });
     if (message.isDeleted)
-      return res.status(410).json({ error: "Сообщение удалено" });
+      return res.status(410).json({ error: tReq(req, "app.message.deleted") });
     if (message.type !== "text" || !message.text) {
       return res
         .status(400)
-        .json({ error: "Перевод доступен только для текстовых сообщений" });
+        .json({ error: tReq(req, "app.translation.textMessagesOnly") });
     }
 
     const isParticipant = await DialogParticipant.exists({
@@ -97,7 +98,7 @@ router.post("/:messageId", authMiddleware, async (req, res, next) => {
     if (err.message === "RATE_LIMIT") {
       return res
         .status(429)
-        .json({ error: "Слишком много запросов. Подождите минуту." });
+        .json({ error: tReq(req, "app.rateLimit.tooManyRequests") });
     }
     next(err);
   }
@@ -111,13 +112,13 @@ router.get("/:messageId/all", authMiddleware, async (req, res, next) => {
     const userId = req.user._id;
 
     if (!mongoose.Types.ObjectId.isValid(messageId)) {
-      return res.status(400).json({ error: "Неверный messageId" });
+      return res.status(400).json({ error: tReq(req, "app.validation.invalidMessageId") });
     }
 
     const message =
       await ChatMessageModel.findById(messageId).select("dialogId isDeleted");
     if (!message || message.isDeleted)
-      return res.status(404).json({ error: "Не найдено" });
+      return res.status(404).json({ error: tReq(req, "app.general.notFound") });
 
     const isParticipant = await DialogParticipant.exists({
       dialogId: message.dialogId,
@@ -151,7 +152,7 @@ router.put("/preferences", authMiddleware, async (req, res, next) => {
     if (!isValidLangCode(lang)) {
       return res.status(400).json({
         error:
-          "Неверный код языка. Используй формат ISO 639-1 (en, ru, ja, zh-TW, ...)",
+          tReq(req, "app.language.invalidCode"),
       });
     }
 

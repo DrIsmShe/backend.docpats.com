@@ -1,4 +1,5 @@
 import Notification from "../../../common/models/Notification/notification.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 export const markSinglePatientNotificationAsReadController = async (
   req,
@@ -21,12 +22,12 @@ export const markSinglePatientNotificationAsReadController = async (
     if (!notif) {
       return res
         .status(404)
-        .json({ success: false, message: "Уведомление не найдено" });
+        .json({ success: false, message: tReq(req, "app.notification.notFound") });
     }
 
     res.json({ success: true, notification: notif });
   } catch (err) {
     console.error("Ошибка при отметке прочитанного:", err);
-    res.status(500).json({ success: false, message: "Ошибка сервера" });
+    res.status(500).json({ success: false, message: tReq(req, "app.server.error") });
   }
 };

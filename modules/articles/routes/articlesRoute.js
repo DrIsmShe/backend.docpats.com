@@ -7,6 +7,7 @@ import path from "path";
 import articlesAllController from "../controllers/articlesAllController.js";
 import createArticleController from "../controllers/createArticleController.js";
 import authMiddleware from "../../../common/middlewares/authMiddleware.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 import {
   upload,
@@ -63,7 +64,7 @@ const imageUpload = multer({
 
 router.post("/uploads", imageUpload.single("upload"), async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ message: "Файл не найден" });
+    return res.status(400).json({ message: tReq(req, "app.file.notFound") });
   }
 
   try {
@@ -86,7 +87,7 @@ router.post("/uploads", imageUpload.single("upload"), async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Ошибка загрузки изображения:", error);
-    res.status(500).json({ message: "Ошибка загрузки файла" });
+    res.status(500).json({ message: tReq(req, "app.file.uploadError") });
   }
 });
 

@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import Notification from "../../../common/models/Notification/notification.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /**
  * Универсальный контроллер уведомлений
@@ -14,7 +15,7 @@ export const getNotificationsController = async (req, res) => {
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: "Неавторизованный доступ.",
+        message: tReq(req, "app.auth.unauthorized2"),
       });
     }
 
@@ -125,7 +126,7 @@ export const getNotificationsController = async (req, res) => {
     // 7️⃣ Ответ
     return res.status(200).json({
       success: true,
-      message: "✅ Уведомления успешно получены",
+      message: tReq(req, "app.notification.fetchSuccess"),
       type,
       total: notifications.length,
       unreadCount,
@@ -135,7 +136,7 @@ export const getNotificationsController = async (req, res) => {
     console.error("❌ Ошибка при получении уведомлений:", err);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера при загрузке уведомлений",
+      message: tReq(req, "app.notification.fetchServerError"),
       error: err.message,
     });
   }

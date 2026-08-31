@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import User from "../../../common/models/Auth/users.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { tReq } from "../../../common/i18n/index.js";
 import Specialization from "../../../common/models/Articles/articlesCategories.js"; // модель из твоего файла
 
 /** ===== helpers ===== */
@@ -165,7 +166,7 @@ export const getDoctorsList = async (req, res) => {
     return res.status(200).json({ doctors: result });
   } catch (error) {
     console.error("❌ getDoctorsList:", error);
-    return res.status(500).json({ message: "Ошибка сервера" });
+    return res.status(500).json({ message: tReq(req, "app.server.error") });
   }
 };
 
@@ -177,13 +178,13 @@ export const addFriend = async (req, res) => {
   const currentUserId = req.userId;
 
   if (!friendId || !isObjectId(friendId)) {
-    return res.status(400).json({ message: "Некорректный ID коллеги" });
+    return res.status(400).json({ message: tReq(req, "app.colleague.invalidId") });
   }
   if (!currentUserId || !isObjectId(currentUserId)) {
-    return res.status(401).json({ message: "Требуется авторизация" });
+    return res.status(401).json({ message: tReq(req, "app.auth.required") });
   }
   if (String(currentUserId) === String(friendId)) {
-    return res.status(400).json({ message: "Нельзя добавить себя в друзья" });
+    return res.status(400).json({ message: tReq(req, "app.colleague.cannotAddSelf") });
   }
 
   try {
@@ -195,12 +196,12 @@ export const addFriend = async (req, res) => {
     if (!currentUser) {
       return res
         .status(404)
-        .json({ message: "Текущий пользователь не найден" });
+        .json({ message: tReq(req, "app.user.currentNotFound") });
     }
     if (!friendUser || friendUser.role !== "doctor" || !friendUser.isDoctor) {
       return res
         .status(404)
-        .json({ message: "Пользователь для добавления не является доктором" });
+        .json({ message: tReq(req, "app.colleague.notDoctor") });
     }
 
     const already = (currentUser.friends || []).some(
@@ -209,7 +210,7 @@ export const addFriend = async (req, res) => {
     if (already) {
       return res
         .status(400)
-        .json({ message: "Этот пользователь уже у вас в друзьях" });
+        .json({ message: tReq(req, "app.colleague.alreadyAdded") });
     }
 
     const pushRes = await User.updateOne(
@@ -218,13 +219,13 @@ export const addFriend = async (req, res) => {
     );
 
     if (pushRes.modifiedCount !== 1) {
-      return res.status(500).json({ message: "Не удалось добавить в друзья" });
+      return res.status(500).json({ message: tReq(req, "app.colleague.addFailed") });
     }
 
-    return res.status(200).json({ message: "Друг успешно добавлен" });
+    return res.status(200).json({ message: tReq(req, "app.colleague.addSuccess") });
   } catch (error) {
     console.error("❌ addFriend:", error);
-    return res.status(500).json({ message: "Ошибка сервера" });
+    return res.status(500).json({ message: tReq(req, "app.server.error") });
   }
 };
 
@@ -236,10 +237,10 @@ export const removeFriend = async (req, res) => {
   const currentUserId = req.userId;
 
   if (!isObjectId(currentUserId)) {
-    return res.status(401).json({ message: "Требуется авторизация" });
+    return res.status(401).json({ message: tReq(req, "app.auth.required") });
   }
   if (!isObjectId(friendId)) {
-    return res.status(400).json({ message: "Некорректный ID друга" });
+    return res.status(400).json({ message: tReq(req, "app.colleague.invalidFriendId") });
   }
 
   try {
@@ -263,7 +264,7 @@ export const removeFriend = async (req, res) => {
       if (!prof?.userId) {
         return res
           .status(404)
-          .json({ message: "Друг не найден (не удалось сопоставить ID)" });
+          .json({ message: tReq(req, "app.friend.idNotMatched") });
       }
       targetUserId = new mongoose.Types.ObjectId(prof.userId);
       matchedBy = "profileId";
@@ -275,7 +276,7 @@ export const removeFriend = async (req, res) => {
     );
 
     if (pullRes.modifiedCount === 0) {
-      return res.status(404).json({ message: "Друг не найден в вашем списке" });
+      return res.status(404).json({ message: tReq(req, "app.friend.notInList") });
     }
 
     return res
@@ -283,7 +284,7 @@ export const removeFriend = async (req, res) => {
       .json({ message: `Друг успешно удалён (${matchedBy})` });
   } catch (error) {
     console.error("❌ removeFriend:", error);
-    return res.status(500).json({ message: "Ошибка сервера" });
+    return res.status(500).json({ message: tReq(req, "app.server.error") });
   }
 };
 
@@ -295,7 +296,7 @@ export const getMyFriends = async (req, res) => {
   const currentUserId = req.userId;
 
   if (!currentUserId || !isObjectId(currentUserId)) {
-    return res.status(401).json({ message: "Требуется авторизация" });
+    return res.status(401).json({ message: tReq(req, "app.auth.required") });
   }
 
   try {
@@ -309,7 +310,7 @@ export const getMyFriends = async (req, res) => {
       });
 
     if (!currentUser) {
-      return res.status(404).json({ message: "Пользователь не найден" });
+      return res.status(404).json({ message: tReq(req, "app.user.notFound") });
     }
 
     const userIds = (currentUser.friends || [])
@@ -377,6 +378,6 @@ export const getMyFriends = async (req, res) => {
     return res.status(200).json({ friends });
   } catch (error) {
     console.error("❌ getMyFriends:", error);
-    return res.status(500).json({ message: "Ошибка сервера" });
+    return res.status(500).json({ message: tReq(req, "app.server.error") });
   }
 };

@@ -1,6 +1,7 @@
 import DoplerScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/DoplerScansTemplates/DoplerScan.js";
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
+import { tReq } from "../../../../common/i18n/index.js";
 
 const getListDoplerScanController = async (req, res) => {
   const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -9,7 +10,7 @@ const getListDoplerScanController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: req.t("myClinic.patient.notFound2"),
+      message: tReq(req, "myClinic.patient.notFound2"),
     });
   }
 
@@ -67,7 +68,7 @@ const getListDoplerScanController = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: req.t("myClinic.study.doppler.fetchError"),
+      message: tReq(req, "myClinic.study.doppler.fetchError"),
       error: error.message,
     });
   }

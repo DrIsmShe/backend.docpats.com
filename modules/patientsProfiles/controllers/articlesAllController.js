@@ -3,6 +3,7 @@ import sanitizeHtml from "sanitize-html";
 import mongoose from "mongoose";
 import Article from "../../../common/models/Articles/articles.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 // Если у тебя есть явные модели, можно подставить реальные имена коллекций
 // import Category from "../../../common/models/category.js";
@@ -559,7 +560,7 @@ const articlesAllController = async (req, res) => {
     console.error("❌ Ошибка при получении статей:", err);
     return res
       .status(500)
-      .json({ message: req.t("app.articles.fetchError") });
+      .json({ message: tReq(req, "app.articles.fetchError") });
   }
 };
 

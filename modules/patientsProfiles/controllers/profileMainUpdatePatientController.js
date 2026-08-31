@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import crypto from "crypto";
 import User from "../../../common/models/Auth/users.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
+import { tReq } from "../../../common/i18n/index.js";
 import {
   isValidPhoneInput,
   INVALID_PHONE_MESSAGE,
@@ -85,17 +86,17 @@ const profileMainUpdatePatientController = async (req, res) => {
     const { avatar, username, dateOfBirth, bio, phoneNumber } = req.body || {};
 
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(401).json({ message: req.t("app.auth.authorizationRequired") });
+      return res.status(401).json({ message: tReq(req, "app.auth.authorizationRequired") });
     }
 
     const user = await User.findById(userId);
     if (!user)
-      return res.status(404).json({ message: req.t("app.user.notFound2") });
+      return res.status(404).json({ message: tReq(req, "app.user.notFound2") });
 
     if (!isBlank(username) && !/^[a-zA-Z0-9_-]{3,20}$/.test(String(username))) {
       return res.status(400).json({
         message:
-          req.t("app.validation.usernameFormat"),
+          tReq(req, "app.validation.usernameFormat"),
       });
     }
 
@@ -104,7 +105,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     if (dateOfBirth != null) {
       dob = parseDate(dateOfBirth);
       if (!dob)
-        return res.status(400).json({ message: req.t("app.validation.invalidBirthDate") });
+        return res.status(400).json({ message: tReq(req, "app.validation.invalidBirthDate") });
     }
 
     // Гендер -> users.bio (читаемо) и NPC.gender/NPC.bio
@@ -112,7 +113,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     if (bioText && bioText.length > 500) {
       return res
         .status(400)
-        .json({ message: req.t("app.validation.bioTooLong") });
+        .json({ message: tReq(req, "app.validation.bioTooLong") });
     }
 
     // Телефон
@@ -134,7 +135,7 @@ const profileMainUpdatePatientController = async (req, res) => {
         if (!normalizedPhone) {
           return res
             .status(400)
-            .json({ message: req.t("app.validation.invalidPhoneNumber") });
+            .json({ message: tReq(req, "app.validation.invalidPhoneNumber") });
         }
         phoneHash = sha256Lower(normalizedPhone);
       }
@@ -166,7 +167,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     if (!card) {
       return res.status(409).json({
         message:
-          req.t("app.patient.recordNotFoundRegisterFirst"),
+          tReq(req, "app.patient.recordNotFoundRegisterFirst"),
       });
     }
 
@@ -180,7 +181,7 @@ const profileMainUpdatePatientController = async (req, res) => {
         .lean();
       if (dupe) {
         return res.status(409).json({
-          message: req.t("app.validation.phoneUsedByAnotherPatient"),
+          message: tReq(req, "app.validation.phoneUsedByAnotherPatient"),
         });
       }
     }
@@ -208,7 +209,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     ).lean({ getters: true, virtuals: true });
 
     return res.status(200).json({
-      message: req.t("app.profile.updateSuccess"),
+      message: tReq(req, "app.profile.updateSuccess"),
       user: updatedUser || null,
       patient: updatedPatient || null,
     });
@@ -230,7 +231,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     }
     return res
       .status(500)
-      .json({ message: req.t("app.error.serverError"), error: error.message });
+      .json({ message: tReq(req, "app.error.serverError"), error: error.message });
   }
 };
 

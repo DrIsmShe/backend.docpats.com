@@ -22,6 +22,7 @@ import {
 import { RESOURCES } from "../../../../common/auth/permissions.js";
 import * as analyticsService from "../services/analytics.service.js";
 import { clinicHasFeature } from "../../clinic-core/services/clinicPlan.service.js";
+import { tReq } from "../../../../common/i18n/index.js";
 
 // ── helpers ───────────────────────────────────────────────
 // clinicId is resolved from ALS tenant-context (tenantMiddleware sets it
@@ -64,7 +65,7 @@ export const getOverview = asyncHandler(async (req, res) => {
     // может показать свою формулировку, а старые версии клиента и внешние
     // потребители получат готовый перевод прямо в сообщении.
     throw new ForbiddenError(
-      req.t("clinic.analyticsNotInPlan"),
+      tReq(req, "clinic.analyticsNotInPlan"),
       { reason: "feature_not_in_plan", feature: "analytics" },
     );
   }
