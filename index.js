@@ -21,6 +21,7 @@ import helmet from "helmet";
 import compression from "compression";
 import session from "express-session";
 import cookieParser from "cookie-parser";
+import { i18nMiddleware } from "./common/i18n/index.js";
 import MongoStore from "connect-mongo";
 import mongoose from "mongoose";
 import path from "path";
@@ -151,6 +152,13 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Язык запроса — до всех маршрутов, включая публичные.
+//
+// Кладёт в req.lang и req.t, поэтому контроллеру не нужно ни импортов, ни
+// разбора заголовков: он пишет req.t("код"). Чем меньше ритуала, тем выше
+// шанс, что следующее сообщение тоже напишут кодом, а не строкой.
+app.use(i18nMiddleware);
 // Clinic-as-Brand (этап A) — публичная страница клиники.
 // Вне session/auth/tenant: гость/потенциальный пациент.
 app.use("/api/v1/public", clinicPublicRouter);
