@@ -643,4 +643,14 @@ export default {
   "app.notify.cardLinked.title": "Sağlık dosyanız bulundu",
   "app.notify.cardLinked.messageWithClinic": "“{{clinicName}}” kliniği sağlık dosyanızı tutuyor — dosya artık hesabınızda.",
   "app.notify.cardLinked.message": "Bir klinik sağlık dosyanızı tutuyor — dosya artık hesabınızda.",
+
+  // Приглашение на видеоприём.
+  "app.notify.telemedScheduled.title": "Görüntülü randevu planlandı",
+  "app.notify.telemedScheduled.messageWithClinic": "“{{clinicName}}” kliniği sizin için {{when}} tarihine görüntülü randevu planladı.",
+  "app.notify.telemedScheduled.message": "Sizin için {{when}} tarihine görüntülü randevu planlandı.",
+  "app.mail.telemedInvite.subject": "Görüntülü randevuda bekleniyorsunuz — {{when}}",
+  "app.mail.telemedInvite.greeting": "“{{clinicName}}” kliniği sizin için görüntülü randevu planladı.",
+  "app.mail.telemedInvite.howto": "Katılmak için aynı e-posta adresiyle bir DocPats hesabı oluşturun. Sağlık dosyanız kendiliğinden bağlanacak ve randevu onaydan hemen sonra açılacak.",
+  "app.mail.telemedInvite.cta": "Hesap oluştur",
+  "app.mail.telemedInvite.footer": "Bu e-posta size yanlışlıkla ulaştıysa yanıtlamayın.",
 };

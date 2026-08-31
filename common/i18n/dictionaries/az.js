@@ -643,4 +643,14 @@ export default {
   "app.notify.cardLinked.title": "Tibbi kartanız tapıldı",
   "app.notify.cardLinked.messageWithClinic": "«{{clinicName}}» klinikası tibbi kartanızı aparır — o, artıq kabinetinizdədir.",
   "app.notify.cardLinked.message": "Klinika tibbi kartanızı aparır — o, artıq kabinetinizdədir.",
+
+  // Приглашение на видеоприём.
+  "app.notify.telemedScheduled.title": "Video qəbul təyin edildi",
+  "app.notify.telemedScheduled.messageWithClinic": "«{{clinicName}}» klinikası sizin üçün {{when}} tarixinə video qəbul təyin etdi.",
+  "app.notify.telemedScheduled.message": "Sizin üçün {{when}} tarixinə video qəbul təyin edilib.",
+  "app.mail.telemedInvite.subject": "Sizi video qəbulda gözləyirlər — {{when}}",
+  "app.mail.telemedInvite.greeting": "«{{clinicName}}» klinikası sizin üçün video qəbul təyin etdi.",
+  "app.mail.telemedInvite.howto": "Qoşulmaq üçün elə bu e-poçt ünvanı ilə DocPats hesabı yaradın. Tibbi kartanız avtomatik qoşulacaq və qəbul təsdiqdən dərhal sonra açılacaq.",
+  "app.mail.telemedInvite.cta": "Hesab yarat",
+  "app.mail.telemedInvite.footer": "Əgər bu məktub sizə səhvən gəlibsə, sadəcə cavab verməyin.",
 };

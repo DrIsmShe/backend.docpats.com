@@ -643,4 +643,14 @@ export default {
   "app.notify.cardLinked.title": "تم العثور على ملفك الطبي",
   "app.notify.cardLinked.messageWithClinic": "تحتفظ عيادة «{{clinicName}}» بملفك الطبي — وهو الآن في حسابك.",
   "app.notify.cardLinked.message": "تحتفظ عيادة بملفك الطبي — وهو الآن في حسابك.",
+
+  // Приглашение на видеоприём.
+  "app.notify.telemedScheduled.title": "تم تحديد موعد مرئي",
+  "app.notify.telemedScheduled.messageWithClinic": "حددت عيادة «{{clinicName}}» لك موعدا مرئيا في {{when}}.",
+  "app.notify.telemedScheduled.message": "تم تحديد موعد مرئي لك في {{when}}.",
+  "app.mail.telemedInvite.subject": "في انتظارك في موعد مرئي — {{when}}",
+  "app.mail.telemedInvite.greeting": "حددت عيادة «{{clinicName}}» لك موعدا مرئيا.",
+  "app.mail.telemedInvite.howto": "للانضمام، أنشئ حساب DocPats بالبريد الإلكتروني نفسه. سيرتبط ملفك الطبي تلقائيا وسيفتح الموعد فور التأكيد.",
+  "app.mail.telemedInvite.cta": "إنشاء حساب",
+  "app.mail.telemedInvite.footer": "إذا وصلتك هذه الرسالة عن طريق الخطأ، فتجاهلها ببساطة.",
 };

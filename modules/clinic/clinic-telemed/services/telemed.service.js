@@ -22,6 +22,7 @@ import {
   ConflictError,
 } from "../../../../common/utils/errors.js";
 import logger from "../../../../common/logger.js";
+import { inviteToTelemedSession } from "./telemedInvite.service.js";
 import { encryptPHI, decryptFields } from "../../../../common/utils/phiCrypto.js";
 
 const TERMINAL = new Set(["completed", "cancelled", "no_show"]);
@@ -132,6 +133,15 @@ export async function createSession(clinicId, input) {
       notes: encryptPHI(input.notes ?? null),
       createdBy: input.actorId ?? null,
     });
+
+    // Позвать пациента. Раньше этого не было вовсе: клиника назначала
+    // видеоприём, а человек не узнавал о нём никак.
+    //
+    // Без await и с проглоченной ошибкой намеренно: приём уже создан, и
+    // недоставленное приглашение — не повод отменять его задним числом.
+    // Само приглашение внутри тоже не бросает.
+    inviteToTelemedSession(doc).catch(() => {});
+
     return decrypt(doc.toObject());
   } catch (err) {
     throw toConflictIfDupKey(err);

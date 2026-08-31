@@ -643,4 +643,14 @@ export default {
   "app.notify.cardLinked.title": "Your medical record was found",
   "app.notify.cardLinked.messageWithClinic": "The clinic “{{clinicName}}” keeps your medical record — it is now in your account.",
   "app.notify.cardLinked.message": "A clinic keeps your medical record — it is now in your account.",
+
+  // Приглашение на видеоприём.
+  "app.notify.telemedScheduled.title": "A video appointment has been scheduled",
+  "app.notify.telemedScheduled.messageWithClinic": "The clinic “{{clinicName}}” has scheduled a video appointment for you on {{when}}.",
+  "app.notify.telemedScheduled.message": "A video appointment has been scheduled for you on {{when}}.",
+  "app.mail.telemedInvite.subject": "You are expected at a video appointment — {{when}}",
+  "app.mail.telemedInvite.greeting": "The clinic “{{clinicName}}” has scheduled a video appointment for you.",
+  "app.mail.telemedInvite.howto": "To join, create a DocPats account using this same email address. Your medical record will be linked automatically and the appointment will open right after confirmation.",
+  "app.mail.telemedInvite.cta": "Create an account",
+  "app.mail.telemedInvite.footer": "If this email reached you by mistake, simply ignore it.",
 };

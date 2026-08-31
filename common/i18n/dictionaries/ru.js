@@ -644,4 +644,14 @@ export default {
   "app.notify.cardLinked.title": "Ваша медкарта найдена",
   "app.notify.cardLinked.messageWithClinic": "Клиника «{{clinicName}}» ведёт вашу медицинскую карту — теперь она в вашем кабинете.",
   "app.notify.cardLinked.message": "Клиника ведёт вашу медицинскую карту — теперь она в вашем кабинете.",
+
+  // Приглашение на видеоприём.
+  "app.notify.telemedScheduled.title": "Назначен видеоприём",
+  "app.notify.telemedScheduled.messageWithClinic": "Клиника «{{clinicName}}» назначила вам видеоприём на {{when}}.",
+  "app.notify.telemedScheduled.message": "Вам назначен видеоприём на {{when}}.",
+  "app.mail.telemedInvite.subject": "Вас ждут на видеоприёме — {{when}}",
+  "app.mail.telemedInvite.greeting": "Клиника «{{clinicName}}» назначила вам видеоприём.",
+  "app.mail.telemedInvite.howto": "Чтобы подключиться, заведите аккаунт DocPats на этот же адрес почты. Ваша медицинская карта подцепится сама, и приём откроется сразу после подтверждения.",
+  "app.mail.telemedInvite.cta": "Создать аккаунт",
+  "app.mail.telemedInvite.footer": "Если письмо пришло вам по ошибке — просто не отвечайте на него.",
 };
