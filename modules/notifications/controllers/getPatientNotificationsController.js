@@ -1,5 +1,6 @@
 import Notification from "../../../common/models/Notification/notification.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { localizeNotifications } from "../services/localize.service.js";
 
 export const getPatientNotificationsController = async (req, res) => {
   try {
@@ -17,8 +18,8 @@ export const getPatientNotificationsController = async (req, res) => {
       success: true,
       total: notifications.length,
       unreadCount: unreadNotifications.length,
-      unreadNotifications,
-      readNotifications,
+      unreadNotifications: localizeNotifications(unreadNotifications, req),
+      readNotifications: localizeNotifications(readNotifications, req),
     });
   } catch (err) {
     console.error("❌ Ошибка при получении уведомлений:", err);

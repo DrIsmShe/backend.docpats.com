@@ -147,6 +147,11 @@ async function createPatientNotification({
       type: "consent_request_new",
       title: "Запрос на доступ к медкарте",
       message: `Клиника "${clinicName}" запросила доступ к вашей медицинской карте.`,
+      i18n: {
+        title: "app.notify.consentRequest.title",
+        message: "app.notify.consentRequest.message",
+        params: { clinicName },
+      },
       meta: {
         clinicId: String(clinicId),
         requestId: String(requestId),

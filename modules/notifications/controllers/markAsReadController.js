@@ -3,6 +3,7 @@ import Notification from "../../../common/models/Notification/notification.js";
 import mongoose from "mongoose";
 import { tReq } from "../../../common/i18n/index.js";
 import { errorText } from "../../../common/i18n/index.js";
+import { localizeNotification } from "../services/localize.service.js";
 
 /**
  * @desc Отметить одно или все уведомления как прочитанные
@@ -40,7 +41,7 @@ export const markAsReadController = async (req, res) => {
       return res.json({
         success: true,
         message: tReq(req, "app.notification.markReadSuccess"),
-        notification: updated,
+        notification: localizeNotification(updated, req),
       });
     }
 
@@ -55,7 +56,9 @@ export const markAsReadController = async (req, res) => {
 
     return res.json({
       success: true,
-      message: `✅ Все уведомления (${result.modifiedCount}) помечены как прочитанные`,
+      message: tReq(req, "app.notification.allMarkedRead", {
+        count: result.modifiedCount,
+      }),
     });
   } catch (err) {
     console.error("❌ Ошибка при отметке уведомлений:", err);

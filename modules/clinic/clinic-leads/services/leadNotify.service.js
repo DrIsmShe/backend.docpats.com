@@ -59,6 +59,14 @@ async function sendInAppNotifications(clinicId, lead) {
     type: "clinic_lead",
     title: "Новая заявка с сайта",
     message: `${lead.name} — ${leadTypeLabel(lead.type)}`,
+    i18n: {
+      title: "app.notify.clinicLead.title",
+      message: "app.notify.clinicLead.message",
+      params: {
+        name: lead.name,
+        kind: lead.type === "callback" ? "app.lead.callback" : "app.lead.message",
+      },
+    },
     // Зона ВЛАДЕЛЬЦА, не сотрудника. Получатели этого уведомления отбираются
     // выше по actorType: "user" — это пользователи DocPats (owner/manager), у
     // них нет сессии сотрудника. Адрес /clinic/employee/* рендерится layout-ом

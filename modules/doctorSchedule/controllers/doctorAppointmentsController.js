@@ -267,6 +267,11 @@ export const updateAppointmentStatus = async (req, res) => {
         type: "appointment_cancelled",
         title: "Приём отменён врачом",
         message: `Ваш приём у доктора ${doctorName} (${formattedDate}) был отменён.`,
+        i18n: {
+          title: "app.notify.appointmentCancelledByDoctor.title",
+          message: "app.notify.appointmentCancelledByDoctor.message",
+          params: { doctorName, when: new Date(appointment.startsAt).toISOString() },
+        },
         link: "/patient/my-appointment",
         isRead: false,
       });
@@ -288,6 +293,11 @@ export const updateAppointmentStatus = async (req, res) => {
         userId: patientUserId,
         title: "Приём завершён",
         message: `Ваш приём у доктора ${doctorName} (${formattedDate}) завершён.`,
+        i18n: {
+          title: "app.notify.appointmentCompleted.title",
+          message: "app.notify.appointmentCompleted.message",
+          params: { doctorName, when: new Date(appointment.startsAt).toISOString() },
+        },
         link: `/patient/my-appointment`,
       });
 
@@ -297,6 +307,11 @@ export const updateAppointmentStatus = async (req, res) => {
         userId: patientUserId,
         title: "Оцените приём",
         message: `Поделитесь впечатлением о докторе ${doctorName} — это поможет другим пациентам выбрать врача.`,
+        i18n: {
+          title: "app.notify.rateAppointment.title",
+          message: "app.notify.rateAppointment.message",
+          params: { doctorName },
+        },
         link: `/patient/doctor-details/${doctorProfile._id}?review=1`,
       });
     }
@@ -306,7 +321,7 @@ export const updateAppointmentStatus = async (req, res) => {
     // ======================================================
     return res.json({
       success: true,
-      message: `Статус приёма обновлён: ${status}`,
+      message: tReq(req, "app.appointment.statusUpdated", { status }),
       data: appointment,
     });
   } catch (err) {

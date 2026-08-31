@@ -243,6 +243,11 @@ export const postponeProcedureController = async (req, res) => {
         type: "procedure_postponed",
         title: "Запись перенесена",
         message: `«${doc.title}» перенесена на ${when}.`,
+        i18n: {
+          title: "app.notify.procedureMoved.title",
+          message: "app.notify.procedureMoved.message",
+          params: { title: doc.title, when: starts.toISOString() },
+        },
         link: "/patient/my-procedures",
         icon: "activity",
         meta: { procedureId: String(created._id), kind: doc.kind },

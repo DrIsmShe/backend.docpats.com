@@ -4,6 +4,7 @@ import Notification from "../../../common/models/Notification/notification.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { tReq } from "../../../common/i18n/index.js";
 import { errorText } from "../../../common/i18n/index.js";
+import { localizeNotifications } from "../services/localize.service.js";
 
 /**
  * Универсальный контроллер уведомлений
@@ -131,7 +132,8 @@ export const getNotificationsController = async (req, res) => {
       type,
       total: notifications.length,
       unreadCount,
-      notifications,
+      // Текст собираем на языке запроса: в базе лежат коды.
+      notifications: localizeNotifications(notifications, req),
     });
   } catch (err) {
     console.error("❌ Ошибка при получении уведомлений:", err);

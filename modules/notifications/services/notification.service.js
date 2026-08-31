@@ -16,6 +16,8 @@ import mongoose from "mongoose";
 import Notification from "../../../common/models/Notification/notification.js";
 import { sendToUser } from "./webpush.service.js";
 import { emitNotification } from "../../../common/realtime/userChannel.js";
+import { renderNotification } from "./localize.service.js";
+import User from "../../../common/models/Auth/users.js";
 
 const VALID_PRIORITIES = new Set(["low", "normal", "high"]);
 
@@ -40,6 +42,9 @@ function toId(v) {
  * @param {"low"|"normal"|"high"} [p.priority]
  * @param {string} [p.icon]
  * @param {string|ObjectId|null} [p.senderId]
+ * @param {object} [p.i18n]  {title, message, params} — коды словаря и
+ *   значения подстановок. Текст собирается при чтении, на языке того, кто
+ *   читает; title/message остаются запасным вариантом.
  * @returns {Promise<Notification|null>}  null если задублировалось (dedup-индекс)
  */
 export async function notify({
@@ -52,6 +57,7 @@ export async function notify({
   priority = "normal",
   icon = "bell",
   senderId = null,
+  i18n = null,
 } = {}) {
   const uid = toId(userId);
   if (!uid) throw new Error("notify: valid userId is required");
@@ -70,17 +76,42 @@ export async function notify({
       meta: meta && typeof meta === "object" ? meta : {},
       priority: VALID_PRIORITIES.has(priority) ? priority : "normal",
       icon: icon || "bell",
+      // Коды словаря. Русский текст выше остаётся: он и запасной вариант,
+      // и то единственное, что уходит в браузерное уведомление — оно
+      // отправляется сейчас, а язык читателя известен только при чтении.
+      ...(i18n?.title || i18n?.message
+        ? {
+            i18n: {
+              title: i18n.title || null,
+              message: i18n.message || null,
+              params: i18n.params && typeof i18n.params === "object" ? i18n.params : {},
+            },
+          }
+        : {}),
     });
+
+    // Язык для того, что уходит ПРЯМО СЕЙЧАС: браузерного уведомления и
+    // строки в открытой вкладке. Языка запроса читателя тут нет — он
+    // появится только когда человек откроет список. Поэтому берём его
+    // собственный выбор из профиля. Без кодов запрос к базе не делаем.
+    let shown = { title: String(title), message: String(message) };
+    if (i18n?.title || i18n?.message) {
+      const user = await User.findById(uid).select("preferredLanguage").lean();
+      shown = renderNotification(
+        { i18n: doc.i18n, title: String(title), message: String(message) },
+        user?.preferredLanguage || "ru",
+      );
+    }
 
     // Колокольчик открытой вкладки — сразу, без перезагрузки страницы.
     // Раньше notify() не слал в сокет вообще: уведомление появлялось в БД, а
     // пользователь узнавал о нём только при следующей загрузке.
-    emitNotification(uid, doc);
+    emitNotification(uid, { ...doc.toObject(), ...shown });
 
     // Браузерный web-push (fire-and-forget; no-op без VAPID-ключей).
     sendToUser(uid, {
-      title: String(title),
-      body: String(message),
+      title: shown.title,
+      body: shown.message,
       url: link || "/",
     }).catch(() => {});
 

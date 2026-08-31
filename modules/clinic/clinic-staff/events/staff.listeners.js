@@ -43,6 +43,15 @@ eventBus.on(EVENTS.STAFF_JOINED, async (payload) => {
     message: clinicName
       ? `Вы добавлены в клинику «${clinicName}» как ${role || "сотрудник"}.`
       : `Вы добавлены в клинику как ${role || "сотрудник"}.`,
+    i18n: {
+      title: "app.notify.addedToClinic.title",
+      message: clinicName
+        ? "app.notify.addedToClinic.messageWithClinic"
+        : "app.notify.addedToClinic.message",
+      // Роль — кодом, а не словом: иначе в турецкой фразе стояло бы
+      // русское «врача».
+      params: { clinicName: clinicName || "", role: `app.role.${role || "staff"}` },
+    },
     link: "/doctor/my-clinics",
     meta: {
       clinicId: String(clinicId),

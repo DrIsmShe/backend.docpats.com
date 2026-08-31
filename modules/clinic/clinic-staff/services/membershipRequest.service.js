@@ -148,6 +148,13 @@ export async function createRequest({
     message: clinicName
       ? `Клиника «${clinicName}» приглашает вас присоединиться как ${asLabel}.`
       : `Вас приглашают в клинику как ${asLabel}.`,
+    i18n: {
+      title: "app.notify.clinicInvite.title",
+      message: clinicName
+        ? "app.notify.clinicInvite.messageWithClinic"
+        : "app.notify.clinicInvite.message",
+      params: { clinicName: clinicName || "", role: `app.role.${role || "staff"}` },
+    },
     link: INVITEE_LANDING,
     meta: {
       clinicId: String(clinicId),
@@ -267,6 +274,10 @@ export async function acceptRequest(userId, requestId) {
     title: "Приглашение принято",
     message:
       "Приглашённый пользователь принял приглашение и присоединился к клинике.",
+    i18n: {
+      title: "app.notify.inviteAccepted.title",
+      message: "app.notify.inviteAccepted.message",
+    },
     link: "/clinic/staff",
     meta: {
       clinicId: String(reqDoc.clinicId),
@@ -303,6 +314,11 @@ export async function rejectRequest(userId, requestId) {
     type: "system_message",
     title: "Приглашение отклонено",
     message: "Приглашённый пользователь отклонил приглашение в клинику.",
+    i18n: {
+      title: "app.notify.inviteDeclined.title",
+      // Тот же текст уже есть в словаре — второй код не нужен.
+      message: "app.clinic.inviteDeclined",
+    },
     link: "/clinic/staff",
     meta: {
       clinicId: String(reqDoc.clinicId),

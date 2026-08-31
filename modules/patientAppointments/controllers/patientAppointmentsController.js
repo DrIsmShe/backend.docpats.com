@@ -160,6 +160,11 @@ export const bookAppointment = async (req, res) => {
         type: "appointment_booked",
         title: "Новая запись на приём",
         message: `Пациент записался на ${formattedDate}`,
+        i18n: {
+          title: "app.notify.newBooking.title",
+          message: "app.notify.newBooking.message",
+          params: { when: new Date(startsAt).toISOString() },
+        },
         link: "/doctor/doctor-appointment",
         isRead: false,
       });
@@ -194,6 +199,11 @@ export const bookAppointment = async (req, res) => {
         type: "appointment_booked",
         title: "Запись успешно создана",
         message: `Вы записались к доктору ${doctorName} на ${formattedDate}`,
+        i18n: {
+          title: "app.notify.bookingCreated.title",
+          message: "app.notify.bookingCreated.message",
+          params: { doctorName, when: new Date(startsAt).toISOString() },
+        },
         link: "/patient/my-appointment",
         isRead: false,
       });

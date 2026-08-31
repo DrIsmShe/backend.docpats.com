@@ -260,6 +260,13 @@ export const bookByDoctorController = async (req, res) => {
           /\s+/g,
           " ",
         ),
+        // Русский текст выше остаётся запасным вариантом и уходит в
+        // браузерное уведомление; читателю список собирается по кодам.
+        i18n: {
+          title: "app.notify.bookedByDoctor.title",
+          message: "app.notify.bookedByDoctor.message",
+          params: { doctorName: doctorName || "", when: starts.toISOString() },
+        },
         link: "/patient/my-appointment",
         icon: "calendar",
         meta: { appointmentId: String(appt._id), type },

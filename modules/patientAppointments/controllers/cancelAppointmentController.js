@@ -103,6 +103,19 @@ export const cancelAppointmentByPatientController = async (req, res) => {
           message: `${patientName} отменил(а) приём, запланированный на ${appointmentDate}. ${
             reason ? "Причина: " + reason : ""
           }`,
+          i18n: {
+            title: "app.notify.patientCancelled.title",
+            message: reason
+              ? "app.notify.patientCancelled.messageWithReason"
+              : "app.notify.patientCancelled.message",
+            params: {
+              patientName,
+              when: appointment.startsAt
+                ? new Date(appointment.startsAt).toISOString()
+                : "",
+              reason: reason || "",
+            },
+          },
           isRead: false,
           priority: "normal",
           link: `/doctor/appointments/${appointment._id}`,

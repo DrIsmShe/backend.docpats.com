@@ -1,5 +1,6 @@
 import Notification from "../../../common/models/Notification/notification.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { localizeNotification } from "../services/localize.service.js";
 
 export const markSinglePatientNotificationAsReadController = async (
   req,
@@ -25,7 +26,7 @@ export const markSinglePatientNotificationAsReadController = async (
         .json({ success: false, message: tReq(req, "app.notification.notFound") });
     }
 
-    res.json({ success: true, notification: notif });
+    res.json({ success: true, notification: localizeNotification(notif, req) });
   } catch (err) {
     console.error("Ошибка при отметке прочитанного:", err);
     res.status(500).json({ success: false, message: tReq(req, "app.server.error") });

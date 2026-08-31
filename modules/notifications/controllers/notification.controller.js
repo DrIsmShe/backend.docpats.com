@@ -9,6 +9,7 @@
 
 import * as notificationService from "../services/notification.service.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { localizeNotifications } from "../services/localize.service.js";
 
 // GET /notifications?status=all|unread|read&limit=&before=
 export const list = async (req, res) => {
@@ -31,7 +32,7 @@ export const list = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      items,
+      items: localizeNotifications(items, req),
       unreadCount: unread,
       total: items.length,
     });

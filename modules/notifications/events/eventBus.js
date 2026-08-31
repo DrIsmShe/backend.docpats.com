@@ -26,6 +26,11 @@ class EventBus extends EventEmitter {
               startsAt,
             ).toLocaleString("ru-RU")}`,
             link: `/doctor/appointments/${appointmentId}`,
+            i18n: {
+              title: "app.notify.patientBooked.title",
+              message: "app.notify.patientBooked.message",
+              params: { when: new Date(startsAt).toISOString() },
+            },
           });
 
           emitNotification(doctorId, n);
@@ -48,6 +53,11 @@ class EventBus extends EventEmitter {
             type: "appointment_cancelled",
             title: "Приём отменён",
             message: `${patientName} отменил запись.`,
+            i18n: {
+              title: "app.notify.appointmentCancelled.title",
+              message: "app.notify.cancelledByPatient.message",
+              params: { patientName },
+            },
             link: `/doctor/doctor-appointment`,
           });
 
@@ -71,6 +81,11 @@ class EventBus extends EventEmitter {
             type: "comment",
             title: "Новый комментарий к вашей статье",
             message: `${commenterName} оставил комментарий к статье «${articleTitle}»`,
+            i18n: {
+              title: "app.notify.articleComment.title",
+              message: "app.notify.articleComment.message",
+              params: { commenterName, articleTitle },
+            },
             link: `/doctor/article-detail/${articleId}`,
           });
 
@@ -166,6 +181,11 @@ class EventBus extends EventEmitter {
             userId: patientId,
             type: "appointment_confirmed",
             title: "Приём подтверждён",
+            i18n: {
+              title: "app.notify.appointmentConfirmed.title",
+              message: "app.notify.appointmentConfirmed.message",
+              params: { doctorName, when: new Date(startsAt).toISOString() },
+            },
             message: `Доктор ${doctorName} подтвердил ваш приём на ${new Date(
               startsAt,
             ).toLocaleString("ru-RU")}`,
@@ -196,6 +216,11 @@ class EventBus extends EventEmitter {
             type: "appointment_cancelled",
             title: "Приём отменён",
             message: `Доктор ${doctorName} отменил ваш приём.`,
+            i18n: {
+              title: "app.notify.appointmentCancelled.title",
+              message: "app.notify.cancelledByDoctorShort.message",
+              params: { doctorName },
+            },
             link: `/patient/my-appointment`,
           });
 
@@ -233,12 +258,44 @@ class EventBus extends EventEmitter {
             type: "comment_reply",
             title: "Ответ на ваш комментарий",
             message: `${replierName} ответил на ваш комментарий`,
+            i18n: {
+              title: "app.notify.commentReply.title",
+              message: "app.notify.commentReply.message",
+              params: { replierName },
+            },
             link: `/article/${articleId}`,
           });
 
           emitNotification(recipientId, n);
         } catch (err) {
           console.error("❌ Ошибка создания уведомления comment.replied:", err);
+        }
+      },
+    );
+
+    /* 🔔 Системное сообщение — общий случай.
+     *
+     * Обработчика на это событие не было вовсе, а испускалось оно дважды:
+     * при завершении приёма и следом — с просьбой оценить врача. Оба
+     * уведомления не создавались никогда. Второе описано в коде как петля
+     * роста «сарафанного радио» — она не работала с тех пор, как была
+     * написана: emit без слушателя молчит, ошибки не бывает.
+     */
+    this.on(
+      "system.message",
+      async ({ userId, title, message, link = null, i18n = null }) => {
+        try {
+          const n = await Notification.create({
+            userId,
+            type: "system_message",
+            title,
+            message,
+            link,
+            ...(i18n ? { i18n } : {}),
+          });
+          emitNotification(userId, n);
+        } catch (err) {
+          console.error("❌ Ошибка создания уведомления system.message:", err);
         }
       },
     );

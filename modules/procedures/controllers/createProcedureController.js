@@ -181,6 +181,21 @@ export const createProcedureController = async (req, res) => {
             /\s+/g,
             " ",
           ),
+        i18n: {
+          title: "app.notify.procedureBooked.title",
+          message: "app.notify.procedureBooked.message",
+          params: {
+            doctorName: doctorName || "",
+            // Вид вмешательства — сам код словаря: внутри турецкой фразы
+            // не должно оказаться русского слова «операцию».
+            what:
+              payload.kind === "surgery"
+                ? "app.procedure.kind.surgery"
+                : "app.procedure.kind.examination",
+            title: payload.title,
+            when: starts.toISOString(),
+          },
+        },
         link: "/patient/my-procedures",
         icon: "activity",
         meta: {
