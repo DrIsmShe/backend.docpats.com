@@ -29,13 +29,13 @@ async function resolveParentId(parentId, clinicId, selfId = null) {
     return null; // корневая категория
   }
   if (selfId && String(parentId) === String(selfId)) {
-    throw new ValidationError("Категория не может быть родителем сама себе");
+    throw new ValidationError("Категория не может быть родителем сама себе", { i18n: "app.category.selfParent" });
   }
   const parent = await ClinicCustomPage.findOne({ _id: parentId, clinicId })
     .select("_id parentId")
     .lean();
   if (!parent) {
-    throw new ValidationError("Родительская категория не найдена");
+    throw new ValidationError("Родительская категория не найдена", { i18n: "app.category.parentNotFound" });
   }
   // защита от третьего уровня: родитель сам должен быть корневым
   if (parent.parentId) {

@@ -5,6 +5,7 @@
 import * as svc from "../services/labInsight.service.js";
 import { labInsightQuotaLeft } from "../services/labInsightQuota.service.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   ValidationError,
   NotFoundError,
@@ -17,15 +18,15 @@ function handleError(res, err) {
     // не просто отказ, а сколько осталось и когда восстановится.
     return res.status(400).json({
       success: false,
-      message: err.message,
+      message: errorText(err, res.req),
       ...(err.details || {}),
     });
   }
   if (err instanceof NotFoundError) {
-    return res.status(404).json({ success: false, message: err.message });
+    return res.status(404).json({ success: false, message: errorText(err, res.req) });
   }
   if (err instanceof ServiceUnavailableError) {
-    return res.status(503).json({ success: false, message: err.message });
+    return res.status(503).json({ success: false, message: errorText(err, res.req) });
   }
   console.error("labInsight:", err);
   return res

@@ -1,6 +1,7 @@
 import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * @desc Добавить, обновить или снять блокировку дня (исключения)
@@ -97,7 +98,7 @@ export const addBlockDate = async (req, res) => {
     res.status(500).json({
       success: false,
       message: tReq(req, "app.block.operationError"),
-      error: err.message,
+      error: errorText(err, req),
     });
   }
 };
@@ -143,7 +144,7 @@ export const getBlockedDays = async (req, res) => {
     res.status(500).json({
       success: false,
       message: tReq(req, "app.doctor.blockedDays.fetchError"),
-      error: err.message,
+      error: errorText(err, req),
       data: [],
     });
   }

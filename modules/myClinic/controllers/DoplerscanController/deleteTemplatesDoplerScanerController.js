@@ -2,6 +2,7 @@ import DoplerScanerTemplateNameofexam from "../../../../common/models/Polyclinic
 import DoplerScanerTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/DoplerScansTemplates/DoplerScanTemplateReport.js";
 import DoplerScanerTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/DoplerScansTemplates/DoplerScanTemplateDiagnosis.js";
 import DoplerScanerTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/DoplerScansTemplates/DoplerScanTemplateRecomandation.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Delete report template
 const deleteNameofexamTemplatesDoplerScanerController = async (req, res) => {
@@ -19,7 +20,7 @@ const deleteNameofexamTemplatesDoplerScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -40,7 +41,7 @@ const deleteReportTemplatesDoplerScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -61,7 +62,7 @@ const deleteDiagnosisTemplatesDoplerScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting diagnosis template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -86,7 +87,7 @@ const deleteRecomandationTemplatesDoplerScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting recommendation template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

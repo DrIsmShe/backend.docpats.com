@@ -2,6 +2,7 @@ import MRIScanerTemplateNameofexam from "../../../../common/models/Polyclinic/Ex
 import MRIScanerTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/MRIScansTemplates/MRIScanTemplateReport.js";
 import MRIScanerTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/MRIScansTemplates/MRIScanTemplateDiagnosis.js";
 import MRIScanerTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/MRIScansTemplates/MRIScanTemplateRecomandation.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Get report template details
 const detailsNameofexamTemplatesMRIScanerController = async (req, res) => {
@@ -20,7 +21,7 @@ const detailsNameofexamTemplatesMRIScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -42,7 +43,7 @@ const detailsReportTemplatesMRIScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -64,7 +65,7 @@ const detailsDiagnosisTemplatesMRIScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading diagnosis template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -88,7 +89,7 @@ const detailsRecomandationTemplatesMRIScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading recommendation template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

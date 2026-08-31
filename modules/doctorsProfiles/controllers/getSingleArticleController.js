@@ -3,6 +3,7 @@ import Article from "../../../common/models/Articles/articles.js";
 import User from "../../../common/models/Auth/users.js";
 import { getOrCreateTranslation } from "../../../modules/translation/translation.service.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 const buildAuthorPublic = (authorId) => {
   if (!authorId) return null;
@@ -121,6 +122,6 @@ export const getSingleArticle = async (req, res) => {
     });
   } catch (error) {
     console.error("🔥 Ошибка при получении статьи:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: errorText(error, req) });
   }
 };

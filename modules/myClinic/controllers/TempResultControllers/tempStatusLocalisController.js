@@ -1,5 +1,6 @@
 import TempStatusLocalis from "../../../../common/models/Polyclinic/TempResults/tempStatusLocalis.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const tempStatusLocalisController = async (req, res) => {
   try {
@@ -35,7 +36,7 @@ const tempStatusLocalisController = async (req, res) => {
     console.error("Ошибка при создании шаблона анамнеза morbi:", error);
     res
       .status(500)
-      .json({ message: tReq(req, "myClinic.template.createError"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError"), error: errorText(error, req) });
   }
 };
 

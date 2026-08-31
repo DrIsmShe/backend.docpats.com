@@ -145,7 +145,7 @@ export async function createTemplate(body = {}) {
   validate(body);
 
   const title = String(body.title || "").trim();
-  if (!title) throw new UnprocessableError("title обязателен");
+  if (!title) throw new UnprocessableError("title обязателен", { i18n: "app.validation.titleRequired" });
 
   const actorType = getCurrentActorType();
   const userId = getCurrentUserId();
@@ -186,7 +186,7 @@ export async function updateTemplate(templateId, body = {}) {
 
   if (Object.prototype.hasOwnProperty.call(body, "title")) {
     const title = String(body.title || "").trim();
-    if (!title) throw new UnprocessableError("title не может быть пустым");
+    if (!title) throw new UnprocessableError("title не может быть пустым", { i18n: "app.validation.titleEmpty" });
     doc.title = title;
   }
   if (Object.prototype.hasOwnProperty.call(body, "body")) {

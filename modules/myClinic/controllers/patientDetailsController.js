@@ -183,7 +183,7 @@ const patientDetailsController = async (req, res) => {
       error?.name,
       error?.message,
     );
-    return res.status(500).json({ message: "Ошибка сервера." });
+    return res.status(500).json({ message: tReq(req, "app.common.serverError", {}, "Ошибка сервера.") });
   }
 };
 

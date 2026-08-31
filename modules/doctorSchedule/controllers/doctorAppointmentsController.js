@@ -9,6 +9,7 @@ import { eventBus } from "../../notifications/events/eventBus.js"; // ✅ доб
 import Notification from "../../../common/models/Notification/notification.js"; // ✅ добавлено
 import { emitNotification } from "../../../common/realtime/userChannel.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 export const getMyAppointments = async (req, res) => {
   try {
     const userId = req.userId;
@@ -162,7 +163,7 @@ export const getMyAppointments = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "app.appointment.fetchServerError"),
-      error: err.message,
+      error: errorText(err, req),
     });
   }
 };
@@ -313,7 +314,7 @@ export const updateAppointmentStatus = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "app.status.updateServerError"),
-      error: err.message,
+      error: errorText(err, req),
     });
   }
 };

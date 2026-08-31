@@ -2,6 +2,7 @@ import SpirometryScanTemplateNameofexam from "../../../../common/models/Polyclin
 import SpirometryScanTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/SpirometryScansTemplates/SpirometryScanTemplateReport.js";
 import SpirometryScanTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/SpirometryScansTemplates/SpirometryScanTemplateDiagnosis.js";
 import SpirometryScanTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/SpirometryScansTemplates/SpirometryScanTemplateRecomandation.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Get report template details
 const detailsNameofexamTemplatesSpirometryScanerController = async (
@@ -22,7 +23,7 @@ const detailsNameofexamTemplatesSpirometryScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "Error loading report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -44,7 +45,7 @@ const detailsReportTemplatesSpirometryScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -68,7 +69,7 @@ const detailsDiagnosisTemplatesSpirometryScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "Error loading diagnosis template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -94,7 +95,7 @@ const detailsRecomandationTemplatesSpirometryScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "Error loading recommendation template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

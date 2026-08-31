@@ -26,13 +26,13 @@ const log = logger.child({ module: "scribe/draft" });
  */
 export async function finishSession({ sessionId, doctorId }) {
   const session = await ScribeSession.findById(sessionId);
-  if (!session) throw new NotFoundError("Сеанс записи не найден");
+  if (!session) throw new NotFoundError("Сеанс записи не найден", { i18n: "app.scribe.sessionNotFound" });
   if (String(session.doctorId) !== String(doctorId)) {
-    throw new ForbiddenError("Завершить запись может только врач приёма");
+    throw new ForbiddenError("Завершить запись может только врач приёма", { i18n: "app.scribe.onlyDoctorCanFinish" });
   }
 
   if (session.status === "declined") {
-    throw new ValidationError("Пациент не дал согласия на запись");
+    throw new ValidationError("Пациент не дал согласия на запись", { i18n: "app.scribe.consentMissing" });
   }
   if (!session.segments.length) {
     // Пустая расшифровка — это не ошибка модели, а отсутствие звука:

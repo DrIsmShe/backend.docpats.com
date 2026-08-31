@@ -145,9 +145,9 @@ export async function getCaseFull(caseId, userId) {
   await reapStaleJobs({ caseId });
 
   const doc = await DiagnosticCase.findById(caseId).lean();
-  if (!doc) throw new NotFoundError("Дело не найдено");
+  if (!doc) throw new NotFoundError("Дело не найдено", { i18n: "app.case.notFound" });
   if (String(doc.ownerId) !== String(userId)) {
-    throw new ForbiddenError("Это чужое дело");
+    throw new ForbiddenError("Это чужое дело", { i18n: "app.diagnostics.foreignCase" });
   }
 
   const [artifacts, jobs, findings] = await Promise.all([
@@ -207,8 +207,8 @@ export async function getCaseFull(caseId, userId) {
 
 export async function updateCase(caseId, patch, userId) {
   const doc = await DiagnosticCase.findOne({ _id: caseId, ownerId: userId });
-  if (!doc) throw new NotFoundError("Дело не найдено");
-  if (doc.status === "closed") throw new ValidationError("Дело закрыто");
+  if (!doc) throw new NotFoundError("Дело не найдено", { i18n: "app.case.notFound" });
+  if (doc.status === "closed") throw new ValidationError("Дело закрыто", { i18n: "app.diagnostics.caseClosed" });
 
   const FIELDS = ["title", "question", "clinicalContext", "deidentified", "doctorSummary"];
   for (const f of FIELDS) if (patch[f] !== undefined) doc[f] = patch[f];
@@ -231,9 +231,9 @@ export async function updateCase(caseId, patch, userId) {
 /** Закрыть дело выводом врача. Именно врач — автор итога, не модель. */
 export async function closeCase(caseId, { summary }, userId) {
   const doc = await DiagnosticCase.findOne({ _id: caseId, ownerId: userId });
-  if (!doc) throw new NotFoundError("Дело не найдено");
+  if (!doc) throw new NotFoundError("Дело не найдено", { i18n: "app.case.notFound" });
   if (!String(summary ?? "").trim()) {
-    throw new ValidationError("Напишите вывод врача — дело закрывается им, а не разбором ИИ");
+    throw new ValidationError("Напишите вывод врача — дело закрывается им, а не разбором ИИ", { i18n: "app.diagnostics.doctorConclusionRequired" });
   }
   doc.doctorSummary = summary;
   doc.status = "closed";
@@ -244,7 +244,7 @@ export async function closeCase(caseId, { summary }, userId) {
 
 export async function reopenCase(caseId, userId) {
   const doc = await DiagnosticCase.findOne({ _id: caseId, ownerId: userId });
-  if (!doc) throw new NotFoundError("Дело не найдено");
+  if (!doc) throw new NotFoundError("Дело не найдено", { i18n: "app.case.notFound" });
   doc.status = "ready";
   doc.closedAt = null;
   await doc.save();
@@ -270,7 +270,7 @@ export async function reopenCase(caseId, userId) {
  */
 export async function deleteCase(caseId, userId) {
   const doc = await DiagnosticCase.findOne({ _id: caseId, ownerId: userId });
-  if (!doc) throw new NotFoundError("Дело не найдено");
+  if (!doc) throw new NotFoundError("Дело не найдено", { i18n: "app.case.notFound" });
 
   const [findings, jobs, artifacts] = await Promise.all([
     DiagnosticFinding.deleteMany({ caseId }),
@@ -293,8 +293,8 @@ export async function deleteCase(caseId, userId) {
 
 export async function addArtifact(caseId, input, userId) {
   const caseDoc = await DiagnosticCase.findOne({ _id: caseId, ownerId: userId });
-  if (!caseDoc) throw new NotFoundError("Дело не найдено");
-  if (caseDoc.status === "closed") throw new ValidationError("Дело закрыто");
+  if (!caseDoc) throw new NotFoundError("Дело не найдено", { i18n: "app.case.notFound" });
+  if (caseDoc.status === "closed") throw new ValidationError("Дело закрыто", { i18n: "app.diagnostics.caseClosed" });
 
   if (input.modality && !getModality(input.modality)) {
     throw new ValidationError(`Неизвестная модальность: ${input.modality}`);
@@ -321,7 +321,7 @@ export async function addArtifact(caseId, input, userId) {
 
 export async function removeArtifact(artifactId, userId) {
   const doc = await DiagnosticArtifact.findOne({ _id: artifactId, ownerId: userId });
-  if (!doc) throw new NotFoundError("Материал не найден");
+  if (!doc) throw new NotFoundError("Материал не найден", { i18n: "app.diagnostics.materialNotFound" });
   const { caseId } = doc;
   await doc.deleteOne();
   await refreshCaseState(caseId);
@@ -337,7 +337,7 @@ export async function removeArtifact(artifactId, userId) {
  */
 export async function setFindingVerdict(findingId, { verdict, correction }, userId) {
   const doc = await DiagnosticFinding.findOne({ _id: findingId, ownerId: userId });
-  if (!doc) throw new NotFoundError("Вывод не найден");
+  if (!doc) throw new NotFoundError("Вывод не найден", { i18n: "app.diagnostics.conclusionNotFound" });
 
   doc.verdict = verdict;
   doc.verdictAt = new Date();

@@ -36,17 +36,17 @@ const log = logger.child({ module: "scribe/save" });
  */
 export async function saveScribeDraft({ sessionId, patient, body }) {
   const session = await ScribeSession.findById(sessionId);
-  if (!session) throw new NotFoundError("Сеанс записи не найден");
+  if (!session) throw new NotFoundError("Сеанс записи не найден", { i18n: "app.scribe.sessionNotFound" });
 
   const userId = getCurrentUserId();
   if (String(session.doctorId) !== String(userId)) {
-    throw new ForbiddenError("Сохранить может только врач, ведший приём");
+    throw new ForbiddenError("Сохранить может только врач, ведший приём", { i18n: "app.scribe.onlyDoctorCanSave" });
   }
 
   if (session.dictationJobId) {
     // Повторное сохранение создало бы вторую запись об одном приёме, и
     // различить их в карте потом было бы нечем.
-    throw new ValidationError("Черновик этого приёма уже сохранён в карту");
+    throw new ValidationError("Черновик этого приёма уже сохранён в карту", { i18n: "app.scribe.draftAlreadySaved" });
   }
 
   // Сохраняем ТО, ЧТО ПРИСЛАЛ ВРАЧ, а не то, что собрала модель.

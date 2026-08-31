@@ -1,3 +1,4 @@
+import { errorText } from "../../../common/i18n/index.js";
 // server/modules/notifications/controllers/push.controller.js
 //
 // Управление web-push подпиской: отдать публичный VAPID-ключ, подписать/
@@ -37,7 +38,7 @@ export async function subscribePush(req, res) {
     await saveSubscription(userId, sub, req.get("user-agent"));
     return res.status(200).json({ success: true });
   } catch (err) {
-    return res.status(400).json({ success: false, message: err.message });
+    return res.status(400).json({ success: false, message: errorText(err, req) });
   }
 }
 
@@ -48,6 +49,6 @@ export async function unsubscribePush(req, res) {
     await removeSubscription(endpoint);
     return res.status(200).json({ success: true });
   } catch (err) {
-    return res.status(400).json({ success: false, message: err.message });
+    return res.status(400).json({ success: false, message: errorText(err, req) });
   }
 }

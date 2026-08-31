@@ -2,6 +2,7 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 import argon2 from "argon2";
 import User from "../../../common/models/Auth/users.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 dotenv.config();
 
@@ -73,7 +74,7 @@ const changePasswordProfileController = async (req, res) => {
     console.error("Error changing password: ", error);
     return res.status(500).json({
       message: "An error occurred while changing the password.",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

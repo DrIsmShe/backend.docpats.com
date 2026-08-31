@@ -3,6 +3,7 @@ import CTScanTemplateReport from "../../../../common/models/Polyclinic/Examenati
 import CTScanTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScanTemplateDiagnosis.js";
 import CTScanTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScanTemplateRecomandation.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Обновление шаблона отчёта
 const updateNameofexamTemplatesCTScanerController = async (req, res) => {
@@ -26,7 +27,7 @@ const updateNameofexamTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.reportTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -53,7 +54,7 @@ const updateReportTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.reportTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -80,7 +81,7 @@ const updateDiagnosisTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.diagnosisTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -107,7 +108,7 @@ const updateRecomandationTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.recommendationTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

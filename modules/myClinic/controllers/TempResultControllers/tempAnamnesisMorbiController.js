@@ -1,5 +1,6 @@
 import TempAnamnesisMorbi from "../../../../common/models/Polyclinic/TempResults/tempAnamnesisMorbi.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const tempAnamnesisMorbiController = async (req, res) => {
   try {
@@ -36,7 +37,7 @@ const tempAnamnesisMorbiController = async (req, res) => {
     console.error("Ошибка при создании шаблона анамнеза morbi:", error);
     res
       .status(500)
-      .json({ message: tReq(req, "myClinic.template.createError"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError"), error: errorText(error, req) });
   }
 };
 

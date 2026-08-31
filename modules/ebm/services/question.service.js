@@ -163,10 +163,10 @@ const SYSTEM = `Ты помогаешь врачу искать доказате
 export async function parseQuestion(question) {
   const clean = String(question || "").trim();
   if (clean.length < 5) {
-    throw new ValidationError("Вопрос слишком короткий");
+    throw new ValidationError("Вопрос слишком короткий", { i18n: "app.question.tooShort" });
   }
   if (clean.length > 1000) {
-    throw new ValidationError("Вопрос слишком длинный — сформулируйте короче");
+    throw new ValidationError("Вопрос слишком длинный — сформулируйте короче", { i18n: "app.question.tooLong" });
   }
 
   if (!isAiConfigured()) {

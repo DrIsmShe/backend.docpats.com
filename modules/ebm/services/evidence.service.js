@@ -88,7 +88,7 @@ export async function searchEvidence({
 } = {}) {
   const clean = String(term || "").trim();
   if (clean.length < 3) {
-    throw new Error("Слишком короткий запрос");
+    throw Object.assign(new Error("Слишком короткий запрос"), { i18n: "app.ebm.queryTooShort" });
   }
 
   const wanted = levels

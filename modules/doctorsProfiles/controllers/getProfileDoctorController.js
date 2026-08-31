@@ -5,6 +5,7 @@ import User from "../../../common/models/Auth/users.js";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import { decryptPhone } from "../../../common/middlewares/cryptoPhone.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 dotenv.config();
 
@@ -184,7 +185,7 @@ const getProfileDoctorController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

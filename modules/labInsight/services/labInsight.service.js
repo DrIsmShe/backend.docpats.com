@@ -172,14 +172,14 @@ export async function listLabInsights({ userId, limit = 20 }) {
 /** Один разбор. Чужой не отдаём даже по прямой ссылке. */
 export async function getLabInsight({ userId, id }) {
   const doc = await LabInsight.findOne({ _id: id, userId }).lean();
-  if (!doc) throw new NotFoundError("Разбор не найден");
+  if (!doc) throw new NotFoundError("Разбор не найден", { i18n: "app.labInsight.notFound" });
   return toShape(doc);
 }
 
 /** Удалить свой разбор. */
 export async function deleteLabInsight({ userId, id }) {
   const res = await LabInsight.deleteOne({ _id: id, userId });
-  if (!res.deletedCount) throw new NotFoundError("Разбор не найден");
+  if (!res.deletedCount) throw new NotFoundError("Разбор не найден", { i18n: "app.labInsight.notFound" });
   return { id: String(id), deleted: true };
 }
 

@@ -130,7 +130,7 @@ async function loadOwned(jobId, doctorId) {
     // Намеренно ForbiddenError, а не NotFound: врач и пациент здесь свои,
     // скрывать факт существования задания не от кого, а внятная ошибка
     // экономит время при разборе.
-    throw new ForbiddenError("Это задание принадлежит другому врачу");
+    throw new ForbiddenError("Это задание принадлежит другому врачу", { i18n: "app.dictation.taskOwnedByAnotherDoctor" });
   }
   return job;
 }
@@ -146,10 +146,10 @@ async function loadOwned(jobId, doctorId) {
  * @param {string} [args.sink]
  */
 export async function createJob({ file, doctorId, patient, lang = "", sink = "myClinic" }) {
-  if (!file?.buffer?.length) throw new ValidationError("Аудиофайл не передан");
+  if (!file?.buffer?.length) throw new ValidationError("Аудиофайл не передан", { i18n: "app.dictation.audioMissing" });
   if (!hasSink(sink)) throw new ValidationError(`Неизвестный приёмник: ${sink}`);
   if (!patient?.patientRef || !patient?.patientType || !patient?.patientTypeModel) {
-    throw new ValidationError("Не определён пациент для надиктовки");
+    throw new ValidationError("Не определён пациент для надиктовки", { i18n: "app.dictation.patientNotResolved" });
   }
 
   const audioUrl = await uploadFile(file);
@@ -394,7 +394,7 @@ export async function attachJob(jobId, doctorId) {
     );
   }
   const draft = parseDraft(job.draftJson);
-  if (!draft) throw new ConflictError("У задания нет черновика");
+  if (!draft) throw new ConflictError("У задания нет черновика", { i18n: "app.dictation.noDraft" });
 
   const sink = getSink(job.sink);
   if (!sink) throw new ConflictError(`Приёмник "${job.sink}" недоступен`);
@@ -415,7 +415,7 @@ export async function attachJob(jobId, doctorId) {
 export async function discardJob(jobId, doctorId) {
   const job = await loadOwned(jobId, doctorId);
   if (job.status === "attached") {
-    throw new ConflictError("Задание уже прикреплено к карте — отказаться нельзя");
+    throw new ConflictError("Задание уже прикреплено к карте — отказаться нельзя", { i18n: "app.dictation.alreadyAttached" });
   }
   job.status = "expired";
   await job.save();

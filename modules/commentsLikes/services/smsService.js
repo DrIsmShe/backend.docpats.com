@@ -34,6 +34,6 @@ export const sendSMS = async (to, message) => {
       "❌ Ошибка при отправке SMS через Infobip:",
       error.response ? error.response.data : error.message
     );
-    throw new Error("Не удалось отправить SMS");
+    throw Object.assign(new Error("Не удалось отправить SMS"), { i18n: "app.sms.sendFailed" });
   }
 };

@@ -2,6 +2,7 @@ import CTScanTemplateNameofexam from "../../../../common/models/Polyclinic/Exame
 import CTScanTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScanTemplateReport.js";
 import CTScanTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScanTemplateDiagnosis.js";
 import CTScanTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScanTemplateRecomandation.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Get report template details
 const detailsNameofexamTemplatesCTScanerController = async (req, res) => {
@@ -20,7 +21,7 @@ const detailsNameofexamTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -42,7 +43,7 @@ const detailsReportTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -64,7 +65,7 @@ const detailsDiagnosisTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading diagnosis template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -88,7 +89,7 @@ const detailsRecomandationTemplatesCTScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading recommendation template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

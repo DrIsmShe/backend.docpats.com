@@ -119,7 +119,7 @@ const getMyMedicalHistoryController = async (req, res) => {
     console.error("❌ getMyMedicalHistoryController error:", error);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера при получении историй болезни",
+      message: tReq(req, "app.medicalHistory.fetchError", {}, "Ошибка сервера при получении историй болезни"),
     });
   }
 };

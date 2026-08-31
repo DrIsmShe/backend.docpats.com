@@ -2,6 +2,7 @@ import LabTest from "../../../../common/models/Polyclinic/ExamenationsTemplates/
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getDetailExaminationsControllerLabtest = async (req, res) => {
   const { id } = req.params;
@@ -70,7 +71,7 @@ const getDetailExaminationsControllerLabtest = async (req, res) => {
     res.status(500).json({
       success: false,
       message: tReq(req, "myClinic.labTest.serverFetchError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

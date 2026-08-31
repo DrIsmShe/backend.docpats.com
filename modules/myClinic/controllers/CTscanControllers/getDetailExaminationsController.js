@@ -1,6 +1,7 @@
 import CTScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/CTScansTemplates/CTScan.js";
 import File from "../../../../common/models/file.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getDetailExaminationsController = async (req, res) => {
   try {
@@ -75,7 +76,7 @@ const getDetailExaminationsController = async (req, res) => {
 
     res.status(500).json({
       message: tReq(req, "myClinic.server.error2"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

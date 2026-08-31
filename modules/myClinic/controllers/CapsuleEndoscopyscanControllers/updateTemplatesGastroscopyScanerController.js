@@ -3,6 +3,7 @@ import CapsuleEndoscopyScannerTemplateReport from "../../../../common/models/Pol
 import CapsuleEndoscopyScannerTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateDiagnosis.js";
 import CapsuleEndoscopyScannerTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateRecomandation.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Обновление шаблона отчёта
 const updateNameofexamTemplatesCapsuleEndoscopyScanerController = async (
@@ -30,7 +31,7 @@ const updateNameofexamTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.reportTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -61,7 +62,7 @@ const updateReportTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.reportTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -92,7 +93,7 @@ const updateDiagnosisTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.diagnosisTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -123,7 +124,7 @@ const updateRecomandationTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.recommendationTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

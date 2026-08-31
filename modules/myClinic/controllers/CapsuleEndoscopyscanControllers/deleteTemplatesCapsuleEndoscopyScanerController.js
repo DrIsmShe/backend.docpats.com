@@ -2,6 +2,7 @@ import CapsuleEndoscopyScannerTemplateNameofexam from "../../../../common/models
 import CapsuleEndoscopyScannerTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateReport.js";
 import CapsuleEndoscopyScannerTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateDiagnosis.js";
 import CapsuleEndoscopyScannerTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateRecomandation.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Delete report template
 const deleteNameofexamTemplatesCapsuleEndoscopyScanerController = async (
@@ -23,7 +24,7 @@ const deleteNameofexamTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -48,7 +49,7 @@ const deleteReportTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -73,7 +74,7 @@ const deleteDiagnosisTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting diagnosis template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -100,7 +101,7 @@ const deleteRecomandationTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting recommendation template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

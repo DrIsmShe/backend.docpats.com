@@ -5,6 +5,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import authMiddleware from "../../common/middlewares/authvalidateMiddleware/authMiddleware.js";
 import * as ctrl from "./surgicalCase.controller.js";
+import { errorText } from "../../common/i18n/index.js";
 
 const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -130,10 +131,10 @@ router.use((err, req, res, next) => {
           error: `Файл слишком большой. Максимум ${MAX_SIZE_MB}MB`,
         });
     }
-    return res.status(400).json({ success: false, error: err.message });
+    return res.status(400).json({ success: false, error: errorText(err, req) });
   }
   if (err?.message?.includes("Недопустимый тип")) {
-    return res.status(400).json({ success: false, error: err.message });
+    return res.status(400).json({ success: false, error: errorText(err, req) });
   }
   next(err);
 });

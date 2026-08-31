@@ -156,7 +156,7 @@ export function cleanTranscript(raw) {
  * @returns {Promise<{text: string, model: string, durationSec: number}>}
  */
 export async function transcribe({ buffer, filename, lang, allowEmpty = false } = {}) {
-  if (!buffer?.length) throw new ValidationError("Пустой аудиофайл");
+  if (!buffer?.length) throw new ValidationError("Пустой аудиофайл", { i18n: "app.dictation.emptyAudioFile" });
   if (!isConfigured()) {
     throw new ServiceUnavailableError(
       "Распознавание не настроено: задайте OPENAI_API_KEY в .env сервера",

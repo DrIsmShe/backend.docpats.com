@@ -563,11 +563,11 @@ export async function createSimulation(
   },
 ) {
   if (!disclaimerAccepted) {
-    throw new Error("Необходимо принять дисклеймер перед симуляцией");
+    throw Object.assign(new Error("Необходимо принять дисклеймер перед симуляцией"), { i18n: "app.surgery.disclaimerRequired" });
   }
 
   const cas = await SurgicalCase.findOne({ _id: caseId, surgeonId });
-  if (!cas) throw new Error("Кейс не найден");
+  if (!cas) throw Object.assign(new Error("Кейс не найден"), { i18n: "app.surgery.caseNotFound" });
 
   // Квота проверяется ДО постановки в очередь: отказ, за который мы уже
   // заплатили генерацию, — худший вид отказа. Симуляция стоит дороже любой
@@ -682,9 +682,9 @@ export async function getSimulations(caseId, surgeonId) {
 
 export async function selectResult(simulationId, surgeonId, idx) {
   const sim = await Simulation.findOne({ _id: simulationId, surgeonId });
-  if (!sim) throw new Error("Симуляция не найдена");
+  if (!sim) throw Object.assign(new Error("Симуляция не найдена"), { i18n: "app.surgery.simulationNotFound" });
   if (idx < 0 || idx >= sim.resultFilenames.length)
-    throw new Error("Неверный индекс");
+    throw Object.assign(new Error("Неверный индекс"), { i18n: "app.validation.invalidIndex" });
   sim.selectedIdx = idx;
   await sim.save();
   return sim;

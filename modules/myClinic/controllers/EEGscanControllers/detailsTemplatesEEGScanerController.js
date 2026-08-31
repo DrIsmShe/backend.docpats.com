@@ -4,6 +4,7 @@ import EEGScanTemplateNameofexam from "../../../../common/models/Polyclinic/Exam
 import EEGScanTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/EEGScansTemplates/EEGScanTemplateReport.js";
 import EEGScanTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/EEGScansTemplates/EEGScanTemplateDiagnosis.js";
 import EEGScanTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/EEGScansTemplates/EEGScanTemplateRecomandation.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Get report template details
 const detailsNameofexamTemplatesEEGScanerController = async (req, res) => {
@@ -22,7 +23,7 @@ const detailsNameofexamTemplatesEEGScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -44,7 +45,7 @@ const detailsReportTemplatesEEGScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -66,7 +67,7 @@ const detailsDiagnosisTemplatesEEGScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading diagnosis template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -97,7 +98,7 @@ const detailsRecomandationTemplatesEEGScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error loading recommendation template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

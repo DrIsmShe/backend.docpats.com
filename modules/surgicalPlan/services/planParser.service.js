@@ -167,7 +167,7 @@ export async function parsePrompt({
   image = null,
 }) {
   if (!prompt || !prompt.trim()) {
-    throw new ValidationError("Пустой запрос врача");
+    throw new ValidationError("Пустой запрос врача", { i18n: "app.surgicalPlan.emptyRequest" });
   }
 
   const { catalog, preset } = getCatalog(procedureCode);

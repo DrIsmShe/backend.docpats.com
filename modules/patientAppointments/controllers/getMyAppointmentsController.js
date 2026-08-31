@@ -4,6 +4,7 @@ import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js
 import User, { decrypt } from "../../../common/models/Auth/users.js";
 import Specialization from "../../../common/models/DoctorProfile/specialityOfDoctor.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * Контроллер: Получение всех приёмов текущего пациента
@@ -109,7 +110,7 @@ export const getMyAppointmentsController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "app.appointments.loadServerError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

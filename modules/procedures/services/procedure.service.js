@@ -31,12 +31,14 @@ export const PAST_GRACE_MS = 5 * 60 * 1000;
 
 /** Ошибка правил записи. Контроллер разворачивает её в ответ. */
 export class ProcedureError extends Error {
-  constructor(message, { status = 400, code = null, extra = {} } = {}) {
+  constructor(message, { status = 400, code = null, extra = {}, i18n = null } = {}) {
     super(message);
     this.name = "ProcedureError";
     this.status = status;
     this.code = code;
     this.extra = extra;
+    // Код сообщения в словаре: текст выбирается по языку того, кто спросил.
+    this.i18n = i18n;
   }
 }
 

@@ -172,13 +172,13 @@ export async function submitAttempt(attemptId, userId, response) {
   const attempt = await RadiologyAttempt.findById(attemptId);
   if (!attempt) throw new NotFoundError("Radiology attempt");
   if (String(attempt.userId) !== String(userId)) {
-    throw new ForbiddenError("Это чужая попытка");
+    throw new ForbiddenError("Это чужая попытка", { i18n: "app.attempt.foreign" });
   }
   if (attempt.status === "submitted") {
-    throw new ConflictError("Попытка уже сдана");
+    throw new ConflictError("Попытка уже сдана", { i18n: "app.attempt.alreadySubmitted" });
   }
   if (attempt.status === "expired") {
-    throw new ConflictError("Попытка просрочена: лимит времени истёк");
+    throw new ConflictError("Попытка просрочена: лимит времени истёк", { i18n: "app.attempt.expiredTimeLimit" });
   }
 
   // Дедлайн считается от startedAt, сохранённого в базе, — клиентский таймер
@@ -199,7 +199,7 @@ export async function submitAttempt(attemptId, userId, response) {
   // заключения с эталоном. На русском эталоне турецкий ответ даёт ноль.
   const caseDoc = await translatedCaseFor("radiology", sourceCase, attempt.lang);
   const rs = getReadingSystem(caseDoc.modality);
-  if (!rs) throw new ConflictError("Нет системы чтения для этой модальности");
+  if (!rs) throw new ConflictError("Нет системы чтения для этой модальности", { i18n: "app.radiology.noReadingSystem" });
 
   const resp = {
     findings: response.findings ?? [],
@@ -332,7 +332,7 @@ export async function getAttempt(attemptId, userId) {
   const attempt = await RadiologyAttempt.findById(attemptId).lean();
   if (!attempt) throw new NotFoundError("Radiology attempt");
   if (String(attempt.userId) !== String(userId)) {
-    throw new ForbiddenError("Это чужая попытка");
+    throw new ForbiddenError("Это чужая попытка", { i18n: "app.attempt.foreign" });
   }
 
   // Разбор раскрываем только для сданной попытки — иначе эталон утёк бы
@@ -405,10 +405,10 @@ export async function aiAnalyzeAttempt(attemptId, userId, { force = false } = {}
   const attempt = await RadiologyAttempt.findById(attemptId);
   if (!attempt) throw new NotFoundError("Radiology attempt");
   if (String(attempt.userId) !== String(userId)) {
-    throw new ForbiddenError("Это чужая попытка");
+    throw new ForbiddenError("Это чужая попытка", { i18n: "app.attempt.foreign" });
   }
   if (attempt.status !== "submitted") {
-    throw new ConflictError("Разбор доступен только после сдачи попытки");
+    throw new ConflictError("Разбор доступен только после сдачи попытки", { i18n: "app.attempt.reviewAfterSubmitOnly" });
   }
   // Кэш: уже разобранную попытку повторно в модель не гоняем.
   if (attempt.aiAnalysis && !force) return attempt.aiAnalysis;

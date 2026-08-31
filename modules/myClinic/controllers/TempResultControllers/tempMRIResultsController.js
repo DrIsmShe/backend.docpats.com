@@ -1,5 +1,6 @@
 import TempMRIResult from "../../../../common/models/Polyclinic/TempResults/tempMRIResults.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const TempMRIResultController = async (req, res) => {
   try {
@@ -47,7 +48,7 @@ const TempMRIResultController = async (req, res) => {
     console.error("Ошибка при создании шаблона результатов МРТ:", error);
     res
       .status(500)
-      .json({ message: tReq(req, "myClinic.template.createError"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError"), error: errorText(error, req) });
   }
 };
 

@@ -262,7 +262,7 @@ export async function startAttempt({
     // поэтому режимы mock/drill к нему неприменимы: оставляем tutor/timed.
     const blockSize = program.blockSize ?? 0;
     if (!blockSize || blockSize < 1) {
-      throw new ConflictError("Тест не разбит на блоки");
+      throw new ConflictError("Тест не разбит на блоки", { i18n: "app.education.testHasNoBlocks" });
     }
     if (mode !== "tutor" && mode !== "timed") mode = "tutor";
 

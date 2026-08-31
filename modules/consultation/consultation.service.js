@@ -359,7 +359,7 @@ export async function chatWithClaude(messages, patientInfo) {
   const text = res?.content?.[0]?.text;
   if (!text) {
     console.error("[chatWithClaude] empty response:", JSON.stringify(res));
-    throw new Error("AI вернул пустой ответ");
+    throw Object.assign(new Error("AI вернул пустой ответ"), { i18n: "app.ai.emptyResponse" });
   }
   return text;
 }
@@ -400,7 +400,7 @@ export async function buildEpicrisis(messages, patientInfo) {
   const rawText = res?.content?.[0]?.text;
   if (!rawText) {
     console.error("[buildEpicrisis] empty AI response");
-    throw new Error("AI вернул пустой ответ");
+    throw Object.assign(new Error("AI вернул пустой ответ"), { i18n: "app.ai.emptyResponse" });
   }
 
   const cleaned = rawText
@@ -412,6 +412,6 @@ export async function buildEpicrisis(messages, patientInfo) {
     return JSON.parse(cleaned);
   } catch (err) {
     console.error("[buildEpicrisis] invalid JSON from Claude:", cleaned);
-    throw new Error("AI вернул невалидный JSON для эпикриза");
+    throw Object.assign(new Error("AI вернул невалидный JSON для эпикриза"), { i18n: "app.ai.invalidJsonEpicrisis" });
   }
 }

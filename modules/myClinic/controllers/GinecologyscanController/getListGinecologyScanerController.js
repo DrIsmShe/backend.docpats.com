@@ -2,6 +2,7 @@ import GinecologyScan from "../../../../common/models/Polyclinic/ExamenationsTem
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getListGinecologyScanerController = async (req, res) => {
   const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -69,7 +70,7 @@ const getListGinecologyScanerController = async (req, res) => {
     res.status(500).json({
       success: false,
       message: tReq(req, "myClinic.study.gynecology.fetchError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

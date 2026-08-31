@@ -12,6 +12,7 @@ import {
 } from "../services/scribeSavePrivate.service.js";
 import ScribeSession from "../models/scribeSession.model.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   ValidationError,
   NotFoundError,
@@ -21,13 +22,13 @@ import {
 
 function handle(res, err) {
   if (err instanceof ValidationError)
-    return res.status(400).json({ success: false, message: err.message });
+    return res.status(400).json({ success: false, message: errorText(err, res.req) });
   if (err instanceof ForbiddenError)
-    return res.status(403).json({ success: false, message: err.message });
+    return res.status(403).json({ success: false, message: errorText(err, res.req) });
   if (err instanceof NotFoundError)
-    return res.status(404).json({ success: false, message: err.message });
+    return res.status(404).json({ success: false, message: errorText(err, res.req) });
   if (err instanceof ServiceUnavailableError)
-    return res.status(503).json({ success: false, message: err.message });
+    return res.status(503).json({ success: false, message: errorText(err, res.req) });
   console.error("scribe:", err);
   return res.status(500).json({ success: false, message: "Server error" });
 }

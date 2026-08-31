@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import User from "../../../common/models/Auth/users.js";
 import argon2 from "argon2";
+import { errorText } from "../../../common/i18n/index.js";
 
 const SECRET_KEY = process.env.ENCRYPTION_KEY?.padEnd(32, "0");
 if (!SECRET_KEY || SECRET_KEY.length !== 32) {
@@ -72,7 +73,7 @@ const changePasswordController = async (req, res) => {
     console.error("Error changing password: ", error);
     return res.status(500).json({
       message: "An error occurred while changing the password.",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

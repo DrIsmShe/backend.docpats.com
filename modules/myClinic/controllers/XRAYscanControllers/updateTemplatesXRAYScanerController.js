@@ -3,6 +3,7 @@ import XRAYScanTemplateReport from "../../../../common/models/Polyclinic/Examena
 import XRAYScanTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/XRayScansTemplates/XRayScanTemplateDiagnos.js";
 import XRAYScanTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/XRayScansTemplates/XRayScanTemplateRecomandations.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Обновление шаблона отчёта
 const updateNameofexamTemplatesXRAYScanerController = async (req, res) => {
@@ -26,7 +27,7 @@ const updateNameofexamTemplatesXRAYScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.reportTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -53,7 +54,7 @@ const updateReportTemplatesXRAYScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.reportTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -80,7 +81,7 @@ const updateDiagnosisTemplatesXRAYScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.diagnosisTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -107,7 +108,7 @@ const updateRecomandationTemplatesXRAYScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.recommendationTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

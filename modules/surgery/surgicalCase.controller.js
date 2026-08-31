@@ -1,6 +1,7 @@
 import * as caseService from "./surgicalCase.service.js";
 import SurgicalCase from "./surgicalCase.model.js";
 import { tReq } from "../../common/i18n/index.js";
+import { errorText } from "../../common/i18n/index.js";
 
 // ─── POST /api/surgery/cases ──────────────────────────────────────────────
 export async function createCase(req, res) {
@@ -10,7 +11,7 @@ export async function createCase(req, res) {
     res.status(201).json({ success: true, case: result });
   } catch (err) {
     console.error("[surgery] createCase error:", err);
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -33,7 +34,7 @@ export async function listCases(req, res) {
     res.json({ success: true, ...result });
   } catch (err) {
     console.error("[surgery] listCases error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -47,7 +48,7 @@ export async function getCase(req, res) {
     res.json({ success: true, case: doc });
   } catch (err) {
     console.error("[surgery] getCase error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -65,7 +66,7 @@ export async function updateCase(req, res) {
     res.json({ success: true, case: result });
   } catch (err) {
     console.error("[surgery] updateCase error:", err);
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -79,7 +80,7 @@ export async function deleteCase(req, res) {
     res.json({ success: true });
   } catch (err) {
     console.error("[surgery] deleteCase error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -104,7 +105,7 @@ export async function addPhoto(req, res) {
     res.status(201).json({ success: true, photo });
   } catch (err) {
     console.error("[surgery] addPhoto error:", err);
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -122,7 +123,7 @@ export async function removePhoto(req, res) {
     res.json({ success: true });
   } catch (err) {
     console.error("[surgery] removePhoto error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -148,7 +149,7 @@ export async function addFollowUp(req, res) {
     res.status(201).json({ success: true, followUp: fu });
   } catch (err) {
     console.error("[surgery] addFollowUp error:", err);
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -172,7 +173,7 @@ export async function setOutcome(req, res) {
     res.json({ success: true, case: result });
   } catch (err) {
     console.error("[surgery] setOutcome error:", err);
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -191,7 +192,7 @@ export async function togglePublish(req, res) {
     res.json({ success: true, case: result });
   } catch (err) {
     console.error("[surgery] togglePublish error:", err);
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -203,7 +204,7 @@ export async function getStats(req, res) {
     res.json({ success: true, stats });
   } catch (err) {
     console.error("[surgery] getStats error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -217,7 +218,7 @@ export async function getWorklist(req, res) {
     res.json({ success: true, worklist });
   } catch (err) {
     console.error("[surgery] getWorklist error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -229,7 +230,7 @@ export async function getPublicCases(req, res) {
     res.json({ success: true, ...result });
   } catch (err) {
     console.error("[surgery] getPublicCases error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -254,7 +255,7 @@ export async function downloadPDF(req, res) {
     generateSurgeryPlanPDF(cas, res);
   } catch (err) {
     console.error("[surgery] downloadPDF error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -274,6 +275,6 @@ export async function getCasesByPatient(req, res) {
     res.json({ success: true, cases });
   } catch (err) {
     console.error("[surgery] getCasesByPatient error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }

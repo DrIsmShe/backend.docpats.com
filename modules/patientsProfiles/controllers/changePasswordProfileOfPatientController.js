@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import argon2 from "argon2";
 import User from "../../../common/models/Auth/users.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 dotenv.config();
 
@@ -74,7 +75,7 @@ const changePasswordProfileOfPatientController = async (req, res) => {
     console.error("Ошибка при изменении пароля: ", error);
     return res.status(500).json({
       message: tReq(req, "app.password.changeError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

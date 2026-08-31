@@ -4,6 +4,7 @@ import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js
 import Notification from "../../../common/models/Notification/notification.js";
 import { emitNotification } from "../../../common/realtime/userChannel.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 // Допуск на запись «в прошлое» — тот же, что у врача
 // (doctorSchedule/bookByDoctorController.js): расхождение часов клиента с
@@ -233,7 +234,7 @@ export const bookAppointment = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "app.appointment.serverErrorOnCreate"),
-      error: err.message,
+      error: errorText(err, req),
     });
   }
 };

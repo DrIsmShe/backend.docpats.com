@@ -13,6 +13,7 @@
 
 import User from "../../../common/models/Auth/users.js";
 import PaymentTransaction from "../models/paymentTransaction.js";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   assertPlanAllowed,
   getPlanAmount,
@@ -54,7 +55,7 @@ export async function createSubscriptionCheckout(req, res) {
     try {
       assertPlanAllowed(planKey, period, user.role);
     } catch (e) {
-      return res.status(400).json({ success: false, message: e.message });
+      return res.status(400).json({ success: false, message: errorText(e, req) });
     }
 
     const amount = getPlanAmount(planKey, period);
@@ -181,6 +182,6 @@ export async function confirmMockPayment(req, res) {
     console.error("confirmMockPayment error:", err.message);
     return res
       .status(400)
-      .json({ success: false, message: err.message || "Payment failed" });
+      .json({ success: false, message: errorText(err, req) || "Payment failed" });
   }
 }

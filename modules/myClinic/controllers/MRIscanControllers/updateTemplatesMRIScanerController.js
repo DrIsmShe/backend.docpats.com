@@ -3,6 +3,7 @@ import MRIScanerTemplateReport from "../../../../common/models/Polyclinic/Examen
 import MRIScanerTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/MRIScansTemplates/MRIScanTemplateDiagnosis.js";
 import MRIScanerTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/MRIScansTemplates/MRIScanTemplateRecomandation.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Обновление шаблона отчёта
 const updateNameofexamTemplatesMRIScanerController = async (req, res) => {
@@ -26,7 +27,7 @@ const updateNameofexamTemplatesMRIScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.reportTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -53,7 +54,7 @@ const updateReportTemplatesMRIScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.reportTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -80,7 +81,7 @@ const updateDiagnosisTemplatesMRIScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.diagnosisTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -107,7 +108,7 @@ const updateRecomandationTemplatesMRIScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.recommendationTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

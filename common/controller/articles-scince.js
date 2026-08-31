@@ -4,6 +4,7 @@ import User from "../models/Auth/users.js";
 import { getOrCreateTranslation } from "../../modules/translation/translation.service.js";
 import { markTranslationsAsStale } from "../../modules/translation/translation.repository.js";
 import { getTranslationIfExists } from "../../modules/translation/translation.service.js";
+import { errorText } from "../i18n/index.js";
 
 const buildAuthorPublic = (authorId) => {
   if (!authorId) return null;
@@ -99,7 +100,7 @@ export const getArticleScineById = async (req, res) => {
     });
   } catch (e) {
     console.error("🔥 getArticleScineById error:", e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: errorText(e, req) });
   }
 };
 
@@ -131,7 +132,7 @@ export const updateArticleScine = async (req, res) => {
 
     res.json({ success: true, article });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: errorText(e, req) });
   }
 };
 
@@ -161,6 +162,6 @@ export const getArticleScineList = async (req, res) => {
 
     res.json({ articles: result });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: errorText(e, req) });
   }
 };

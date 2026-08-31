@@ -66,7 +66,7 @@ const str = (v, max = 8000) => {
  */
 export async function structure({ transcript, hint } = {}) {
   const text = String(transcript ?? "").trim();
-  if (!text) throw new ValidationError("Пустая расшифровка — нечего разбирать");
+  if (!text) throw new ValidationError("Пустая расшифровка — нечего разбирать", { i18n: "app.dictation.emptyTranscript" });
 
   if (!isConfigured()) {
     throw new ServiceUnavailableError(
@@ -138,13 +138,13 @@ export async function structure({ transcript, hint } = {}) {
   }
 
   const block = message.content.find((b) => b.type === "text");
-  if (!block) throw new ServiceUnavailableError("ИИ вернул пустой ответ");
+  if (!block) throw new ServiceUnavailableError("ИИ вернул пустой ответ", { i18n: "app.ai.emptyResponse" });
 
   let parsed;
   try {
     parsed = JSON.parse(block.text);
   } catch {
-    throw new ServiceUnavailableError("ИИ вернул некорректный JSON");
+    throw new ServiceUnavailableError("ИИ вернул некорректный JSON", { i18n: "app.ai.invalidJson" });
   }
 
   // Нормализация. Пустые строки приводим к null: для карты «поле не заполнено»

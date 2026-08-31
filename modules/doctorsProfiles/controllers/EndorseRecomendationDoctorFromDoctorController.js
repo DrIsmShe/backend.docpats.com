@@ -1,4 +1,5 @@
 import DoctorEndorsement from "../../../common/models/DoctorProfile/doctorEndorsement.js";
+import { errorText } from "../../../common/i18n/index.js";
 import User, {
   decrypt as decryptField,
 } from "../../../common/models/Auth/users.js";
@@ -219,7 +220,7 @@ export const getDoctorEndorsements = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err.message,
+      error: errorText(err, req),
     });
   }
 };

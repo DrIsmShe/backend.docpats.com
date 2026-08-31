@@ -2,6 +2,7 @@
 import LabTest from "../../../../common/models/Polyclinic/ExamenationsTemplates/Labtest/LabTest.js";
 import dayjs from "dayjs";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getLatestLabtestController = async (req, res) => {
   const { patientId } = req.params;
@@ -35,7 +36,7 @@ const getLatestLabtestController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "myClinic.server.error2"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

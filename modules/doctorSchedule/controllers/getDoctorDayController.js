@@ -18,6 +18,7 @@ import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPo
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   buildDaySlots,
   dayBoundsUtc,
@@ -193,7 +194,7 @@ export const getDoctorDayController = async (req, res) => {
     console.error("❌ Ошибка getDoctorDay:", err);
     return res
       .status(500)
-      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: errorText(err, req) });
   }
 };
 

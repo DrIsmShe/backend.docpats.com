@@ -22,8 +22,8 @@ export class ValidationError extends AppError {
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message = "Unauthorized") {
-    super(message, 401, "UNAUTHORIZED");
+  constructor(message = "Unauthorized", details = null) {
+    super(message, 401, "UNAUTHORIZED", details);
   }
 }
 
@@ -40,8 +40,18 @@ export class TenantViolationError extends AppError {
 }
 
 export class NotFoundError extends AppError {
-  constructor(resource = "Resource") {
-    super(`${resource} not found`, 404, "NOT_FOUND", { resource });
+  // resource — либо короткое имя сущности ("VP attempt"), из которого
+  // собирается английская фраза, либо уже готовое сообщение на русском.
+  // Различаем по кириллице: без этого к готовой фразе приклеивалось
+  // " not found", и пользователь видел «Дело не найдено not found».
+  constructor(resource = "Resource", details = null) {
+    const ready = /[А-Яа-яЁё]/.test(String(resource));
+    super(
+      ready ? String(resource) : `${resource} not found`,
+      404,
+      "NOT_FOUND",
+      { resource, ...(details || {}) },
+    );
   }
 }
 
@@ -89,8 +99,8 @@ export class RateLimitError extends AppError {
 }
 
 export class ServiceUnavailableError extends AppError {
-  constructor(message = "Service temporarily unavailable") {
-    super(message, 503, "SERVICE_UNAVAILABLE");
+  constructor(message = "Service temporarily unavailable", details = null) {
+    super(message, 503, "SERVICE_UNAVAILABLE", details);
   }
 }
 

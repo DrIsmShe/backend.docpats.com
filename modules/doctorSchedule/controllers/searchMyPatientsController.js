@@ -21,6 +21,7 @@ import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPo
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 const HARD_LIMIT = 400; // потолок на источник — защита от выгрузки всей базы
 const RESULT_LIMIT = 30;
@@ -139,7 +140,7 @@ export const searchMyPatientsController = async (req, res) => {
     console.error("❌ Ошибка searchMyPatients:", err);
     return res
       .status(500)
-      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: errorText(err, req) });
   }
 };
 

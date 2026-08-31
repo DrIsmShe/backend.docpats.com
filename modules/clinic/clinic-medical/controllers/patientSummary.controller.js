@@ -13,6 +13,7 @@ import ClinicPatient, {
 } from "../../clinic-patients/models/clinicPatient.model.js";
 import { getCurrentClinicId } from "../../../../common/context/tenantContext.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 import {
   ForbiddenError,
   NotFoundError,
@@ -25,16 +26,16 @@ function handleError(res, err) {
   // причиной, а не сбой сервера: врач должен прочитать «уже сохранён»,
   // а не «Server error».
   if (err instanceof ValidationError) {
-    return res.status(400).json({ success: false, message: err.message });
+    return res.status(400).json({ success: false, message: errorText(err, res.req) });
   }
   if (err instanceof ForbiddenError) {
-    return res.status(403).json({ success: false, message: err.message });
+    return res.status(403).json({ success: false, message: errorText(err, res.req) });
   }
   if (err instanceof NotFoundError) {
-    return res.status(404).json({ success: false, message: err.message });
+    return res.status(404).json({ success: false, message: errorText(err, res.req) });
   }
   if (err instanceof UnprocessableError) {
-    return res.status(422).json({ success: false, message: err.message });
+    return res.status(422).json({ success: false, message: errorText(err, res.req) });
   }
   console.error("patientSummary:", err);
   return res.status(500).json({ success: false, message: "Server error" });

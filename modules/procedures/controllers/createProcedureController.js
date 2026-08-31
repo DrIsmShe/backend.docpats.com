@@ -39,12 +39,13 @@ import {
 import { validateCreate } from "../validators/procedure.validator.js";
 import { toProcedureDTO } from "../procedure.mapper.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 function fail(res, err) {
   if (err instanceof ProcedureError || err instanceof BookingPatientError) {
     return res.status(err.status || 400).json({
       success: false,
-      message: err.message,
+      message: errorText(err, res.req),
       ...(err.code ? { code: err.code } : {}),
       ...(err.extra || {}),
     });
@@ -204,7 +205,7 @@ export const createProcedureController = async (req, res) => {
     console.error("❌ Ошибка createProcedure:", err);
     return res
       .status(500)
-      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: errorText(err, req) });
   }
 };
 

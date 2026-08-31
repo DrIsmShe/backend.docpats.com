@@ -3,6 +3,7 @@ import XRAYScanTemplateNameofexam from "../../../../common/models/Polyclinic/Exa
 import XRAYScanTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/XRayScansTemplates/XRayScanTemplateReports.js";
 import XRAYScanTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/XRayScansTemplates/XRayScanTemplateRecomandations.js";
 import XRAYScanTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/XRayScansTemplates/XRayScanTemplateRecomandations.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Delete report template
 const deleteNameofexamTemplatesXRAYScanerController = async (req, res) => {
@@ -20,7 +21,7 @@ const deleteNameofexamTemplatesXRAYScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -41,7 +42,7 @@ const deleteReportTemplatesXRAYScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -62,7 +63,7 @@ const deleteDiagnosisTemplatesXRAYScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting diagnosis template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -85,7 +86,7 @@ const deleteRecomandationTemplatesXRAYScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting recommendation template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

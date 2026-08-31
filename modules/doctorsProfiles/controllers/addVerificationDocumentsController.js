@@ -1,6 +1,7 @@
 import DoctorVerificationDocument from "../../../common/models/DoctorVerification/DocumentFiles.js";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { uploadFile } from "../../../common/middlewares/uploadMiddleware.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 const AddVerificationDocumentsController = async (req, res) => {
   try {
@@ -97,7 +98,7 @@ const AddVerificationDocumentsController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error while uploading verification document",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

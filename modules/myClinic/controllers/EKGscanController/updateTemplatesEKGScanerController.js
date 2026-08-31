@@ -3,6 +3,7 @@ import EKGScanerTemplateReport from "../../../../common/models/Polyclinic/Examen
 import EKGScanerTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/EKGscanTemplates/EKGScanTemplateDiagnosis.js";
 import EKGScanerTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/EKGscanTemplates/EKGScanTemplateRecomandation.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Обновление шаблона отчёта
 const updateNameofexamTemplatesEKGScanerController = async (req, res) => {
@@ -26,7 +27,7 @@ const updateNameofexamTemplatesEKGScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.reportTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -53,7 +54,7 @@ const updateReportTemplatesEKGScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.reportTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -80,7 +81,7 @@ const updateDiagnosisTemplatesEKGScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.diagnosisTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -107,7 +108,7 @@ const updateRecomandationTemplatesEKGScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: tReq(req, "myClinic.recommendationTemplate.updateError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

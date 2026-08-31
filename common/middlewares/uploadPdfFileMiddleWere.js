@@ -5,6 +5,7 @@ import path from "path";
 import crypto from "crypto";
 import slugify from "slugify";
 import { tReq } from "../i18n/index.js";
+import { errorText } from "../i18n/index.js";
 import {
   S3Client,
   PutObjectCommand,
@@ -165,7 +166,7 @@ export const processFiles = async (req, res, next) => {
 
     next();
   } catch (err) {
-    res.status(500).json({ message: "File upload error", error: err.message });
+    res.status(500).json({ message: "File upload error", error: errorText(err, req) });
   }
 };
 
@@ -188,7 +189,7 @@ export const getPDF = async (req, res) => {
       res.setHeader("Content-Type", "application/pdf");
       data.Body.pipe(res);
     } catch (error) {
-      res.status(404).json({ message: "PDF not found", error: error.message });
+      res.status(404).json({ message: "PDF not found", error: errorText(error, req) });
     }
     return;
   }
@@ -206,7 +207,7 @@ export const uploadPDF = (req, res) => {
     if (err) {
       return res.status(500).json({
         message: tReq(req, "app.pdf.uploadError"),
-        error: err.message,
+        error: errorText(err, req),
       });
     }
 
@@ -224,7 +225,7 @@ export const uploadPDF = (req, res) => {
     } catch (e) {
       res.status(500).json({
         message: tReq(req, "app.pdf.processingError"),
-        error: e.message,
+        error: errorText(e, req),
       });
     }
   });

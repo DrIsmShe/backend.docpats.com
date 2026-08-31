@@ -66,7 +66,7 @@ export async function submitDoctorReview(req, res) {
     return res.status(200).json({ success: true, review });
   } catch (err) {
     console.error("submitDoctorReview error:", err.message);
-    return res.status(500).json({ success: false, message: "Ошибка сервера." });
+    return res.status(500).json({ success: false, message: tReq(req, "app.common.serverError", {}, "Ошибка сервера.") });
   }
 }
 
@@ -115,7 +115,7 @@ export async function getDoctorReviews(req, res) {
     });
   } catch (err) {
     console.error("getDoctorReviews error:", err.message);
-    return res.status(500).json({ success: false, message: "Ошибка сервера." });
+    return res.status(500).json({ success: false, message: tReq(req, "app.common.serverError", {}, "Ошибка сервера.") });
   }
 }
 
@@ -210,7 +210,7 @@ export async function replyToDoctorReview(req, res) {
     });
   } catch (err) {
     console.error("replyToDoctorReview error:", err.message);
-    return res.status(500).json({ success: false, message: "Ошибка сервера." });
+    return res.status(500).json({ success: false, message: tReq(req, "app.common.serverError", {}, "Ошибка сервера.") });
   }
 }
 
@@ -283,6 +283,6 @@ export async function getDoctorTrustStats(req, res) {
     });
   } catch (err) {
     console.error("getDoctorTrustStats error:", err.message);
-    return res.status(500).json({ success: false, message: "Ошибка сервера." });
+    return res.status(500).json({ success: false, message: tReq(req, "app.common.serverError", {}, "Ошибка сервера.") });
   }
 }

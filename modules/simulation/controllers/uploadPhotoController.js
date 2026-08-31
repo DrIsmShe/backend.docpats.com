@@ -7,6 +7,7 @@
 
 import { processAndUploadPhoto } from "../services/upload.service.js";
 import { UploadValidationError } from "../validators/upload.validator.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * S.7.7+ — Строит proxy URL из r2Key.
@@ -43,7 +44,7 @@ export async function uploadPhotoController(req, res) {
     if (err instanceof UploadValidationError) {
       return res.status(400).json({
         error: err.code,
-        message: err.message,
+        message: errorText(err, req),
       });
     }
     console.error("[simulation/uploadPhoto] Unexpected error:", err);

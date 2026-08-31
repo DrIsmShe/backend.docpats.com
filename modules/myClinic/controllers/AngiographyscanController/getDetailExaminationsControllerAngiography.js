@@ -2,6 +2,7 @@
 
 import AngiographyScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/AngiographyscanTemplates/Angiographyscan.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getDetailExaminationsControllerAngiography = async (req, res) => {
   try {
@@ -43,7 +44,7 @@ const getDetailExaminationsControllerAngiography = async (req, res) => {
     res.status(200).json(angiographyScan);
   } catch (error) {
     console.error("Ошибка при получении Angiography-исследования:", error);
-    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: error.message });
+    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: errorText(error, req) });
   }
 };
 

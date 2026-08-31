@@ -2,6 +2,7 @@ import * as service from "./simulation.service.js";
 import { maxPaintedPct, isFaceProcedure } from "./procedureZones.js";
 import { simulationQuotaLeft } from "./simulationQuota.service.js";
 import { tReq } from "../../common/i18n/index.js";
+import { errorText } from "../../common/i18n/index.js";
 
 // POST /api/surgery/cases/:id/simulate
 export async function startSimulation(req, res) {
@@ -37,7 +38,7 @@ export async function startSimulation(req, res) {
     res.status(201).json({ success: true, simulation });
   } catch (err) {
     console.error("[simulation] startSimulation error:", err);
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -50,7 +51,7 @@ export async function getSimulations(req, res) {
     res.json({ success: true, simulations });
   } catch (err) {
     console.error("[simulation] getSimulations error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -68,7 +69,7 @@ export async function getPrompts(req, res) {
       isFaceProcedure: isFaceProcedure(procedure),
     });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -83,7 +84,7 @@ export async function getQuota(req, res) {
     res.json({ success: true, quota });
   } catch (err) {
     console.error("[simulation] getQuota error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -92,7 +93,7 @@ export async function getPromptCatalog(req, res) {
     res.json({ success: true, catalog: service.getPromptCatalog() });
   } catch (err) {
     console.error("[simulation] getPromptCatalog error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -111,7 +112,7 @@ export async function selectResult(req, res) {
     res.json({ success: true, simulation: sim });
   } catch (err) {
     console.error("[simulation] selectResult error:", err);
-    res.status(400).json({ success: false, error: err.message });
+    res.status(400).json({ success: false, error: errorText(err, req) });
   }
 }
 
@@ -128,6 +129,6 @@ export async function deleteSimulation(req, res) {
     res.json({ success: true });
   } catch (err) {
     console.error("[simulation] deleteSimulation error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 }

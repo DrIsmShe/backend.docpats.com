@@ -4,6 +4,7 @@ import crypto from "crypto";
 import User from "../../../common/models/Auth/users.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   isValidPhoneInput,
   INVALID_PHONE_MESSAGE,
@@ -231,7 +232,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     }
     return res
       .status(500)
-      .json({ message: tReq(req, "app.error.serverError"), error: error.message });
+      .json({ message: tReq(req, "app.error.serverError"), error: errorText(error, req) });
   }
 };
 

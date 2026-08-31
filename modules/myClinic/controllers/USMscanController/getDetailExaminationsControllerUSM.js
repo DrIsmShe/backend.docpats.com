@@ -2,6 +2,7 @@
 
 import USMScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/USMscanTemplates/USMscan.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getDetailExaminationsControllerUSM = async (req, res) => {
   try {
@@ -41,7 +42,7 @@ const getDetailExaminationsControllerUSM = async (req, res) => {
     res.status(200).json(usmScan);
   } catch (error) {
     console.error("Ошибка при получении USM-исследования:", error);
-    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: error.message });
+    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: errorText(error, req) });
   }
 };
 

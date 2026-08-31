@@ -3,6 +3,7 @@ import NewPatientPolyclinicMedical from "../../../common/models/Polyclinic/Medic
 import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivatePatient.js";
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * UMR rewrite (Sprint 2 Phase 1):
@@ -203,7 +204,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     if (err.name === "ValidationError") {
       return res.status(400).json({
         success: false,
-        message: err.message,
+        message: errorText(err, req),
       });
     }
 
@@ -216,7 +217,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: err.message,
+        message: errorText(err, req),
       });
     }
 

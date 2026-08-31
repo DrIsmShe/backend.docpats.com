@@ -2,6 +2,7 @@
 
 import SPECTScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/SPECTScansTemplates/SPECTScan.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getDetailExaminationsControllerSPECT = async (req, res) => {
   try {
@@ -41,7 +42,7 @@ const getDetailExaminationsControllerSPECT = async (req, res) => {
     res.status(200).json(spectScan);
   } catch (error) {
     console.error("Ошибка при получении SPECT-исследования:", error);
-    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: error.message });
+    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: errorText(error, req) });
   }
 };
 

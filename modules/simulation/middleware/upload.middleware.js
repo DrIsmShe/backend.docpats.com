@@ -1,5 +1,6 @@
 // server/modules/simulation/middleware/upload.middleware.js
 import multer from "multer";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   multerFileFilter,
   MAX_UPLOAD_SIZE,
@@ -42,14 +43,14 @@ export function handleUploadErrors(err, req, res, next) {
     const m = map[err.code] || { status: 400, code: "upload_error" };
     return res.status(m.status).json({
       error: m.code,
-      message: err.message,
+      message: errorText(err, req),
     });
   }
 
   if (err instanceof UploadValidationError) {
     return res.status(400).json({
       error: err.code,
-      message: err.message,
+      message: errorText(err, req),
     });
   }
 

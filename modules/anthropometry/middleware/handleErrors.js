@@ -1,4 +1,5 @@
 import { AnthropometryError } from "../utils/errors.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /* ============================================================
    ERROR HANDLER MIDDLEWARE
@@ -18,7 +19,7 @@ const handleErrors = (err, req, res, next) => {
     const body = {
       error: {
         code: err.errorCode,
-        message: err.message,
+        message: errorText(err, req),
         details: err.details,
       },
     };

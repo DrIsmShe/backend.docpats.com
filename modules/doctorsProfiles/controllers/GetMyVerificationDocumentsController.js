@@ -1,6 +1,7 @@
 // GetMyVerificationDocumentsController.js
 import DoctorVerificationDocument from "../../../common/models/DoctorVerification/DocumentFiles.js";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 const GetMyVerificationDocumentsController = async (req, res) => {
   try {
@@ -23,7 +24,7 @@ const GetMyVerificationDocumentsController = async (req, res) => {
 
     res.json({ success: true, documents });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 };
 

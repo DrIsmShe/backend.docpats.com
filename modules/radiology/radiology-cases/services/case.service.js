@@ -293,7 +293,7 @@ export async function reviewCase(caseId, { decision, reason }, actorId, actorRol
 
   if (decision === "reject") {
     if (!reason?.trim())
-      throw new ValidationError("Укажите причину отклонения — она вернётся автору");
+      throw new ValidationError("Укажите причину отклонения — она вернётся автору", { i18n: "app.review.rejectReasonRequired" });
     doc.status = "rejected";
     doc.rejectionReason = reason.trim();
     doc.reviewedBy = actorId;

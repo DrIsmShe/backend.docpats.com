@@ -140,7 +140,7 @@ const privatePatientDetailsController = async (req, res) => {
   } catch (error) {
     console.error("❌ privatePatientDetailsController error:", error);
     return res.status(500).json({
-      message: "Ошибка сервера при получении private-пациента",
+      message: tReq(req, "app.privatePatient.fetchError", {}, "Ошибка сервера при получении private-пациента"),
     });
   }
 };

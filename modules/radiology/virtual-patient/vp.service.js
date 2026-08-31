@@ -159,7 +159,7 @@ export async function createVpCase(input, actorId, actorRole) {
 export async function updateVpCase(caseId, patch) {
   const doc = await VirtualPatientCase.findById(caseId);
   if (!doc) throw new NotFoundError("VP case");
-  if (doc.status === "archived") throw new ConflictError("Архивный кейс редактировать нельзя");
+  if (doc.status === "archived") throw new ConflictError("Архивный кейс редактировать нельзя", { i18n: "app.case.archivedNotEditable" });
   const FIELDS = ["title", "presentation", "difficulty", "categoryId", "investigations", "variants", "diagnosis", "source"];
   for (const f of FIELDS) if (patch[f] !== undefined) doc[f] = patch[f];
   await doc.save();
@@ -183,7 +183,7 @@ export async function applyVpAiRevision(caseId, draft, meta = {}) {
   const doc = await VirtualPatientCase.findById(caseId);
   if (!doc) throw new NotFoundError("VP case");
   if (doc.status === "archived") {
-    throw new ConflictError("Архивный кейс редактировать нельзя");
+    throw new ConflictError("Архивный кейс редактировать нельзя", { i18n: "app.case.archivedNotEditable" });
   }
   if (doc.status === "published") {
     throw new ConflictError(
@@ -193,7 +193,7 @@ export async function applyVpAiRevision(caseId, draft, meta = {}) {
 
   const listIn = Array.isArray(draft?.investigations) ? draft.investigations : [];
   if (listIn.length < 2) {
-    throw new ValidationError("В исправленном сценарии меньше двух обследований — правки не применены");
+    throw new ValidationError("В исправленном сценарии меньше двух обследований — правки не применены", { i18n: "app.case.revisedScenarioTooSmall" });
   }
 
   const keyByName = new Map();
@@ -236,7 +236,7 @@ export async function applyVpAiRevision(caseId, draft, meta = {}) {
   }
 
   if (investigations.length < 2) {
-    throw new ValidationError("В исправленном сценарии меньше двух обследований — правки не применены");
+    throw new ValidationError("В исправленном сценарии меньше двух обследований — правки не применены", { i18n: "app.case.revisedScenarioTooSmall" });
   }
 
   const hadVariants = (doc.variants?.length ?? 0) > 0;
@@ -291,7 +291,7 @@ export async function setVpStatus(caseId, status, actorId, actorRole) {
   } else if (status === "draft" || status === "archived") {
     doc.status = status;
   } else {
-    throw new ValidationError("Неизвестный статус");
+    throw new ValidationError("Неизвестный статус", { i18n: "app.validation.unknownStatus" });
   }
   await doc.save();
   recordRadiologyEvent({ action: `vp.${status}`, actorId, actorRole, metadata: {} });
@@ -489,11 +489,11 @@ export async function startVpAttempt(caseId, userId, mode = "learn", lang = "ru"
 export async function commitDifferential(attemptId, userId, text) {
   const attempt = await VirtualPatientAttempt.findById(attemptId);
   if (!attempt) throw new NotFoundError("VP attempt");
-  if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка");
-  if (attempt.status !== "in_progress") throw new ConflictError("Попытка уже закрыта");
-  if (isExpired(attempt)) throw new ConflictError("Время попытки истекло");
+  if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка", { i18n: "app.attempt.foreign" });
+  if (attempt.status !== "in_progress") throw new ConflictError("Попытка уже закрыта", { i18n: "app.attempt.alreadyClosed" });
+  if (isExpired(attempt)) throw new ConflictError("Время попытки истекло", { i18n: "app.attempt.timeExpired" });
   if (attempt.commitment?.committedAt) {
-    throw new ConflictError("Предварительный диагноз уже зафиксирован — менять его нельзя");
+    throw new ConflictError("Предварительный диагноз уже зафиксирован — менять его нельзя", { i18n: "app.attempt.differentialLocked" });
   }
 
   const caseDoc = await VirtualPatientCase.findById(attempt.caseId)
@@ -531,10 +531,10 @@ export async function commitDifferential(attemptId, userId, text) {
 export async function orderInvestigation(attemptId, userId, key) {
   const attempt = await VirtualPatientAttempt.findById(attemptId);
   if (!attempt) throw new NotFoundError("VP attempt");
-  if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка");
-  if (attempt.status === "submitted") throw new ConflictError("Попытка уже сдана");
-  if (attempt.status === "expired") throw new ConflictError("Попытка просрочена");
-  if (isExpired(attempt)) throw new ConflictError("Время попытки истекло");
+  if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка", { i18n: "app.attempt.foreign" });
+  if (attempt.status === "submitted") throw new ConflictError("Попытка уже сдана", { i18n: "app.attempt.alreadySubmitted" });
+  if (attempt.status === "expired") throw new ConflictError("Попытка просрочена", { i18n: "app.attempt.expired" });
+  if (isExpired(attempt)) throw new ConflictError("Время попытки истекло", { i18n: "app.attempt.timeExpired" });
 
   // В зачёте порядок жёсткий: сначала своя версия по жалобе, потом
   // обследования. Иначе «предварительный» диагноз перестаёт быть
@@ -614,10 +614,10 @@ function buildVpReview(caseDoc, attempt) {
 export async function submitVpAttempt(attemptId, userId, response) {
   const attempt = await VirtualPatientAttempt.findById(attemptId);
   if (!attempt) throw new NotFoundError("VP attempt");
-  if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка");
-  if (attempt.status === "submitted") throw new ConflictError("Попытка уже сдана");
+  if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка", { i18n: "app.attempt.foreign" });
+  if (attempt.status === "submitted") throw new ConflictError("Попытка уже сдана", { i18n: "app.attempt.alreadySubmitted" });
   if (attempt.status === "expired") {
-    throw new ConflictError("Попытка просрочена: лимит времени истёк");
+    throw new ConflictError("Попытка просрочена: лимит времени истёк", { i18n: "app.attempt.expiredTimeLimit" });
   }
 
   const late = isExpired(attempt);
@@ -764,7 +764,7 @@ export async function submitVpAttempt(attemptId, userId, response) {
 export async function getVpAttempt(attemptId, userId) {
   const attempt = await VirtualPatientAttempt.findById(attemptId).lean();
   if (!attempt) throw new NotFoundError("VP attempt");
-  if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка");
+  if (String(attempt.userId) !== String(userId)) throw new ForbiddenError("Это чужая попытка", { i18n: "app.attempt.foreign" });
   if (attempt.status === "submitted") {
     const caseDoc = await VirtualPatientCase.findById(attempt.caseId).lean();
     return { attempt, review: caseDoc ? buildVpReview(caseDoc, attempt) : null };

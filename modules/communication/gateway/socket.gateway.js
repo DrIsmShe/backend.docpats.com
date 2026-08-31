@@ -12,6 +12,7 @@ import {
 import { createSocketRateLimiter } from "../../../common/utils/socketRateLimit.js";
 import { recordActionAsync } from "../../audit/index.js";
 import User from "../../../common/models/Auth/users.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 let ioInstance = null;
 let presenceSweepTimer = null;
@@ -607,7 +608,12 @@ export function initCommunicationGateway(nsp) {
         ) {
           socket.emit("translation:error", {
             messageId,
-            error: "Сообщение недоступно для перевода",
+            error: tReq(
+              socket.request,
+              "app.message.notTranslatable",
+              {},
+              "Сообщение недоступно для перевода",
+            ),
           });
           return;
         }

@@ -1,4 +1,5 @@
 import reviewService from "../../clinic/clinic-reviews/services/review.service.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 function requirePatient(req, res) {
   if (!req.session?.userId) {
@@ -29,7 +30,7 @@ export async function submitMyReview(req, res) {
   } catch (err) {
     const code = err.statusCode || 500;
     if (code >= 500) console.error("[clinicReview.submitMyReview]", err);
-    res.status(code).json({ error: err.message || "Failed to submit review" });
+    res.status(code).json({ error: errorText(err, req) || "Failed to submit review" });
   }
 }
 

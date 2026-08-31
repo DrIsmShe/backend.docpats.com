@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Notification from "../../../common/models/Notification/notification.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * Универсальный контроллер уведомлений
@@ -137,7 +138,7 @@ export const getNotificationsController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "app.notification.fetchServerError"),
-      error: err.message,
+      error: errorText(err, req),
     });
   }
 };

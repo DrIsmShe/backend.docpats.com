@@ -2,6 +2,7 @@ import Chat from "../../../common/models/Communication/message.js"; // созд�
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 export const openChatForAppointment = async (req, res) => {
   try {
@@ -39,6 +40,6 @@ export const openChatForAppointment = async (req, res) => {
     res.json({ success: true, data: chat });
   } catch (err) {
     console.error("❌ Ошибка openChatForAppointment:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: errorText(err, req) });
   }
 };

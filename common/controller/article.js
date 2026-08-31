@@ -3,6 +3,7 @@ import { getOrCreateTranslation } from "../../modules/translation/translation.se
 import { markTranslationsAsStale } from "../../modules/translation/translation.repository.js";
 
 import { getTranslationIfExists } from "../../modules/translation/translation.service.js";
+import { errorText } from "../i18n/index.js";
 export const getMyArticleSingle = async (req, res) => {
   try {
     const article = await Article.findById(req.params.id).populate(
@@ -57,7 +58,7 @@ export const getMyArticleSingle = async (req, res) => {
     console.error("❌ getMyArticleSingle error:", error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: errorText(error, req),
     });
   }
 };
@@ -128,7 +129,7 @@ export const updateArticle = async (req, res) => {
       article,
     });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: errorText(e, req) });
   }
 };
 
@@ -169,6 +170,6 @@ export const getArticlesList = async (req, res) => {
       articles: result,
     });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: errorText(e, req) });
   }
 };

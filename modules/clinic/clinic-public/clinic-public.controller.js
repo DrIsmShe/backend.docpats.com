@@ -9,6 +9,7 @@
 import { getPublicClinicBySlug } from "./clinic-public.service.js";
 import { getPublicClinicDoctor } from "./clinic-public-doctor.service.js";
 import { getPublicClinicPublication } from "./clinic-public-publication.service.js";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   getPublicDoctorSlots,
   createPublicBooking,
@@ -151,7 +152,7 @@ export async function getPublicDoctorSlotsController(req, res) {
   } catch (err) {
     // Ошибки валидации диапазона дат приходят отсюда же — это 400, не 500.
     if (err?.name === "ValidationError") {
-      return res.status(400).json({ error: err.message, code: "BAD_REQUEST" });
+      return res.status(400).json({ error: errorText(err, req), code: "BAD_REQUEST" });
     }
     console.error("[clinic-public] getPublicDoctorSlots error:", err?.message);
     return res.status(500).json({
@@ -183,7 +184,7 @@ export async function createPublicBookingController(req, res) {
     return res.status(201).json({ ok: true, ...booking });
   } catch (err) {
     if (err?.name === "ValidationError") {
-      return res.status(400).json({ error: err.message, code: "BAD_REQUEST" });
+      return res.status(400).json({ error: errorText(err, req), code: "BAD_REQUEST" });
     }
     // Слот заняли, пока посетитель заполнял форму — это нормальный ход
     // событий, а не сбой: отвечаем отдельным кодом, чтобы страница могла

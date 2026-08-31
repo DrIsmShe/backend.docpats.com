@@ -3,6 +3,7 @@ import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
 /**
@@ -42,7 +43,7 @@ export const getMySchedule = async (req, res) => {
     res.json({ success: true, data: schedule });
   } catch (err) {
     console.error("❌ Ошибка getMySchedule:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: errorText(err, req) });
   }
 };
 
@@ -86,7 +87,7 @@ export const createOrUpdateSchedule = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Ошибка createOrUpdateSchedule:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: errorText(err, req) });
   }
 };
 
@@ -125,7 +126,7 @@ export const getAvailableSlots = async (req, res) => {
     res.json({ success: true, slots });
   } catch (err) {
     console.error("❌ Ошибка getAvailableSlots:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: errorText(err, req) });
   }
 };
 
@@ -164,6 +165,6 @@ export const getDoctorAppointments = async (req, res) => {
     res.json({ success: true, data: appointments });
   } catch (err) {
     console.error("❌ Ошибка получения приёмов врача:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: errorText(err, req) });
   }
 };

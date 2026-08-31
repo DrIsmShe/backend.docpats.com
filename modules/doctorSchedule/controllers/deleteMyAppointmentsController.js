@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * @desc Удаление приёмов врача — одиночное или массовое
@@ -116,7 +117,7 @@ const deleteMyAppointmentsController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "app.appointment.deleteServerError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

@@ -96,7 +96,7 @@ export async function checkUserLimit(userId, { req, consume = false } = {}) {
   }
 
   const user = await User.findById(userId).lean();
-  if (!user) throw new Error("Пользователь не найден");
+  if (!user) throw Object.assign(new Error("Пользователь не найден"), { i18n: "app.user.notFound" });
 
   // Эффективный план учитывает trial для врачей
   const plan = resolveEffectivePlan(user);
@@ -272,7 +272,7 @@ ${isGuestOrPatient ? "> [Блок-дисклеймер из инструкции
   });
 
   if (!message.content?.[0]?.text) {
-    throw new Error("Пустой ответ от AI. Попробуйте ещё раз.");
+    throw Object.assign(new Error("Пустой ответ от AI. Попробуйте ещё раз."), { i18n: "app.ai.emptyResponseRetry" });
   }
 
   const rawBody = message.content[0].text;
@@ -464,6 +464,6 @@ export async function getUserArticle(userId, articleId) {
     _id: articleId,
     userId,
   }).lean();
-  if (!article) throw new Error("Статья не найдена");
+  if (!article) throw Object.assign(new Error("Статья не найдена"), { i18n: "app.article.notFound" });
   return article;
 }

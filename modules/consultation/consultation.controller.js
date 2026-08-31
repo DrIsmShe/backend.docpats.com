@@ -10,6 +10,7 @@ import {
   buildEpicrisis,
 } from "./consultation.service.js";
 import User from "../../common/models/Auth/users.js";
+import { errorText } from "../../common/i18n/index.js";
 
 // ─── Извлечь userId из сессии (всегда строка или null) ────────────
 function extractUserId(req) {
@@ -29,7 +30,7 @@ export async function sessionStatus(req, res) {
     res.json(data);
   } catch (e) {
     console.error("[sessionStatus] error:", e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: errorText(e, req) });
   }
 }
 
@@ -49,7 +50,7 @@ export async function startSession(req, res) {
     res.json({ ok: true, remaining: result.remaining, max: result.max });
   } catch (e) {
     console.error("[startSession] error:", e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: errorText(e, req) });
   }
 }
 
@@ -113,7 +114,7 @@ export async function chat(req, res) {
     });
   } catch (e) {
     console.error("[chat] error:", e);
-    res.status(500).json({ error: e.message || "Chat error" });
+    res.status(500).json({ error: errorText(e, req) || "Chat error" });
   }
 }
 
@@ -172,6 +173,6 @@ export async function epicrisis(req, res) {
     });
   } catch (e) {
     console.error("[epicrisis] error:", e);
-    res.status(500).json({ error: e.message || "Epicrisis error" });
+    res.status(500).json({ error: errorText(e, req) || "Epicrisis error" });
   }
 }

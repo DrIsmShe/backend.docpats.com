@@ -101,7 +101,7 @@ export async function startSession({
   telemedSessionId = null,
   lang = "",
 }) {
-  if (!room) throw new ValidationError("Не указана комната приёма");
+  if (!room) throw new ValidationError("Не указана комната приёма", { i18n: "app.scribe.roomMissing" });
 
   // ─── КАРТА ИЗ ТЕЛЕМЕД-ПРИЁМА ─────────────────────────────────────
   //
@@ -140,7 +140,7 @@ export async function startSession({
     }
   }
 
-  if (!resolvedPatientUser) throw new ValidationError("Не указан пациент");
+  if (!resolvedPatientUser) throw new ValidationError("Не указан пациент", { i18n: "app.scribe.patientMissing" });
 
   // Один активный сеанс на комнату: два параллельных писали бы один и
   // тот же разговор дважды и стоили бы вдвое.
@@ -198,10 +198,10 @@ export async function startSession({
  */
 export async function markRecordingUnsupported({ sessionId, userId }) {
   const session = await ScribeSession.findById(sessionId);
-  if (!session) throw new NotFoundError("Сеанс записи не найден");
+  if (!session) throw new NotFoundError("Сеанс записи не найден", { i18n: "app.scribe.sessionNotFound" });
 
   const me = participantOf(session, userId);
-  if (!me) throw new ForbiddenError("Вы не участник этого приёма");
+  if (!me) throw new ForbiddenError("Вы не участник этого приёма", { i18n: "app.scribe.notParticipant" });
 
   // Уже ответившего не перебиваем: человек мог согласиться с компьютера,
   // а потом открыть ту же комнату с телефона.
@@ -220,10 +220,10 @@ export async function markRecordingUnsupported({ sessionId, userId }) {
 
 export async function respondToConsent({ sessionId, userId, granted }) {
   const session = await ScribeSession.findById(sessionId);
-  if (!session) throw new NotFoundError("Сеанс записи не найден");
+  if (!session) throw new NotFoundError("Сеанс записи не найден", { i18n: "app.scribe.sessionNotFound" });
 
   const me = participantOf(session, userId);
-  if (!me) throw new ForbiddenError("Вы не участник этого приёма");
+  if (!me) throw new ForbiddenError("Вы не участник этого приёма", { i18n: "app.scribe.notParticipant" });
 
   if (!granted) {
     me.consent = "declined";
@@ -255,10 +255,10 @@ export async function respondToConsent({ sessionId, userId, granted }) {
  */
 export async function revokeConsent({ sessionId, userId }) {
   const session = await ScribeSession.findById(sessionId);
-  if (!session) throw new NotFoundError("Сеанс записи не найден");
+  if (!session) throw new NotFoundError("Сеанс записи не найден", { i18n: "app.scribe.sessionNotFound" });
 
   const me = participantOf(session, userId);
-  if (!me) throw new ForbiddenError("Вы не участник этого приёма");
+  if (!me) throw new ForbiddenError("Вы не участник этого приёма", { i18n: "app.scribe.notParticipant" });
 
   me.consent = "revoked";
   me.consentAt = new Date();
@@ -290,7 +290,7 @@ export async function ingestChunk({
   lang = "",
 }) {
   const session = await ScribeSession.findById(sessionId);
-  if (!session) throw new NotFoundError("Сеанс записи не найден");
+  if (!session) throw new NotFoundError("Сеанс записи не найден", { i18n: "app.scribe.sessionNotFound" });
 
   if (session.status !== "recording") {
     // Не ошибка клиента: браузер мог отправить кусок, который уже был в
@@ -299,7 +299,7 @@ export async function ingestChunk({
   }
 
   const me = participantOf(session, userId);
-  if (!me) throw new ForbiddenError("Вы не участник этого приёма");
+  if (!me) throw new ForbiddenError("Вы не участник этого приёма", { i18n: "app.scribe.notParticipant" });
   if (me.consent !== "granted") {
     return { accepted: false, reason: "consent" };
   }

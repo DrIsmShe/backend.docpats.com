@@ -6,6 +6,7 @@
 // смотрит именно на него, а не на расширение файла.
 
 import * as svc from "../services/fhir/fhirExport.service.js";
+import { errorText } from "../../../../common/i18n/index.js";
 import {
   ForbiddenError,
   NotFoundError,
@@ -14,13 +15,13 @@ import {
 
 function handleError(res, err) {
   if (err instanceof ForbiddenError) {
-    return res.status(403).json({ success: false, message: err.message });
+    return res.status(403).json({ success: false, message: errorText(err, res.req) });
   }
   if (err instanceof NotFoundError) {
-    return res.status(404).json({ success: false, message: err.message });
+    return res.status(404).json({ success: false, message: errorText(err, res.req) });
   }
   if (err instanceof UnprocessableError) {
-    return res.status(422).json({ success: false, message: err.message });
+    return res.status(422).json({ success: false, message: errorText(err, res.req) });
   }
   console.error("fhirExport:", err);
   return res.status(500).json({ success: false, message: "Server error" });

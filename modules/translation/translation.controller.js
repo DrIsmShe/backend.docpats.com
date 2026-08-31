@@ -1,5 +1,6 @@
 import Article from "../../common/models/Articles/articles.js";
 import ArticleScine from "../../common/models/Articles/articles-scince.js";
+import { errorText } from "../../common/i18n/index.js";
 import {
   findTranslation,
   saveReviewedTranslation,
@@ -56,7 +57,7 @@ export const getTranslationForEdit = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: errorText(error, req),
     });
   }
 };
@@ -97,7 +98,7 @@ export const saveTranslationReview = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: errorText(error, req),
     });
   }
 };

@@ -129,7 +129,7 @@ function artifactsFor(modality, artifacts) {
  */
 export async function queueAnalysis({ caseId, userId, modalities: requested = [], lang = "ru" }) {
   const caseDoc = await DiagnosticCase.findOne({ _id: caseId, ownerId: userId });
-  if (!caseDoc) throw new NotFoundError("Дело не найдено");
+  if (!caseDoc) throw new NotFoundError("Дело не найдено", { i18n: "app.case.notFound" });
 
   const artifacts = await DiagnosticArtifact.find({ caseId }).sort({ createdAt: 1 });
 
@@ -140,7 +140,7 @@ export async function queueAnalysis({ caseId, userId, modalities: requested = []
 
   const keys = planModalities({ artifacts, requested });
   if (!keys.length) {
-    throw new ValidationError("Не выбрано ни одной модальности для разбора");
+    throw new ValidationError("Не выбрано ни одной модальности для разбора", { i18n: "app.diagnostics.noModalitySelected" });
   }
 
   const jobs = [];
@@ -227,7 +227,7 @@ export async function reapStaleJobs({ caseId = null, ownerId = null, now = Date.
  */
 export async function runJob(jobId, { lang = null } = {}) {
   const job = await DiagnosticJob.findById(jobId);
-  if (!job) throw new NotFoundError("Задание не найдено");
+  if (!job) throw new NotFoundError("Задание не найдено", { i18n: "app.diagnostics.jobNotFound" });
 
   // Смена языка при перезапуске. Это единственный способ получить уже
   // разобранное дело на другом языке: выводы лежат в базе готовым текстом.
@@ -243,12 +243,12 @@ export async function runJob(jobId, { lang = null } = {}) {
     // упирается в «уже выполняется» и дело не расклинить вообще ничем.
     const startedAt = job.provenance?.startedAt?.getTime?.() ?? 0;
     if (Date.now() - startedAt < STALE_JOB_MS) {
-      throw new ConflictError("Задание уже выполняется");
+      throw new ConflictError("Задание уже выполняется", { i18n: "app.diagnostics.jobAlreadyRunning" });
     }
   }
 
   const caseDoc = await DiagnosticCase.findById(job.caseId);
-  if (!caseDoc) throw new NotFoundError("Дело не найдено");
+  if (!caseDoc) throw new NotFoundError("Дело не найдено", { i18n: "app.case.notFound" });
 
   const modality = getModality(job.modality);
   const analyzer = getAnalyzer(job.analyzer);

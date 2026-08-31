@@ -27,6 +27,7 @@
 import mongoose from "mongoose";
 import consentRequestService from "../../clinic-consent/services/consentRequest.service.js";
 import ClinicPatient from "../models/clinicPatient.model.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // ─── Auth + tenant guard ──────────────────────────────────────────────
 
@@ -156,13 +157,13 @@ export async function createConsentRequest(req, res) {
   } catch (err) {
     console.error("[consentRequest.clinic.create]", err);
     if (err.code === "RATE_LIMIT_EXCEEDED") {
-      return res.status(429).json({ message: err.message });
+      return res.status(429).json({ message: errorText(err, req) });
     }
     if (err.code === "NO_SCOPES") {
-      return res.status(422).json({ message: err.message });
+      return res.status(422).json({ message: errorText(err, req) });
     }
     if (err.name === "ValidationError") {
-      return res.status(422).json({ message: err.message });
+      return res.status(422).json({ message: errorText(err, req) });
     }
     res.status(500).json({ message: "Failed to create consent request" });
   }
@@ -226,7 +227,7 @@ export async function cancelConsentRequest(req, res) {
       return res.status(404).json({ message: "Consent request not found" });
     }
     if (err.code === "NOT_PENDING") {
-      return res.status(409).json({ message: err.message });
+      return res.status(409).json({ message: errorText(err, req) });
     }
     res.status(500).json({ message: "Failed to cancel consent request" });
   }

@@ -19,6 +19,7 @@ import DoctorPrivatePatient from "../../../common/models/Polyclinic/DoctorPrivat
 import NewPatientPolyclinic from "../../../common/models/Polyclinic/newPatientPolyclinic.js";
 import { encryptPHI } from "../../../common/utils/phiCrypto.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   normalizeItems,
   normalizeRefills,
@@ -154,7 +155,7 @@ export async function createDoctorPrescription(req, res, next) {
     return res.status(201).json({ ok: true, prescription: toApi(rx.toObject()) });
   } catch (err) {
     if (err?.name === "ValidationError" || err?.message?.includes("INN")) {
-      return res.status(422).json({ ok: false, error: err.message });
+      return res.status(422).json({ ok: false, error: errorText(err, req) });
     }
     return next ? next(err) : res.status(500).json({ ok: false });
   }

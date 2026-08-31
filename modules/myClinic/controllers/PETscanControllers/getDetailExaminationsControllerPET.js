@@ -1,5 +1,6 @@
 import PETScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/PETScansTemplates/PETScan.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getDetailExaminationsControllerPET = async (req, res) => {
   try {
@@ -36,7 +37,7 @@ const getDetailExaminationsControllerPET = async (req, res) => {
     res.status(200).json(petScan);
   } catch (error) {
     console.error("Ошибка при получении PET-исследования:", error);
-    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: error.message });
+    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: errorText(error, req) });
   }
 };
 

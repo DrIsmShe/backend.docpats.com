@@ -23,6 +23,7 @@ import {
 } from "../services/procedureNames.service.js";
 import { toProcedureDTO } from "../procedure.mapper.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 const ACTIVE_APPOINTMENT_STATUSES = ["pending", "confirmed"];
 
@@ -30,7 +31,7 @@ function fail(res, err) {
   if (err instanceof ProcedureError) {
     return res.status(err.status || 400).json({
       success: false,
-      message: err.message,
+      message: errorText(err, res.req),
       ...(err.code ? { code: err.code } : {}),
     });
   }
@@ -100,7 +101,7 @@ export const listProceduresController = async (req, res) => {
     console.error("❌ Ошибка listProcedures:", err);
     return res
       .status(500)
-      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: errorText(err, req) });
   }
 };
 
@@ -161,7 +162,7 @@ export const getProcedureDayController = async (req, res) => {
     console.error("❌ Ошибка getProcedureDay:", err);
     return res
       .status(500)
-      .json({ success: false, message: tReq(req, "app.server.error"), error: err.message });
+      .json({ success: false, message: tReq(req, "app.server.error"), error: errorText(err, req) });
   }
 };
 

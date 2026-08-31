@@ -1,5 +1,6 @@
 import TempCTScanResults from "../../../../common/models/Polyclinic/TempResults/tempCTScanResults.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const tempCTScanResultsController = async (req, res) => {
   try {
@@ -35,7 +36,7 @@ const tempCTScanResultsController = async (req, res) => {
     console.error("Ошибка при создании шаблона CT:", error);
     res
       .status(500)
-      .json({ message: tReq(req, "myClinic.template.createError2"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError2"), error: errorText(error, req) });
   }
 };
 

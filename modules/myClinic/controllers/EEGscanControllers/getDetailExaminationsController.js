@@ -2,6 +2,7 @@
 
 import EEGScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/EEGScansTemplates/EEGScan.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getDetailExaminationsController = async (req, res) => {
   try {
@@ -41,7 +42,7 @@ const getDetailExaminationsController = async (req, res) => {
     res.status(200).json(eegScan);
   } catch (error) {
     console.error("Ошибка при получении исследования:", error);
-    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: error.message });
+    res.status(500).json({ message: tReq(req, "myClinic.server.error2"), error: errorText(error, req) });
   }
 };
 

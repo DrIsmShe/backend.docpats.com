@@ -3,6 +3,7 @@ import Appointment from "../../../common/models/Appointment/appointment.js";
 import AppointmentAudit from "../../../common/models/Appointment/appointmentAudit.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 export const getDoctorStats = async (req, res) => {
   try {
@@ -50,7 +51,7 @@ export const getDoctorStats = async (req, res) => {
     console.error("❌ Ошибка getDoctorStats:", err);
     res.status(500).json({
       success: false,
-      message: err.message,
+      message: errorText(err, req),
     });
   }
 };

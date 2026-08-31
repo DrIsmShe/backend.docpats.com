@@ -3,6 +3,7 @@
 // Публичный контур опроса: пациент по подписанной ссылке.
 
 import * as svc from "../services/previsit.service.js";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   ValidationError,
   NotFoundError,
@@ -10,10 +11,10 @@ import {
 
 function handleError(res, err) {
   if (err instanceof ValidationError) {
-    return res.status(400).json({ success: false, message: err.message });
+    return res.status(400).json({ success: false, message: errorText(err, res.req) });
   }
   if (err instanceof NotFoundError) {
-    return res.status(404).json({ success: false, message: err.message });
+    return res.status(404).json({ success: false, message: errorText(err, res.req) });
   }
   console.error("previsit:", err);
   return res.status(500).json({ success: false, message: "Server error" });

@@ -188,13 +188,13 @@ async function assertParentValid(parentId, selfId = null) {
   if (!parentId) return;
 
   if (selfId && String(parentId) === String(selfId)) {
-    throw new ValidationError("Категория не может быть родителем самой себе");
+    throw new ValidationError("Категория не может быть родителем самой себе", { i18n: "app.category.selfParent" });
   }
 
   let cursor = await ExamCategory.findById(parentId)
     .select("_id parentId")
     .lean();
-  if (!cursor) throw new NotFoundError("Родительская категория");
+  if (!cursor) throw new NotFoundError("Родительская категория", { i18n: "app.category.parentNotFound" });
 
   if (selfId) {
     // Идём вверх по цепочке предков предполагаемого родителя. Если встретим
@@ -217,7 +217,7 @@ async function assertParentValid(parentId, selfId = null) {
 // ─── create ───────────────────────────────────────────────────────────
 export async function createCategory(input) {
   const name = String(input.name ?? "").trim();
-  if (!name) throw new ValidationError("Имя категории обязательно");
+  if (!name) throw new ValidationError("Имя категории обязательно", { i18n: "app.category.nameRequired" });
 
   await assertParentValid(input.parentId ?? null);
 
@@ -243,7 +243,7 @@ export async function createCategory(input) {
     // Дубликат имени в пределах родителя ловим по коду Mongo, чтобы отдать
     // человеку понятное сообщение вместо E11000.
     if (err?.code === 11000) {
-      throw new ConflictError("Категория с таким именем здесь уже есть");
+      throw new ConflictError("Категория с таким именем здесь уже есть", { i18n: "app.category.duplicateName" });
     }
     throw err;
   }
@@ -252,14 +252,14 @@ export async function createCategory(input) {
 // ─── update ───────────────────────────────────────────────────────────
 export async function updateCategory(id, input) {
   const existing = await ExamCategory.findById(id);
-  if (!existing) throw new NotFoundError("Категория");
+  if (!existing) throw new NotFoundError("Категория", { i18n: "app.category.notFound" });
 
   const update = {};
   // Текст изменился — значит прежние переводы относятся к другому названию.
   let textChanged = false;
   if (input.name !== undefined) {
     const name = String(input.name).trim();
-    if (!name) throw new ValidationError("Имя категории обязательно");
+    if (!name) throw new ValidationError("Имя категории обязательно", { i18n: "app.category.nameRequired" });
     if (name !== existing.name) textChanged = true;
     update.name = name;
     // Пересобираем slug только при смене имени.
@@ -302,7 +302,7 @@ export async function updateCategory(id, input) {
     return doc;
   } catch (err) {
     if (err?.code === 11000) {
-      throw new ConflictError("Категория с таким именем здесь уже есть");
+      throw new ConflictError("Категория с таким именем здесь уже есть", { i18n: "app.category.duplicateName" });
     }
     throw err;
   }
@@ -314,7 +314,7 @@ export async function updateCategory(id, input) {
 // категории что-то привязано: сначала перенеси тесты и подкатегории.
 export async function deleteCategory(id) {
   const category = await ExamCategory.findById(id).lean();
-  if (!category) throw new NotFoundError("Категория");
+  if (!category) throw new NotFoundError("Категория", { i18n: "app.category.notFound" });
 
   const child = await ExamCategory.findOne({ parentId: id })
     .select("_id")
@@ -344,8 +344,8 @@ export async function deleteCategory(id) {
 
 // ─── getCategoryById ──────────────────────────────────────────────────
 export async function getCategoryById(id) {
-  if (!mongoose.isValidObjectId(id)) throw new NotFoundError("Категория");
+  if (!mongoose.isValidObjectId(id)) throw new NotFoundError("Категория", { i18n: "app.category.notFound" });
   const doc = await ExamCategory.findById(id).lean();
-  if (!doc) throw new NotFoundError("Категория");
+  if (!doc) throw new NotFoundError("Категория", { i18n: "app.category.notFound" });
   return doc;
 }

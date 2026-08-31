@@ -4,6 +4,7 @@ import File from "../../../../common/models/file.js";
 import User from "../../../../common/models/Auth/users.js";
 import { recordActionAsync } from "../../../audit/index.js";
 import { invalidatePatientAISummary } from "../../../aiAssistant/service/aiAutoRefreshService.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 /* ============= MIME → fileType helper ============= */
 function resolveFileType(mimetype) {
@@ -191,7 +192,7 @@ const addEEGscanController = async (req, res) => {
     console.error("❌ Ошибка при добавлении обследования:", error);
     return res.status(500).json({
       message: "Error",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

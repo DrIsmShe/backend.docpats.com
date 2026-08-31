@@ -12,6 +12,7 @@ import {
 import r2 from "../services/r2Client.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { tReq } from "../i18n/index.js";
+import { errorText } from "../i18n/index.js";
 import {
   assertStorageAllowed,
   recordStoredFiles,
@@ -205,7 +206,7 @@ export const processFiles = async (req, res, next) => {
     return res.status(403).json({
       success: false,
       code: "STORAGE_LIMIT_REACHED",
-      message: err.message,
+      message: errorText(err, req),
       ...(err.details ?? {}),
     });
   }
@@ -237,7 +238,7 @@ export const processFiles = async (req, res, next) => {
     next();
   } catch (err) {
     console.error("🔥 ERROR in processFiles:", err);
-    res.status(500).json({ message: "File upload error", error: err.message });
+    res.status(500).json({ message: "File upload error", error: errorText(err, req) });
   }
 };
 
@@ -251,7 +252,7 @@ export const uploadImageForCKEditor = async (req, res) => {
     const url = await uploadFile(file);
     res.json({ uploaded: true, url });
   } catch (err) {
-    res.status(500).json({ uploaded: false, error: err.message });
+    res.status(500).json({ uploaded: false, error: errorText(err, req) });
   }
 };
 
@@ -282,7 +283,7 @@ export const getPDF = async (req, res) => {
     } catch (e) {
       return res
         .status(404)
-        .json({ message: "PDF not found", error: e.message });
+        .json({ message: "PDF not found", error: errorText(e, req) });
     }
   }
 

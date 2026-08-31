@@ -2,6 +2,7 @@ import EKGScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getListEKGScanController = async (req, res) => {
   const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
@@ -64,7 +65,7 @@ const getListEKGScanController = async (req, res) => {
     res.status(500).json({
       success: false,
       message: tReq(req, "myClinic.study.ekg.fetchError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

@@ -19,7 +19,7 @@ export const listPatientTelemedSessionsController = async (req, res) => {
     return res.status(200).json({ success: true, data });
   } catch (err) {
     console.error("patientTelemedList error:", err?.message);
-    return res.status(500).json({ success: false, message: "Ошибка сервера" });
+    return res.status(500).json({ success: false, message: tReq(req, "app.common.serverError", {}, "Ошибка сервера") });
   }
 };
 

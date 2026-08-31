@@ -56,7 +56,7 @@ export const requireLearner = asyncHandler(async (req, res, next) => {
 function requireRole(allowedRoles, message) {
   return (req, res, next) => {
     const role = req.educationActor?.role;
-    if (!role) return next(new UnauthorizedError("Требуется авторизация"));
+    if (!role) return next(new UnauthorizedError("Требуется авторизация", { i18n: "app.auth.required" }));
     if (!allowedRoles.includes(role)) {
       return next(new ForbiddenError(message));
     }

@@ -113,7 +113,7 @@ export async function askGuide({ messages, lang = DEFAULT_LANG, role = "guest", 
   const turns = normalizeMessages(messages);
 
   if (!isConfigured()) {
-    throw new ServiceUnavailableError("Помощник сейчас недоступен");
+    throw new ServiceUnavailableError("Помощник сейчас недоступен", { i18n: "app.guide.unavailable" });
   }
 
   let corpus;
@@ -123,7 +123,7 @@ export async function askGuide({ messages, lang = DEFAULT_LANG, role = "guest", 
     logger?.error?.({ err, lang }, "guide: корпус недоступен");
     // Без корпуса отвечать нечем, а отвечать «из головы» — ровно то, чего
     // здесь допускать нельзя.
-    throw new ServiceUnavailableError("Справочные материалы сейчас недоступны");
+    throw new ServiceUnavailableError("Справочные материалы сейчас недоступны", { i18n: "app.guide.materialsUnavailable" });
   }
 
   const audience = AUDIENCE[role] ?? AUDIENCE.guest;
@@ -207,7 +207,7 @@ function usageOf(message) {
  */
 export function normalizeMessages(messages) {
   if (!Array.isArray(messages) || !messages.length) {
-    throw new ValidationError("Нужен хотя бы один вопрос");
+    throw new ValidationError("Нужен хотя бы один вопрос", { i18n: "app.guide.questionRequired" });
   }
   if (messages.length > MAX_TURNS) {
     throw new ValidationError(
@@ -228,7 +228,7 @@ export function normalizeMessages(messages) {
   });
 
   if (turns[turns.length - 1].role !== "user") {
-    throw new ValidationError("Последним сообщением должен быть вопрос пользователя");
+    throw new ValidationError("Последним сообщением должен быть вопрос пользователя", { i18n: "app.guide.lastMessageMustBeUser" });
   }
   return turns;
 }

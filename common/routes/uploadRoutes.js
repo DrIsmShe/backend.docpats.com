@@ -5,6 +5,7 @@ import sharp from "sharp";
 import multer from "multer";
 import { uploadFile as uploadToR2 } from "../middlewares/uploadMiddleware.js";
 import { tReq } from "../i18n/index.js";
+import { errorText } from "../i18n/index.js";
 
 const router = express.Router();
 
@@ -86,7 +87,7 @@ router.post("/uploads", upload.single("upload"), async (req, res) => {
     console.error("❌ Ошибка загрузки:", err);
     return res.status(500).json({
       uploaded: false,
-      error: { message: err.message },
+      error: { message: errorText(err, req) },
     });
   }
 });

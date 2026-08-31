@@ -27,8 +27,30 @@ const { default: ExamCategory } = await import(
   "../../modules/education/education-categories/models/examCategory.model.js"
 );
 
-/** Дождаться фонового перевода: он запускается через setImmediate. */
-const settle = () => new Promise((r) => setTimeout(r, 30));
+/**
+ * Дождаться фонового перевода: он идёт через setImmediate и наружу промис
+ * не отдаёт.
+ *
+ * Фиксированной паузы не хватало. В одиночку файл проходил, а в полном
+ * прогоне запись в базу не успевала за 30 мс, и тест падал через раз —
+ * на пустых переводах. Поэтому ждём не время, а результат: пока перевод
+ * не окажется в рубрике. Без условия — прежняя короткая пауза, её хватает
+ * там, где проверяется как раз ОТСУТСТВИЕ перевода.
+ */
+const settle = async (until) => {
+  const deadline = Date.now() + 3000;
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 10));
+    if (!until || (await until())) return;
+    if (Date.now() > deadline) return;
+  }
+};
+
+/** Условие «у рубрики с таким именем перевод уже сохранён». */
+const translated = (name) => async () => {
+  const doc = await ExamCategory.findOne({ name }).lean();
+  return Boolean(doc?.translations?.length);
+};
 
 const find = (tree, name) => tree.find((c) => c.name === name);
 
@@ -47,7 +69,7 @@ describe("выключенный автоперевод", () => {
   it("не заказывает перевод и не подменяет имя готовым", async () => {
     // Рубрику заводим при включённом режиме, чтобы перевод в базе появился.
     await createCategory({ name: "Психология", lang: "ru" });
-    await settle();
+    await settle(translated("Психология"));
 
     process.env.EDUCATION_AUTO_TRANSLATE = "off";
     translateMock.mockClear();
@@ -64,7 +86,7 @@ describe("выключенный автоперевод", () => {
 describe("перевод рубрики", () => {
   it("создание запускает перевод и сохраняет его в рубрике", async () => {
     const cat = await createCategory({ name: "Психология", lang: "ru" });
-    await settle();
+    await settle(translated("Психология"));
 
     const fresh = await ExamCategory.findById(cat._id).lean();
     expect(fresh.lang).toBe("ru");
@@ -76,7 +98,7 @@ describe("перевод рубрики", () => {
 
   it("врач получает имя рубрики на своём языке", async () => {
     await createCategory({ name: "Психология", lang: "ru" });
-    await settle();
+    await settle(translated("Психология"));
 
     const az = await listCategoriesTree({ lang: "az" });
     expect(find(az, "Psixologiya")).toBeTruthy();
@@ -87,7 +109,7 @@ describe("перевод рубрики", () => {
 
   it("нет перевода на нужный язык — отдаём оригинал, а не пустоту", async () => {
     await createCategory({ name: "Психология", lang: "ru" });
-    await settle();
+    await settle(translated("Психология"));
 
     // Турецкого в моке нет.
     const tr = await listCategoriesTree({ lang: "tr" });
@@ -96,7 +118,7 @@ describe("перевод рубрики", () => {
 
   it("язык оригинала не подменяется собственным переводом", async () => {
     await createCategory({ name: "Психология", lang: "ru" });
-    await settle();
+    await settle(translated("Психология"));
 
     const ru = await listCategoriesTree({ lang: "ru" });
     expect(find(ru, "Психология")).toBeTruthy();
@@ -104,7 +126,7 @@ describe("перевод рубрики", () => {
 
   it("переименование стирает старые переводы СРАЗУ и заказывает новые", async () => {
     const cat = await createCategory({ name: "Психология", lang: "ru" });
-    await settle();
+    await settle(translated("Психология"));
 
     translateMock.mockResolvedValue([
       { lang: "az", name: "Kardiologiya", description: "" },
@@ -117,14 +139,17 @@ describe("перевод рубрики", () => {
     const mid = await ExamCategory.findById(cat._id).lean();
     expect(mid.translations).toHaveLength(0);
 
-    await settle();
+    await settle(async () => {
+      const doc = await ExamCategory.findById(cat._id).lean();
+      return doc?.translations?.[0]?.name === "Kardiologiya";
+    });
     const after = await ExamCategory.findById(cat._id).lean();
     expect(after.translations[0].name).toBe("Kardiologiya");
   });
 
   it("правка порядка или иконки перевод не трогает", async () => {
     const cat = await createCategory({ name: "Психология", lang: "ru" });
-    await settle();
+    await settle(translated("Психология"));
     translateMock.mockClear();
 
     await updateCategory(cat._id, { order: 5 });

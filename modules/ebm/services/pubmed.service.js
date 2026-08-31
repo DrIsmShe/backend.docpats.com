@@ -85,7 +85,7 @@ async function callEutils(endpoint, params, { retryOn429 = true } = {}) {
       await new Promise((r) => setTimeout(r, RETRY_AFTER_429_MS));
       return callEutils(endpoint, params, { retryOn429: false });
     }
-    throw new Error("PubMed ограничил частоту запросов — попробуйте через минуту");
+    throw Object.assign(new Error("PubMed ограничил частоту запросов — попробуйте через минуту"), { i18n: "app.pubmed.rateLimited" });
   }
   if (!res.ok) {
     throw new Error(`PubMed ответил ${res.status}`);

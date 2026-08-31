@@ -2,6 +2,7 @@ import AngiographyScanerTemplateNameofexam from "../../../../common/models/Exame
 import AngiographyScanerTemplateReport from "../../../../common/models/ExamenationsTemplates/AngiographyscanTemplates/AngiographyScanTemplateReport.js";
 import AngiographycanerTemplateDiagnosis from "../../../../common/models/ExamenationsTemplates/AngiographyscanTemplates/AngiographyScanTemplateDiagnosis.js";
 import AngiographyScanerTemplateRecomandation from "../../../../common/models/ExamenationsTemplates/AngiographyscanTemplates/AngiographyScanTemplateRecomandation.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Delete report template
 const deleteNameofexamTemplateAngiographyScanerController = async (
@@ -24,7 +25,7 @@ const deleteNameofexamTemplateAngiographyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -45,7 +46,7 @@ const deleteReportTemplatesAngiographyScanerController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -71,7 +72,7 @@ const deleteDiagnosisTemplatesAngiographyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting diagnosis template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -98,7 +99,7 @@ const deleteRecomandationTemplatesAngiographyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "❌ Error deleting recommendation template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

@@ -93,7 +93,7 @@ const patientsMedicalHistoryGetController = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ patientsMedicalHistoryGetController error:", err);
-    return res.status(500).json({ message: "Ошибка сервера" });
+    return res.status(500).json({ message: tReq(req, "app.common.serverError", {}, "Ошибка сервера") });
   }
 };
 

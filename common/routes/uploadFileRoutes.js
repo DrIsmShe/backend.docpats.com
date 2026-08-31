@@ -3,6 +3,7 @@ import multer from "multer";
 import { upload, uploadFile, getPDF } from "../middlewares/uploadMiddleware.js";
 import requireSession from "../middlewares/requireSession.js";
 import adminRoute from "../../modules/admin/routes/adminRoute.js";
+import { errorText } from "../i18n/index.js";
 const router = Router();
 
 // Ошибки multer (не то поле, слишком большой файл, запрещённый тип) — это
@@ -22,7 +23,7 @@ const acceptPdf = (req, res, next) =>
         code: err.code,
       });
     }
-    return res.status(400).json({ message: err.message });
+    return res.status(400).json({ message: errorText(err, req) });
   });
 
 // Загрузка доступна только аутентифицированным: роут кладёт файл в R2 и
@@ -36,7 +37,7 @@ router.post("/upload", requireSession, acceptPdf, async (req, res) => {
     res.status(201).json({ uploaded: true, url });
   } catch (e) {
     console.error("❌ /api/upload:", e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: errorText(e, req) });
   }
 });
 

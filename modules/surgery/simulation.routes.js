@@ -26,7 +26,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     ["image/png", "image/jpeg", "image/webp"].includes(file.mimetype)
       ? cb(null, true)
-      : cb(new Error("Только PNG/JPEG/WEBP"));
+      : cb(Object.assign(new Error("Только PNG/JPEG/WEBP"), { i18n: "app.upload.pngJpegWebpOnly" }));
   },
 });
 

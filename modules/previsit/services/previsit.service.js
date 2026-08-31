@@ -43,7 +43,7 @@ export async function inviteToIntake({ appointmentId }) {
     .select("clinicId patientId doctorId startUTC")
     .setOptions({ skipTenantScope: true })
     .lean();
-  if (!appt) throw new NotFoundError("Приём не найден");
+  if (!appt) throw new NotFoundError("Приём не найден", { i18n: "app.appointment.notFound4" });
 
   let intake = await PrevisitIntake.findOne({ appointmentId });
   if (!intake) {
@@ -85,7 +85,7 @@ export async function getIntakeByToken(token) {
   }
 
   const intake = await PrevisitIntake.findById(payload.intakeId).lean();
-  if (!intake) throw new NotFoundError("Анкета не найдена");
+  if (!intake) throw new NotFoundError("Анкета не найдена", { i18n: "app.previsit.formNotFound" });
 
   return {
     id: String(intake._id),
@@ -153,11 +153,11 @@ export async function submitIntake({ token, answers, language = "ru" }) {
   try {
     payload = verifySignedToken(token);
   } catch {
-    throw new ValidationError("Ссылка недействительна или истекла");
+    throw new ValidationError("Ссылка недействительна или истекла", { i18n: "app.previsit.linkInvalidOrExpired" });
   }
 
   const intake = await PrevisitIntake.findById(payload.intakeId);
-  if (!intake) throw new NotFoundError("Анкета не найдена");
+  if (!intake) throw new NotFoundError("Анкета не найдена", { i18n: "app.previsit.formNotFound" });
 
   const clean = validate(answers);
   const redFlags = Array.isArray(clean.redFlags) ? clean.redFlags : [];

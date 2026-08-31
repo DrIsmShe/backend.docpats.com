@@ -6,7 +6,7 @@
 
 import logger from "../logger.js";
 import { toErrorResponse, AppError } from "../utils/errors.js";
-import { tReq } from "../i18n/index.js";
+import { tReq, translateKnown } from "../i18n/index.js";
 
 export function errorHandler(err, req, res, next) {
   if (res.headersSent) {
@@ -46,9 +46,16 @@ export function errorHandler(err, req, res, next) {
   // Код лежит либо в details (наследники AppError), либо прямо на ошибке
   // (свои классы вроде BookingPatientError). Оба варианта — один механизм.
   const i18nCode = err?.details?.i18n || err?.i18n;
-  if (i18nCode && typeof req.t === "function") {
+  if (i18nCode) {
     body.error = tReq(req, i18nCode, err?.details?.i18nParams || {}, body.error);
+  } else {
+    // Кода нет — пробуем узнать саму фразу. Так переводятся сообщения,
+    // которые некому было пометить кодом: их русский текст есть в словаре.
+    body.error = translateKnown(body.error, req);
   }
+
+  // Подробности разбора запроса приходят готовым деревом от схемы.
+  if (body.details) body.details = translateKnown(body.details, req);
 
   res.status(status).json(body);
 }

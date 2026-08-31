@@ -9,6 +9,7 @@ import validate from "../middleware/validate.js";
 import parsePlanSchema, {
   validatePlanRequestSchema,
 } from "../validators/parsePlan.validator.js";
+import { tReq } from "../../../common/i18n/index.js";
 
 /* ============================================================
    МАРШРУТЫ МОДУЛЯ
@@ -36,7 +37,11 @@ const parseLimiter = rateLimit({
   // IPv6-подсети обходит лимит сменой последнего сегмента.
   keyGenerator: (req) =>
     req.session?.userId ? `u:${req.session.userId}` : ipKeyGenerator(req.ip),
-  message: { error: "Слишком часто. Подождите минуту." },
+  // Сообщение — ФУНКЦИЕЙ: настройка вычисляется при загрузке модуля,
+  // где запроса ещё нет, а функция вызывается на каждый отказ.
+  message: (req) => ({
+    error: tReq(req, "app.rateLimit.waitAMinute", {}, "Слишком часто. Подождите минуту."),
+  }),
 });
 
 const router = Router();

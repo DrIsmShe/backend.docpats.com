@@ -17,6 +17,7 @@ import User from "../../../common/models/Auth/users.js";
 import PaymentTransaction from "../models/paymentTransaction.js";
 import { grantPlan } from "../services/subscription.service.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * POST /api/payments/admin/grant
@@ -53,7 +54,7 @@ export async function grantPlanByAdmin(req, res) {
     try {
       result = await grantPlan(user, { planKey, months: count });
     } catch (e) {
-      return res.status(400).json({ success: false, message: e.message });
+      return res.status(400).json({ success: false, message: errorText(e, req) });
     }
 
     // Запись в реестр — вместе с выдачей, а не «когда-нибудь потом».

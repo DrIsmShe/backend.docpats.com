@@ -1,6 +1,7 @@
 import Appointment from "../../../common/models/Appointment/appointment.js";
 import ProfileDoctor from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * @desc Получение архивированных приёмов врача
@@ -46,7 +47,7 @@ const getArchivedAppointmentsController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "app.archive.serverError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

@@ -2,6 +2,7 @@ import XRAYScan from "../../../../common/models/Polyclinic/ExamenationsTemplates
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import dayjs from "dayjs";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getListXRAYScanerController = async (req, res) => {
   try {
@@ -29,7 +30,7 @@ const getListXRAYScanerController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "myClinic.xray.fetchError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

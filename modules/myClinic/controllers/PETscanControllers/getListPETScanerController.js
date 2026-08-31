@@ -1,6 +1,7 @@
 import PETScan from "../../../../common/models/Polyclinic/ExamenationsTemplates/PETScansTemplates/PETScan.js";
 import { decrypt } from "../../../../common/models/Auth/users.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const getListPETScanerController = async (req, res) => {
   try {
@@ -41,7 +42,7 @@ const getListPETScanerController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "myClinic.petStudies.fetchError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
+import { errorText } from "../i18n/index.js";
 
 // 📌 Получаем абсолютный путь
 const __filename = fileURLToPath(import.meta.url);
@@ -106,7 +107,7 @@ const processFiles = async (req, res, next) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: "File processing error", error: error.message });
+      .json({ message: "File processing error", error: errorText(error, req) });
   }
 };
 

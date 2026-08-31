@@ -1,4 +1,5 @@
 import { tReq } from "../../common/i18n/index.js";
+import { errorText } from "../../common/i18n/index.js";
 import {
   generateUserSynthesis,
   checkUserLimit,
@@ -84,7 +85,7 @@ export async function generate(req, res) {
     const isLimitError = err.message.includes("Лимит исчерпан");
     res.status(isLimitError ? 403 : 500).json({
       success: false,
-      message: err.message,
+      message: errorText(err, req),
     });
   }
 }
@@ -111,7 +112,7 @@ export async function getLimit(req, res) {
     res.json({ success: true, ...result, catalog: getArticlesCatalog() });
   } catch (err) {
     console.error("[LIMIT] ERROR:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: errorText(err, req) });
   }
 }
 
@@ -131,7 +132,7 @@ export async function getMy(req, res) {
     const result = await getUserArticles(userId, { page, limit });
     res.json({ success: true, ...result });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: errorText(err, req) });
   }
 }
 
@@ -147,6 +148,6 @@ export async function getMyOne(req, res) {
     const article = await getUserArticle(userId, req.params.id);
     res.json({ success: true, article });
   } catch (err) {
-    res.status(404).json({ success: false, message: err.message });
+    res.status(404).json({ success: false, message: errorText(err, req) });
   }
 }

@@ -82,7 +82,7 @@ const doctorRecommendToggleController = async (req, res) => {
     });
   } catch (e) {
     console.error("❌ Recommend toggle error:", e);
-    return res.status(500).json({ ok: false, message: "Ошибка сервера" });
+    return res.status(500).json({ ok: false, message: tReq(req, "app.common.serverError", {}, "Ошибка сервера") });
   }
 };
 

@@ -4,6 +4,7 @@
 import { upload, uploadFile } from "../middleware/uploadMiddleware.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 // POST /api/communication/upload
 router.post(
@@ -30,7 +31,7 @@ router.post(
       console.error("Chat upload error:", err);
       return res
         .status(500)
-        .json({ message: err.message || "Ошибка загрузки файла" });
+        .json({ message: errorText(err, req) || "Ошибка загрузки файла" });
     }
   },
 );

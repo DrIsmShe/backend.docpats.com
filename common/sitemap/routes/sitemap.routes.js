@@ -11,6 +11,7 @@ import {
   invalidateFeedCaches,
 } from "../services/feeds.service.js";
 import { runIndexNowSubmit } from "../../../jobs/indexnowSubmit.job.js";
+import { errorText } from "../../i18n/index.js";
 
 const router = Router();
 
@@ -59,7 +60,7 @@ router.post("/api/seo/indexnow/run", async (req, res) => {
     res.json({ ok: true, ...result });
   } catch (err) {
     console.error("[indexnow] ручной прогон:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: errorText(err, req) });
   }
 });
 

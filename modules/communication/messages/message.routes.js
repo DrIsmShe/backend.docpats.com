@@ -7,6 +7,7 @@ import Notification from "../../../common/models/Notification/notification.js";
 import ChatMessageModel from "../messages/message.model.js";
 import mongoose from "mongoose";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   upload,
   uploadFile,
@@ -320,7 +321,7 @@ router.post(
       console.error("Chat upload error:", err);
       return res
         .status(500)
-        .json({ error: err.message || "Ошибка загрузки файла" });
+        .json({ error: errorText(err, req) || "Ошибка загрузки файла" });
     }
   },
 );

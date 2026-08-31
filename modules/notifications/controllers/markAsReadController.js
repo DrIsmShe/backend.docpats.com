@@ -2,6 +2,7 @@
 import Notification from "../../../common/models/Notification/notification.js";
 import mongoose from "mongoose";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * @desc Отметить одно или все уведомления как прочитанные
@@ -61,7 +62,7 @@ export const markAsReadController = async (req, res) => {
     res.status(500).json({
       success: false,
       message: tReq(req, "app.notification.updateServerError"),
-      error: err.message,
+      error: errorText(err, req),
     });
   }
 };

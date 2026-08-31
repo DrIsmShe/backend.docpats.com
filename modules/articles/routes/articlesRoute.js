@@ -58,7 +58,7 @@ const imageUpload = multer({
     const mimetype = fileTypes.test(file.mimetype);
 
     if (extname && mimetype) cb(null, true);
-    else cb(new Error("Разрешены только изображения!"));
+    else cb(Object.assign(new Error("Разрешены только изображения!"), { i18n: "app.upload.imagesOnly" }));
   },
 });
 

@@ -2,6 +2,7 @@ import CapsuleEndoscopyScannerTemplateNameofexam from "../../../../common/models
 import CapsuleEndoscopyScannerTemplateReport from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateReport.js";
 import CapsuleEndoscopyScannerTemplateDiagnosis from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateDiagnosis.js";
 import CapsuleEndoscopyScannerTemplateRecomandation from "../../../../common/models/Polyclinic/ExamenationsTemplates/CapsuleEndoscopyScansTemplates/CapsuleEndoscopyScanTemplateRecomandation.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 // Get report template details
 const detailsNameofexamTemplatesCapsuleEndoscopyScanerController = async (
@@ -22,7 +23,7 @@ const detailsNameofexamTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "Error loading report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -46,7 +47,7 @@ const detailsReportTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "Error loading report template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -70,7 +71,7 @@ const detailsDiagnosisTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "Error loading diagnosis template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -98,7 +99,7 @@ const detailsRecomandationTemplatesCapsuleEndoscopyScanerController = async (
   } catch (error) {
     res.status(500).json({
       message: "Error loading recommendation template",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

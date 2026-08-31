@@ -20,6 +20,7 @@ import { performanceQueries } from "../queries/performance.js";
 import { liveQueries, eventLogQuery } from "../queries/live.js";
 import { eventDetailQueries, allCustomEventPropsQuery } from "../queries/eventDetail.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * Выполнить набор блоков и вернуть { имя: [{колонка: значение}, …] }.
@@ -61,7 +62,7 @@ function handler(fn) {
 
       res.status(status).json({
         configured: true,
-        message: err.message || "Не удалось получить статистику",
+        message: errorText(err, req) || "Не удалось получить статистику",
       });
     }
   };
@@ -122,7 +123,7 @@ export const getBehavior = handler(async (req) => {
 export const getEventDetail = handler(async (req) => {
   const name = String(req.query.name || "").trim();
   if (!name) {
-    const err = new Error("Не указано имя события");
+    const err = Object.assign(new Error("Не указано имя события"), { i18n: "app.analytics.eventNameMissing" });
     err.statusCode = 400;
     throw err;
   }

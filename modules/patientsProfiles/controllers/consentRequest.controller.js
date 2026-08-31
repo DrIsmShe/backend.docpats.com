@@ -15,6 +15,7 @@
 //   • All audit писется внутри service
 
 import consentRequestService from "../../clinic/clinic-consent/services/consentRequest.service.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 // ─── Auth guard ──────────────────────────────────────────────────────
 
@@ -108,19 +109,19 @@ export async function approveRequest(req, res) {
       return res.status(404).json({ message: "Consent request not found" });
     }
     if (err.code === "NOT_PENDING") {
-      return res.status(409).json({ message: err.message });
+      return res.status(409).json({ message: errorText(err, req) });
     }
     if (err.code === "FORBIDDEN") {
-      return res.status(403).json({ message: err.message });
+      return res.status(403).json({ message: errorText(err, req) });
     }
     if (
       err.code === "SCOPES_OUT_OF_RANGE" ||
       err.code === "ZERO_SCOPES_APPROVED"
     ) {
-      return res.status(422).json({ message: err.message });
+      return res.status(422).json({ message: errorText(err, req) });
     }
     if (err.name === "ValidationError") {
-      return res.status(422).json({ message: err.message });
+      return res.status(422).json({ message: errorText(err, req) });
     }
     res.status(500).json({ message: "Failed to approve consent request" });
   }
@@ -160,10 +161,10 @@ export async function rejectRequest(req, res) {
       return res.status(404).json({ message: "Consent request not found" });
     }
     if (err.code === "NOT_PENDING") {
-      return res.status(409).json({ message: err.message });
+      return res.status(409).json({ message: errorText(err, req) });
     }
     if (err.code === "FORBIDDEN") {
-      return res.status(403).json({ message: err.message });
+      return res.status(403).json({ message: errorText(err, req) });
     }
     res.status(500).json({ message: "Failed to reject consent request" });
   }

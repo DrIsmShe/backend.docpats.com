@@ -66,27 +66,27 @@ export async function submitResult(duelId, userId, attemptId) {
     .select("userId caseId status score")
     .lean();
   if (!attempt) throw new NotFoundError("Radiology attempt");
-  if (String(attempt.userId) !== String(userId)) throw new ValidationError("Это чужая попытка");
-  if (attempt.status !== "submitted") throw new ConflictError("Попытка ещё не сдана");
+  if (String(attempt.userId) !== String(userId)) throw new ValidationError("Это чужая попытка", { i18n: "app.attempt.foreign" });
+  if (attempt.status !== "submitted") throw new ConflictError("Попытка ещё не сдана", { i18n: "app.attempt.notSubmitted" });
   if (String(attempt.caseId) !== String(duel.caseId)) {
-    throw new ValidationError("Попытка не по кейсу этой дуэли");
+    throw new ValidationError("Попытка не по кейсу этой дуэли", { i18n: "app.duel.attemptCaseMismatch" });
   }
   const score = attempt.score?.total ?? 0;
   const isChallenger = String(duel.challenger.userId) === String(userId);
 
   if (isChallenger) {
-    if (duel.challenger.score != null) throw new ConflictError("Ваш результат уже засчитан");
+    if (duel.challenger.score != null) throw new ConflictError("Ваш результат уже засчитан", { i18n: "app.duel.resultAlreadyCounted" });
     duel.challenger.score = score;
     duel.challenger.attemptId = attemptId;
     if (duel.status === "awaiting_challenger") duel.status = "open";
   } else {
     if (duel.status === "awaiting_challenger") {
-      throw new ConflictError("Создатель ещё не прошёл кейс — дуэль пока недоступна");
+      throw new ConflictError("Создатель ещё не прошёл кейс — дуэль пока недоступна", { i18n: "app.duel.creatorNotFinished" });
     }
     if (duel.opponent.userId && String(duel.opponent.userId) !== String(userId)) {
-      throw new ConflictError("Эту дуэль уже принял другой игрок");
+      throw new ConflictError("Эту дуэль уже принял другой игрок", { i18n: "app.duel.alreadyAccepted" });
     }
-    if (duel.opponent.score != null) throw new ConflictError("Ваш результат уже засчитан");
+    if (duel.opponent.score != null) throw new ConflictError("Ваш результат уже засчитан", { i18n: "app.duel.resultAlreadyCounted" });
     duel.opponent.userId = userId;
     duel.opponent.name = await userName(userId);
     duel.opponent.score = score;

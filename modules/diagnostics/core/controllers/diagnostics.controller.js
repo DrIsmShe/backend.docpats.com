@@ -50,6 +50,7 @@ import HIPAAAuditLog from "../../../audit/models/AuditLog.model.js";
 import { enqueueAnalysis } from "../../jobs/analysis.queue.js";
 import { renderCaseDocument } from "../services/export.service.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 function throwZod(parsed) {
   throw new ValidationError("Validation failed", {
@@ -371,7 +372,7 @@ export const extractDocumentController = asyncHandler(async (req, res) => {
       // Сжатый или нестандартный DICOM — отказ с объяснением, а не молчание.
       // Отрисовать «как получится» нельзя: по искажённой картинке сделают вывод.
       return res.status(422).json({
-        error: err.message,
+        error: errorText(err, req),
         code: err.compressed ? "DICOM_COMPRESSED" : "DICOM_UNREADABLE",
         // Даже при отказе врач должен узнать, что файл не обезличен.
         phiFields: err.phiFields ?? [],

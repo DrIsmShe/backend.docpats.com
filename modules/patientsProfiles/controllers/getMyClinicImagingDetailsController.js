@@ -164,7 +164,7 @@ const getMyClinicImagingDetailsController = async (req, res) => {
     return res.status(200).json({ ok: true, item });
   } catch (error) {
     console.error("❌ getMyClinicImagingDetails error:", error);
-    return res.status(500).json({ ok: false, error: "Ошибка сервера" });
+    return res.status(500).json({ ok: false, error: tReq(req, "app.common.serverError", {}, "Ошибка сервера") });
   }
 };
 

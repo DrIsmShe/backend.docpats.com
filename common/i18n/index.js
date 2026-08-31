@@ -100,3 +100,55 @@ export function tReq(req, code, params, fallback) {
     ? req.t(code, params, fallback)
     : t(code, langOf(req), params, fallback);
 }
+
+// Обратный указатель: русская фраза -> код. Строится один раз, лениво.
+let reverse = null;
+function reverseIndex() {
+  if (reverse) return reverse;
+  reverse = new Map();
+  for (const [code, text] of Object.entries(ru)) {
+    if (typeof text === "string" && !reverse.has(text)) reverse.set(text, code);
+  }
+  return reverse;
+}
+
+/**
+ * Перевести русские фразы внутри уже собранной структуры.
+ *
+ * Нужно для сообщений из схем проверки запроса. Схема собирается при
+ * загрузке модуля, где запроса ещё нет, поэтому подставить перевод на
+ * месте нельзя, а держать в схеме служебный код опасно: стоит коду
+ * разойтись со словарём, и пользователь увидит на экране
+ * app.validation.something вместо фразы.
+ *
+ * Поэтому в коде остаётся русский текст. По нему находится код словаря,
+ * а по коду — текст на языке собеседника. Фразы, которой в словаре нет,
+ * это не касается: она уходит как была.
+ */
+export function translateKnown(value, req, depth = 0) {
+  if (depth > 6) return value;
+  if (typeof value === "string") {
+    const code = reverseIndex().get(value);
+    return code ? tReq(req, code, {}, value) : value;
+  }
+  if (Array.isArray(value)) return value.map((v) => translateKnown(v, req, depth + 1));
+  if (value && typeof value === "object" && value.constructor === Object) {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = translateKnown(v, req, depth + 1);
+    return out;
+  }
+  return value;
+}
+
+/**
+ * Текст ошибки на языке собеседника.
+ *
+ * Для модулей, которые отвечают сами, минуя общий обработчик ошибок:
+ * там err.message уходил в ответ как есть, то есть всегда по-русски.
+ * Сначала пробуем код, потом — узнать саму фразу по словарю.
+ */
+export function errorText(err, req) {
+  const code = err?.details?.i18n || err?.i18n;
+  if (code) return tReq(req, code, err?.details?.i18nParams || {}, err?.message);
+  return translateKnown(err?.message, req);
+}

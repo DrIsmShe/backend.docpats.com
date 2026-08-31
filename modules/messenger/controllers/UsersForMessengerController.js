@@ -1,5 +1,6 @@
 import User from "../../../common/models/Auth/users.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 const UsersForMessengerController = async (req, res) => {
   try {
@@ -16,7 +17,7 @@ const UsersForMessengerController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: tReq(req, "app.users.fetchError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

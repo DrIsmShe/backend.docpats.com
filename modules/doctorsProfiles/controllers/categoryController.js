@@ -1,4 +1,5 @@
 import Category from "../../../common/models/Articles/articlesCategories.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 // Функция для генерации slug
 const generateSlug = (name) => {
@@ -56,7 +57,7 @@ export const createCategory = async (req, res) => {
     console.error("Error creating category:", error);
     res
       .status(500)
-      .json({ message: "Error creating category", error: error.message });
+      .json({ message: "Error creating category", error: errorText(error, req) });
   }
 };
 
@@ -68,7 +69,7 @@ export const getAllCategories = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error getting categories",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -90,7 +91,7 @@ export const getCategoryById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error getting category",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -136,7 +137,7 @@ export const updateCategory = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error updating category",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };
@@ -155,6 +156,6 @@ export const deleteCategory = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Error deleting category", error: error.message });
+      .json({ message: "Error deleting category", error: errorText(error, req) });
   }
 };

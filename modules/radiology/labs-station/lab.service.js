@@ -132,7 +132,7 @@ export async function updateLabCase(caseId, patch) {
   const doc = await LabCase.findById(caseId);
   if (!doc) throw new NotFoundError("Lab case");
   if (doc.status === "archived") {
-    throw new ConflictError("Архивный кейс редактировать нельзя");
+    throw new ConflictError("Архивный кейс редактировать нельзя", { i18n: "app.case.archivedNotEditable" });
   }
   const FIELDS = [
     "title",
@@ -180,7 +180,7 @@ export async function applyLabAiRevision(caseId, draft, meta = {}) {
   const doc = await LabCase.findById(caseId);
   if (!doc) throw new NotFoundError("Lab case");
   if (doc.status === "archived") {
-    throw new ConflictError("Архивный кейс редактировать нельзя");
+    throw new ConflictError("Архивный кейс редактировать нельзя", { i18n: "app.case.archivedNotEditable" });
   }
   // Опубликованный кейс машина не правит. Ручная правка published разрешена
   // (автор отвечает за неё сам), но здесь меняются ЦИФРЫ, а по ним уже сданы
@@ -194,7 +194,7 @@ export async function applyLabAiRevision(caseId, draft, meta = {}) {
 
   const panelIn = Array.isArray(draft?.panel) ? draft.panel : [];
   if (panelIn.length < 2) {
-    throw new ValidationError("В исправленной панели меньше двух показателей — правки не применены");
+    throw new ValidationError("В исправленной панели меньше двух показателей — правки не применены", { i18n: "app.case.revisedPanelTooSmall" });
   }
 
   // Ключи существующих строк по имени. Первое вхождение выигрывает: дубли
@@ -236,7 +236,7 @@ export async function applyLabAiRevision(caseId, draft, meta = {}) {
   }
 
   if (panel.length < 2) {
-    throw new ValidationError("В исправленной панели меньше двух показателей — правки не применены");
+    throw new ValidationError("В исправленной панели меньше двух показателей — правки не применены", { i18n: "app.case.revisedPanelTooSmall" });
   }
 
   // Числовые варианты пересобираем под новый набор ключей. Вариант, чьи
@@ -306,7 +306,7 @@ export async function setLabStatus(caseId, status, actorId, actorRole) {
   } else if (status === "draft" || status === "archived") {
     doc.status = status;
   } else {
-    throw new ValidationError("Неизвестный статус");
+    throw new ValidationError("Неизвестный статус", { i18n: "app.validation.unknownStatus" });
   }
   await doc.save();
   recordRadiologyEvent({
@@ -520,11 +520,11 @@ export async function submitLabAttempt(attemptId, userId, response) {
   const attempt = await LabAttempt.findById(attemptId);
   if (!attempt) throw new NotFoundError("Lab attempt");
   if (String(attempt.userId) !== String(userId)) {
-    throw new ForbiddenError("Это чужая попытка");
+    throw new ForbiddenError("Это чужая попытка", { i18n: "app.attempt.foreign" });
   }
-  if (attempt.status === "submitted") throw new ConflictError("Попытка уже сдана");
+  if (attempt.status === "submitted") throw new ConflictError("Попытка уже сдана", { i18n: "app.attempt.alreadySubmitted" });
   if (attempt.status === "expired") {
-    throw new ConflictError("Попытка просрочена: лимит времени истёк");
+    throw new ConflictError("Попытка просрочена: лимит времени истёк", { i18n: "app.attempt.expiredTimeLimit" });
   }
 
   // Дедлайн проверяется на сервере от сохранённого startedAt. Сдачу после
@@ -657,7 +657,7 @@ export async function getLabAttempt(attemptId, userId) {
   const attempt = await LabAttempt.findById(attemptId).lean();
   if (!attempt) throw new NotFoundError("Lab attempt");
   if (String(attempt.userId) !== String(userId)) {
-    throw new ForbiddenError("Это чужая попытка");
+    throw new ForbiddenError("Это чужая попытка", { i18n: "app.attempt.foreign" });
   }
   if (attempt.status === "submitted") {
     const caseDoc = await LabCase.findById(attempt.caseId).lean();

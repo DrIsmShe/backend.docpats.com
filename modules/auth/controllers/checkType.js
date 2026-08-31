@@ -1,5 +1,6 @@
 import User from "../../../common/models/Auth/users.js";
 import crypto from "crypto";
+import { errorText } from "../../../common/i18n/index.js";
 
 const hashData = (v) =>
   crypto.createHash("sha256").update(String(v).toLowerCase()).digest("hex");
@@ -25,6 +26,6 @@ export const checkUserType = async (req, res) => {
 
     return res.json({ type: "adult" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: errorText(error, req) });
   }
 };

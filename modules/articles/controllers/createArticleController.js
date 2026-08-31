@@ -1,6 +1,7 @@
 import Article from "../../../common/models/Articles/articles.js";
 import Category from "../../../common/models/Articles/articlesCategories.js";
 import { invalidateSitemapCache } from "../../../common/sitemap/services/sitemap.service.js";
+import { errorText } from "../../../common/i18n/index.js";
 const createArticleController = async (req, res) => {
   const {
     title,
@@ -98,7 +99,7 @@ const createArticleController = async (req, res) => {
     console.error("\u274c Error saving article:", error);
     return res.status(500).json({
       message: "An error occurred while creating the article.",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

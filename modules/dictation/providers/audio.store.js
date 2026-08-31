@@ -21,7 +21,7 @@ const TIMEOUT_MS = Number(process.env.DICTATION_FETCH_TIMEOUT_MS ?? 30000);
  * @returns {Promise<Buffer>}
  */
 export async function fetchAudio(url) {
-  if (!url) throw new ValidationError("У задания нет аудио");
+  if (!url) throw new ValidationError("У задания нет аудио", { i18n: "app.dictation.noAudio" });
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);

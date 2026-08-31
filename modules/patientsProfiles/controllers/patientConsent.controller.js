@@ -12,6 +12,7 @@ import myClinicsService, {
   findMyConsent,
 } from "../services/myClinics.service.js";
 import consentService from "../../clinic/clinic-consent/services/consent.service.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 // ─── Auth guard ──────────────────────────────────────────────────────
 
@@ -128,7 +129,7 @@ export async function grantConsent(req, res) {
   } catch (err) {
     console.error("[patientConsent.grantConsent]", err);
     if (err.name === "ValidationError") {
-      return res.status(422).json({ message: err.message });
+      return res.status(422).json({ message: errorText(err, req) });
     }
     res.status(500).json({ message: "Failed to grant consent" });
   }

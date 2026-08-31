@@ -1,6 +1,7 @@
 import allergiesPatient from "../../../common/models/Polyclinic/MedicalHistory/allergiesPatient.js";
 import path from "path";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 const addpatientAllergiesController = async (req, res) => {
   try {
@@ -37,7 +38,7 @@ const addpatientAllergiesController = async (req, res) => {
     console.error("Ошибка при добавлении пациента:", error);
     return res.status(500).json({
       message: tReq(req, "myClinic.patient.addError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

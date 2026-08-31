@@ -26,6 +26,7 @@ import {
 import { sendEmail } from "../../auth/services/emailService.js";
 import { requisitesAsText } from "./requisites.controller.js";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 import {
   createSignedToken,
   verifySignedToken,
@@ -675,7 +676,7 @@ export async function markInvoicePaid(req, res) {
         months: request.months,
       });
     } catch (e) {
-      return res.status(400).json({ success: false, message: e.message });
+      return res.status(400).json({ success: false, message: errorText(e, req) });
     }
 
     // Сумма из тела запроса, если банк зачислил не ровно прайс (курс,

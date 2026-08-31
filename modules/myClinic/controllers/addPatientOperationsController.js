@@ -1,6 +1,7 @@
 import PatientOperations from "../../models/polyclinic/operationsPatient.js";
 import path from "path";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 // Контроллер для добавления данных об операциях пациента
 const addPatientOperationsController = async (req, res) => {
@@ -46,7 +47,7 @@ const addPatientOperationsController = async (req, res) => {
     console.error("Ошибка при добавлении данных об операциях:", error);
     return res.status(500).json({
       message: tReq(req, "myClinic.operations.addError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

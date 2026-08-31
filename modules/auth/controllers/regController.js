@@ -5,6 +5,7 @@ import "dotenv/config";
 import { sendEmail } from "../../../common/services/emailService.js";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import crypto from "crypto";
+import { tReq } from "../../../common/i18n/index.js";
 // Единственный источник правды по тарифам и лимитам.
 //
 // Раньше здесь же импортировался common/config/subscriptions.js — второй,
@@ -69,7 +70,7 @@ export const registerUser = async (req, res) => {
     // ----------- Проверка обязательных полей -----------
     if (!email || !password || !username || !role) {
       return res.status(400).json({
-        message: "email, password, username и role обязательны",
+        message: tReq(req, "app.auth.regFieldsRequired", {}, "email, password, username и role обязательны"),
       });
     }
 

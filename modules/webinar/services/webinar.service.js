@@ -21,10 +21,10 @@ import Webinar from "../models/Webinar.model.js";
 
 async function loadWebinar(webinarId) {
   if (!mongoose.isValidObjectId(webinarId)) {
-    throw new ValidationError("Некорректный идентификатор встречи");
+    throw new ValidationError("Некорректный идентификатор встречи", { i18n: "app.webinar.invalidId" });
   }
   const webinar = await Webinar.findById(webinarId);
-  if (!webinar) throw new NotFoundError("Встреча не найдена");
+  if (!webinar) throw new NotFoundError("Встреча не найдена", { i18n: "app.webinar.notFound" });
   return webinar;
 }
 
@@ -98,7 +98,7 @@ export async function updateWebinar({ webinarId, userId, patch }) {
   // Править встречу может только ведущий. Соведущий модерирует комнату,
   // но не переписывает условия входа.
   if (String(webinar.hostId) !== String(userId)) {
-    throw new ForbiddenError("Менять встречу может только ведущий");
+    throw new ForbiddenError("Менять встречу может только ведущий", { i18n: "app.webinar.onlyHostCanEdit" });
   }
 
   const allowed = [
@@ -122,7 +122,7 @@ export async function updateWebinar({ webinarId, userId, patch }) {
 export async function deleteWebinar({ webinarId, userId }) {
   const webinar = await loadWebinar(webinarId);
   if (String(webinar.hostId) !== String(userId)) {
-    throw new ForbiddenError("Удалить встречу может только ведущий");
+    throw new ForbiddenError("Удалить встречу может только ведущий", { i18n: "app.webinar.onlyHostCanDelete" });
   }
   await webinar.deleteOne();
 }
@@ -133,13 +133,13 @@ export async function deleteWebinar({ webinarId, userId }) {
 
 export async function issueWebinarToken({ webinarId, userId, displayName, email }) {
   if (!isJitsiConfigured()) {
-    throw new ServiceUnavailableError("Видеосвязь не настроена");
+    throw new ServiceUnavailableError("Видеосвязь не настроена", { i18n: "app.webinar.videoNotConfigured" });
   }
 
   const webinar = await loadWebinar(webinarId);
 
   if (!webinar.mayJoin(userId)) {
-    throw new ForbiddenError("Вас не пригласили на эту встречу");
+    throw new ForbiddenError("Вас не пригласили на эту встречу", { i18n: "app.webinar.notInvited" });
   }
 
   // Первый вошедший переводит встречу в «идёт». Отдельной кнопки

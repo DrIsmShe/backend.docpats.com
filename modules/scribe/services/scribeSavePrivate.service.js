@@ -83,10 +83,10 @@ export async function findPrivatePatientByUser({ doctorId, userId }) {
 /** Принадлежит ли карта этому врачу. */
 async function assertOwnership({ doctorId, patientRef, patientTypeModel }) {
   const Model = MODELS[patientTypeModel];
-  if (!Model) throw new ValidationError("Неизвестный тип карты пациента");
+  if (!Model) throw new ValidationError("Неизвестный тип карты пациента", { i18n: "app.scribe.unknownPatientCardType" });
 
   const doc = await Model.findById(patientRef).select("doctorId createdBy").lean();
-  if (!doc) throw new NotFoundError("Карта пациента не найдена");
+  if (!doc) throw new NotFoundError("Карта пациента не найдена", { i18n: "app.scribe.patientCardNotFound" });
 
   const owns =
     patientTypeModel === "NewPatientPolyclinic"
@@ -94,7 +94,7 @@ async function assertOwnership({ doctorId, patientRef, patientTypeModel }) {
       : String(doc.createdBy) === String(doctorId);
 
   if (!owns) {
-    throw new ForbiddenError("Это не ваш пациент");
+    throw new ForbiddenError("Это не ваш пациент", { i18n: "app.scribe.notYourPatient" });
   }
 }
 
@@ -109,14 +109,14 @@ export async function saveScribeDraftPrivate({
   body,
 }) {
   const session = await ScribeSession.findById(sessionId);
-  if (!session) throw new NotFoundError("Сеанс записи не найден");
+  if (!session) throw new NotFoundError("Сеанс записи не найден", { i18n: "app.scribe.sessionNotFound" });
   if (String(session.doctorId) !== String(doctorId)) {
-    throw new ForbiddenError("Сохранить может только врач, ведший приём");
+    throw new ForbiddenError("Сохранить может только врач, ведший приём", { i18n: "app.scribe.onlyDoctorCanSave" });
   }
   if (session.dictationJobId) {
-    throw new ValidationError("Черновик этого приёма уже сохранён в карту");
+    throw new ValidationError("Черновик этого приёма уже сохранён в карту", { i18n: "app.scribe.draftAlreadySaved" });
   }
-  if (!patientRef) throw new ValidationError("Не выбрана карта пациента");
+  if (!patientRef) throw new ValidationError("Не выбрана карта пациента", { i18n: "app.scribe.patientCardNotSelected" });
 
   await assertOwnership({ doctorId, patientRef, patientTypeModel });
 

@@ -1,6 +1,7 @@
 import chronicDiseasesPatient from "../../../common/models/Polyclinic/MedicalHistory/chronicDiseasesPatient.js";
 import path from "path";
 import { tReq } from "../../../common/i18n/index.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 // Контроллер для создания нового пациента
 const addPatientChronicDiseasesPatientController = async (req, res) => {
@@ -46,7 +47,7 @@ const addPatientChronicDiseasesPatientController = async (req, res) => {
     console.error("Ошибка при добавлении пациента:", error);
     return res.status(500).json({
       message: tReq(req, "myClinic.patient.addError"),
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

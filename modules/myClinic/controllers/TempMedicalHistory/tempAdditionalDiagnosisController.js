@@ -1,5 +1,6 @@
 import TempAdditionalDiagnosis from "../../../../common/models/Polyclinic/TempResults/tempAdditionalDiagnosis.js";
 import { tReq } from "../../../../common/i18n/index.js";
+import { errorText } from "../../../../common/i18n/index.js";
 
 const tempAdditionalDiagnosisController = async (req, res) => {
   try {
@@ -36,7 +37,7 @@ const tempAdditionalDiagnosisController = async (req, res) => {
     console.error("Ошибка при создании шаблона:", error);
     res
       .status(500)
-      .json({ message: tReq(req, "myClinic.template.createError"), error: error.message });
+      .json({ message: tReq(req, "myClinic.template.createError"), error: errorText(error, req) });
   }
 };
 

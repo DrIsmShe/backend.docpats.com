@@ -6,6 +6,7 @@ import { eventBus } from "../../notifications/events/eventBus.js";
 
 import { JSDOM } from "jsdom";
 import createDOMPurify from "dompurify";
+import { errorText } from "../../../common/i18n/index.js";
 
 // Инициализация DOMPurify для защиты от XSS
 const window = new JSDOM("").window;
@@ -115,7 +116,7 @@ const addCommentDoctor = async (req, res) => {
     console.error("❌ Error adding comment:", error);
     res.status(500).json({
       message: "Error creating comment",
-      error: error.message,
+      error: errorText(error, req),
     });
   }
 };

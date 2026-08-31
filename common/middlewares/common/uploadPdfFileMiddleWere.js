@@ -2,6 +2,7 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import { tReq } from "../../i18n/index.js";
+import { errorText } from "../../i18n/index.js";
 
 // Папка для загрузки файлов
 const uploadDir = "uploads";
@@ -47,7 +48,7 @@ export const uploadPDF = (req, res) => {
     if (err) {
       return res
         .status(500)
-        .json({ message: tReq(req, "app.file.uploadError"), error: err.message });
+        .json({ message: tReq(req, "app.file.uploadError"), error: errorText(err, req) });
     }
     res.json({
       message: tReq(req, "app.file.uploadSuccess"),

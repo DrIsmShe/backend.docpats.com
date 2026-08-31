@@ -36,30 +36,30 @@ export function validateCreate(body) {
 
   const title = str(body.title, { max: 300, field: "название" });
   if (!title) {
-    throw new ProcedureError("Укажите название вмешательства");
+    throw new ProcedureError("Укажите название вмешательства", { i18n: "app.procedure.titleRequired" });
   }
 
   // Время: либо готовый инстант, либо наивное локальное «YYYY-MM-DDTHH:MM».
   // Ни одного — отказ; собирать инстант из «сегодня» опасно молча.
   if (!body.startsAt && !body.startsAtLocal) {
-    throw new ProcedureError("Укажите дату и время начала");
+    throw new ProcedureError("Укажите дату и время начала", { i18n: "app.procedure.startRequired" });
   }
 
   const durationMin = Number(body.durationMin);
   if (!Number.isFinite(durationMin)) {
-    throw new ProcedureError("Укажите длительность в минутах");
+    throw new ProcedureError("Укажите длительность в минутах", { i18n: "app.procedure.durationMinutesRequired" });
   }
 
   const anesthesia = body.anesthesia
     ? String(body.anesthesia).trim()
     : "none";
   if (!ANESTHESIA.includes(anesthesia)) {
-    throw new ProcedureError("Некорректный вид анестезии");
+    throw new ProcedureError("Некорректный вид анестезии", { i18n: "app.procedure.invalidAnesthesia" });
   }
 
   const patient = body.patient || {};
   if (!PATIENT_KINDS.includes(String(patient.kind || ""))) {
-    throw new ProcedureError("Не указан тип пациента");
+    throw new ProcedureError("Не указан тип пациента", { i18n: "app.procedure.patientTypeMissing" });
   }
 
   return {
@@ -81,7 +81,7 @@ export function validateCreate(body) {
 export function validateStatus(body) {
   const status = String(body.status || "").trim();
   if (!PROCEDURE_STATUSES.includes(status)) {
-    throw new ProcedureError("Некорректный статус");
+    throw new ProcedureError("Некорректный статус", { i18n: "app.procedure.invalidStatus" });
   }
   // postponed ставится только переносом: у него обязан появиться адресат
   // (новая запись), иначе в базе повисает «перенесено в никуда».
@@ -99,12 +99,12 @@ export function validateStatus(body) {
 
 export function validatePostpone(body) {
   if (!body.startsAt && !body.startsAtLocal) {
-    throw new ProcedureError("Укажите новую дату и время");
+    throw new ProcedureError("Укажите новую дату и время", { i18n: "app.procedure.newDateTimeRequired" });
   }
   const durationMin =
     body.durationMin === undefined ? null : Number(body.durationMin);
   if (durationMin !== null && !Number.isFinite(durationMin)) {
-    throw new ProcedureError("Некорректная длительность");
+    throw new ProcedureError("Некорректная длительность", { i18n: "app.procedure.invalidDuration" });
   }
   return {
     startsAt: body.startsAt,

@@ -6,6 +6,7 @@ import Specialization from "../../../common/models/DoctorProfile/specialityOfDoc
 import Comments from "../../../common/models/Comments/CommentDocpats.js";
 import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js";
 import DoctorReview from "../../../common/models/DoctorProfile/doctorReview.js";
+import { errorText } from "../../../common/i18n/index.js";
 
 /**
  * Получение списка всех врачей с фильтрацией и проверкой даты
@@ -203,7 +204,7 @@ const AllDoctorController = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Ошибка AllDoctorController:", err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: errorText(err, req) });
   }
 };
 
