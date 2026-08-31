@@ -9,7 +9,7 @@ const getListCapsuleEndoscopySScanController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: "Пациент не найден",
+      message: req.t("myClinic.patient.notFound2"),
     });
   }
 
@@ -61,7 +61,7 @@ const getListCapsuleEndoscopySScanController = async (req, res) => {
     );
     res.status(500).json({
       success: false,
-      message: "Ошибка при получении Capsule Endoscopy исследований",
+      message: req.t("myClinic.study.capsuleEndoscopy.fetchError"),
       error: error.message,
     });
   }

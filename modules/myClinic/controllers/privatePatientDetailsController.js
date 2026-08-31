@@ -63,7 +63,7 @@ const privatePatientDetailsController = async (req, res) => {
 
     if (patientType !== "private") {
       return res.status(400).json({
-        message: "Это не private-пациент",
+        message: req.t("myClinic.patient.notPrivate"),
       });
     }
 

@@ -9,7 +9,7 @@ const addPatientChronicDiseasesPatientController = async (req, res) => {
       console.log("Ошибка: пользователь не аутентифицирован.");
       return res
         .status(403)
-        .json({ message: "Пожалуйста, войдите в систему." });
+        .json({ message: req.t("myClinic.auth.pleaseLogin") });
     }
 
     const patientId = req.params.id;
@@ -22,7 +22,7 @@ const addPatientChronicDiseasesPatientController = async (req, res) => {
     if (!chronicDiseases || chronicDiseases.trim() === "") {
       return res
         .status(400)
-        .json({ message: "Поле 'chronicDiseases' не может быть пустым." });
+        .json({ message: req.t("myClinic.field.chronicDiseases.required") });
     }
 
     // Создание нового пациента с хроническими заболеваниями
@@ -38,13 +38,13 @@ const addPatientChronicDiseasesPatientController = async (req, res) => {
     console.log("Пациент успешно добавлен:", newchronicDiseasesPatient);
 
     return res.status(201).json({
-      message: "Пациент успешно добавлен!",
+      message: req.t("myClinic.patient.addSuccess"),
       patient: newchronicDiseasesPatient,
     });
   } catch (error) {
     console.error("Ошибка при добавлении пациента:", error);
     return res.status(500).json({
-      message: "Произошла ошибка при добавлении пациента.",
+      message: req.t("myClinic.patient.addError"),
       error: error.message,
     });
   }

@@ -5,13 +5,13 @@ const tempAdditionalDiagnosisController = async (req, res) => {
     const { title, content, tags } = req.body;
     const userId = req.session.userId;
     if (!userId) {
-      return res.status(400).json({ message: "Пользователь не авторизован." });
+      return res.status(400).json({ message: req.t("myClinic.auth.userNotAuthorized") });
     }
     const existingTemplate = await TempAdditionalDiagnosis.findOne({ title });
     if (existingTemplate) {
       return res
         .status(400)
-        .json({ message: "Шаблон с таким названием уже существует." });
+        .json({ message: req.t("myClinic.template.nameAlreadyExists") });
     }
     let tagsArray = [];
     if (tags) {
@@ -28,14 +28,14 @@ const tempAdditionalDiagnosisController = async (req, res) => {
     console.log("Создается шаблон :", newTemplate); // <-- Проверка перед сохранением
     await newTemplate.save();
     res.status(201).json({
-      message: "Шаблон создан успешно",
+      message: req.t("myClinic.template.createdSuccessfully"),
       template: newTemplate,
     });
   } catch (error) {
     console.error("Ошибка при создании шаблона:", error);
     res
       .status(500)
-      .json({ message: "Ошибка при создании шаблона", error: error.message });
+      .json({ message: req.t("myClinic.template.createError"), error: error.message });
   }
 };
 

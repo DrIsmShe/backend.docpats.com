@@ -6,7 +6,7 @@ const addpatientAllergiesController = async (req, res) => {
     if (!req.session.userId) {
       return res
         .status(403)
-        .json({ message: "Пожалуйста, войдите в систему." });
+        .json({ message: req.t("myClinic.auth.pleaseLogin") });
     }
 
     const patientId = req.params.id;
@@ -18,7 +18,7 @@ const addpatientAllergiesController = async (req, res) => {
     if (!allergies || allergies.trim() === "") {
       return res
         .status(400)
-        .json({ message: "Поле 'allergies' не может быть пустым." });
+        .json({ message: req.t("myClinic.field.allergies.required") });
     }
 
     const newallergiesPatient = new allergiesPatient({
@@ -29,13 +29,13 @@ const addpatientAllergiesController = async (req, res) => {
 
     await newallergiesPatient.save();
     return res.status(201).json({
-      message: "Пациент успешно добавлен!",
+      message: req.t("myClinic.patient.addSuccess"),
       patient: newallergiesPatient,
     });
   } catch (error) {
     console.error("Ошибка при добавлении пациента:", error);
     return res.status(500).json({
-      message: "Произошла ошибка при добавлении пациента.",
+      message: req.t("myClinic.patient.addError"),
       error: error.message,
     });
   }

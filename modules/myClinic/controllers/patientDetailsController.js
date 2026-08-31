@@ -97,7 +97,7 @@ const patientDetailsController = async (req, res) => {
     const { id } = req.params;
 
     if (!id || !mongoose.isValidObjectId(id)) {
-      return res.status(400).json({ message: "Некорректный ID пациента." });
+      return res.status(400).json({ message: req.t("myClinic.patient.invalidId") });
     }
 
     // Загружаем карточку пациента
@@ -106,7 +106,7 @@ const patientDetailsController = async (req, res) => {
       .exec();
 
     if (!doc) {
-      return res.status(404).json({ message: "Пациент не найден." });
+      return res.status(404).json({ message: req.t("myClinic.patient.notFound") });
     }
 
     const p = doc.toObject({ getters: true, virtuals: true });

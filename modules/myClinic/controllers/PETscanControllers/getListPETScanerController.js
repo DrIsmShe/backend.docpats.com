@@ -6,7 +6,7 @@ const getListPETScanerController = async (req, res) => {
     const patient = req.patient;
 
     if (!patient) {
-      return res.status(404).json({ message: "Пациент не найден" });
+      return res.status(404).json({ message: req.t("myClinic.patient.notFound2") });
     }
 
     // автоматически определяем модель пациента
@@ -39,7 +39,7 @@ const getListPETScanerController = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Ошибка получения PET",
+      message: req.t("myClinic.petStudies.fetchError"),
       error: error.message,
     });
   }

@@ -9,7 +9,7 @@ const patientsMedicalHistoryGetController = async (req, res) => {
 
     if (!patient || !patientType) {
       return res.status(404).json({
-        message: "Пациент не найден",
+        message: req.t("myClinic.patient.notFound2"),
       });
     }
 
@@ -19,7 +19,7 @@ const patientsMedicalHistoryGetController = async (req, res) => {
 
     if (!patientId) {
       return res.status(400).json({
-        message: "Не удалось определить patientId",
+        message: req.t("myClinic.patient.cannotDetermineId"),
       });
     }
 

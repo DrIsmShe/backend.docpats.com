@@ -31,7 +31,7 @@ const addXRAYscanController = async (req, res) => {
     const doctorId = req.session?.userId;
 
     if (!doctorId) {
-      return res.status(401).json({ message: "⛔ Вы не авторизованы" });
+      return res.status(401).json({ message: req.t("myClinic.auth.notAuthorized") });
     }
 
     /* ================= DOCTOR ================= */
@@ -55,7 +55,7 @@ const addXRAYscanController = async (req, res) => {
     const patient = req.patient;
 
     if (!patient) {
-      return res.status(404).json({ message: "Пациент не найден" });
+      return res.status(404).json({ message: req.t("myClinic.patient.notFound2") });
     }
 
     const patientModelName = patient.constructor.modelName;

@@ -27,7 +27,7 @@ const checkEmailController = async (req, res) => {
     }
   } catch (error) {
     console.error("Ошибка при проверке email:", error);
-    return res.status(500).json({ message: "Ошибка сервера." });
+    return res.status(500).json({ message: req.t("myClinic.server.error") });
   }
 };
 

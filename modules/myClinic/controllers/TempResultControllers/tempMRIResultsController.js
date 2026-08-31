@@ -6,7 +6,7 @@ const TempMRIResultController = async (req, res) => {
     const userId = req.session.userId;
 
     if (!userId) {
-      return res.status(400).json({ message: "Пользователь не авторизован." });
+      return res.status(400).json({ message: req.t("myClinic.auth.userNotAuthorized") });
     }
 
     console.log("Полученные данные:", { title, content, tags });
@@ -15,7 +15,7 @@ const TempMRIResultController = async (req, res) => {
     if (existingTemplate) {
       return res
         .status(400)
-        .json({ message: "Шаблон с таким названием уже существует." });
+        .json({ message: req.t("myClinic.template.nameAlreadyExists") });
     }
 
     let tagsArray = [];
@@ -39,14 +39,14 @@ const TempMRIResultController = async (req, res) => {
     console.log("Шаблон успешно сохранен!");
 
     res.status(201).json({
-      message: "Шаблон результатов МРТ создан успешно",
+      message: req.t("myClinic.mriResultTemplate.createSuccess"),
       template: newTemplate,
     });
   } catch (error) {
     console.error("Ошибка при создании шаблона результатов МРТ:", error);
     res
       .status(500)
-      .json({ message: "Ошибка при создании шаблона", error: error.message });
+      .json({ message: req.t("myClinic.template.createError"), error: error.message });
   }
 };
 

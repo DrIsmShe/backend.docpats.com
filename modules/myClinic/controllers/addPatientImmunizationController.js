@@ -9,7 +9,7 @@ const addImmunizationPatientController = async (req, res) => {
       console.log("Ошибка: пользователь не аутентифицирован.");
       return res
         .status(403)
-        .json({ message: "Пожалуйста, войдите в систему." });
+        .json({ message: req.t("myClinic.auth.pleaseLogin") });
     }
 
     const patientId = req.params.id;
@@ -21,7 +21,7 @@ const addImmunizationPatientController = async (req, res) => {
     // Проверка на наличие данных
     if (!immunization || immunization.trim() === "") {
       return res.status(400).json({
-        message: "Поле 'immunization' не может быть пустым.",
+        message: req.t("myClinic.field.immunization.required"),
       });
     }
 
@@ -38,13 +38,13 @@ const addImmunizationPatientController = async (req, res) => {
     console.log("Пациент успешно добавлен:", newImmunizationPatient);
 
     return res.status(201).json({
-      message: "Пациент успешно добавлен!",
+      message: req.t("myClinic.patient.addSuccess"),
       patient: newImmunizationPatient,
     });
   } catch (error) {
     console.error("Ошибка при добавлении пациента:", error);
     return res.status(500).json({
-      message: "Произошла ошибка при добавлении пациента.",
+      message: req.t("myClinic.patient.addError"),
       error: error.message,
     });
   }

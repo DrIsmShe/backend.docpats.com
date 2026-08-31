@@ -7,7 +7,7 @@ const tempComplaintsController = async (req, res) => {
     // Получите userId из сессии
     const userId = req.session.userId; // Это должно быть записано в сессии
     if (!userId) {
-      return res.status(400).json({ message: "Пользователь не авторизован." });
+      return res.status(400).json({ message: req.t("myClinic.auth.userNotAuthorized") });
     }
 
     // Проверка на существование шаблона с таким же названием
@@ -15,7 +15,7 @@ const tempComplaintsController = async (req, res) => {
     if (existingComplaint) {
       return res
         .status(400)
-        .json({ message: "Шаблон с таким названием уже существует." });
+        .json({ message: req.t("myClinic.template.nameAlreadyExists") });
     }
 
     // Обработка тегов
@@ -36,14 +36,14 @@ const tempComplaintsController = async (req, res) => {
 
     await newComplaint.save();
     res.status(201).json({
-      message: "Шаблон жалобы создан успешно",
+      message: req.t("myClinic.complaintTemplate.createSuccess"),
       complaint: newComplaint,
     });
   } catch (error) {
     console.error("Ошибка при создании шаблона:", error);
     res
       .status(500)
-      .json({ message: "Ошибка при создании шаблона", error: error.message });
+      .json({ message: req.t("myClinic.template.createError"), error: error.message });
   }
 };
 

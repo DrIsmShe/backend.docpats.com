@@ -10,7 +10,7 @@ const getListXRAYScanerController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: "Пациент не найден",
+      message: req.t("myClinic.patient.notFound2"),
     });
   }
 
@@ -59,7 +59,7 @@ const getListXRAYScanerController = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Ошибка при получении XRAY-исследований",
+      message: req.t("myClinic.xrayStudy.fetchError"),
       error: error.message,
     });
   }

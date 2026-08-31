@@ -100,12 +100,12 @@ export async function createDoctorPrescription(req, res, next) {
   try {
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: "Не авторизован" });
+      return res.status(401).json({ ok: false, error: req.t("myClinic.auth.unauthorized") });
     }
 
     const patient = await ownedPatient(req.params.patientId, userId);
     if (!patient) {
-      return res.status(404).json({ ok: false, error: "Пациент не найден" });
+      return res.status(404).json({ ok: false, error: req.t("myClinic.patient.notFound2") });
     }
 
     const body = req.body || {};
@@ -113,7 +113,7 @@ export async function createDoctorPrescription(req, res, next) {
     if (items.length === 0) {
       return res.status(422).json({
         ok: false,
-        error: "Нужна хотя бы одна позиция с международным названием (МНН)",
+        error: req.t("myClinic.prescription.innRequired"),
       });
     }
 
@@ -164,12 +164,12 @@ export async function listDoctorPrescriptions(req, res, next) {
   try {
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: "Не авторизован" });
+      return res.status(401).json({ ok: false, error: req.t("myClinic.auth.unauthorized") });
     }
 
     const patient = await ownedPatient(req.params.patientId, userId);
     if (!patient) {
-      return res.status(404).json({ ok: false, error: "Пациент не найден" });
+      return res.status(404).json({ ok: false, error: req.t("myClinic.patient.notFound2") });
     }
 
     // Что показываем в кабинете врача.
@@ -220,25 +220,25 @@ export async function updateDoctorPrescription(req, res, next) {
   try {
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: "Не авторизован" });
+      return res.status(401).json({ ok: false, error: req.t("myClinic.auth.unauthorized") });
     }
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ ok: false, error: "Неверный формат ID" });
+      return res.status(400).json({ ok: false, error: req.t("myClinic.validation.invalidIdFormat") });
     }
 
     const rx = await Prescription.findById(req.params.id);
     if (!rx) {
-      return res.status(404).json({ ok: false, error: "Рецепт не найден" });
+      return res.status(404).json({ ok: false, error: req.t("myClinic.prescription.notFound") });
     }
     // Править может только автор: рецепт — документ с его именем.
     if (String(rx.createdBy || "") !== String(userId)) {
-      return res.status(403).json({ ok: false, error: "Доступ запрещён" });
+      return res.status(403).json({ ok: false, error: req.t("myClinic.access.denied") });
     }
     if (rx.status !== "active") {
       return res.status(409).json({
         ok: false,
         error:
-          "Править можно только активный рецепт. Отмените его и выпишите новый.",
+          req.t("myClinic.prescription.cannotEditInactive"),
       });
     }
 
@@ -253,7 +253,7 @@ export async function updateDoctorPrescription(req, res, next) {
         return res.status(409).json({
           ok: false,
           error:
-            "По рецепту уже был отпуск — править нельзя. Отмените его и выпишите новый.",
+            req.t("myClinic.prescription.cannotEditDispensed"),
         });
       }
     } catch (e) {
@@ -268,7 +268,7 @@ export async function updateDoctorPrescription(req, res, next) {
       if (items.length === 0) {
         return res.status(422).json({
           ok: false,
-          error: "Нужна хотя бы одна позиция с международным названием (МНН)",
+          error: req.t("myClinic.prescription.innRequired"),
         });
       }
       next_.items = items;
@@ -329,19 +329,19 @@ export async function doctorPrescriptionPdf(req, res, next) {
   try {
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: "Не авторизован" });
+      return res.status(401).json({ ok: false, error: req.t("myClinic.auth.unauthorized") });
     }
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ ok: false, error: "Неверный формат ID" });
+      return res.status(400).json({ ok: false, error: req.t("myClinic.validation.invalidIdFormat") });
     }
 
     const rx = await Prescription.findById(req.params.id).lean();
     if (!rx) {
-      return res.status(404).json({ ok: false, error: "Рецепт не найден" });
+      return res.status(404).json({ ok: false, error: req.t("myClinic.prescription.notFound") });
     }
     // Печатать может только тот, кто выписал: рецепт — документ с именем.
     if (String(rx.createdBy || "") !== String(userId)) {
-      return res.status(403).json({ ok: false, error: "Доступ запрещён" });
+      return res.status(403).json({ ok: false, error: req.t("myClinic.access.denied") });
     }
 
     // Карта может быть любой из трёх: врач печатает и свой рецепт,

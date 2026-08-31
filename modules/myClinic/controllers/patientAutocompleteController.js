@@ -25,12 +25,12 @@ const patientAutocompleteController = async (req, res) => {
     if (!req.session.userId) {
       return res
         .status(403)
-        .json({ message: "Пожалуйста, войдите в систему." });
+        .json({ message: req.t("myClinic.auth.pleaseLogin") });
     }
 
     const { query } = req.query;
     if (!query?.trim()) {
-      return res.status(400).json({ message: "Введите данные для поиска." });
+      return res.status(400).json({ message: req.t("myClinic.search.enterSearchData") });
     }
 
     console.log("🔍 Выполняем поиск:", query);
@@ -56,10 +56,10 @@ const patientAutocompleteController = async (req, res) => {
 
     return res
       .status(200)
-      .json({ found: false, message: "Пациенты не найдены." });
+      .json({ found: false, message: req.t("myClinic.patient.noPatientsFound") });
   } catch (error) {
     console.error("❌ Ошибка при поиске пациента:", error);
-    res.status(500).json({ message: "Ошибка при поиске пациента" });
+    res.status(500).json({ message: req.t("myClinic.patient.searchError") });
   }
 };
 

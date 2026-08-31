@@ -9,14 +9,14 @@ const getDetailExaminationsController = async (req, res) => {
     const ctScan = await CTScan.findById(id);
 
     if (!ctScan) {
-      return res.status(404).json({ message: "Исследование не найдено" });
+      return res.status(404).json({ message: req.t("myClinic.study.notFound") });
     }
 
     // 🔒 2. ПРОВЕРКА ДОСТУПА
     if (req.user.role === "patient") {
       if (!req.user.patientPolyclinicId) {
         return res.status(403).json({
-          message: "Нет профиля пациента в поликлинике",
+          message: req.t("myClinic.patient.profileNotFound"),
         });
       }
 
@@ -24,7 +24,7 @@ const getDetailExaminationsController = async (req, res) => {
         ctScan.patientId.toString() !== req.user.patientPolyclinicId.toString()
       ) {
         return res.status(403).json({
-          message: "Доступ запрещен",
+          message: req.t("myClinic.access.denied2"),
         });
       }
     }
@@ -73,7 +73,7 @@ const getDetailExaminationsController = async (req, res) => {
     console.error("Ошибка при получении исследования:", error);
 
     res.status(500).json({
-      message: "Ошибка сервера",
+      message: req.t("myClinic.server.error2"),
       error: error.message,
     });
   }

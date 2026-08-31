@@ -20,15 +20,15 @@ const updateNameofexamTemplatesCoronographyScanerController = async (
       );
 
     if (!updated) {
-      return res.status(404).json({ message: "Шаблон отчёта не найден" });
+      return res.status(404).json({ message: req.t("myClinic.reportTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: "✅ Шаблон отчёта успешно обновлён", updated });
+      .json({ message: req.t("myClinic.reportTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: "❌ Ошибка при обновлении шаблона отчёта",
+      message: req.t("myClinic.reportTemplate.updateError"),
       error: error.message,
     });
   }
@@ -47,15 +47,15 @@ const updateReportTemplatesCoronographyScanerController = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ message: "Шаблон отчёта не найден" });
+      return res.status(404).json({ message: req.t("myClinic.reportTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: "✅ Шаблон отчёта успешно обновлён", updated });
+      .json({ message: req.t("myClinic.reportTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: "❌ Ошибка при обновлении шаблона отчёта",
+      message: req.t("myClinic.reportTemplate.updateError"),
       error: error.message,
     });
   }
@@ -77,15 +77,15 @@ const updateDiagnosisTemplatesCoronographyScanerController = async (
     );
 
     if (!updated) {
-      return res.status(404).json({ message: "Шаблон диагноза не найден" });
+      return res.status(404).json({ message: req.t("myClinic.diagnosisTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: "✅ Шаблон диагноза успешно обновлён", updated });
+      .json({ message: req.t("myClinic.diagnosisTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: "❌ Ошибка при обновлении шаблона диагноза",
+      message: req.t("myClinic.diagnosisTemplate.updateError"),
       error: error.message,
     });
   }
@@ -108,15 +108,15 @@ const updateRecomandationTemplatesCoronographyScanerController = async (
       );
 
     if (!updated) {
-      return res.status(404).json({ message: "Шаблон рекомендации не найден" });
+      return res.status(404).json({ message: req.t("myClinic.recommendationTemplate.notFound") });
     }
 
     res
       .status(200)
-      .json({ message: "✅ Шаблон рекомендации успешно обновлён", updated });
+      .json({ message: req.t("myClinic.recommendationTemplate.updateSuccess"), updated });
   } catch (error) {
     res.status(500).json({
-      message: "❌ Ошибка при обновлении шаблона рекомендации",
+      message: req.t("myClinic.recommendationTemplate.updateError"),
       error: error.message,
     });
   }

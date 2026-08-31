@@ -12,7 +12,7 @@ const addPatientFamilyHistoryOfDiseasePatientRouteController = async (
       console.log("Ошибка: пользователь не аутентифицирован.");
       return res
         .status(403)
-        .json({ message: "Пожалуйста, войдите в систему." });
+        .json({ message: req.t("myClinic.auth.pleaseLogin") });
     }
     const patientId = req.params.id;
     const { familyHistoryOfDisease } = req.body;
@@ -23,7 +23,7 @@ const addPatientFamilyHistoryOfDiseasePatientRouteController = async (
     // Проверка на наличие данных
     if (!familyHistoryOfDisease || familyHistoryOfDisease.trim() === "") {
       return res.status(400).json({
-        message: "Поле 'familyHistoryOfDisease' не может быть пустым.",
+        message: req.t("myClinic.field.familyHistoryOfDisease.required"),
       });
     }
 
@@ -40,13 +40,13 @@ const addPatientFamilyHistoryOfDiseasePatientRouteController = async (
     console.log("Пациент успешно добавлен:", newFamilyHistoryOfDiseasePatient);
 
     return res.status(201).json({
-      message: "Пациент успешно добавлен!",
+      message: req.t("myClinic.patient.addSuccess"),
       patient: newFamilyHistoryOfDiseasePatient,
     });
   } catch (error) {
     console.error("Ошибка при добавлении пациента:", error);
     return res.status(500).json({
-      message: "Произошла ошибка при добавлении пациента.",
+      message: req.t("myClinic.patient.addError"),
       error: error.message,
     });
   }

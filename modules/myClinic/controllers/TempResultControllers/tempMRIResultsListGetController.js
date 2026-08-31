@@ -6,12 +6,12 @@ const tempMRIResultsListGetController = async (req, res) => {
     if (!templates) {
       return res
         .status(404)
-        .json({ message: "Шаблоны результатов МРТ не найдены" });
+        .json({ message: req.t("myClinic.mriResultTemplate.notFound") });
     }
     res.status(200).json(templates);
   } catch (error) {
     console.error("Ошибка при получении шаблонов результатов МРТ:", error);
-    res.status(500).json({ message: "Ошибка сервера" });
+    res.status(500).json({ message: req.t("myClinic.server.error2") });
   }
 };
 

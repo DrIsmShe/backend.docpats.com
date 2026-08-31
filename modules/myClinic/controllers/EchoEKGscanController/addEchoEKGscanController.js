@@ -31,18 +31,18 @@ const addEKGScanController = async (req, res) => {
 
     /* ================= AUTH ================= */
     if (!doctorId) {
-      return res.status(401).json({ message: "⛔ Вы не авторизованы" });
+      return res.status(401).json({ message: req.t("myClinic.auth.notAuthorized") });
     }
 
     if (!patient) {
-      return res.status(404).json({ message: "❌ Пациент не найден" });
+      return res.status(404).json({ message: req.t("myClinic.patient.notFound3") });
     }
 
     /* ================= DOCTOR ================= */
 
     const doctor = await User.findById(doctorId).populate("specialization");
     if (!doctor) {
-      return res.status(404).json({ message: "❌ Врач не найден" });
+      return res.status(404).json({ message: req.t("myClinic.doctor.notFound") });
     }
 
     const allowedSpecializations = [

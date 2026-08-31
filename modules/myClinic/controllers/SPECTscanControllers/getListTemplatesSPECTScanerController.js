@@ -17,7 +17,7 @@ const getListNameofexamTemplatesSPECTScanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Ошибка при получении шаблонов отчёта", error });
+      .json({ message: req.t("myClinic.reportTemplate.fetchError"), error });
   }
 };
 
@@ -33,7 +33,7 @@ const getListReportTemplatesSPECTScanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Ошибка при получении шаблонов отчёта", error });
+      .json({ message: req.t("myClinic.reportTemplate.fetchError"), error });
   }
 };
 
@@ -51,7 +51,7 @@ const getListDiagnosisTemplatesSPECTScanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Ошибка при получении шаблонов диагноза", error });
+      .json({ message: req.t("myClinic.diagnosisTemplate.fetchError"), error });
   }
 };
 
@@ -69,7 +69,7 @@ const getListRecomandationTemplatesSPECTScanerController = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Ошибка при получении шаблонов рекомендаций", error });
+      .json({ message: req.t("myClinic.recommendationTemplate.fetchError"), error });
   }
 };
 

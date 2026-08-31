@@ -9,7 +9,7 @@ const getListLabtestScanerController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: "Пациент не найден",
+      message: req.t("myClinic.patient.notFound2"),
     });
   }
 
@@ -58,7 +58,7 @@ const getListLabtestScanerController = async (req, res) => {
     console.error(`[${timestamp}] ❌ Ошибка получения LabTest:`, error);
     res.status(500).json({
       success: false,
-      message: "Ошибка при получении лабораторных тестов",
+      message: req.t("myClinic.labTests.fetchError"),
       error: error.message,
     });
   }

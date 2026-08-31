@@ -8,7 +8,7 @@ const getLatestLabtestController = async (req, res) => {
   if (!patientId) {
     return res.status(400).json({
       success: false,
-      message: "Не передан ID пациента",
+      message: req.t("myClinic.patient.idNotProvided"),
     });
   }
 
@@ -21,7 +21,7 @@ const getLatestLabtestController = async (req, res) => {
     if (!latestLabTest) {
       return res.status(404).json({
         success: false,
-        message: "У пациента нет предыдущих анализов",
+        message: req.t("myClinic.patient.noPreviousTests"),
       });
     }
 
@@ -33,7 +33,7 @@ const getLatestLabtestController = async (req, res) => {
     console.error("❌ Ошибка при получении последнего анализа:", error);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера",
+      message: req.t("myClinic.server.error2"),
       error: error.message,
     });
   }

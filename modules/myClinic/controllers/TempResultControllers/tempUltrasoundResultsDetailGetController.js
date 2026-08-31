@@ -5,18 +5,18 @@ const tempUltrasoundResultsDetailGetController = async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Неверный ID шаблона" });
+      return res.status(400).json({ message: req.t("myClinic.template.invalidId") });
     }
     const template = await TempUltrasoundResults.findById(id);
     if (!template) {
       return res
         .status(404)
-        .json({ message: "Шаблон анамнеза morbi не найден" });
+        .json({ message: req.t("myClinic.anamnesisMorbi.templateNotFound") });
     }
     res.status(200).json(template);
   } catch (error) {
     console.error("Ошибка при получении шаблона анамнеза morbi:", error);
-    res.status(500).json({ message: "Ошибка сервера" });
+    res.status(500).json({ message: req.t("myClinic.server.error2") });
   }
 };
 

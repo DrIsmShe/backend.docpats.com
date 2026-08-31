@@ -8,19 +8,19 @@ const privatePatientDeleteFromDoctorController = async (req, res) => {
     if (!doctorUserId) {
       return res
         .status(403)
-        .json({ message: "Пожалуйста, войдите в систему." });
+        .json({ message: req.t("myClinic.auth.pleaseLogin") });
     }
 
     const patient = await DoctorPrivatePatient.findById(id);
 
     if (!patient) {
-      return res.status(404).json({ message: "Пациент не найден." });
+      return res.status(404).json({ message: req.t("myClinic.patient.notFound") });
     }
 
     // 🔒 Проверка владельца private-пациента
     if (String(patient.doctorUserId) !== String(doctorUserId)) {
       return res.status(403).json({
-        message: "Вы не имеете доступа к этому пациенту.",
+        message: req.t("myClinic.patient.accessDenied"),
       });
     }
 
@@ -33,14 +33,14 @@ const privatePatientDeleteFromDoctorController = async (req, res) => {
     await patient.save();
 
     return res.status(200).json({
-      message: "Private пациент архивирован.",
+      message: req.t("myClinic.patient.privateArchived"),
       patientId: id,
     });
   } catch (error) {
     console.error("❌ Ошибка при удалении private пациента:", error);
     return res
       .status(500)
-      .json({ message: "Ошибка сервера при удалении пациента." });
+      .json({ message: req.t("myClinic.patient.deletionError") });
   }
 };
 

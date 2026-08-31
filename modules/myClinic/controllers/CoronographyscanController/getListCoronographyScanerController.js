@@ -9,7 +9,7 @@ const getListCoronographyScanController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: "Пациент не найден",
+      message: req.t("myClinic.patient.notFound2"),
     });
   }
 
@@ -61,7 +61,7 @@ const getListCoronographyScanController = async (req, res) => {
     console.error(`[${timestamp}] ❌ Ошибка получения Coronography:`, error);
     res.status(500).json({
       success: false,
-      message: "Ошибка при получении Coronography-исследований",
+      message: req.t("myClinic.study.coronography.fetchError"),
       error: error.message,
     });
   }

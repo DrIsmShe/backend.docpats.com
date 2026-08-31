@@ -26,7 +26,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
   if (!req.session?.userId) {
     return res.status(403).json({
       success: false,
-      message: "Пожалуйста, войдите в систему.",
+      message: req.t("myClinic.auth.pleaseLogin"),
     });
   }
 
@@ -38,14 +38,14 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
   if (!patient || !patientType) {
     return res.status(404).json({
       success: false,
-      message: "Пациент не найден.",
+      message: req.t("myClinic.patient.notFound"),
     });
   }
 
   if (!mongoose.Types.ObjectId.isValid(patient._id)) {
     return res.status(400).json({
       success: false,
-      message: "Некорректный ID пациента.",
+      message: req.t("myClinic.patient.invalidId"),
     });
   }
 
@@ -60,7 +60,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     if (!checkPrivate) {
       return res.status(403).json({
         success: false,
-        message: "Этот приватный пациент не принадлежит текущему врачу.",
+        message: req.t("myClinic.patient.notOwnedByDoctor"),
       });
     }
   }
@@ -75,7 +75,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     if (!checkRegistered) {
       return res.status(403).json({
         success: false,
-        message: "Этот зарегистрированный пациент не связан с врачом.",
+        message: req.t("myClinic.patient.notLinkedToDoctor"),
       });
     }
   }
@@ -114,7 +114,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
       } catch (e) {
         return res.status(400).json({
           success: false,
-          message: "Некорректный формат основного диагноза (mainDiagnosis).",
+          message: req.t("myClinic.diagnosis.main.invalidFormat"),
         });
       }
     } else if (typeof rawMainDiagnosis === "object") {
@@ -130,7 +130,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
     return res.status(400).json({
       success: false,
       message:
-        "Основной диагноз обязателен: укажите код МКБ-10 и текст диагноза.",
+        req.t("myClinic.diagnosis.main.required"),
     });
   }
 
@@ -193,7 +193,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "История болезни успешно добавлена!",
+      message: req.t("myClinic.medicalHistory.addSuccess"),
       medicalHistory: history,
     });
   } catch (err) {
@@ -221,7 +221,7 @@ const addPatientsPolyclinicMedicalHistoryController = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Ошибка при сохранении истории болезни.",
+      message: req.t("myClinic.medicalHistory.saveError"),
     });
   }
 };

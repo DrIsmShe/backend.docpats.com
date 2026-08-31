@@ -21,7 +21,7 @@ const getDetailExaminationsControllerLabtest = async (req, res) => {
       );
 
     if (!labTest) {
-      return res.status(404).json({ message: "Лабораторный тест не найден" });
+      return res.status(404).json({ message: req.t("myClinic.labTest.notFound") });
     }
 
     const labTestObj = labTest.toObject();
@@ -60,7 +60,7 @@ const getDetailExaminationsControllerLabtest = async (req, res) => {
     res.status(200).json({
       success: true,
       data: labTestObj,
-      message: "Детали лабораторного теста успешно получены",
+      message: req.t("myClinic.labTest.detailsFetchedSuccessfully"),
     });
   } catch (error) {
     console.error(
@@ -68,7 +68,7 @@ const getDetailExaminationsControllerLabtest = async (req, res) => {
     );
     res.status(500).json({
       success: false,
-      message: "Ошибка сервера при получении лабораторного теста",
+      message: req.t("myClinic.labTest.serverFetchError"),
       error: error.message,
     });
   }

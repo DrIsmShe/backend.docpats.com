@@ -9,7 +9,7 @@ const getListEchoEKGScanController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: "Пациент не найден",
+      message: req.t("myClinic.patient.notFound2"),
     });
   }
 
@@ -63,7 +63,7 @@ const getListEchoEKGScanController = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Ошибка при получении Echo EKG исследований",
+      message: req.t("myClinic.study.echoEkg.fetchError"),
       error: error.message,
     });
   }

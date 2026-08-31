@@ -9,7 +9,7 @@ const addPatientOperationsController = async (req, res) => {
       console.log("Ошибка: пользователь не аутентифицирован.");
       return res
         .status(403)
-        .json({ message: "Пожалуйста, войдите в систему." });
+        .json({ message: req.t("myClinic.auth.pleaseLogin") });
     }
 
     const patientId = req.params.id;
@@ -21,7 +21,7 @@ const addPatientOperationsController = async (req, res) => {
     // Проверка на наличие данных
     if (!operations || operations.trim() === "") {
       return res.status(400).json({
-        message: "Поле 'operations' не может быть пустым.",
+        message: req.t("myClinic.field.operations.required"),
       });
     }
 
@@ -38,13 +38,13 @@ const addPatientOperationsController = async (req, res) => {
     console.log("Данные успешно добавлены:", newPatientOperations);
 
     return res.status(201).json({
-      message: "Данные об операциях успешно добавлены!",
+      message: req.t("myClinic.operations.addSuccess"),
       patient: newPatientOperations,
     });
   } catch (error) {
     console.error("Ошибка при добавлении данных об операциях:", error);
     return res.status(500).json({
-      message: "Произошла ошибка при добавлении данных об операциях.",
+      message: req.t("myClinic.operations.addError"),
       error: error.message,
     });
   }

@@ -62,7 +62,7 @@ const patientsMedicalHistoryGetDetailsController = async (req, res) => {
     if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
       return res.status(400).json({
         message:
-          "Некорректный запрос: отсутствует или неверный ID истории болезни",
+          req.t("myClinic.medicalHistory.invalidOrMissingId"),
       });
     }
 
@@ -87,11 +87,11 @@ const patientsMedicalHistoryGetDetailsController = async (req, res) => {
       .lean();
 
     if (!mh) {
-      return res.status(404).json({ message: "История болезни не найдена" });
+      return res.status(404).json({ message: req.t("myClinic.medicalHistory.notFound") });
     }
     if (!mh.patientRef) {
       console.warn("⚠️ История без пациента:", mh._id);
-      return res.status(404).json({ message: "Пациент не привязан к истории" });
+      return res.status(404).json({ message: req.t("myClinic.medicalHistory.patientNotLinked") });
     }
     // Врач
     let doctor = null;
@@ -135,7 +135,7 @@ const patientsMedicalHistoryGetDetailsController = async (req, res) => {
     return res.status(200).json(out);
   } catch (err) {
     console.error("❌ Ошибка при получении истории болезни пациента:", err);
-    return res.status(500).json({ message: "Ошибка сервера" });
+    return res.status(500).json({ message: req.t("myClinic.server.error2") });
   }
 };
 

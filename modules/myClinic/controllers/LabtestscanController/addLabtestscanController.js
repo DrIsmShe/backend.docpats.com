@@ -190,18 +190,18 @@ const addLabtestscanController = async (req, res) => {
     const { patient } = req; // 👈 resolvePatient
 
     if (!doctorId) {
-      return res.status(401).json({ message: "Вы не авторизованы" });
+      return res.status(401).json({ message: req.t("myClinic.auth.notAuthorized2") });
     }
 
     if (!patient) {
-      return res.status(404).json({ message: "Пациент не найден" });
+      return res.status(404).json({ message: req.t("myClinic.patient.notFound2") });
     }
 
     const doctor = await User.findById(doctorId).populate("specialization");
     if (!doctor || !doctor.specialization) {
       return res
         .status(403)
-        .json({ message: "Специализация врача не определена" });
+        .json({ message: req.t("myClinic.doctor.specializationNotDefined") });
     }
 
     const patientModelName = patient.constructor?.modelName;
@@ -251,14 +251,14 @@ const addLabtestscanController = async (req, res) => {
     if (!testType) {
       return res
         .status(400)
-        .json({ message: "Не указан тип анализа (testType)" });
+        .json({ message: req.t("myClinic.labTest.testTypeNotSpecified") });
     }
 
     const normalizedParams = normalizeTestParameters(testParameters);
     if (!normalizedParams.length) {
       return res.status(400).json({
         message:
-          "Показатели анализа (testParameters) не переданы или имеют неверный формат",
+          req.t("myClinic.labTest.parametersInvalidOrMissing"),
       });
     }
 

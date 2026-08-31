@@ -9,7 +9,7 @@ const getListSPECTScanerController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: "Пациент не найден",
+      message: req.t("myClinic.patient.notFound2"),
     });
   }
 
@@ -61,7 +61,7 @@ const getListSPECTScanerController = async (req, res) => {
     console.error(`[${timestamp}] ❌ Ошибка получения SPECT:`, error);
     res.status(500).json({
       success: false,
-      message: "Ошибка при получении SPECT-исследований",
+      message: req.t("myClinic.spectStudies.fetchError"),
       error: error.message,
     });
   }

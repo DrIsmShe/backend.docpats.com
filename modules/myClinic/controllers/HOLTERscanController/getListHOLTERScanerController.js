@@ -9,7 +9,7 @@ const getListHOLTERScanController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: "Пациент не найден",
+      message: req.t("myClinic.patient.notFound2"),
     });
   }
 
@@ -62,7 +62,7 @@ const getListHOLTERScanController = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Ошибка при получении HOLTER-исследований",
+      message: req.t("myClinic.holterStudies.fetchError"),
       error: error.message,
     });
   }

@@ -9,7 +9,7 @@ const getListEEGScanerController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: "Пациент не найден",
+      message: req.t("myClinic.patient.notFound2"),
     });
   }
 
@@ -55,13 +55,13 @@ const getListEEGScanerController = async (req, res) => {
       success: true,
       count: eegScans.length,
       data: eegScans,
-      message: "Список EEG-исследований успешно получен",
+      message: req.t("myClinic.study.eeg.fetchSuccess"),
     });
   } catch (error) {
     console.error(`[${timestamp}] ❌ Ошибка получения EEG:`, error);
     res.status(500).json({
       success: false,
-      message: "Ошибка при получении EEG-исследований",
+      message: req.t("myClinic.study.eeg.fetchError"),
       error: error.message,
     });
   }

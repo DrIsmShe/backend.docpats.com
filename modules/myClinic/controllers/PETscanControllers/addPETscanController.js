@@ -33,7 +33,7 @@ const addPETscanController = async (req, res) => {
     const doctorId = req.session?.userId;
 
     if (!doctorId) {
-      return res.status(401).json({ message: "⛔ Вы не авторизованы" });
+      return res.status(401).json({ message: req.t("myClinic.auth.notAuthorized") });
     }
 
     /* ================= PATIENT ================= */
@@ -41,7 +41,7 @@ const addPETscanController = async (req, res) => {
     const patient = req.patient;
 
     if (!patient) {
-      return res.status(404).json({ message: "Пациент не найден" });
+      return res.status(404).json({ message: req.t("myClinic.patient.notFound2") });
     }
 
     const patientModel = patient.constructor.modelName;

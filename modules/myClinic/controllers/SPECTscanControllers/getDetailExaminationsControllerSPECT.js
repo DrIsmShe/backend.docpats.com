@@ -19,7 +19,7 @@ const getDetailExaminationsControllerSPECT = async (req, res) => {
       ); // комментарии врачей
 
     if (!spectScan) {
-      return res.status(404).json({ message: "Исследование не найдено" });
+      return res.status(404).json({ message: req.t("myClinic.study.notFound") });
     }
 
     // Расшифровка имени врача, если используется шифрование
@@ -40,7 +40,7 @@ const getDetailExaminationsControllerSPECT = async (req, res) => {
     res.status(200).json(spectScan);
   } catch (error) {
     console.error("Ошибка при получении SPECT-исследования:", error);
-    res.status(500).json({ message: "Ошибка сервера", error: error.message });
+    res.status(500).json({ message: req.t("myClinic.server.error2"), error: error.message });
   }
 };
 

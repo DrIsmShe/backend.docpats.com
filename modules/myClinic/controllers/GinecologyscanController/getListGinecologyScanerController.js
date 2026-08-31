@@ -9,7 +9,7 @@ const getListGinecologyScanerController = async (req, res) => {
   if (!patient) {
     return res.status(404).json({
       success: false,
-      message: "Пациент не найден",
+      message: req.t("myClinic.patient.notFound2"),
     });
   }
 
@@ -58,7 +58,7 @@ const getListGinecologyScanerController = async (req, res) => {
       success: true,
       count: ginecologyScans.length,
       data: ginecologyScans,
-      message: "Список ginecology-исследований успешно получен",
+      message: req.t("myClinic.study.gynecology.fetchSuccess"),
     });
   } catch (error) {
     console.error(
@@ -67,7 +67,7 @@ const getListGinecologyScanerController = async (req, res) => {
     );
     res.status(500).json({
       success: false,
-      message: "Ошибка при получении ginecology исследований",
+      message: req.t("myClinic.study.gynecology.fetchError"),
       error: error.message,
     });
   }
