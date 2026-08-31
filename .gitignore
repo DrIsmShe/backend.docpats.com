@@ -22,3 +22,9 @@ backend-github-check/
 # Тестовые DICOM, собранные npm run make:test-dicom
 test-scan*.dcm
 dicom-samples/
+
+# Рабочие файлы разбора сообщений — в репозиторий не нужны.
+.inv.json
+.texts.txt
+stage3_i18n.json
+stage3_texts.json
