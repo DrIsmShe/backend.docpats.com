@@ -86,13 +86,13 @@ export default async function addPatientPolyclinicController(req, res) {
     /* 1) Авторизация */
     const rawUserId = req.user?._id || req.session?.userId;
     if (!rawUserId || !mongoose.Types.ObjectId.isValid(rawUserId)) {
-      return res.status(403).json({ message: "Пользователь не авторизован." });
+      return res.status(403).json({ message: req.t("app.user.notAuthorized2") });
     }
     const linkedUserId = new mongoose.Types.ObjectId(rawUserId);
 
     const user = await User.findById(linkedUserId);
     if (!user) {
-      return res.status(404).json({ message: "Пользователь не найден." });
+      return res.status(404).json({ message: req.t("app.user.notFound2") });
     }
 
     /* 2) Извлекаем вход (корректно работает и для JSON, и для multipart/form-data) */
@@ -135,13 +135,13 @@ export default async function addPatientPolyclinicController(req, res) {
     ) {
       return res
         .status(400)
-        .json({ message: "❌ Заполните все обязательные поля." });
+        .json({ message: req.t("app.validation.requiredFieldsMissing") });
     }
 
     /* 4) Дата рождения */
     const birthDate = parseBirthDate(birthDateRaw);
     if (!birthDate) {
-      return res.status(400).json({ message: "Некорректная дата рождения." });
+      return res.status(400).json({ message: req.t("app.validation.invalidBirthDate") });
     }
 
     /* 5) Проверки дублей */
@@ -152,7 +152,7 @@ export default async function addPatientPolyclinicController(req, res) {
 
     if (exists) {
       return res.status(409).json({
-        message: "Пациент уже зарегистрирован в поликлинике.",
+        message: req.t("app.patient.alreadyRegistered"),
         patientUUID: exists.patientUUID,
       });
     }
@@ -165,7 +165,7 @@ export default async function addPatientPolyclinicController(req, res) {
       if (dup) {
         return res
           .status(409)
-          .json({ message: "Пациент с таким телефоном уже существует." });
+          .json({ message: req.t("app.patient.phoneAlreadyExists") });
       }
     }
 
@@ -212,7 +212,7 @@ export default async function addPatientPolyclinicController(req, res) {
     const rawEncrypted = doc.get("phoneEncrypted", null, { getters: false });
 
     return res.status(201).json({
-      message: "✅ Медкарта успешно создана!",
+      message: req.t("app.medicalRecord.createdSuccessfully"),
       patientUUID: out.patientUUID,
       phoneNumber: out.phoneNumber || null, // геттер вернёт плейн
       phoneEncrypted: rawEncrypted || null, // физическое поле в БД (для проверки)
@@ -221,11 +221,11 @@ export default async function addPatientPolyclinicController(req, res) {
   } catch (error) {
     if (error?.code === 11000) {
       const field = Object.keys(error?.keyPattern || {})[0] || "unknown";
-      return res.status(409).json({ message: "Конфликт уникальности.", field });
+      return res.status(409).json({ message: req.t("app.database.uniquenessConflict"), field });
     }
     console.error("❌ Ошибка при создании медкарты:", error);
     return res
       .status(500)
-      .json({ message: "Ошибка сервера при добавлении пациента." });
+      .json({ message: req.t("app.patient.addServerError") });
   }
 }

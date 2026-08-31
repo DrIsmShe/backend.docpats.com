@@ -13,7 +13,7 @@ const countArticlesTodayController = async (req, res) => {
 
     res.json({ count });
   } catch (error) {
-    res.status(500).json({ message: "Ошибка при подсчете статей" });
+    res.status(500).json({ message: req.t("app.articles.countingError") });
   }
 };
 

@@ -37,7 +37,7 @@ const imageUpload = multer({
 
 router.post("/upload/image", imageUpload.single("upload"), async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ message: "Файл не найден" });
+    return res.status(400).json({ message: req.t("app.file.notFound") });
   }
 
   try {
@@ -61,7 +61,7 @@ router.post("/upload/image", imageUpload.single("upload"), async (req, res) => {
     });
   } catch (error) {
     console.error("Ошибка загрузки файла:", error);
-    res.status(500).json({ message: "Ошибка загрузки файла" });
+    res.status(500).json({ message: req.t("app.file.uploadError") });
   }
 });
 

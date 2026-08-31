@@ -45,7 +45,7 @@ const resolvePatient = async (req, res, next) => {
       return next();
     }
 
-    return res.status(404).json({ message: "Пациент не найден" });
+    return res.status(404).json({ message: req.t("app.patient.notFound") });
   } catch (err) {
     console.error("❌ resolvePatient error:", err);
     return res.status(500).json({ message: "Server error" });

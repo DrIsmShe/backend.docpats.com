@@ -38,14 +38,14 @@ const getMyMedicalHistoryController = async (req, res) => {
     if (!userId || role !== "patient") {
       return res.status(401).json({
         success: false,
-        message: "Доступ разрешён только зарегистрированным пациентам",
+        message: req.t("app.access.registeredPatientsOnly"),
       });
     }
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: "Некорректный userId",
+        message: req.t("app.validation.invalidUserId"),
       });
     }
 

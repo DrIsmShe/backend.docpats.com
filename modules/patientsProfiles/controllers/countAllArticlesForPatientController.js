@@ -7,7 +7,7 @@ const countAllArticlesController = async (req, res) => {
     res.status(200).json({ count: totalArticles });
   } catch (error) {
     console.error("Ошибка при подсчете всех статей:", error);
-    res.status(500).json({ message: "Ошибка сервера при подсчете статей" });
+    res.status(500).json({ message: req.t("app.articles.countError") });
   }
 };
 

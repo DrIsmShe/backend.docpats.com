@@ -21,7 +21,7 @@ export default async function requireDoctorRole(req, res, next) {
       return res.status(401).json({
         success: false,
         code: "AUTH_REQUIRED",
-        message: "Раздел доступен только врачам. Войдите в аккаунт.",
+        message: req.t("app.access.doctorsOnlyPleaseLogin"),
       });
     }
 
@@ -33,7 +33,7 @@ export default async function requireDoctorRole(req, res, next) {
       return res.status(403).json({
         success: false,
         code: "DOCTORS_ONLY",
-        message: "Раздел доступен только врачам.",
+        message: req.t("app.access.doctorsOnly"),
       });
     }
 

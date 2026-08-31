@@ -22,12 +22,12 @@ export async function removeDoctorFromMyDoctors(req, res) {
     if (!patientId) {
       return res
         .status(401)
-        .json({ success: false, message: "Пациент не авторизован." });
+        .json({ success: false, message: req.t("app.patient.notAuthorized") });
     }
     if (!doctorId && !alt) {
       return res
         .status(400)
-        .json({ success: false, message: "Не передан ID доктора." });
+        .json({ success: false, message: req.t("app.validation.doctorIdMissing") });
     }
 
     // Собираем все кандидаты (как строки и как ObjectId)
@@ -72,22 +72,22 @@ export async function removeDoctorFromMyDoctors(req, res) {
     if (!result.matchedCount) {
       return res
         .status(404)
-        .json({ success: false, message: "Пациент не найден." });
+        .json({ success: false, message: req.t("app.patient.notFound2") });
     }
     if (!result.modifiedCount) {
       return res
         .status(400)
-        .json({ success: false, message: "Доктор не найден в Моих Докторах." });
+        .json({ success: false, message: req.t("app.doctor.notFoundInMyDoctors") });
     }
 
     return res
       .status(200)
-      .json({ success: true, message: "Доктор удалён из Моих Докторов." });
+      .json({ success: true, message: req.t("app.doctor.removedFromMyDoctors") });
   } catch (error) {
     console.error("❌ Ошибка при удалении доктора:", error);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера при удалении доктора.",
+      message: req.t("app.doctor.removeError"),
     });
   }
 }

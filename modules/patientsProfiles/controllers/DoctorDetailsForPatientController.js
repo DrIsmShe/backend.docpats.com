@@ -7,27 +7,27 @@ const DoctorDetailsForPatientController = async (req, res) => {
     const { id } = req.params; // профайл врача
     const sessionUserId = req.session.userId;
 
-    if (!id) return res.status(400).json({ error: "Не передан ID доктора" });
+    if (!id) return res.status(400).json({ error: req.t("app.doctor.idNotProvided") });
     if (!sessionUserId)
       return res
         .status(403)
-        .json({ error: "Доступ запрещен: нет авторизации" });
+        .json({ error: req.t("app.access.deniedNoAuth") });
 
     const doctorProfile = await DoctorProfile.findById(id).lean();
     if (!doctorProfile)
-      return res.status(404).json({ error: "Профиль доктора не найден" });
+      return res.status(404).json({ error: req.t("app.doctor.profileNotFound2") });
 
     const doctorUser = await User.findById(doctorProfile.userId)
       .populate({ path: "specialization", select: "name" })
       .lean();
-    if (!doctorUser) return res.status(404).json({ error: "Доктор не найден" });
+    if (!doctorUser) return res.status(404).json({ error: req.t("app.doctor.notFound") });
 
     // Кто запрашивает — пускаем пациентов и врачей (как раньше)
     const requestingUser = await User.findById(sessionUserId).lean();
     if (!requestingUser || !["patient", "doctor"].includes(requestingUser.role))
       return res
         .status(403)
-        .json({ error: "Доступ запрещен: недостаточно прав" });
+        .json({ error: req.t("app.access.deniedInsufficientPermissions") });
 
     // Статьи доктора
     const doctorArticles = await Article.find({
@@ -72,7 +72,7 @@ const DoctorDetailsForPatientController = async (req, res) => {
     return res.status(200).json(doctorDetails);
   } catch (error) {
     console.error("❌ Ошибка профиля врача:", error);
-    return res.status(500).json({ error: "Внутренняя ошибка сервера" });
+    return res.status(500).json({ error: req.t("app.server.internalError") });
   }
 };
 

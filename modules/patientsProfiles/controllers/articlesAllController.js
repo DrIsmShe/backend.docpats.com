@@ -559,7 +559,7 @@ const articlesAllController = async (req, res) => {
     console.error("❌ Ошибка при получении статей:", err);
     return res
       .status(500)
-      .json({ message: "Ошибка сервера при получении статей" });
+      .json({ message: req.t("app.articles.fetchError") });
   }
 };
 

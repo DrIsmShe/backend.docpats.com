@@ -46,10 +46,10 @@ export const uploadPDF = (req, res) => {
     if (err) {
       return res
         .status(500)
-        .json({ message: "Ошибка загрузки файла", error: err.message });
+        .json({ message: req.t("app.file.uploadError"), error: err.message });
     }
     res.json({
-      message: "Файл загружен!",
+      message: req.t("app.file.uploadSuccess"),
       fileUrl: `/uploads/${req.file.filename}`,
     });
   });
@@ -63,7 +63,7 @@ export const getPDF = (req, res) => {
   if (fs.existsSync(filePath)) {
     res.sendFile(path.resolve(filePath));
   } else {
-    res.status(404).json({ message: "Файл не найден" });
+    res.status(404).json({ message: req.t("app.file.notFound") });
   }
 };
 const downloadPDF = async () => {

@@ -95,7 +95,7 @@ export default async function getMRIlFilesDetailController(req, res) {
       return res.status(403).json({
         ok: false,
         error: "FORBIDDEN",
-        message: "Доступ запрещён",
+        message: req.t("app.access.forbidden2"),
       });
     }
 

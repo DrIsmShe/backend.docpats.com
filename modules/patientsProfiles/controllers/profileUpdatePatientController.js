@@ -70,7 +70,7 @@ const profileUpdatePatientController = async (req, res) => {
     if (!rawUserId || !mongoose.Types.ObjectId.isValid(rawUserId)) {
       return res
         .status(403)
-        .json({ message: "Пожалуйста, войдите в систему." });
+        .json({ message: req.t("app.auth.pleaseLogin") });
     }
     const userId = new mongoose.Types.ObjectId(rawUserId);
 
@@ -139,7 +139,7 @@ const profileUpdatePatientController = async (req, res) => {
       }).lean();
       if (emailDup) {
         return res.status(409).json({
-          message: "E-mail уже используется.",
+          message: req.t("app.validation.emailAlreadyInUse"),
           field: "everyoneEmail",
           value: emailNorm,
         });
@@ -156,7 +156,7 @@ const profileUpdatePatientController = async (req, res) => {
       }).lean();
       if (idDup) {
         return res.status(409).json({
-          message: "Документ уже используется.",
+          message: req.t("app.validation.documentAlreadyInUse"),
           field: "identityDocument",
           value: idDocNorm,
         });
@@ -327,7 +327,7 @@ const profileUpdatePatientController = async (req, res) => {
       if (!lang) {
         return res.status(400).json({
           message:
-            "Некорректное значение preferredLanguage. Допустимо: en, ru, az, tr.",
+            req.t("app.validation.invalidPreferredLanguage"),
           field: "preferredLanguage",
           value: preferredLanguage,
         });
@@ -345,7 +345,7 @@ const profileUpdatePatientController = async (req, res) => {
     }
 
     return res.status(200).json({
-      message: "✅ Профиль сохранён.",
+      message: req.t("app.profile.saved"),
     });
   } catch (error) {
     console.error("❌ Ошибка при обновлении профиля:", error);
@@ -364,7 +364,7 @@ const profileUpdatePatientController = async (req, res) => {
         value: error?.keyValue?.[field],
       });
     }
-    return res.status(500).json({ message: "Ошибка при обновлении профиля." });
+    return res.status(500).json({ message: req.t("app.profile.updateError") });
   }
 };
 

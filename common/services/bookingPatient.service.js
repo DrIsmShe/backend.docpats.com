@@ -34,11 +34,17 @@ import {
 
 /** Ошибка, которую вызывающий превращает в свой формат ответа. */
 export class BookingPatientError extends Error {
-  constructor(message, { status = 400, code = null, extra = {} } = {}) {
+  /**
+   * Служба не видит запроса, а значит не знает языка собеседника. Поэтому
+   * она несёт КОД сообщения, а перевод подставляет обработчик ошибок — там
+   * запрос уже есть. Текст остаётся запасным, если кода нет в словаре.
+   */
+  constructor(message, { status = 400, code = null, i18n = null, extra = {} } = {}) {
     super(message);
     this.name = "BookingPatientError";
     this.status = status;
     this.code = code;
+    this.i18n = i18n;
     this.extra = extra;
   }
 }
@@ -74,7 +80,7 @@ export async function resolveBookingPatient({
 }) {
   if (patient.kind === "registered") {
     if (!mongoose.Types.ObjectId.isValid(patient.id)) {
-      throw new BookingPatientError("Не указан пациент");
+      throw new BookingPatientError("Не указан пациент", { i18n: "app.patient.notSpecified" });
     }
     // В patientId исторически кладут то User._id, то id карты поликлиники —
     // принимаем оба и запоминаем, кому уходит уведомление.
@@ -99,7 +105,7 @@ export async function resolveBookingPatient({
       .select("firstNameEncrypted lastNameEncrypted linkedUserId")
       .lean();
     if (!card) {
-      throw new BookingPatientError("Пациент не найден", { status: 404 });
+      throw new BookingPatientError("Пациент не найден", { status: 404, i18n: "app.patient.notFound" });
     }
     return {
       patientId: card._id,
@@ -116,7 +122,7 @@ export async function resolveBookingPatient({
 
   if (patient.kind === "private") {
     if (!mongoose.Types.ObjectId.isValid(patient.id)) {
-      throw new BookingPatientError("Не указан пациент");
+      throw new BookingPatientError("Не указан пациент", { i18n: "app.patient.notSpecified" });
     }
     // Фильтр по doctorProfileId — не украшение: без него врач мог бы
     // записать чужую карточку и увидеть её имя в своём календаре.
@@ -125,7 +131,7 @@ export async function resolveBookingPatient({
       doctorProfileId,
     });
     if (!card) {
-      throw new BookingPatientError("Пациент не найден", { status: 404 });
+      throw new BookingPatientError("Пациент не найден", { status: 404, i18n: "app.patient.notFound" });
     }
     return {
       patientId: null,
@@ -139,7 +145,7 @@ export async function resolveBookingPatient({
     const firstName = String(patient.firstName || "").trim();
     const lastName = String(patient.lastName || "").trim();
     if (!firstName || !lastName) {
-      throw new BookingPatientError("Укажите имя и фамилию пациента");
+      throw new BookingPatientError("Укажите имя и фамилию пациента", { i18n: "app.patient.nameRequired" });
     }
 
     const phone = normalizePhone(patient.phone);

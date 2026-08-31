@@ -9,7 +9,7 @@ const patientDetailsController = async (req, res) => {
 
     // ✅ Проверка ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Неверный ID пациента" });
+      return res.status(400).json({ message: req.t("app.validation.invalidPatientId") });
     }
     const objId = new mongoose.Types.ObjectId(id);
 
@@ -65,7 +65,7 @@ const patientDetailsController = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     console.error("💥 Ошибка в контроллере patientDetails:", error);
-    return res.status(500).json({ message: "Внутренняя ошибка сервера" });
+    return res.status(500).json({ message: req.t("app.server.internalError") });
   }
 };
 

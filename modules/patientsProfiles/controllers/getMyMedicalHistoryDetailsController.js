@@ -204,7 +204,7 @@ const getMyMedicalHistoryDetailsController = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
-        message: "Неверный формат ID истории болезни",
+        message: req.t("app.validation.invalidMedicalHistoryIdFormat"),
       });
     }
 
@@ -249,14 +249,14 @@ const getMyMedicalHistoryDetailsController = async (req, res) => {
     if (!history) {
       return res
         .status(404)
-        .json({ success: false, message: "История болезни не найдена" });
+        .json({ success: false, message: req.t("app.medicalHistory.notFound") });
     }
 
     // 🔒 PHI-доступ: только владелец-пациент, врач-создатель или админ.
     if (!canAccessPatientRecord(req, history)) {
       return res
         .status(403)
-        .json({ success: false, message: "Доступ запрещён" });
+        .json({ success: false, message: req.t("app.access.forbidden2") });
     }
 
     /* ───── врач ───── */
@@ -378,7 +378,7 @@ const getMyMedicalHistoryDetailsController = async (req, res) => {
     console.error("❌ Ошибка при получении детальной истории болезни:", error);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера при получении истории болезни",
+      message: req.t("app.medicalHistory.fetchError"),
     });
   }
 };

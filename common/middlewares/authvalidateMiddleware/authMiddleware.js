@@ -15,7 +15,7 @@ const authMiddleware = async (req, res, next) => {
     if (user.permanentlyBanned) {
       return res
         .status(403)
-        .json({ message: "Ваш аккаунт заблокирован навсегда" });
+        .json({ message: req.t("app.account.permanentlyBlocked") });
     }
 
     if (user.blockedUntil && user.blockedUntil > new Date()) {

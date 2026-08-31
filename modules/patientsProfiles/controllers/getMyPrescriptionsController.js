@@ -20,7 +20,7 @@ const getMyPrescriptionsController = async (req, res) => {
   try {
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: "Не авторизован" });
+      return res.status(401).json({ ok: false, error: req.t("app.auth.notAuthorized2") });
     }
 
     // 1. Все карты пациента, привязанные к этому юзеру.

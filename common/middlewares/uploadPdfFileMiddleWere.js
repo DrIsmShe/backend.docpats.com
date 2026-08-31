@@ -90,7 +90,7 @@ const uploadToR2 = async (buffer, key, contentType) => {
 //       UNIVERSAL uploadFile FUNCTION (prod → R2, dev → local)
 // ============================================================
 export const uploadFile = async (file) => {
-  if (!file) throw new Error("Файл не найден");
+  if (!file) throw new Error(req.t("app.file.notFound"));
 
   const ext = path.extname(file.originalname).toLowerCase();
   const category = detectCategory(file.originalname);
@@ -195,7 +195,7 @@ export const getPDF = async (req, res) => {
   // --- LOCAL MODE ---
   const filePath = path.join(localUploadDir, fileName);
   if (fs.existsSync(filePath)) res.sendFile(path.resolve(filePath));
-  else res.status(404).json({ message: "Файл не найден" });
+  else res.status(404).json({ message: req.t("app.file.notFound") });
 };
 // ============================================================
 //      Legacy wrapper: uploadPDF (чтобы не ломать старые роуты)
@@ -204,25 +204,25 @@ export const uploadPDF = (req, res) => {
   upload.single("file")(req, res, async (err) => {
     if (err) {
       return res.status(500).json({
-        message: "Ошибка загрузки PDF",
+        message: req.t("app.pdf.uploadError"),
         error: err.message,
       });
     }
 
     try {
       if (!req.file) {
-        return res.status(400).json({ message: "Файл не получен" });
+        return res.status(400).json({ message: req.t("app.file.notReceived") });
       }
 
       const pdfUrl = await uploadFile(req.file);
 
       res.json({
-        message: "PDF успешно загружен",
+        message: req.t("app.pdf.uploadSuccess"),
         fileUrl: pdfUrl,
       });
     } catch (e) {
       res.status(500).json({
-        message: "Ошибка обработки PDF",
+        message: req.t("app.pdf.processingError"),
         error: e.message,
       });
     }

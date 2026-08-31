@@ -89,7 +89,7 @@ const getMyLabResultPdfController = async (req, res) => {
   try {
     const rawUserId = getUserId(req);
     if (!rawUserId)
-      return res.status(401).json({ ok: false, error: "Не авторизован" });
+      return res.status(401).json({ ok: false, error: req.t("app.auth.notAuthorized2") });
     const userId = toObjectId(rawUserId) || rawUserId;
 
     const labId = toObjectId(req.params.id);

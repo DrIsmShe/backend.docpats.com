@@ -13,7 +13,7 @@ export const getSingleArticle = async (req, res) => {
     console.warn(`⛔ Неверный формат ID статьи: ${articleId}`);
     return res.status(400).json({
       success: false,
-      message: "Неверный формат ID статьи",
+      message: req.t("app.validation.invalidArticleIdFormat"),
     });
   }
 
@@ -25,7 +25,7 @@ export const getSingleArticle = async (req, res) => {
       console.warn(`📭 Статья не найдена: ID = ${articleId}`);
       return res.status(404).json({
         success: false,
-        message: "Статья не найдена",
+        message: req.t("app.article.notFound"),
       });
     }
 
@@ -39,7 +39,7 @@ export const getSingleArticle = async (req, res) => {
     console.error("🔥 Ошибка сервера при получении статьи:", error.message);
     return res.status(500).json({
       success: false,
-      message: "Ошибка сервера при получении статьи",
+      message: req.t("app.article.fetchError"),
     });
   }
 };

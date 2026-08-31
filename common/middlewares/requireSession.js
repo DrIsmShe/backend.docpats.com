@@ -19,7 +19,7 @@ export const requireSession = (req, res, next) => {
   if (!actorId) {
     return res
       .status(401)
-      .json({ authenticated: false, message: "Вы не авторизованы" });
+      .json({ authenticated: false, message: req.t("app.auth.notAuthorized") });
   }
 
   next();

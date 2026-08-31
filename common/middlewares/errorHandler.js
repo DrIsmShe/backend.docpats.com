@@ -34,6 +34,21 @@ export function errorHandler(err, req, res, next) {
     res.setHeader("Retry-After", body.retryAfter);
   }
 
+  // Перевод сообщения по коду — здесь, в одном месте на все ошибки.
+  //
+  // Службы и модели не видят запроса, а значит не знают языка собеседника:
+  // req.t им недоступен. Поэтому они бросают ошибку с кодом в details, а
+  // перевод подставляется тут, где запрос уже есть.
+  //
+  // Текст самой ошибки остаётся запасным: код, которого нет в словаре, не
+  // должен стирать сообщение — лучше показать русскую фразу, чем пустоту.
+  // Код лежит либо в details (наследники AppError), либо прямо на ошибке
+  // (свои классы вроде BookingPatientError). Оба варианта — один механизм.
+  const i18nCode = err?.details?.i18n || err?.i18n;
+  if (i18nCode && typeof req.t === "function") {
+    body.error = req.t(i18nCode, err?.details?.i18nParams || {}, body.error);
+  }
+
   res.status(status).json(body);
 }
 

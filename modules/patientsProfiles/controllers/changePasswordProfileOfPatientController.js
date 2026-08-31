@@ -7,7 +7,7 @@ dotenv.config();
 
 const SECRET_KEY = process.env.ENCRYPTION_KEY?.padEnd(32, "0");
 if (!SECRET_KEY || SECRET_KEY.length !== 32) {
-  throw new Error("❌ Ошибка: ENCRYPTION_KEY не найден или некорректен!");
+  throw new Error(req.t("app.config.encryptionKeyInvalid"));
 }
 
 const changePasswordProfileOfPatientController = async (req, res) => {
@@ -18,30 +18,30 @@ const changePasswordProfileOfPatientController = async (req, res) => {
       console.log("Ошибка: пользователь не аутентифицирован.");
       return res
         .status(403)
-        .json({ message: "Пожалуйста, войдите в систему." });
+        .json({ message: req.t("app.auth.pleaseLogin") });
     }
 
     // H-2: НЕ логируем req.body — там пароли (утечка секретов в логи).
 
     if (!currentPassword || !newPassword || !renewPassword) {
-      return res.status(400).json({ message: "Все поля обязательны." });
+      return res.status(400).json({ message: req.t("app.validation.allFieldsRequired") });
     }
 
     if (newPassword !== renewPassword) {
       return res
         .status(400)
-        .json({ message: "Новый пароль и подтверждение не совпадают." });
+        .json({ message: req.t("app.password.confirmationMismatch") });
     }
 
     if (newPassword.length < 8) {
       return res
         .status(400)
-        .json({ message: "Пароль должен содержать минимум 8 символов." });
+        .json({ message: req.t("app.password.minLength") });
     }
 
     const existingUser = await User.findById(req.session.userId);
     if (!existingUser) {
-      return res.status(404).json({ message: "Пользователь не найден." });
+      return res.status(404).json({ message: req.t("app.user.notFound2") });
     }
 
     const isCurrentPasswordValid = await argon2.verify(
@@ -49,13 +49,13 @@ const changePasswordProfileOfPatientController = async (req, res) => {
       currentPassword
     );
     if (!isCurrentPasswordValid) {
-      return res.status(400).json({ message: "Текущий пароль неверен." });
+      return res.status(400).json({ message: req.t("app.password.currentIncorrect") });
     }
 
     if (await argon2.verify(existingUser.password, newPassword)) {
       return res
         .status(400)
-        .json({ message: "Новый пароль не должен совпадать с текущим." });
+        .json({ message: req.t("app.password.mustBeDifferent") });
     }
 
     const hashedPassword = await argon2.hash(newPassword, {
@@ -68,11 +68,11 @@ const changePasswordProfileOfPatientController = async (req, res) => {
     existingUser.password = hashedPassword;
     await existingUser.save();
 
-    return res.status(200).json({ message: "Пароль успешно изменён." });
+    return res.status(200).json({ message: req.t("app.password.changeSuccess") });
   } catch (error) {
     console.error("Ошибка при изменении пароля: ", error);
     return res.status(500).json({
-      message: "Произошла ошибка при изменении пароля.",
+      message: req.t("app.password.changeError"),
       error: error.message,
     });
   }

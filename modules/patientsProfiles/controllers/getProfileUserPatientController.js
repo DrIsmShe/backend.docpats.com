@@ -11,14 +11,14 @@ const getProfileUserPatientController = async (req, res) => {
 
     // 1) Валидация ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Некорректный ID" });
+      return res.status(400).json({ message: req.t("app.validation.invalidId2") });
     }
     const userObjectId = new mongoose.Types.ObjectId(id);
 
     // 2) Пользователь с ролью patient
     const user = await User.findOne({ _id: userObjectId, role: "patient" });
     if (!user) {
-      return res.status(404).json({ message: "Пациент не найден" });
+      return res.status(404).json({ message: req.t("app.patient.notFound") });
     }
 
     // 3) Расшифровка полей пользователя
@@ -86,7 +86,7 @@ const getProfileUserPatientController = async (req, res) => {
     return res.status(200).json(userProfile);
   } catch (error) {
     console.error("❌ Ошибка при получении профиля пациента:", error);
-    return res.status(500).json({ message: "Ошибка сервера" });
+    return res.status(500).json({ message: req.t("app.server.error") });
   }
 };
 

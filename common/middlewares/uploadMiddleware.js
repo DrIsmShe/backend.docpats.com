@@ -125,11 +125,11 @@ const resolvePublicURL = () => {
 
 export const uploadFile = async (file) => {
   if (!file || !file.buffer) {
-    throw new Error("Файл повреждён или пустой");
+    throw new Error(req.t("app.file.corruptedOrEmpty"));
   }
 
   if (!file.mimetype) {
-    throw new Error("Не указан ContentType");
+    throw new Error(req.t("app.file.contentTypeMissing"));
   }
 
   const PUBLIC_URL = resolvePublicURL();
@@ -268,7 +268,7 @@ export const getPDF = async (req, res) => {
   const fileName = req.params.fileName;
 
   if (!SAFE_FILE_NAME.test(fileName) || fileName.includes("..")) {
-    return res.status(400).json({ message: "Некорректное имя файла" });
+    return res.status(400).json({ message: req.t("app.file.invalidName") });
   }
 
   if (IS_R2) {
@@ -288,7 +288,7 @@ export const getPDF = async (req, res) => {
   const filePath = path.join(LOCAL_DIR, fileName);
   if (fs.existsSync(filePath)) return res.sendFile(path.resolve(filePath));
 
-  res.status(404).json({ message: "Файл не найден" });
+  res.status(404).json({ message: req.t("app.file.notFound") });
 };
 
 //                Image Resize (unused but kept)
@@ -322,7 +322,7 @@ export const resizeImage = async (req, res, next) => {
     return next();
   } catch (error) {
     console.error("Ошибка при обработке изображения:", error);
-    return res.status(500).json({ message: "Ошибка обработки изображения" });
+    return res.status(500).json({ message: req.t("app.image.processingError") });
   }
 };
 

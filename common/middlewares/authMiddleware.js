@@ -6,14 +6,14 @@ const authMiddleware = async (req, res, next) => {
     if (!req.session || !req.session.userId) {
       return res
         .status(401)
-        .json({ authenticated: false, message: "Вы не авторизованы" });
+        .json({ authenticated: false, message: req.t("app.auth.notAuthorized") });
     }
 
     const user = await User.findById(req.session.userId);
     if (!user) {
       return res
         .status(401)
-        .json({ authenticated: false, message: "Пользователь не найден" });
+        .json({ authenticated: false, message: req.t("app.user.notFound") });
     }
 
     // 🧩 Проверяем, есть ли у пациента профиль в поликлинике
@@ -38,7 +38,7 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (err) {
     console.error("❌ Ошибка в authMiddleware:", err.message);
-    return res.status(500).json({ message: "Внутренняя ошибка сервера" });
+    return res.status(500).json({ message: req.t("app.server.internalError") });
   }
 };
 

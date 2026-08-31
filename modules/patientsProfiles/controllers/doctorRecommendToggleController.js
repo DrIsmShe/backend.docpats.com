@@ -12,27 +12,27 @@ const doctorRecommendToggleController = async (req, res) => {
     const sessionUserId = req.session.userId;
 
     if (!id)
-      return res.status(400).json({ ok: false, message: "Нет id профиля" });
+      return res.status(400).json({ ok: false, message: req.t("app.profile.idMissing") });
     if (!sessionUserId)
-      return res.status(403).json({ ok: false, message: "Нет авторизации" });
+      return res.status(403).json({ ok: false, message: req.t("app.auth.notAuthenticated") });
 
     const me = await User.findById(sessionUserId).lean();
     if (!me || me.role !== "patient")
       return res
         .status(403)
-        .json({ ok: false, message: "Только пациенты могут рекомендовать" });
+        .json({ ok: false, message: req.t("app.recommendation.patientsOnly") });
 
     const profile = await DoctorProfile.findById(id)
       .select("recommendations userId")
       .lean();
     if (!profile)
-      return res.status(404).json({ ok: false, message: "Профиль не найден" });
+      return res.status(404).json({ ok: false, message: req.t("app.profile.notFound") });
 
     // Не даем рекомендовать самого себя, если пациент = врач (на всякий случай)
     if (String(profile.userId) === String(sessionUserId)) {
       return res
         .status(400)
-        .json({ ok: false, message: "Нельзя рекомендовать себя" });
+        .json({ ok: false, message: req.t("app.recommendation.cannotRecommendSelf") });
     }
 
     const already = await DoctorProfile.exists({

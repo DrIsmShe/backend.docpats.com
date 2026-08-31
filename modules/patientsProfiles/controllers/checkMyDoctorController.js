@@ -20,7 +20,7 @@ export async function checkMyDoctor(req, res) {
     if (!patientId) {
       return res
         .status(401)
-        .json({ isAdded: false, message: "Пациент не авторизован." });
+        .json({ isAdded: false, message: req.t("app.patient.notAuthorized") });
     }
     if (!doctorId && !alt) {
       return res.status(200).json({ isAdded: false });

@@ -166,7 +166,7 @@ router.get("/patientprofilelayout", async (req, res) => {
     console.warn("⚠️ Пользователь не авторизован!");
     return res.status(401).json({
       authenticated: false,
-      message: "Пользователь не авторизован",
+      message: req.t("app.user.notAuthorized"),
     });
   }
 
@@ -174,7 +174,7 @@ router.get("/patientprofilelayout", async (req, res) => {
     console.warn("⚠️ Доступ запрещен! Роль:", req.session.role);
     return res.status(403).json({
       authenticated: false,
-      message: "Доступ разрешен только для пациентов",
+      message: req.t("app.access.patientsOnly"),
     });
   }
 

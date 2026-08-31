@@ -8,7 +8,7 @@ dotenv.config();
 
 const SECRET_KEY = process.env.ENCRYPTION_KEY?.padEnd(32, "0");
 if (!SECRET_KEY || SECRET_KEY.length !== 32) {
-  throw new Error("❌ Ошибка: ENCRYPTION_KEY не найден или некорректен!");
+  throw new Error(req.t("app.config.encryptionKeyInvalid"));
 }
 
 // 🔐 Функции шифрования и дешифрования
@@ -49,14 +49,14 @@ const patientSearchPolyclinicController = async (req, res) => {
     if (!req.session.userId) {
       return res
         .status(403)
-        .json({ message: "Пожалуйста, войдите в систему." });
+        .json({ message: req.t("app.auth.pleaseLogin") });
     }
 
     const { query } = req.query;
     if (!query?.trim()) {
       return res
         .status(400)
-        .json({ message: "Введите Email, Телефон, patientId или UUID." });
+        .json({ message: req.t("app.validation.searchCriteriaMissing") });
     }
 
     console.log(`🔍 Поиск пациента по запросу: ${query}`);
@@ -80,7 +80,7 @@ const patientSearchPolyclinicController = async (req, res) => {
 
       return res.status(200).json({
         found: true,
-        message: "Пациент найден и привязан к вам.",
+        message: req.t("app.patient.foundAndLinked"),
         patient: {
           ...foundPatient.toObject(),
           email: decrypt(foundPatient.emailEncrypted),
@@ -129,7 +129,7 @@ const patientSearchPolyclinicController = async (req, res) => {
 
       return res.status(201).json({
         found: true,
-        message: "Пациент найден в Users и добавлен в клинику.",
+        message: req.t("app.patient.foundAndAddedToClinic"),
         patient: {
           ...newPatient.toObject(),
           email: decrypt(newPatient.emailEncrypted),
@@ -142,10 +142,10 @@ const patientSearchPolyclinicController = async (req, res) => {
     console.log("❌ Пациент не найден.");
     return res
       .status(404)
-      .json({ found: false, message: "Пациент не найден." });
+      .json({ found: false, message: req.t("app.patient.notFound2") });
   } catch (error) {
     console.error("❌ Ошибка при поиске пациента:", error);
-    res.status(500).json({ message: "Ошибка при поиске пациента." });
+    res.status(500).json({ message: req.t("app.patient.searchError") });
   }
 };
 

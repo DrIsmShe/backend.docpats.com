@@ -79,7 +79,7 @@ export default async function getCTlFilesDetailController(req, res) {
       return res.status(403).json({
         ok: false,
         error: "FORBIDDEN",
-        message: "Доступ запрещён",
+        message: req.t("app.access.forbidden2"),
       });
     }
 

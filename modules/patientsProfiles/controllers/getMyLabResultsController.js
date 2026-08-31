@@ -74,7 +74,7 @@ const getMyLabResultsController = async (req, res) => {
   try {
     const rawUserId = getUserId(req);
     if (!rawUserId) {
-      return res.status(401).json({ ok: false, error: "Не авторизован" });
+      return res.status(401).json({ ok: false, error: req.t("app.auth.notAuthorized2") });
     }
     const userId = mongoose.Types.ObjectId.isValid(rawUserId)
       ? new mongoose.Types.ObjectId(rawUserId)

@@ -2,6 +2,6 @@ export const verifyAdmin = (req, res, next) => {
   if (req.user && req.user.role === admin) {
     next();
   } else {
-    res.status(403).json({ message: "Доступ запрещен" });
+    res.status(403).json({ message: req.t("app.access.forbidden") });
   }
 };

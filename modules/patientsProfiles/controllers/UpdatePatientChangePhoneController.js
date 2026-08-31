@@ -102,7 +102,7 @@ export async function updatePatientChangePhoneController(req, res) {
         ok: false,
         error: "CLINIC_CARD_NOT_FOUND",
         message:
-          "У вас ещё нет карты пациента в клинике. Пожалуйста, зарегистрируйтесь в клинике.",
+          req.t("app.patient.noRecordPleaseRegister"),
       });
     }
 
@@ -148,7 +148,7 @@ export async function updatePatientChangePhoneController(req, res) {
       return res.status(400).json({
         ok: false,
         error: "VALIDATION_ERROR",
-        message: "Неверный формат номера. Используйте '+' и до 15 цифр.",
+        message: req.t("app.validation.invalidPhoneFormat"),
       });
     }
 
@@ -173,7 +173,7 @@ export async function updatePatientChangePhoneController(req, res) {
       return res.status(409).json({
         ok: false,
         error: "PHONE_IN_USE",
-        message: "Этот номер уже используется другим пациентом.",
+        message: req.t("app.validation.phoneUsedByOtherPatient"),
       });
     }
 
@@ -208,7 +208,7 @@ export async function updatePatientChangePhoneController(req, res) {
       return res.status(409).json({
         ok: false,
         error: "PHONE_IN_USE",
-        message: "Телефон уже используется.",
+        message: req.t("app.validation.phoneAlreadyInUse"),
       });
     }
     if (err?.name === "ValidationError") {

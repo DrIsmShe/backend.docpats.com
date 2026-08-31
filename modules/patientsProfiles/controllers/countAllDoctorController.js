@@ -7,7 +7,7 @@ const countAllDoctorController = async (req, res) => {
     res.status(200).json({ count: totalDoctors });
   } catch (error) {
     console.error("Ошибка при подсчете докторов:", error);
-    res.status(500).json({ message: "Ошибка сервера при подсчете докторов" });
+    res.status(500).json({ message: req.t("app.doctors.countError") });
   }
 };
 

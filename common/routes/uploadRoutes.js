@@ -27,7 +27,7 @@ router.post("/uploads", upload.single("upload"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         uploaded: false,
-        error: { message: "Файл не найден" },
+        error: { message: req.t("app.file.notFound") },
       });
     }
 

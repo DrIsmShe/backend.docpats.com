@@ -62,12 +62,12 @@ const getMyClinicImagingDetailsController = async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ ok: false, error: "Неверный формат ID" });
+      return res.status(400).json({ ok: false, error: req.t("app.validation.invalidIdFormat") });
     }
 
     const userId = req.user?.userId || req.session?.userId;
     if (!userId) {
-      return res.status(401).json({ ok: false, error: "Не авторизован" });
+      return res.status(401).json({ ok: false, error: req.t("app.auth.notAuthorized2") });
     }
 
     // ─── 1. Снимок ───
@@ -80,12 +80,12 @@ const getMyClinicImagingDetailsController = async (req, res) => {
       .lean();
 
     if (!study) {
-      return res.status(404).json({ ok: false, error: "Запись не найдена." });
+      return res.status(404).json({ ok: false, error: req.t("app.appointment.notFound") });
     }
 
     // Этот endpoint только для clinic-снимков (привязка через patientId).
     if (!study.patientId) {
-      return res.status(404).json({ ok: false, error: "Запись не найдена." });
+      return res.status(404).json({ ok: false, error: req.t("app.appointment.notFound") });
     }
 
     // ─── 2. Авторизация: карта пациента принадлежит текущему юзеру ───
@@ -97,7 +97,7 @@ const getMyClinicImagingDetailsController = async (req, res) => {
       .lean();
 
     if (!card || String(card.linkedUserId || "") !== String(userId)) {
-      return res.status(403).json({ ok: false, error: "Доступ запрещён." });
+      return res.status(403).json({ ok: false, error: req.t("app.access.forbidden3") });
     }
 
     // ─── 3. Сборка ответа (форма для детальной страницы) ───

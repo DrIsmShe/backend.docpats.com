@@ -85,17 +85,17 @@ const profileMainUpdatePatientController = async (req, res) => {
     const { avatar, username, dateOfBirth, bio, phoneNumber } = req.body || {};
 
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(401).json({ message: "Требуется авторизация." });
+      return res.status(401).json({ message: req.t("app.auth.authorizationRequired") });
     }
 
     const user = await User.findById(userId);
     if (!user)
-      return res.status(404).json({ message: "Пользователь не найден." });
+      return res.status(404).json({ message: req.t("app.user.notFound2") });
 
     if (!isBlank(username) && !/^[a-zA-Z0-9_-]{3,20}$/.test(String(username))) {
       return res.status(400).json({
         message:
-          "Username может содержать только буквы, цифры, '-', '_', длиной 3–20 символов.",
+          req.t("app.validation.usernameFormat"),
       });
     }
 
@@ -104,7 +104,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     if (dateOfBirth != null) {
       dob = parseDate(dateOfBirth);
       if (!dob)
-        return res.status(400).json({ message: "Некорректная дата рождения." });
+        return res.status(400).json({ message: req.t("app.validation.invalidBirthDate") });
     }
 
     // Гендер -> users.bio (читаемо) и NPC.gender/NPC.bio
@@ -112,7 +112,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     if (bioText && bioText.length > 500) {
       return res
         .status(400)
-        .json({ message: "Bio не должно превышать 500 символов." });
+        .json({ message: req.t("app.validation.bioTooLong") });
     }
 
     // Телефон
@@ -134,7 +134,7 @@ const profileMainUpdatePatientController = async (req, res) => {
         if (!normalizedPhone) {
           return res
             .status(400)
-            .json({ message: "Некорректный номер телефона." });
+            .json({ message: req.t("app.validation.invalidPhoneNumber") });
         }
         phoneHash = sha256Lower(normalizedPhone);
       }
@@ -166,7 +166,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     if (!card) {
       return res.status(409).json({
         message:
-          "Карточка пациента в клинике не найдена. Сначала зарегистрируйтесь в клинике.",
+          req.t("app.patient.recordNotFoundRegisterFirst"),
       });
     }
 
@@ -180,7 +180,7 @@ const profileMainUpdatePatientController = async (req, res) => {
         .lean();
       if (dupe) {
         return res.status(409).json({
-          message: "Телефон уже используется другой картой пациента.",
+          message: req.t("app.validation.phoneUsedByAnotherPatient"),
         });
       }
     }
@@ -208,7 +208,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     ).lean({ getters: true, virtuals: true });
 
     return res.status(200).json({
-      message: "Профиль успешно обновлён",
+      message: req.t("app.profile.updateSuccess"),
       user: updatedUser || null,
       patient: updatedPatient || null,
     });
@@ -230,7 +230,7 @@ const profileMainUpdatePatientController = async (req, res) => {
     }
     return res
       .status(500)
-      .json({ message: "Ошибка на сервере", error: error.message });
+      .json({ message: req.t("app.error.serverError"), error: error.message });
   }
 };
 
