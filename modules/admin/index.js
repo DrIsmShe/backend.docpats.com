@@ -33,6 +33,7 @@ import adminConferencesRoute from "./routes/adminConferencesRoute.js";
 // Посещаемость сайта (PostHog). Лежит отдельным модулем: у него своя
 // внешняя зависимость и свой кеш, админка только даёт ему адрес.
 import analyticsRoutes from "../analytics/index.js";
+import newsEngineJobsRoute from "./routes/newsEngineJobsRoute.js";
 
 // system ADMIN end
 // system ADMIN start
@@ -80,6 +81,11 @@ router.use("/database", adminDatabaseRoute);
 // Модерация конференций. Карточки живут в новостном движке — контроллер
 // ходит туда по внутреннему токену, браузер этот токен не видит.
 router.use("/conferences", adminConferencesRoute);
+
+// Управление фоновыми задачами движка новостей: генерация статей,
+// перевод, сбор новостей. Ходит в отдельную службу через посредника —
+// внутренний токен в браузер не отдаётся.
+router.use("/news-engine/jobs", newsEngineJobsRoute);
 // Посещаемость сайта: экраны, аудитория, источники, скорость (PostHog)
 router.use("/analytics", analyticsRoutes);
 //router.use("/admin-panel", isAdminRoute);
