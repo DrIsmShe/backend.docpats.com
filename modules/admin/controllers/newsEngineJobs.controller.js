@@ -25,19 +25,22 @@ import {
 
 const ENGINE_TIMEOUT_MS = 15000;
 
+// Имена переменных те же, что у модерации конференций: INTERNAL_API_TOKEN,
+// а не отдельный NEWS_ENGINE_TOKEN. Вторая переменная под тот же токен
+// означала бы, что на сервере надо не забыть задать обе, — а забудут, и
+// панель перестанет работать по причине, которую придётся искать.
 function engineBase() {
-  const base = process.env.NEWS_ENGINE_URL;
-  if (!base) return null;
+  const base = process.env.NEWS_ENGINE_URL || "http://localhost:5010";
   return base.replace(/\/+$/, "");
 }
 
 async function callEngine(path, { method = "GET", body } = {}) {
   const base = engineBase();
-  const token = process.env.NEWS_ENGINE_TOKEN;
+  const token = process.env.INTERNAL_API_TOKEN;
 
   if (!base || !token) {
     const err = new Error(
-      "Управление движком не настроено: нужны NEWS_ENGINE_URL и NEWS_ENGINE_TOKEN",
+      "Управление движком не настроено: нужен INTERNAL_API_TOKEN",
     );
     err.status = 503;
     throw err;
