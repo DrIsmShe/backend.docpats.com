@@ -87,6 +87,7 @@ import previsitRoutes from "./modules/previsit/index.js";
 import scribeRoutes from "./modules/scribe/index.js";
 import medicalCodesRoutes from "./modules/medicalCodes/index.js";
 import ebmRoutes from "./modules/ebm/index.js";
+import videraRoutes from "./modules/videra/index.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -460,6 +461,12 @@ app.use("/api/v1/medical-codes", medicalCodesRoutes);
 // здесь нет ни в запросе, ни в ответе. Модель к поиску не допускается: все
 // названия, журналы и идентификаторы приходят из PubMed.
 app.use("/api/v1/ebm", ebmRoutes);
+
+// Студия медицинских фильмов DP-Videra: выдаёт подписанный пропуск, по
+// которому врач или пациент входит в неё без второй регистрации. Кадры
+// считает машина пользователя, здесь только подпись — нагрузки ноль.
+// Глобальный модуль без tenantMiddleware: студией пользуются и вне клиники.
+app.use("/api/v1/videra", videraRoutes);
 
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");
