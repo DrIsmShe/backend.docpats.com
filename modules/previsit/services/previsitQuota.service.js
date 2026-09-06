@@ -14,6 +14,7 @@ import User from "../../../common/models/Auth/users.js";
 import {
   resolveEffectivePlan,
   getLimit,
+  planHasAI,
   PLAN_DISPLAY_NAMES,
 } from "../../../common/config/aiPlanLimits.js";
 import { ValidationError } from "../../../common/utils/errors.js";
@@ -46,6 +47,20 @@ async function planQuota(doctorId) {
 
 /** Бросает ValidationError, если разбирать анкету уже не на что. */
 export async function assertIntakeAllowed(doctorId, now = Date.now()) {
+  // Тариф без ИИ (doctor_free): разбор анкеты — обращение к модели, значит
+  // его нет вовсе. Форму пациент всё равно заполнит, а submitIntake ловит
+  // этот отказ и сохраняет ответы без разбора. Проверяем ДО квоты.
+  const doc = await User.findById(doctorId)
+    .select("role subscriptionPlan subscriptionEndsAt trialEndsAt")
+    .lean();
+  const plan = resolveEffectivePlan(doc);
+  if (!planHasAI(plan)) {
+    throw new ValidationError(
+      "Разбор анкеты недоступен на бесплатном тарифе (ИИ выключен)",
+      { feature: "previsitIntakes", plan, aiDisabled: true, i18n: "app.ai.notOnPlan" },
+    );
+  }
+
   const quota = await planQuota(doctorId);
   if (!quota) return null;
 

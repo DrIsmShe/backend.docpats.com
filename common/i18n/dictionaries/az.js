@@ -481,6 +481,7 @@ export default {
   "app.clinic.inviteDeclined": "Dəvət olunan istifadəçi klinikaya dəvəti rədd etdi.",
   "app.message.notTranslatable": "Bu mesajı tərcümə etmək mümkün deyil",
   "app.ai.emptyResponse": "Süni intellekt boş cavab qaytardı",
+  "app.ai.notOnPlan": "Süni intellekt pulsuz tarifdə əlçatan deyil. İİ-ni aktivləşdirmək üçün abunə olun.",
   "app.ai.invalidJsonEpicrisis": "Süni intellekt epikriz üçün yanlış JSON qaytardı",
   "app.ai.invalidJson": "Süni intellekt yanlış JSON qaytardı",
   "app.diagnostics.noModalitySelected": "Təhlil üçün heç bir modallıq seçilməyib",

@@ -240,12 +240,10 @@ const PLAN_TO_MAX_PATIENTS = {
   doctor_basic: 100,
   doctor_super: 600,
   doctor_pro: 2000, // было -1 (безлимит); см. пояснение в aiPlanLimits.js v4
-  doctor_trial: 100, // как Start: пробный сокращён до 3 месяцев на лимитах Start
-  // Бесплатный врачебный уровень: сюда падает врач, который не платит —
-  // после пробного и после окончания подписки. Значение 5 совпадает с
-  // legacy-ключом ниже (он же ставится в subscription.tier при
-  // регистрации), поэтому у существующих аккаунтов ничего не сдвинется.
-  doctor_free: 5,
+  doctor_trial: 2000, // v5: пробный 14 дней на лимитах Pro (patientsInOffice:2000)
+  // Бесплатный врачебный уровень (v5): рабочий тариф на не-ИИ функциях
+  // бывшего Lite. 30 совпадает с patientsInOffice в aiPlanLimits.js.
+  doctor_free: 30,
 
   patient_trial: 0,
   patient_free: 0,
@@ -258,7 +256,7 @@ const PLAN_TO_MAX_PATIENTS = {
 
   // Legacy ключи
   free: 5, // у врачей было — 5 пациентов
-  doctor_free: 5,
+  doctor_free: 30, // v5: дубль ключа выше — держим синхронно (в JS побеждает он)
   doctor_plus: 50,
   standard: 0,
   premium: 0,

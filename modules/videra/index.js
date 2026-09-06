@@ -21,7 +21,10 @@ import express from "express";
 import { requireSession } from "../../common/middlewares/requireSession.js";
 import { asyncHandler } from "../../common/middlewares/errorHandler.js";
 import { decryptPHI } from "../../common/utils/phiCrypto.js";
-import { resolveEffectivePlan } from "../../common/config/aiPlanLimits.js";
+import {
+  resolveEffectivePlan,
+  videraFilmsAllowed,
+} from "../../common/config/aiPlanLimits.js";
 import User from "../../common/models/Auth/users.js";
 import ClinicEmployee from "../clinic/clinic-staff/models/clinicEmployee.model.js";
 import Clinic from "../clinic/clinic-core/models/clinic.model.js";
@@ -93,13 +96,18 @@ router.get(
 
     if (!кто) return res.status(401).json({ message: "Пользователь не найден" });
 
+    // У сотрудника клиники своего тарифа нет — за него платит клиника,
+    // и водяной знак (и лимит фильмов) берётся от её плана, а не его.
+    const plan = userId ? resolveEffectivePlan(кто) : "clinic";
+
     const url = ссылкаНаСтудию({
       id: String(userId || employeeId),
       name: имя(кто),
       clinic: await клиника(clinicId),
-      // У сотрудника клиники своего тарифа нет — за него платит клиника,
-      // и водяной знак снимает её план, а не его.
-      plan: userId ? resolveEffectivePlan(кто) : "clinic",
+      plan,
+      // Сколько фильмов разрешено тарифом: -1 = без лимита, 3 = Free.
+      // Считает уже снятые и отказывает в лишнем сама студия.
+      films: videraFilmsAllowed(plan),
     });
 
     // Пропуск не кладём ни в один журнал: он открывает студию, пока жив.

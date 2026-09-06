@@ -481,6 +481,7 @@ export default {
   "app.clinic.inviteDeclined": "رفض المستخدم المدعو دعوة العيادة.",
   "app.message.notTranslatable": "لا يمكن ترجمة هذه الرسالة",
   "app.ai.emptyResponse": "أعاد الذكاء الاصطناعي ردا فارغا",
+  "app.ai.notOnPlan": "الذكاء الاصطناعي غير متاح في الباقة المجانية. اشترك لتفعيل الذكاء الاصطناعي.",
   "app.ai.invalidJsonEpicrisis": "أعاد الذكاء الاصطناعي JSON غير صالح للتقرير الطبي",
   "app.ai.invalidJson": "أعاد الذكاء الاصطناعي JSON غير صالح",
   "app.diagnostics.noModalitySelected": "لم يتم اختيار أي نمط للتحليل",

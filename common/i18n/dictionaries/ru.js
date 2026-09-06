@@ -482,6 +482,7 @@ export default {
   "app.clinic.inviteDeclined": "Приглашённый пользователь отклонил приглашение в клинику.",
   "app.message.notTranslatable": "Сообщение недоступно для перевода",
   "app.ai.emptyResponse": "AI вернул пустой ответ",
+  "app.ai.notOnPlan": "ИИ недоступен на бесплатном тарифе. Оформите подписку, чтобы включить ИИ.",
   "app.ai.invalidJsonEpicrisis": "AI вернул невалидный JSON для эпикриза",
   "app.ai.invalidJson": "ИИ вернул некорректный JSON",
   "app.diagnostics.noModalitySelected": "Не выбрано ни одной модальности для разбора",

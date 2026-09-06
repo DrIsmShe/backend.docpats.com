@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import authMiddleware from "../../common/middlewares/authvalidateMiddleware/authMiddleware.js";
+import requireAi from "../../common/middlewares/requireAi.js";
 import * as ctrl from "./simulation.controller.js";
 
 const router = express.Router();
@@ -41,7 +42,7 @@ router.get("/prompts", ctrl.getPromptCatalog);
 router.get("/prompts/:procedure", ctrl.getPrompts);
 
 // Запустить симуляцию
-router.post("/cases/:id/simulate", upload.single("mask"), ctrl.startSimulation);
+router.post("/cases/:id/simulate", requireAi, upload.single("mask"), ctrl.startSimulation);
 
 // Остаток симуляций по тарифу. Отдельно от кейса: квота у врача одна на
 // все кейсы сразу.

@@ -21,6 +21,7 @@ import {
 } from "../diagnostics/ai/documentReader.js";
 import * as ctrl from "./controllers/labInsight.controller.js";
 import { tReq } from "../../common/i18n/index.js";
+import requireAi from "../../common/middlewares/requireAi.js";
 
 const router = express.Router();
 
@@ -57,7 +58,9 @@ router.use(requireUser);
 
 router.get("/quota", ctrl.quotaController);
 router.get("/", ctrl.listController);
-router.post("/", sheetUpload.single("file"), ctrl.createController);
+// requireAi: расшифровка бланка — обращение к модели. На тарифе без ИИ
+// (doctor_free) недоступна; пациент на patient_free проходит (демо).
+router.post("/", requireAi, sheetUpload.single("file"), ctrl.createController);
 router.get("/:id", ctrl.getController);
 router.delete("/:id", ctrl.deleteController);
 

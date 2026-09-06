@@ -481,6 +481,7 @@ export default {
   "app.clinic.inviteDeclined": "Davet edilen kullanıcı klinik davetini reddetti.",
   "app.message.notTranslatable": "Bu mesaj çevrilemiyor",
   "app.ai.emptyResponse": "Yapay zekâ boş yanıt döndürdü",
+  "app.ai.notOnPlan": "Yapay zekâ ücretsiz planda kullanılamaz. Yapay zekâyı etkinleştirmek için abone olun.",
   "app.ai.invalidJsonEpicrisis": "Yapay zekâ epikriz için geçersiz JSON döndürdü",
   "app.ai.invalidJson": "Yapay zekâ hatalı JSON döndürdü",
   "app.diagnostics.noModalitySelected": "Analiz için modalite seçilmedi",

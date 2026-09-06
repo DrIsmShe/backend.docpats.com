@@ -17,6 +17,7 @@ import express from "express";
 import multer from "multer";
 
 import { requireClinician } from "./middlewares/diagnosticsAuth.js";
+import requireAi from "../../common/middlewares/requireAi.js";
 import { ALLOWED_MIME, MAX_FILE_BYTES } from "./ai/documentReader.js";
 import * as ctrl from "./core/controllers/diagnostics.controller.js";
 import {
@@ -92,15 +93,16 @@ const documentUpload = multer({
   },
 });
 
-router.post("/cases/:id/extract", documentUpload.single("file"), ctrl.extractDocumentController);
+router.post("/cases/:id/extract", requireAi, documentUpload.single("file"), ctrl.extractDocumentController);
 
 // Материалы дела.
 router.post("/cases/:id/artifacts", ctrl.addArtifactController);
 router.delete("/cases/:id/artifacts/:artifactId", ctrl.removeArtifactController);
 
-// Разбор.
-router.post("/cases/:id/analyze", ctrl.analyzeController);
-router.post("/jobs/:jobId/rerun", ctrl.rerunJobController);
+// Разбор. requireAi — жёсткий выключатель ИИ: на doctor_free (без ИИ)
+// разбор недоступен вовсе, ещё до квоты и до обращения к модели.
+router.post("/cases/:id/analyze", requireAi, ctrl.analyzeController);
+router.post("/jobs/:jobId/rerun", requireAi, ctrl.rerunJobController);
 
 // Обратная связь врача по выводу — она же разметка будущего датасета.
 router.post("/findings/:findingId/verdict", ctrl.verdictController);

@@ -481,6 +481,7 @@ export default {
   "app.clinic.inviteDeclined": "The invited user declined the clinic invitation.",
   "app.message.notTranslatable": "This message cannot be translated",
   "app.ai.emptyResponse": "The AI returned an empty response",
+  "app.ai.notOnPlan": "AI is not available on the free plan. Subscribe to enable AI.",
   "app.ai.invalidJsonEpicrisis": "The AI returned invalid JSON for the discharge summary",
   "app.ai.invalidJson": "The AI returned malformed JSON",
   "app.diagnostics.noModalitySelected": "No modality selected for analysis",

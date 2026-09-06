@@ -8,6 +8,7 @@ import {
   getMyOne,
 } from "./userSynthesis.controller.js";
 import requireDoctorRole from "../../common/middlewares/requireDoctorRole.js";
+import requireAi from "../../common/middlewares/requireAi.js";
 
 const router = express.Router();
 
@@ -51,7 +52,7 @@ const readLimiter = rateLimit({
 // операция в приложении (16 000 токенов на запрос).
 //
 // Ограничители частоты остаются: врач тоже может открыть десять вкладок.
-router.post("/generate", requireDoctorRole, generateLimiter, generate);
+router.post("/generate", requireDoctorRole, requireAi, generateLimiter, generate);
 router.get("/limit", requireDoctorRole, readLimiter, getLimit); // свой лимит
 router.get("/my", requireDoctorRole, readLimiter, getMy); // история
 router.get("/my/:id", requireDoctorRole, readLimiter, getMyOne); // одна статья
