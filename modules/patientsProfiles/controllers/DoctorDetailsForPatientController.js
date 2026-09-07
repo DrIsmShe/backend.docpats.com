@@ -14,7 +14,9 @@ const DoctorDetailsForPatientController = async (req, res) => {
         .status(403)
         .json({ error: tReq(req, "app.access.deniedNoAuth") });
 
-    const doctorProfile = await DoctorProfile.findById(id).lean();
+    // Запасной поиск по userId (ссылки DP-Videra несут userId владельца).
+    let doctorProfile = await DoctorProfile.findById(id).lean();
+    if (!doctorProfile) doctorProfile = await DoctorProfile.findOne({ userId: id }).lean();
     if (!doctorProfile)
       return res.status(404).json({ error: tReq(req, "app.doctor.profileNotFound2") });
 
