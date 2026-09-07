@@ -22,7 +22,9 @@ const DoctorDetailsForPatientController = async (req, res) => {
     }
 
     // Получаем профиль доктора
-    const doctor = await DoctorProfile.findById(id).lean();
+    // Запасной поиск по userId (ссылки несут userId владельца фильма).
+    let doctor = await DoctorProfile.findById(id).lean();
+    if (!doctor) doctor = await DoctorProfile.findOne({ userId: id }).lean();
     if (!doctor) {
       console.error("❌ Error: Doctor not found");
       return res.status(404).json({ error: "Doctor not found" });

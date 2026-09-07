@@ -33,7 +33,10 @@ const DoctorDetailController = async (req, res) => {
     }
 
     // сам профиль доктора
-    const doc = await DoctorProfile.findById(id);
+    // Ищем по id профиля, а если не нашли — по userId владельца: ссылки
+    // DP-Videra и внешние несут userId, а не id профиля.
+    let doc = await DoctorProfile.findById(id);
+    if (!doc) doc = await DoctorProfile.findOne({ userId: id });
     if (!doc) return res.status(404).json({ error: "Doctor not found" });
 
     const doctor = doc.toObject({ virtuals: true });
