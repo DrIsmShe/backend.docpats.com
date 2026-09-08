@@ -334,11 +334,15 @@ export const createComment = async (req, res) => {
   }
 };
 
-export const getCommentsByRef = async (req, res) => {
-  try {
-    const { refId } = req.params;
-
-    // 🔹 Получаем все комментарии по цели (Doctor, Article, News)
+/**
+ * Дерево комментариев к одной цели.
+ *
+ * Вынесено из обработчика, потому что тем же деревом отвечает публичный
+ * маршрут витрины роликов: гость читает обсуждение, не входя в систему.
+ * Второй экземпляр этой сборки разошёлся бы с первым — расшифровка имён
+ * и склейка ответов живут в одном месте.
+ */
+export async function собратьДерево(refId) {
     const allComments = await Comment.find({ targetId: refId })
       .populate(
         "author",
@@ -402,7 +406,13 @@ export const getCommentsByRef = async (req, res) => {
       }
     }
 
-    res.status(200).json({ success: true, comments: rootComments });
+    return rootComments;
+}
+
+export const getCommentsByRef = async (req, res) => {
+  try {
+    const comments = await собратьДерево(req.params.refId);
+    res.status(200).json({ success: true, comments });
   } catch (err) {
     console.error("❌ Ошибка при получении комментариев:", err);
     res.status(500).json({

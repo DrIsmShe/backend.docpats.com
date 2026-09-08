@@ -529,6 +529,25 @@ export const publicViewController = asyncHandler(async (req, res) => {
   res.json(итог);
 });
 
+/**
+ * Обсуждение под опубликованным роликом — открыто без входа.
+ *
+ * Читать может любой, писать — нет: форма ответа появляется только у
+ * вошедшего, и создание комментария по-прежнему идёт общим маршрутом со
+ * своей проверкой.
+ */
+export const publicCommentsController = asyncHandler(async (req, res) => {
+  // Сначала убеждаемся, что ролик открыт: иначе этот вход стал бы
+  // способом читать обсуждение под чужим черновиком.
+  const { getPublicVideoRaw } = await import("../services/video.service.js");
+  await getPublicVideoRaw(req.params.id);
+
+  const { собратьДерево } = await import(
+    "../../commentsLikes/controllers/commentController/commentController.js"
+  );
+  res.json({ success: true, comments: await собратьДерево(req.params.id) });
+});
+
 /** Витрина. Единственный маршрут модуля без сессии. */
 export const listPublicController = asyncHandler(async (req, res) => {
   const parsed = publicListQuerySchema.safeParse(req.query);
