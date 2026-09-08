@@ -211,10 +211,27 @@ export async function createVideo({ actor, data }) {
  * не попадают никогда: ссылка на то и ссылка, что её дают адресно.
  */
 export async function listVideos({ actor, query = {} }) {
-  const or = [{ ownerType: actor.ownerType, ownerId: actor.ownerId }];
-  if (actor.clinicId && clinicCan(actor, "read")) {
+  // СОСТАВ ВЫБОРКИ — РЕШЕНИЕ ВЫЗЫВАЮЩЕГО, А НЕ ПОБОЧНЫЙ ЭФФЕКТ РОЛИ.
+  //
+  // Раньше клиника подмешивалась сама собой всякому, у кого есть право
+  // video:read. Пациент, оказавшийся администратором клиники своего
+  // врача, видел под заголовком «Мои ролики» чужие фильмы. Приватные не
+  // утекали, но список называл чужое своим и предлагал его удалить.
+  //
+  // По умолчанию «свои»: страница, которая так называется, не должна
+  // показывать ничего другого. Библиотека клиники запрашивается явно.
+  const scope = ["own", "clinic", "all"].includes(query.scope) ? query.scope : "own";
+
+  const or = [];
+  if (scope !== "clinic") {
+    or.push({ ownerType: actor.ownerType, ownerId: actor.ownerId });
+  }
+  if (scope !== "own" && actor.clinicId && clinicCan(actor, "read")) {
     or.push({ clinicId: actor.clinicId, visibility: { $in: ["clinic", "public"] } });
   }
+  // Запрос библиотеки клиники без прав на неё — пустой список, а не
+  // молчаливая подмена своими роликами.
+  if (!or.length) return { items: [] };
 
   // Архив не мешается в кабинете, но остаётся доступен по прямой ссылке
   // владельцу — он не удалён, а убран с глаз.
@@ -239,7 +256,16 @@ export async function listVideos({ actor, query = {} }) {
   // Адрес превью собираем здесь, а не в интерфейсе: адрес хранилища
   // знает только сервер. На витрине это уже сделано так же — когда
   // адрес собирали на клиенте, карточки выходили чёрными.
-  return { items: items.map((v) => ({ ...v, posterUrl: posterUrl(v) })) };
+  //
+  // isOwner отдаём явно: интерфейс иначе гадает по ownerId, которого у
+  // него нет, и показывает «Удалить» на чужом ролике.
+  return {
+    items: items.map((v) => ({
+      ...v,
+      posterUrl: posterUrl(v),
+      isOwner: isOwner(v, actor),
+    })),
+  };
 }
 
 export async function getVideo({ actor, id }) {
@@ -444,6 +470,51 @@ export async function findPublicByStudioFilm(studioFilmId) {
     .lean();
 
   return video || null;
+}
+
+/**
+ * Засчитать просмотр публичного ролика.
+ *
+ * БЕЗ СЕССИИ — И В ЭТОМ ВЕСЬ СМЫСЛ. Витрина открыта гостю, и если
+ * считать только вошедших, счётчик врёт в разы. Взамен он и не
+ * притязает на точность: это витринное число, а не доказательство.
+ * Настоящий просмотр — событие video.watch в журнале, у него своя
+ * дорога и своя ответственность (видео-согласие).
+ *
+ * ЗАЩИТА ОТ НАКРУТКИ ЗДЕСЬ СЛАБАЯ, И ЭТО ОСОЗНАННО. Один вызов на
+ * открытие страницы отсекается на клиенте, повтор из десяти вкладок —
+ * нет. Ставить сюда учёт по адресу значило бы хранить адреса зрителей
+ * медицинских роликов, а это цена, которой витринный счётчик не стоит.
+ */
+export async function countPublicView({ id, viewerId = null }) {
+  if (!mongoose.isValidObjectId(id)) return { views: 0 };
+
+  const video = await Video.findOneAndUpdate(
+    {
+      _id: id,
+      visibility: "public",
+      status: "ready",
+      phi: false,
+      archivedAt: null,
+    },
+    { $inc: { "stats.views": 1 } },
+    { new: true },
+  ).select("stats clinicId ownerId categoryId kind lang phi visibility");
+
+  if (!video) return { views: 0 };
+
+  // След для подборок — только у вошедшего и только по открытому ролику:
+  // остальное решает сам сервис интересов.
+  if (viewerId) {
+    try {
+      const { запомнитьПросмотр } = await import("./videoFeed.service.js");
+      await запомнитьПросмотр({ viewerId, video, ratio: 0.2 });
+    } catch (err) {
+      console.warn("[video] след просмотра не записан:", err?.message);
+    }
+  }
+
+  return { views: video.stats.views };
 }
 
 export async function getPublicVideo({ id, viewerId = null }) {

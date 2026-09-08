@@ -79,6 +79,10 @@ export const attachSchema = z.object({
 });
 
 export const listVideosQuerySchema = z.object({
+  // Чьи ролики показать. Без этого поля состав выборки зависел от роли:
+  // пациент, оказавшийся администратором клиники, видел в «Моих роликах»
+  // чужие фильмы — и кнопку «Удалить» на них.
+  scope: z.enum(["own", "clinic", "all"]).optional(),
   kind: z.enum(VIDEO_KINDS).optional(),
   status: z.enum(["draft", "processing", "ready", "failed"]).optional(),
   phi: z

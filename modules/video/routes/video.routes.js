@@ -39,6 +39,9 @@ router.get("/public/clinic/:clinicId", ctrl.listClinicPublicController);
 router.get("/public/:id/playback", ctrl.publicPlaybackController);
 // Похожие — до "/public/:id", иначе путь разберётся как идентификатор.
 router.get("/public/:id/related", ctrl.relatedController);
+// Просмотр гостя. Без сессии: витрина открыта всем, и считать только
+// вошедших значит показывать неправду на каждой карточке.
+router.post("/public/:id/view", ctrl.publicViewController);
 // Разделы витрины — открыто: по ним строятся чипсы ленты.
 // Встраивание: страница плеера для чужого сайта и код для вставки.
 // Обе — без сессии; страница плеера сама снимает запрет на фрейм.

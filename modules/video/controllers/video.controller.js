@@ -515,6 +515,20 @@ export const byStudioFilmController = asyncHandler(async (req, res) => {
   res.json({ id: video._id, title: video.title });
 });
 
+/**
+ * Просмотр публичного ролика — счётчик витрины.
+ *
+ * Отвечает новым числом, чтобы страница показала его сразу, а не ждала
+ * перезагрузки.
+ */
+export const publicViewController = asyncHandler(async (req, res) => {
+  const итог = await service.countPublicView({
+    id: req.params.id,
+    viewerId: req.session?.userId || null,
+  });
+  res.json(итог);
+});
+
 /** Витрина. Единственный маршрут модуля без сессии. */
 export const listPublicController = asyncHandler(async (req, res) => {
   const parsed = publicListQuerySchema.safeParse(req.query);
