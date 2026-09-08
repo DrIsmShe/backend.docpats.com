@@ -18,6 +18,8 @@ import { asyncHandler } from "../../../common/middlewares/errorHandler.js";
 import * as ctrl from "../controllers/video.controller.js";
 import * as consent from "../controllers/videoConsent.controller.js";
 import * as playlist from "../controllers/videoPlaylist.controller.js";
+import * as adminCtrl from "../controllers/videoAdmin.controller.js";
+import requireAdmin from "../../admin/middlewares/authvalidateMiddleware/requireAdmin.js";
 import { проверитьПодписьСтудии } from "../studioCallback.js";
 import { applyStudioRender } from "../services/video.service.js";
 import { studioCallbackSchema } from "../validators/video.schemas.js";
@@ -27,10 +29,24 @@ const router = express.Router();
 
 /* ── Витрина: единственный маршрут без входа ────────────────────── */
 router.get("/public", ctrl.listPublicController);
+// Лента «по интересам». Без сессии — свежее; с сессией — подобранное.
+router.get("/recommended", ctrl.recommendedController);
 // Страница ролика и канал клиники — тоже без входа. Объявлены здесь, до
 // requireSession: ниже начинается закрытая часть модуля.
 router.get("/public/clinic/:clinicId", ctrl.listClinicPublicController);
 router.get("/public/:id/playback", ctrl.publicPlaybackController);
+// Похожие — до "/public/:id", иначе путь разберётся как идентификатор.
+router.get("/public/:id/related", ctrl.relatedController);
+// Разделы витрины — открыто: по ним строятся чипсы ленты.
+// Встраивание: страница плеера для чужого сайта и код для вставки.
+// Обе — без сессии; страница плеера сама снимает запрет на фрейм.
+router.get("/embed/:id", ctrl.embedPageController);
+router.get("/public/:id/embed", ctrl.embedCodeController);
+
+router.get("/categories", ctrl.categoriesController);
+
+// Правила публикации — открыто: их читают до того, как решают загружать.
+router.get("/upload/rules", ctrl.uploadRulesController);
 router.get("/public/:id", ctrl.getPublicVideoController);
 
 /* ── Вебхук студии: без сессии, но с подписью ───────────────────── */
@@ -85,6 +101,54 @@ router.get("/for/:entityType/:entityId", ctrl.listForEntityController);
 // Воспроизведение: ссылка на файл и доклад о просмотре.
 router.get("/:id/playback", ctrl.playbackController);
 router.post("/:id/watch", ctrl.watchController);
+
+// ── Администратор платформы ───────────────────────────────────────
+// Своя ветка с requireAdmin: он сам ходит в базу и сверяет role="admin".
+// Объявлена до "/:id", иначе "admin" было бы прочитано как идентификатор.
+//
+// Создание ролика админом отдельного маршрута не требует: обычный POST "/"
+// заводит ролик от его имени, а дальше он правит и публикует его теми же
+// админскими действиями.
+// Разделы: их состав — решение владельца площадки, а не разработчика,
+// поэтому меняются из админки, а не выкаткой кода.
+router.get("/admin/categories", requireAdmin, adminCtrl.adminCategoriesController);
+router.post("/admin/categories", requireAdmin, adminCtrl.createCategoryController);
+router.patch("/admin/categories/:id", requireAdmin, adminCtrl.updateCategoryController);
+router.delete("/admin/categories/:id", requireAdmin, adminCtrl.deleteCategoryController);
+
+// Очередь жалоб. Строго до "/admin/:id": иначе "reports" будет
+// разобран как идентификатор ролика и список ответит 404.
+router.get("/admin/reports", requireAdmin, ctrl.listReportsController);
+router.post("/admin/reports/:id/resolve", requireAdmin, ctrl.resolveReportController);
+
+router.get("/admin", requireAdmin, adminCtrl.adminListController);
+router.get("/admin/:id", requireAdmin, adminCtrl.adminGetController);
+router.patch("/admin/:id", requireAdmin, adminCtrl.adminUpdateController);
+router.post("/admin/:id/archive", requireAdmin, adminCtrl.adminArchiveController);
+router.post("/admin/:id/unarchive", requireAdmin, adminCtrl.adminUnarchiveController);
+router.delete("/admin/:id", requireAdmin, adminCtrl.adminDeleteController);
+
+// Загрузка своего файла: заявка со ссылками и подтверждение по факту.
+router.post("/upload/prepare", ctrl.prepareUploadController);
+router.post("/upload/complete", ctrl.completeUploadController);
+
+// Перенос готового фильма из студии. Стоит до "/:id", иначе "import" будет
+// разобран как идентификатор ролика.
+router.post("/import/studio", ctrl.importStudioController);
+
+// Жалоба на ролик или комментарий — от любого вошедшего.
+router.post("/reports", ctrl.reportController);
+
+// Подписки на каналы врачей и клиник.
+router.get("/subscriptions", ctrl.mySubscriptionsController);
+router.post("/subscriptions/toggle", ctrl.subscribeController);
+
+// Отметки под роликом.
+// Субтитры из речи и перевод на выбранные языки.
+router.post("/:id/transcribe", ctrl.transcribeController);
+
+router.post("/:id/like", ctrl.likeController);
+router.post("/:id/dislike", ctrl.dislikeController);
 
 // Расход и пакеты минут.
 router.get("/quota", ctrl.quotaController);

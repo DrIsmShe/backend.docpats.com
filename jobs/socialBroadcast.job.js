@@ -104,6 +104,7 @@ async function fetchVideoCandidates() {
           visibility: "public",
           status: "ready",
           phi: { $ne: true },
+          archivedAt: null,
           publishedAt: { $gte: since },
         },
         { projection: { _id: 1, title: 1, description: 1, publishedAt: 1 } },

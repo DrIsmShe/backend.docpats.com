@@ -167,6 +167,7 @@ export async function getPublicPlaybackUrls({ id }) {
     visibility: "public",
     status: "ready",
     phi: false,
+    archivedAt: null,
   });
   if (!video) throw new NotFoundError("Видео не найдено");
   if (!bucket()) throw new ServiceUnavailableError("Хранилище не настроено");
@@ -287,6 +288,20 @@ export async function recordWatch({ actor, id, watchedSec }) {
     await продвинутьПланы(событие);
   } catch (err) {
     console.warn("[video] не удалось продвинуть планы подготовки:", err?.message);
+  }
+
+  // След для подбора роликов — третьей отдельной попыткой и только по
+  // открытым роликам без PHI (решает сам сервис). Подборка — удобство,
+  // и её сбой не должен стоить человеку засчитанного просмотра.
+  try {
+    const { запомнитьПросмотр } = await import("./videoFeed.service.js");
+    await запомнитьПросмотр({
+      viewerId: actor.ownerType === "user" ? actor.ownerId : null,
+      video,
+      ratio: доля,
+    });
+  } catch (err) {
+    console.warn("[video] не удалось запомнить просмотр:", err?.message);
   }
 
   return {

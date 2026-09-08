@@ -36,7 +36,11 @@ const commentSchema = new mongoose.Schema(
     targetType: {
       type: String,
       required: true,
-      enum: ["Doctor", "Article", "News", "ArticleScine"],
+      // "Video" — ролик каталога. Комментарии к нему идут через ту же
+      // модель, что и к статьям и профилям: своя лента означала бы вторую
+      // модерацию, вторые уведомления об упоминаниях и два места, где
+      // чинить одну и ту же ошибку.
+      enum: ["Doctor", "Article", "News", "ArticleScine", "Video"],
     },
     isDeleted: {
       type: Boolean,

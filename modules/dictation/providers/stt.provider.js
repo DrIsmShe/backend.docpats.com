@@ -155,7 +155,17 @@ export function cleanTranscript(raw) {
  *   речи — ошибка, и там это остаётся исключением.
  * @returns {Promise<{text: string, model: string, durationSec: number}>}
  */
-export async function transcribe({ buffer, filename, lang, allowEmpty = false } = {}) {
+export async function transcribe({
+  buffer,
+  filename,
+  lang,
+  allowEmpty = false,
+  // Вернуть фрагменты с тайм-кодами. Надиктовке они не нужны
+  // — там важен текст целиком, — а субтитры без них не собрать.
+  // Ответ verbose_json их уже содержит, просто раньше они
+  // отбрасывались.
+  withSegments = false,
+} = {}) {
   if (!buffer?.length) throw new ValidationError("Пустой аудиофайл", { i18n: "app.dictation.emptyAudioFile" });
   if (!isConfigured()) {
     throw new ServiceUnavailableError(
@@ -228,5 +238,21 @@ export async function transcribe({ buffer, filename, lang, allowEmpty = false } 
     );
   }
 
-  return { text, model: STT_MODEL, durationSec };
+  const итог = { text, model: STT_MODEL, durationSec };
+
+  if (withSegments) {
+    // На эхо подсказки фрагменты тоже не отдаём: текст мы уже
+    // признали неречевым, и тайм-коды к нему ничего не меняют.
+    итог.segments = echo
+      ? []
+      : (result?.segments || [])
+          .map((ф) => ({
+            start: Number(ф.start) || 0,
+            end: Number(ф.end) || 0,
+            text: cleanTranscript(ф.text),
+          }))
+          .filter((ф) => ф.text && ф.end > ф.start);
+  }
+
+  return итог;
 }

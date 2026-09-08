@@ -26,10 +26,17 @@ import {
   attachSchema,
   listVideosQuerySchema,
   publicListQuerySchema,
+  importStudioSchema,
+  subscribeSchema,
+  reportSchema,
+  resolveReportSchema,
+  transcribeSchema,
   watchSchema,
   draftFromDataSchema,
   reviewSchema,
   buyMinutesSchema,
+  prepareUploadSchema,
+  completeUploadSchema,
 } from "../validators/video.schemas.js";
 
 function throwZod(parsed) {
@@ -186,6 +193,56 @@ export const watchController = asyncHandler(async (req, res) => {
   res.json(итог);
 });
 
+/* ── Отклик и загрузка ───────────────────────────────────────────── */
+
+/** Отметка «полезно» — переключателем. */
+export const likeController = asyncHandler(async (req, res) => {
+  const итог = await service.toggleLike({ actor: buildActor(req), id: req.params.id });
+  res.json(итог);
+});
+
+/** Правила публикации и текущая редакция. Отдаются без входа: их читают
+    до того, как решают загружать. */
+export const uploadRulesController = asyncHandler(async (_req, res) => {
+  const { ВЕРСИЯ_ПРАВИЛ, ТЕМЫ_РАЗРЕШЕНЫ, ЗАПРЕЩЕНО, ТРЕБОВАНИЯ, ОТВЕТСТВЕННОСТЬ } =
+    await import("../uploadRules.js");
+  const { МАКС_СЕКУНД, МАКС_БАЙТ, ТИПЫ } = await import(
+    "../services/videoUpload.service.js"
+  );
+  res.json({
+    version: ВЕРСИЯ_ПРАВИЛ,
+    topics: ТЕМЫ_РАЗРЕШЕНЫ,
+    forbidden: ЗАПРЕЩЕНО,
+    requirements: ТРЕБОВАНИЯ,
+    liability: ОТВЕТСТВЕННОСТЬ,
+    limits: {
+      maxSeconds: МАКС_СЕКУНД,
+      maxBytes: МАКС_БАЙТ,
+      mimeTypes: Object.keys(ТИПЫ),
+    },
+  });
+});
+
+export const prepareUploadController = asyncHandler(async (req, res) => {
+  const parsed = prepareUploadSchema.safeParse(req.body);
+  if (!parsed.success) throwZod(parsed);
+  const { prepareUpload } = await import("../services/videoUpload.service.js");
+  const итог = await prepareUpload({ actor: buildActor(req), data: parsed.data });
+  res.set("Cache-Control", "no-store");
+  res.status(201).json(итог);
+});
+
+export const completeUploadController = asyncHandler(async (req, res) => {
+  const parsed = completeUploadSchema.safeParse(req.body);
+  if (!parsed.success) throwZod(parsed);
+  const { completeUpload } = await import("../services/videoUpload.service.js");
+  const video = await completeUpload({
+    actor: buildActor(req),
+    id: parsed.data.videoId,
+  });
+  res.json({ video });
+});
+
 /* ── Расход и пакеты минут ───────────────────────────────────────── */
 
 /**
@@ -298,7 +355,12 @@ export const publicPlaybackController = asyncHandler(async (req, res) => {
 
 /** Один публичный ролик — страница витрины. Без сессии. */
 export const getPublicVideoController = asyncHandler(async (req, res) => {
-  const video = await service.getPublicVideo({ id: req.params.id });
+  // Зритель нужен ровно для одного: показать, отмечал ли он этот ролик.
+  // Страница остаётся публичной — без сессии просто нет отметки.
+  const video = await service.getPublicVideo({
+    id: req.params.id,
+    viewerId: req.session?.userId || null,
+  });
   res.json({ video });
 });
 
@@ -310,10 +372,192 @@ export const listClinicPublicController = asyncHandler(async (req, res) => {
   res.json({ items, count: items.length });
 });
 
+/** Разделы витрины — открыто: по ним строятся чипсы и меню ленты. */
+export const categoriesController = asyncHandler(async (req, res) => {
+  const { listCategories } = await import("../services/videoCategory.service.js");
+  const { items } = await listCategories({
+    lang: String(req.query.lang || "ru"),
+    withCounts: req.query.counts === "true",
+  });
+  res.json({ items, count: items.length });
+});
+
+/**
+ * Лента «по интересам».
+ *
+ * Открыта без сессии: гость увидит свежее. Вошедшему подбираем по тому,
+ * что он сам смотрел и на кого подписан — см. videoFeed.service.js.
+ */
+export const recommendedController = asyncHandler(async (req, res) => {
+  const { рекомендации } = await import("../services/videoFeed.service.js");
+  const items = await рекомендации({
+    viewer: req.session?.userId ? buildActor(req) : null,
+    limit: Math.min(Number(req.query.limit) || 24, 100),
+    lang: String(req.query.lang || ""),
+  });
+
+  const { сИменамиИПостерами } = await import("../services/video.service.js");
+  res.json({ items: await сИменамиИПостерами(items), count: items.length });
+});
+
+/** Похожие ролики — колонка справа на странице ролика. */
+export const relatedController = asyncHandler(async (req, res) => {
+  const { getPublicVideoRaw, сИменамиИПостерами } = await import(
+    "../services/video.service.js"
+  );
+  const video = await getPublicVideoRaw(req.params.id);
+
+  const { похожие } = await import("../services/videoFeed.service.js");
+  const items = await похожие({
+    video,
+    viewerId: req.session?.userId || null,
+    limit: Math.min(Number(req.query.limit) || 12, 50),
+  });
+
+  res.json({ items: await сИменамиИПостерами(items), count: items.length });
+});
+
+/**
+ * Пожаловаться на ролик или комментарий.
+ *
+ * Жалоба ничего не скрывает сама — она ставит материал в очередь разбора.
+ * Ответ короткий: человеку важно знать, что заявление принято.
+ */
+export const reportController = asyncHandler(async (req, res) => {
+  const parsed = reportSchema.safeParse(req.body);
+  if (!parsed.success) throwZod(parsed);
+
+  const { report } = await import("../services/contentReport.service.js");
+  const жалоба = await report({ actor: buildActor(req), data: parsed.data });
+  res.status(201).json({ id: жалоба._id, status: жалоба.status });
+});
+
+/** Очередь разбора — только администратору площадки. */
+export const listReportsController = asyncHandler(async (req, res) => {
+  const { listReports } = await import("../services/contentReport.service.js");
+  const { items } = await listReports({ actor: buildActor(req), query: req.query });
+  res.json({ items, count: items.length });
+});
+
+/** Решение по жалобе. */
+export const resolveReportController = asyncHandler(async (req, res) => {
+  const parsed = resolveReportSchema.safeParse(req.body);
+  if (!parsed.success) throwZod(parsed);
+
+  const { resolveReport } = await import("../services/contentReport.service.js");
+  const жалоба = await resolveReport({
+    actor: buildActor(req),
+    id: req.params.id,
+    ...parsed.data,
+  });
+  res.json(жалоба);
+});
+
+/**
+ * Страница плеера для чужого сайта.
+ *
+ * Единственное место приложения, которому разрешено открываться внутри
+ * <iframe>, поэтому заголовки ставятся здесь поштучно, а не глобально:
+ * frame-ancestors * только для этой страницы, X-Frame-Options снимается —
+ * старый заголовок не умеет «всем, кроме» и перекрыл бы разрешение.
+ */
+export const embedPageController = asyncHandler(async (req, res) => {
+  const { embedPage } = await import("../services/videoEmbed.service.js");
+  const html = await embedPage(req.params.id);
+
+  res.removeHeader("X-Frame-Options");
+  res.setHeader("Content-Security-Policy", "frame-ancestors *");
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  // Ссылка на файл подписана на час — страницу дольше держать нельзя,
+  // иначе фрейм покажет протухший адрес.
+  res.setHeader("Cache-Control", "public, max-age=600");
+  res.send(html);
+});
+
+/** Код для вставки — его копирует автор на странице ролика. */
+export const embedCodeController = asyncHandler(async (req, res) => {
+  const { embedData, embedCode } = await import("../services/videoEmbed.service.js");
+  // Проверяем доступность до выдачи кода: дать код на ролик, который не
+  // встроится, — это отправить человека отлаживать чужую страницу.
+  await embedData(req.params.id);
+  res.json(embedCode(req.params.id));
+});
+
+/**
+ * Распознать речь и приложить субтитры.
+ *
+ * Долгая операция: файл скачивается, распознаётся и переводится
+ * на каждый выбранный язык. Ответ говорит, какие дорожки легли,
+ * а какие языки не вышли — молчаливый частичный успех хуже отказа.
+ */
+export const transcribeController = asyncHandler(async (req, res) => {
+  const parsed = transcribeSchema.safeParse(req.body || {});
+  if (!parsed.success) throwZod(parsed);
+
+  const { transcribeVideo } = await import("../services/videoTranscribe.service.js");
+  const итог = await transcribeVideo({
+    actor: buildActor(req),
+    id: req.params.id,
+    targets: parsed.data.targets || [],
+    lang: parsed.data.lang || "",
+  });
+  res.json(итог);
+});
+
 /** Витрина. Единственный маршрут модуля без сессии. */
 export const listPublicController = asyncHandler(async (req, res) => {
   const parsed = publicListQuerySchema.safeParse(req.query);
   if (!parsed.success) throwZod(parsed);
-  const { items } = await service.listPublicVideos({ query: parsed.data });
+
+  // Лента подписок доступна только вошедшему: у гостя нет подписок, и
+  // отдавать ему вместо них весь каталог — врать про то, что он видит.
+  const { items } = await service.listPublicVideos({
+    query: parsed.data,
+    viewer: req.session?.userId ? buildActor(req) : null,
+  });
   res.json({ items, count: items.length });
+});
+
+/**
+ * Отметка «не помогло».
+ *
+ * Отдельный маршрут, а не параметр у лайка: так у действия свой след в
+ * журнале и своя строка в правах, если завтра минусы придётся ограничить.
+ */
+export const dislikeController = asyncHandler(async (req, res) => {
+  const итог = await service.toggleDislike({ actor: buildActor(req), id: req.params.id });
+  res.json(итог);
+});
+
+/** Подписаться на канал или отписаться — одно действие, как и кнопка. */
+export const subscribeController = asyncHandler(async (req, res) => {
+  const parsed = subscribeSchema.safeParse(req.body);
+  if (!parsed.success) throwZod(parsed);
+
+  const { toggleSubscription } = await import("../services/videoSubscription.service.js");
+  const итог = await toggleSubscription({ actor: buildActor(req), ...parsed.data });
+  res.json(итог);
+});
+
+/** Мои каналы — для страницы «Подписки» и для отметок в интерфейсе. */
+export const mySubscriptionsController = asyncHandler(async (req, res) => {
+  const { listMySubscriptions } = await import("../services/videoSubscription.service.js");
+  const items = await listMySubscriptions({ actor: buildActor(req) });
+  res.json({ items, count: items.length });
+});
+
+/**
+ * Перенести фильм из студии в каталог.
+ *
+ * Долгая операция: файл действительно скачивается к нам и кладётся в
+ * хранилище. Ответ — созданная запись, чтобы страница сразу показала
+ * ролик, а не отправляла человека обновлять список.
+ */
+export const importStudioController = asyncHandler(async (req, res) => {
+  const parsed = importStudioSchema.safeParse(req.body);
+  if (!parsed.success) throwZod(parsed);
+
+  const { importFromStudio } = await import("../services/videoImport.service.js");
+  const video = await importFromStudio({ actor: buildActor(req), data: parsed.data });
+  res.status(201).json(video);
 });

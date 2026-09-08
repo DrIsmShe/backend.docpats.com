@@ -169,7 +169,12 @@ async function fetchVideos() {
     const videos = await db
       .collection(collectionOf("Video", "videos"))
       .find(
-        { visibility: "public", status: "ready", phi: { $ne: true } },
+        {
+          visibility: "public",
+          status: "ready",
+          phi: { $ne: true },
+          archivedAt: null,
+        },
         {
           projection: {
             _id: 1,

@@ -22,6 +22,11 @@ import {
 } from "../../../common/utils/errors.js";
 import { canFor } from "../../../common/auth/can.js";
 import {
+  каналРолика,
+  countSubscribers,
+  isSubscribed,
+} from "./videoSubscription.service.js";
+import {
   recordAction,
   recordActionAsync,
 } from "../../audit/services/audit.service.js";
@@ -29,6 +34,24 @@ import {
 /* ═══════════ вспомогательное ═══════════ */
 
 const asId = (v) => (v ? String(v) : "");
+
+/**
+ * Готовый адрес превью для публичных выдач.
+ *
+ * Собирается НА СЕРВЕРЕ, а не на клиенте. Первая версия витрины склеивала
+ * его из REACT_APP_R2_PUBLIC_URL — переменной, которой в сборке нет, и все
+ * превью выходили чёрными прямоугольниками. Адрес хранилища знает сервер,
+ * ему и собирать.
+ *
+ * Постер публичного ролика открыт: это кадр из фильма, который и так виден
+ * всем, а подписанная ссылка на превью в ленте означала бы по запросу на
+ * каждую карточку.
+ */
+function posterUrl(video) {
+  const base = process.env.R2_PUBLIC_URL;
+  const key = video?.media?.posterKey;
+  return base && key ? `${base}/${key}` : null;
+}
 
 /**
  * Актёр журнала.
@@ -102,7 +125,7 @@ export function canView(video, actor) {
  * Ролик клиники правит и её администратор — иначе уволившийся врач унёс бы
  * с собой единственный ключ к материалам, снятым за счёт клиники.
  */
-function canEdit(video, actor) {
+export function canEdit(video, actor) {
   if (isOwner(video, actor)) return true;
   if (sameClinic(video, actor)) return clinicCan(actor, "write");
   return false;
@@ -193,7 +216,9 @@ export async function listVideos({ actor, query = {} }) {
     or.push({ clinicId: actor.clinicId, visibility: { $in: ["clinic", "public"] } });
   }
 
-  const filter = { $or: or };
+  // Архив не мешается в кабинете, но остаётся доступен по прямой ссылке
+  // владельцу — он не удалён, а убран с глаз.
+  const filter = { $or: or, archivedAt: null };
   if (query.kind) filter.kind = query.kind;
   if (query.status) filter.status = query.status;
   if (query.phi !== undefined) filter.phi = query.phi;
@@ -211,7 +236,10 @@ export async function listVideos({ actor, query = {} }) {
     metadata: { count: items.length, hasClinic: Boolean(actor.clinicId) },
   });
 
-  return { items };
+  // Адрес превью собираем здесь, а не в интерфейсе: адрес хранилища
+  // знает только сервер. На витрине это уже сделано так же — когда
+  // адрес собирали на клиенте, карточки выходили чёрными.
+  return { items: items.map((v) => ({ ...v, posterUrl: posterUrl(v) })) };
 }
 
 export async function getVideo({ actor, id }) {
@@ -235,19 +263,117 @@ export async function getVideo({ actor, id }) {
  * общий код рано или поздно получил бы условие «если актёра нет, то…» —
  * ровно ту развилку, через которую приватный ролик и утекает наружу.
  */
-export async function listPublicVideos({ query = {} } = {}) {
-  const filter = { visibility: "public", status: "ready", phi: false };
+/**
+ * Имя автора для витрины.
+ *
+ * Клиника важнее человека: ролик, снятый её врачом, представляет клинику, и
+ * на витрине подписывается ею. У одиночки берём имя врача из профиля, а если
+ * ни того ни другого нет — площадку: подпись «DocPats» честнее пустого места.
+ *
+ * Одним запросом на весь список, а не по имени на карточку: витрина на
+ * сорок восемь роликов иначе делала бы сорок восемь походов в базу.
+ */
+async function авторыДля(items) {
+  const клиники = [...new Set(items.filter((v) => v.clinicId).map((v) => String(v.clinicId)))];
+  const владельцы = [
+    ...new Set(items.filter((v) => !v.clinicId).map((v) => String(v.ownerId))),
+  ];
+
+  const имена = new Map();
+
+  if (клиники.length) {
+    const Clinic = (
+      await import("../../clinic/clinic-core/models/clinic.model.js")
+    ).default;
+    const найдено = await Clinic.find({ _id: { $in: клиники } })
+      .select("name")
+      .lean();
+    for (const к of найдено) имена.set(String(к._id), к.name || "");
+  }
+
+  if (владельцы.length) {
+    const User = (await import("../../../common/models/Auth/users.js")).default;
+    const { decryptPHI } = await import("../../../common/utils/phiCrypto.js");
+    const найдено = await User.find({ _id: { $in: владельцы } })
+      .select("firstNameEncrypted lastNameEncrypted")
+      .lean();
+    for (const u of найдено) {
+      const имя = [decryptPHI(u.firstNameEncrypted), decryptPHI(u.lastNameEncrypted)]
+        .filter((ч) => ч && String(ч).trim())
+        .join(" ")
+        .trim();
+      имена.set(String(u._id), имя);
+    }
+  }
+
+  return items.map((v) => ({
+    ...v,
+    authorName:
+      (v.clinicId ? имена.get(String(v.clinicId)) : имена.get(String(v.ownerId))) ||
+      "DocPats",
+  }));
+}
+
+export async function listPublicVideos({ query = {}, viewer = null } = {}) {
+  // archivedAt: null во всех публичных выдачах. Архив на то и архив:
+  // ролик остаётся в базе, но не показывается никому.
+  const filter = {
+    visibility: "public",
+    status: "ready",
+    phi: false,
+    archivedAt: null,
+  };
   if (query.kind) filter.kind = query.kind;
   if (query.lang) filter.lang = query.lang;
+  // Раздел витрины — та полка, на которую ролик положили руками.
+  if (query.categoryId) filter.categoryId = query.categoryId;
+  if (query.q) {
+    // Поиск по названию и описанию. Строку экранируем: она приходит от
+    // человека и не должна становиться регулярным выражением.
+    const безопасно = String(query.q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.$or = [
+      { title: { $regex: безопасно, $options: "i" } },
+      { description: { $regex: безопасно, $options: "i" } },
+    ];
+  }
+
+  // Лента «Подписки». Условие тоже приходит как $or (каналы-люди и
+  // каналы-клиники), поэтому складываем через $and: присвоить второй $or
+  // значило бы молча выбросить условие поиска и показать не то.
+  if (query.feed === "subscriptions") {
+    if (!viewer) return { items: [] };
+
+    const { фильтрПодписок } = await import("./videoSubscription.service.js");
+    const условие = await фильтрПодписок({ actor: viewer });
+    // Подписок нет — лента пуста. Показать вместо неё весь каталог
+    // значило бы выдать чужие ролики за «то, на что вы подписаны».
+    if (!условие) return { items: [] };
+
+    if (filter.$or) {
+      filter.$and = [{ $or: filter.$or }, условие];
+      delete filter.$or;
+    } else {
+      Object.assign(filter, условие);
+    }
+  }
 
   const limit = Math.min(Number(query.limit) || 24, 100);
   const items = await Video.find(filter)
     .sort({ publishedAt: -1 })
     .limit(limit)
-    .select("title description lang kind media.posterKey media.durationSec attribution publishedAt stats")
+    .select(
+      "title description lang kind media.posterKey media.durationSec attribution publishedAt stats likes clinicId ownerId",
+    )
     .lean();
 
-  return { items };
+  const сИменами = await авторыДля(items);
+  return {
+    items: сИменами.map((v) => ({
+      ...v,
+      posterUrl: posterUrl(v),
+      likes: (v.likes || []).length,
+    })),
+  };
 }
 
 /**
@@ -258,21 +384,87 @@ export async function listPublicVideos({ query = {} } = {}) {
  * обязана быть на странице, иначе использование материалов под CC —
  * нарушение, сколько бы аккуратно она ни была вписана в кадр.
  */
-export async function getPublicVideo({ id }) {
+/**
+ * Имена авторов и адреса превью для готового списка роликов.
+ *
+ * Вынесено наружу, потому что подборки строит другой сервис, а отделка
+ * карточки должна остаться одна: два места, собирающие «имя автора»,
+ * разойдутся в первый же день.
+ */
+export async function сИменамиИПостерами(items) {
+  const сИменами = await авторыДля(items);
+  return сИменами.map((v) => ({
+    ...v,
+    posterUrl: posterUrl(v),
+    likes: (v.likes || []).length,
+  }));
+}
+
+/**
+ * Ролик витрины как документ — для подборок, которым нужны его признаки.
+ * Публичная карточка со счётчиками собирается в getPublicVideo.
+ */
+export async function getPublicVideoRaw(id) {
   if (!mongoose.isValidObjectId(id)) throw new NotFoundError("Видео не найдено");
   const video = await Video.findOne({
     _id: id,
     visibility: "public",
     status: "ready",
     phi: false,
+    archivedAt: null,
+  })
+    .select("clinicId ownerId categoryId kind lang")
+    .lean();
+  if (!video) throw new NotFoundError("Видео не найдено");
+  return video;
+}
+
+export async function getPublicVideo({ id, viewerId = null }) {
+  if (!mongoose.isValidObjectId(id)) throw new NotFoundError("Видео не найдено");
+  const video = await Video.findOne({
+    _id: id,
+    visibility: "public",
+    status: "ready",
+    phi: false,
+    archivedAt: null,
   })
     .select(
-      "title description lang kind media.posterKey media.durationSec attribution publishedAt stats clinicId",
+      "title description lang kind media.posterKey media.durationSec attribution publishedAt stats clinicId ownerId ownerType likes dislikes categoryId",
     )
     .lean();
 
   if (!video) throw new NotFoundError("Видео не найдено");
-  return video;
+
+  const [сИменем] = await авторыДля([video]);
+
+  // Канал автора: число подписчиков публично (это довод «автору доверяют»),
+  // список — нет, он выдавал бы, кто чем интересуется.
+  const канал = каналРолика(video);
+  const [subscribers, subscribedByMe] = await Promise.all([
+    countSubscribers(канал),
+    isSubscribed({ viewerId, ...канал }),
+  ]);
+
+  return {
+    ...сИменем,
+    posterUrl: posterUrl(video),
+    likes: (video.likes || []).length,
+    dislikes: (video.dislikes || []).length,
+    // Отмечал ли этот человек. Гостю — false: у него нет ни отметки, ни
+    // возможности её поставить.
+    likedByMe: viewerId
+      ? (video.likes || []).some((u) => String(u) === String(viewerId))
+      : false,
+    dislikedByMe: viewerId
+      ? (video.dislikes || []).some((u) => String(u) === String(viewerId))
+      : false,
+    channel: {
+      type: канал.channelType,
+      id: канал.channelId,
+      subscribers,
+      subscribedByMe,
+    },
+  };
 }
 
 /**
@@ -288,17 +480,31 @@ export async function listClinicPublicVideos({ clinicId, limit = 24 }) {
     visibility: "public",
     status: "ready",
     phi: false,
+    archivedAt: null,
   })
     .sort({ publishedAt: -1 })
     .limit(Math.min(Number(limit) || 24, 100))
-    .select("title description lang kind media.posterKey media.durationSec publishedAt stats")
+    .select(
+      "title description lang kind media.posterKey media.durationSec publishedAt stats clinicId ownerId",
+    )
     .lean();
-  return { items };
+  const сИменами = await авторыДля(items);
+  return { items: сИменами.map((v) => ({ ...v, posterUrl: posterUrl(v) })) };
 }
 
 /* ═══════════ правка ═══════════ */
 
-const EDITABLE = ["title", "description", "lang", "kind", "phi", "attribution"];
+// Что владелец меняет у своего ролика. Видимости здесь нет намеренно:
+// открыть ролик — отдельное действие publish со своими проверками.
+const EDITABLE = [
+  "title",
+  "description",
+  "lang",
+  "kind",
+  "phi",
+  "attribution",
+  "categoryId",
+];
 
 export async function updateVideo({ actor, id, patch }) {
   const video = await loadViewable(id, actor);
@@ -341,7 +547,7 @@ export async function updateVideo({ actor, id, patch }) {
  * Сбой постановки в очередь не срывает удаление: потерять уборку файла
  * неприятно, но оставить пользователю неудаляемый ролик — хуже.
  */
-async function поставитьФайлыВОчередьУборки(video) {
+export async function enqueueOrphanFiles(video) {
   const base = process.env.R2_PUBLIC_URL;
   if (!base) return; // хранилище не настроено — убирать нечего
 
@@ -385,7 +591,7 @@ export async function deleteVideo({ actor, id }) {
 
   // Файлы — в очередь уборки ДО удаления записи: после неё ключи взять
   // неоткуда, и файл остался бы в хранилище навсегда, платно и незаметно.
-  await поставитьФайлыВОчередьУборки(video);
+  await enqueueOrphanFiles(video);
 
   await Video.deleteOne({ _id: video._id });
 
@@ -626,8 +832,89 @@ export default {
   applyStudioRender,
   setIntroVideo,
   clearIntroVideo,
+  toggleLike,
   canView,
 };
+
+/* ═══════════ отметка «полезно» ═══════════ */
+
+/**
+ * Поставить или снять отметку — одним действием.
+ *
+ * Переключателем, а не двумя маршрутами: интерфейсу нужна одна кнопка, и
+ * две ручки означали бы, что он должен помнить состояние и угадывать, какую
+ * вызвать. Массив в записи меняем через $addToSet/$pull, а не чтением и
+ * записью целиком: два человека, нажавших одновременно, иначе затёрли бы
+ * отметки друг друга.
+ */
+export async function toggleReaction({ actor, id, kind = "like" }) {
+  if (!["like", "dislike"].includes(kind)) {
+    throw new ValidationError("Неизвестная отметка");
+  }
+  if (!mongoose.isValidObjectId(id)) throw new NotFoundError("Ролик не найден");
+  if (actor.ownerType !== "user") {
+    throw new ForbiddenError("Отметку ставит человек, а не сотрудник клиники");
+  }
+
+  const video = await Video.findOne({
+    _id: id,
+    visibility: { $in: ["public", "link"] },
+    status: "ready",
+    phi: false,
+    archivedAt: null,
+  }).select("likes dislikes");
+  if (!video) throw new NotFoundError("Ролик не найден");
+
+  const своё = kind === "like" ? "likes" : "dislikes";
+  const противоположное = kind === "like" ? "dislikes" : "likes";
+
+  const ужеОтмечен = (video[своё] || []).some(
+    (u) => String(u) === String(actor.ownerId),
+  );
+
+  // Одновременно «полезно» и «не помогло» от одного человека — не мнение,
+  // а рассинхрон интерфейса. Поэтому противоположная отметка снимается
+  // тем же запросом, а не отдельным обращением, которое может не дойти.
+  const правка = ужеОтмечен
+    ? { $pull: { [своё]: actor.ownerId } }
+    : {
+        $addToSet: { [своё]: actor.ownerId },
+        $pull: { [противоположное]: actor.ownerId },
+      };
+
+  const обновлён = await Video.findByIdAndUpdate(id, правка, { new: true }).select(
+    "likes dislikes",
+  );
+
+  recordActionAsync({
+    actor: auditActor(actor),
+    action: kind === "like" ? "video.like" : "video.dislike",
+    resourceType: "video",
+    resourceId: id,
+    metadata: {
+      on: !ужеОтмечен,
+      likes: (обновлён.likes || []).length,
+      dislikes: (обновлён.dislikes || []).length,
+    },
+  });
+
+  return {
+    liked: (обновлён.likes || []).some((u) => String(u) === String(actor.ownerId)),
+    disliked: (обновлён.dislikes || []).some((u) => String(u) === String(actor.ownerId)),
+    likes: (обновлён.likes || []).length,
+    dislikes: (обновлён.dislikes || []).length,
+  };
+}
+
+/** Отметка «полезно» — исторический вход, оставлен ради вызывающих. */
+export async function toggleLike({ actor, id }) {
+  return toggleReaction({ actor, id, kind: "like" });
+}
+
+/** Отметка «не помогло». */
+export async function toggleDislike({ actor, id }) {
+  return toggleReaction({ actor, id, kind: "dislike" });
+}
 
 /* ═══════════ видео-визитка врача ═══════════ */
 
