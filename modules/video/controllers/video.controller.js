@@ -504,6 +504,17 @@ export const transcribeController = asyncHandler(async (req, res) => {
   res.json(итог);
 });
 
+/**
+ * Где теперь фильм студии. Спрашивает сама студия, чтобы
+ * переадресовать старую ссылку в каталог. 404 — нормальный ответ:
+ * фильм мог так и не попасть в каталог.
+ */
+export const byStudioFilmController = asyncHandler(async (req, res) => {
+  const video = await service.findPublicByStudioFilm(req.params.filmId);
+  if (!video) return res.status(404).json({ message: "Ролик не найден" });
+  res.json({ id: video._id, title: video.title });
+});
+
 /** Витрина. Единственный маршрут модуля без сессии. */
 export const listPublicController = asyncHandler(async (req, res) => {
   const parsed = publicListQuerySchema.safeParse(req.query);

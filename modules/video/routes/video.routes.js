@@ -33,6 +33,8 @@ router.get("/public", ctrl.listPublicController);
 router.get("/recommended", ctrl.recommendedController);
 // Страница ролика и канал клиники — тоже без входа. Объявлены здесь, до
 // requireSession: ниже начинается закрытая часть модуля.
+// Где теперь фильм студии — для переадресации старых ссылок.
+router.get("/public/by-studio/:filmId", ctrl.byStudioFilmController);
 router.get("/public/clinic/:clinicId", ctrl.listClinicPublicController);
 router.get("/public/:id/playback", ctrl.publicPlaybackController);
 // Похожие — до "/public/:id", иначе путь разберётся как идентификатор.

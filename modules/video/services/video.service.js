@@ -419,6 +419,33 @@ export async function getPublicVideoRaw(id) {
   return video;
 }
 
+/**
+ * Найти опубликованный ролик по ключу фильма в студии.
+ *
+ * ЗАЧЕМ. Студия раздавала врачам ссылки вида /film/<ключ>, и они
+ * уже разошлись по пациентам и коллегам. Когда собственная витрина
+ * студии закрывается в пользу каталога, эти ссылки должны не умереть, а
+ * привести туда, где фильм теперь живёт. Отвечает только про
+ * ОПУБЛИКОВАННЫЕ ролики: приватный ролик по чужому ключу
+ * найти нельзя — иначе перебор ключей выдавал бы чужие черновики.
+ */
+export async function findPublicByStudioFilm(studioFilmId) {
+  const ключ = String(studioFilmId || "").trim();
+  if (!/^[A-Za-z0-9_-]{6,64}$/.test(ключ)) return null;
+
+  const video = await Video.findOne({
+    "source.studioFilmId": ключ,
+    visibility: "public",
+    status: "ready",
+    phi: false,
+    archivedAt: null,
+  })
+    .select("_id title")
+    .lean();
+
+  return video || null;
+}
+
 export async function getPublicVideo({ id, viewerId = null }) {
   if (!mongoose.isValidObjectId(id)) throw new NotFoundError("Видео не найдено");
   const video = await Video.findOne({
