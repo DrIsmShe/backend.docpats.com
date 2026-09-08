@@ -616,6 +616,7 @@ export const directUploadController = asyncHandler(async (req, res) => {
       phi: req.body.phi === "true",
       durationSec: req.body.durationSec,
       rulesVersion: req.body.rulesVersion,
+      termsAccepted: req.body.termsAccepted,
       poster: req.body.poster,
     },
   });

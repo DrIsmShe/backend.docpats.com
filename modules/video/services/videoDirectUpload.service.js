@@ -48,7 +48,14 @@ export async function directUpload({ actor, file, data }) {
 
   // Те же правила, что и на прямом пути: запасной вход не должен быть
   // лазейкой мимо согласия и пределов.
-  if (!правилаПриняты(data.rulesVersion)) {
+  // Проверка ждёт ОБЪЕКТ с двумя полями, а не одну версию: само
+  // согласие и то, на какую редакцию оно дано, — разные вещи. Форма
+  // приходит multipart, где всё строки, отсюда сравнение с "true".
+  const согласие = {
+    termsAccepted: data.termsAccepted === true || data.termsAccepted === "true",
+    termsVersion: data.rulesVersion,
+  };
+  if (!правилаПриняты(согласие)) {
     throw new ValidationError(
       "Подтвердите правила публикации — без этого загрузка невозможна",
     );
