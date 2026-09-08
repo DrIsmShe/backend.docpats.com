@@ -61,6 +61,10 @@ const notificationSchema = new mongoose.Schema(
         "video_consent_requested",
         // Назначен план подготовки к процедуре: ролики по дням.
         "video_playlist_assigned",
+        // Новый ролик у канала, на который человек подписан. Отдельный
+        // тип: это не просьба врача, а новость площадки, и человек
+        // вправе отключить её, не отключая назначений от врача.
+        "video_published",
       ],
       default: "system_message",
       required: true,

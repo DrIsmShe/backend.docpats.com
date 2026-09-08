@@ -752,6 +752,16 @@ export async function publishVideo({ actor, id, visibility }) {
     },
   });
 
+  // Подписчикам — новость о ролике. После записи в журнал и без
+  // ожидания: рассылка не должна срывать публикацию, которая уже
+  // состоялась, а неполученное уведомление — не повод откатывать ролик
+  // обратно в черновики.
+  if (video.visibility === "public") {
+    import("./videoSubscriberNotify.service.js")
+      .then(({ известитьПодписчиков }) => известитьПодписчиков(video))
+      .catch((err) => console.warn("[video] рассылка не запустилась:", err?.message));
+  }
+
   return video;
 }
 

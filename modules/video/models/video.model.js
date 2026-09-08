@@ -228,6 +228,11 @@ const videoSchema = new mongoose.Schema(
     publishedAt: { type: Date, default: null },
     publishedBy: { type: mongoose.Schema.Types.ObjectId, default: null },
 
+    /* Когда о ролике известили подписчиков. Отметка нужна, чтобы снятие с
+       витрины и возврат обратно не звонили второй раз: подписчик получает
+       новость о новом ролике, а не о том, что автор передумал. */
+    subscribersNotifiedAt: { type: Date, default: null },
+
     /* Отметки «полезно». Массив идентификаторов, а не счётчик: так же
        устроены лайки статей и профилей врачей (likes: [User]), и третий
        механизм в одном продукте был бы лишним. Массив заодно отвечает на

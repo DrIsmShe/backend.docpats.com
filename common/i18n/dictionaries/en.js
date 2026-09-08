@@ -658,4 +658,6 @@ export default {
   "app.notification.videoConsent.message": "The clinic asks you to watch a short video about “{{procedure}}” and confirm your consent.",
   "app.notification.videoPlaylist.title": "Preparation for your procedure",
   "app.notification.videoPlaylist.message": "You have been assigned a preparation plan: {{title}}. Watch the short videos by the given dates.",
+  "app.notification.videoPublished.title": "New video",
+  "app.notification.videoPublished.message": "{{author}}: “{{title}}”",
 };

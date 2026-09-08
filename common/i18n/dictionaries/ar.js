@@ -658,4 +658,6 @@ export default {
   "app.notification.videoConsent.message": "تطلب العيادة مشاهدة مقطع قصير عن «{{procedure}}» وتأكيد موافقتك.",
   "app.notification.videoPlaylist.title": "التحضير للإجراء",
   "app.notification.videoPlaylist.message": "تم تعيين خطة تحضير لك: {{title}}. شاهد المقاطع القصيرة قبل التواريخ المحددة.",
+  "app.notification.videoPublished.title": "مقطع جديد",
+  "app.notification.videoPublished.message": "{{author}}: «{{title}}»",
 };

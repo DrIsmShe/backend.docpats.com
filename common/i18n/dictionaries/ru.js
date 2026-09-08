@@ -659,4 +659,6 @@ export default {
   "app.notification.videoConsent.message": "Клиника просит посмотреть короткий ролик о вмешательстве «{{procedure}}» и подтвердить согласие.",
   "app.notification.videoPlaylist.title": "Подготовка к процедуре",
   "app.notification.videoPlaylist.message": "Вам назначена подготовка: {{title}}. Посмотрите короткие ролики к указанным датам.",
+  "app.notification.videoPublished.title": "Новый ролик",
+  "app.notification.videoPublished.message": "{{author}}: «{{title}}»",
 };

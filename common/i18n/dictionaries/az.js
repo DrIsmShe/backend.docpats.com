@@ -658,4 +658,6 @@ export default {
   "app.notification.videoConsent.message": "Klinika «{{procedure}}» müdaxiləsi haqqında qısa videonu izləməyi və razılığı təsdiqləməyi xahiş edir.",
   "app.notification.videoPlaylist.title": "Prosedura hazırlıq",
   "app.notification.videoPlaylist.message": "Sizə hazırlıq təyin olunub: {{title}}. Qısa videolara göstərilən tarixlərədək baxın.",
+  "app.notification.videoPublished.title": "Yeni video",
+  "app.notification.videoPublished.message": "{{author}}: «{{title}}»",
 };
