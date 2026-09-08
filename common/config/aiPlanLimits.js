@@ -166,6 +166,12 @@ export const PLAN_LIMITS = {
     // консультаций: это разные поводы прийти.
     labExplanations: 5,
     documentExports: -1,
+  
+    // Видео: хранение и сборка. Без явного значения тариф
+    // получал безлимит — при тысяче врачей это несогласованный
+    // счёт за хранилище.
+    videraRenderMinutes: 10,
+    videraStorageGb: 2,
   },
   patient_free: {
     examQuestions: 250,
@@ -192,6 +198,12 @@ export const PLAN_LIMITS = {
     aiConsultations: 15,
     labExplanations: 20,
     documentExports: -1,
+  
+    // Видео: хранение и сборка. Без явного значения тариф
+    // получал безлимит — при тысяче врачей это несогласованный
+    // счёт за хранилище.
+    videraRenderMinutes: 20,
+    videraStorageGb: 5,
   },
 
   // ═════════════════════ ВРАЧИ ═══════════════════════════
@@ -298,6 +310,12 @@ export const PLAN_LIMITS = {
     previsitIntakes: 30,
     storedFiles: 400,
     aiSimulations: 5,
+  
+    // Видео: хранение и сборка. Без явного значения тариф
+    // получал безлимит — при тысяче врачей это несогласованный
+    // счёт за хранилище.
+    videraRenderMinutes: 20,
+    videraStorageGb: 5,
   },
   doctor_basic: {
     // 1500 при банке примерно в 1011 вопросов — квота заведомо больше банка
@@ -316,6 +334,12 @@ export const PLAN_LIMITS = {
     previsitIntakes: 100,
     storedFiles: 1500,
     aiSimulations: 15,
+  
+    // Видео: хранение и сборка. Без явного значения тариф
+    // получал безлимит — при тысяче врачей это несогласованный
+    // счёт за хранилище.
+    videraRenderMinutes: 60,
+    videraStorageGb: 20,
   },
   doctor_super: {
     examQuestions: -1,
@@ -329,6 +353,12 @@ export const PLAN_LIMITS = {
     previsitIntakes: 600,
     storedFiles: 6000,
     aiSimulations: 40,
+  
+    // Видео: хранение и сборка. Без явного значения тариф
+    // получал безлимит — при тысяче врачей это несогласованный
+    // счёт за хранилище.
+    videraRenderMinutes: 150,
+    videraStorageGb: 50,
   },
   // Pro. Все безлимиты, кроме банка вопросов, заменены потолками.
   //
@@ -351,6 +381,12 @@ export const PLAN_LIMITS = {
     previsitIntakes: 2000,
     storedFiles: 20000,
     aiSimulations: 100,
+  
+    // Видео: хранение и сборка. Без явного значения тариф
+    // получал безлимит — при тысяче врачей это несогласованный
+    // счёт за хранилище.
+    videraRenderMinutes: 300,
+    videraStorageGb: 100,
   },
 
   // ═════════════════════ КЛИНИКИ ═════════════════════════
@@ -370,6 +406,12 @@ export const PLAN_LIMITS = {
     // некуда, и поле три тарифа подряд обещало несуществующее.
     analytics: false,
     aiSimulations: 100,
+  
+    // Видео: хранение и сборка. Без явного значения тариф
+    // получал безлимит — при тысяче врачей это несогласованный
+    // счёт за хранилище.
+    videraRenderMinutes: 300,
+    videraStorageGb: 100,
   },
   // Клинические потолки заданы «на врача, помноженное на штат»: Business —
   // 15 врачей, значит ~27 разборов на врача в месяц. Enterprise штат не
@@ -387,6 +429,12 @@ export const PLAN_LIMITS = {
     storedFiles: 20000,
     analytics: true,
     aiSimulations: 250,
+  
+    // Видео: хранение и сборка. Без явного значения тариф
+    // получал безлимит — при тысяче врачей это несогласованный
+    // счёт за хранилище.
+    videraRenderMinutes: 900,
+    videraStorageGb: 300,
   },
   // Штат перестал быть безлимитным. Пока число врачей не ограничено,
   // расход на инфраструктуру нельзя даже оценить — а значит и проверить,
@@ -405,6 +453,12 @@ export const PLAN_LIMITS = {
     storedFiles: 60000,
     analytics: true,
     aiSimulations: 500,
+  
+    // Видео: хранение и сборка. Без явного значения тариф
+    // получал безлимит — при тысяче врачей это несогласованный
+    // счёт за хранилище.
+    videraRenderMinutes: 3000,
+    videraStorageGb: 1000,
   },
 };
 

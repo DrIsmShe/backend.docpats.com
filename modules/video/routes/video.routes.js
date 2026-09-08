@@ -20,6 +20,15 @@ import * as consent from "../controllers/videoConsent.controller.js";
 import * as playlist from "../controllers/videoPlaylist.controller.js";
 import * as adminCtrl from "../controllers/videoAdmin.controller.js";
 import requireAdmin from "../../admin/middlewares/authvalidateMiddleware/requireAdmin.js";
+import multer from "multer";
+
+/* Приём файла для запасного пути загрузки. Предел тот же, что в
+   правилах загрузки: большее отсекается до чтения тела, а не после
+   того, как 300 МБ уже оказались в памяти. */
+const приёмФайла = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 300 * 1024 * 1024 },
+});
 import { проверитьПодписьСтудии } from "../studioCallback.js";
 import { applyStudioRender } from "../services/video.service.js";
 import { studioCallbackSchema } from "../validators/video.schemas.js";
@@ -139,6 +148,11 @@ router.delete("/admin/:id", requireAdmin, adminCtrl.adminDeleteController);
 router.post("/upload/prepare", ctrl.prepareUploadController);
 router.post("/upload/complete", ctrl.completeUploadController);
 
+// Запасной путь: файл идёт через сервер. Нужен, пока бакет не
+// разрешает браузеру писать напрямую. Предел в multer — тот же, что в
+// правилах загрузки: большее отсекается до чтения тела.
+router.post("/upload/direct", приёмФайла.single("file"), ctrl.directUploadController);
+
 // Перенос готового фильма из студии. Стоит до "/:id", иначе "import" будет
 // разобран как идентификатор ролика.
 router.post("/import/studio", ctrl.importStudioController);
@@ -148,6 +162,8 @@ router.post("/reports", ctrl.reportController);
 
 // Подписки на каналы врачей и клиник.
 router.get("/subscriptions", ctrl.mySubscriptionsController);
+// С именами и кадрами: список подписок без имён — список идентификаторов.
+router.get("/subscriptions/channels", ctrl.myChannelsController);
 router.post("/subscriptions/toggle", ctrl.subscribeController);
 
 // Отметки под роликом.
@@ -156,6 +172,11 @@ router.post("/:id/transcribe", ctrl.transcribeController);
 
 router.post("/:id/like", ctrl.likeController);
 router.post("/:id/dislike", ctrl.dislikeController);
+
+// Статистика автора: досматривают ли его ролики и где бросают.
+// "/stats" строго до "/:id", иначе слово разберётся как идентификатор.
+router.get("/stats", ctrl.statsController);
+router.get("/:id/stats", ctrl.videoStatsController);
 
 // Расход и пакеты минут.
 router.get("/quota", ctrl.quotaController);

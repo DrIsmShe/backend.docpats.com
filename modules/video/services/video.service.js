@@ -383,9 +383,28 @@ export async function listPublicVideos({ query = {}, viewer = null } = {}) {
     }
   }
 
+  // Лента одного канала — из списка подписок: человек открывает автора,
+  // а не ищет его ролики среди чужих.
+  if (query.channelId && query.channelType) {
+    if (query.channelType === "clinic") {
+      filter.clinicId = query.channelId;
+    } else {
+      filter.ownerId = query.channelId;
+      filter.clinicId = null;
+    }
+  }
+
   const limit = Math.min(Number(query.limit) || 24, 100);
+
+  // «Популярное» — по просмотрам, при равенстве по свежести: без второго
+  // ключа ролики с нулём просмотров выстроились бы в случайном порядке.
+  const порядок =
+    query.sort === "popular"
+      ? { "stats.views": -1, publishedAt: -1 }
+      : { publishedAt: -1 };
+
   const items = await Video.find(filter)
-    .sort({ publishedAt: -1 })
+    .sort(порядок)
     .limit(limit)
     .select(
       "title description lang kind media.posterKey media.durationSec attribution publishedAt stats likes clinicId ownerId",

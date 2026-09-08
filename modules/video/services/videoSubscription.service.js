@@ -125,6 +125,62 @@ export async function toggleSubscription({ actor, channelType, channelId }) {
   return { subscribed: !была, subscribers };
 }
 
+/**
+ * Каналы зрителя — с именем, числом роликов и последним кадром.
+ *
+ * Список подписок без имён — это список идентификаторов: человек
+ * подписывался на врача, а не на строку в базе.
+ */
+export async function myChannels({ actor }) {
+  if (actor.ownerType !== "user") return [];
+
+  const подписки = await VideoSubscription.find({ subscriberId: actor.ownerId })
+    .sort({ createdAt: -1 })
+    .lean();
+  if (!подписки.length) return [];
+
+  const { сИменамиИПостерами } = await import("./video.service.js");
+
+  const каналы = [];
+  for (const п of подписки) {
+    const условие =
+      п.channelType === "clinic"
+        ? { clinicId: п.channelId }
+        : { ownerId: п.channelId, clinicId: null };
+
+    const общее = {
+      ...условие,
+      visibility: "public",
+      status: "ready",
+      phi: false,
+      archivedAt: null,
+    };
+
+    // Последний ролик даёт и кадр для карточки, и имя автора — второй
+    // запрос за именем не нужен.
+    const [последний] = await сИменамиИПостерами(
+      await Video.find(общее)
+        .sort({ publishedAt: -1 })
+        .limit(1)
+        .select("title media.posterKey publishedAt clinicId ownerId")
+        .lean(),
+    );
+
+    каналы.push({
+      channelType: п.channelType,
+      channelId: п.channelId,
+      name: последний?.authorName || "DocPats",
+      videos: await Video.countDocuments(общее),
+      lastTitle: последний?.title || "",
+      lastAt: последний?.publishedAt || null,
+      posterUrl: последний?.posterUrl || null,
+      subscribedAt: п.createdAt,
+    });
+  }
+
+  return каналы;
+}
+
 /** Каналы, на которые подписан зритель. */
 export async function listMySubscriptions({ actor }) {
   if (actor.ownerType !== "user") return [];

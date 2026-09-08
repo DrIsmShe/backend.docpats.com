@@ -107,6 +107,12 @@ export const publicListQuerySchema = z.object({
   // каталог: отказа нет, ошибки нет, просто не тот список.
   categoryId: z.string().trim().length(24).optional(),
   q: z.string().trim().min(1).max(200).optional(),
+  // Порядок выдачи. «Популярное» было пунктом меню, который вёл на ту же
+  // страницу и ничего не менял.
+  sort: z.enum(["new", "popular"]).optional(),
+  // Лента одного канала: открывается из списка подписок.
+  channelType: z.enum(["user", "clinic"]).optional(),
+  channelId: z.string().trim().length(24).optional(),
 });
 
 /**

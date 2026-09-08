@@ -573,6 +573,56 @@ export const publicCommentsController = asyncHandler(async (req, res) => {
   res.json({ success: true, comments: почистить(дерево) });
 });
 
+/** Сводка по всем своим роликам — чтобы видеть, какой проседает. */
+export const statsController = asyncHandler(async (req, res) => {
+  const { statsForOwner } = await import("../services/videoStats.service.js");
+  const итог = await statsForOwner({
+    actor: buildActor(req),
+    days: Math.min(Number(req.query.days) || 30, 365),
+  });
+  res.json(итог);
+});
+
+/** Подробно по одному ролику: где бросают и досматривают ли. */
+export const videoStatsController = asyncHandler(async (req, res) => {
+  const { statsForVideo } = await import("../services/videoStats.service.js");
+  const итог = await statsForVideo({
+    actor: buildActor(req),
+    id: req.params.id,
+    days: Math.min(Number(req.query.days) || 30, 365),
+  });
+  res.json(итог);
+});
+
+/**
+ * Загрузка через сервер — запасной путь.
+ *
+ * Нужен, пока бакет не разрешает запись с нашего домена: браузер
+ * получает 403 на preflight, и прямая загрузка невозможна при
+ * исправных сервере и хранилище.
+ */
+export const directUploadController = asyncHandler(async (req, res) => {
+  const { directUpload } = await import("../services/videoDirectUpload.service.js");
+
+  const video = await directUpload({
+    actor: buildActor(req),
+    file: req.file,
+    data: {
+      title: req.body.title,
+      description: req.body.description,
+      lang: req.body.lang,
+      kind: req.body.kind,
+      categoryId: req.body.categoryId || null,
+      phi: req.body.phi === "true",
+      durationSec: req.body.durationSec,
+      rulesVersion: req.body.rulesVersion,
+      poster: req.body.poster,
+    },
+  });
+
+  res.status(201).json(video);
+});
+
 /** Витрина. Единственный маршрут модуля без сессии. */
 export const listPublicController = asyncHandler(async (req, res) => {
   const parsed = publicListQuerySchema.safeParse(req.query);
@@ -606,6 +656,13 @@ export const subscribeController = asyncHandler(async (req, res) => {
   const { toggleSubscription } = await import("../services/videoSubscription.service.js");
   const итог = await toggleSubscription({ actor: buildActor(req), ...parsed.data });
   res.json(итог);
+});
+
+/** Мои каналы с именами и кадрами — для страницы «Подписки». */
+export const myChannelsController = asyncHandler(async (req, res) => {
+  const { myChannels } = await import("../services/videoSubscription.service.js");
+  const items = await myChannels({ actor: buildActor(req) });
+  res.json({ items, count: items.length });
 });
 
 /** Мои каналы — для страницы «Подписки» и для отметок в интерфейсе. */

@@ -111,13 +111,22 @@ describe("предел тарифа", () => {
     expect(квота.renderLeft).toBe(4);
   });
 
-  it("на платном плане предела нет", async () => {
+  it("на платном плане предел щедрый, но конечный", async () => {
+    // Раньше здесь было «предела нет», и это была не щедрость, а
+    // пропуск: квоты просто не было в тарифе, а отсутствующее значение
+    // трактуется как безлимит. Минута сборки стоит денег, и тариф
+    // без потолка — это счёт, который никто не согласовывал.
     const user = пользователь("doctor_pro");
     await ролик({ ownerId: user._id, sec: 3600 });
 
     const квота = await videoQuota({ user, ownerId: user._id });
-    expect(квота.renderLimit).toBe(-1);
-    expect(квота.renderLeft).toBe(-1);
+
+    expect(квота.renderLimit).toBeGreaterThan(0);
+    // Заметно больше бесплатного: иначе платить не за что.
+    expect(квота.renderLimit).toBeGreaterThan(60);
+    // Час уже собранного списан.
+    expect(квота.renderedMinutes).toBe(60);
+    expect(квота.renderLeft).toBe(квота.renderLimit - 60);
   });
 
   it("докупленные минуты складываются с тарифом", async () => {
