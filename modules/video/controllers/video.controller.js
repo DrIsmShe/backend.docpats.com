@@ -545,7 +545,32 @@ export const publicCommentsController = asyncHandler(async (req, res) => {
   const { собратьДерево } = await import(
     "../../commentsLikes/controllers/commentController/commentController.js"
   );
-  res.json({ success: true, comments: await собратьДерево(req.params.id) });
+  const дерево = await собратьДерево(req.params.id);
+
+  /**
+   * Шифротекст имён наружу не отдаём.
+   *
+   * Сборка дерева расшифровывает имя и кладёт рядом, а исходные
+   * поля остаются — в кабинете это безразлично, а здесь ответ читает
+   * кто угодно. Шифрованное значение бесполезно читателю и
+   * полезно тому, кто собирает шифротексты для анализа.
+   */
+  const почистить = (список) =>
+    (список || []).map((к) => {
+      const { author, replies, ...остальное } = к;
+      const автор = author
+        ? {
+            _id: author._id,
+            firstName: author.firstName || "",
+            lastName: author.lastName || "",
+            avatar: author.avatar || null,
+            username: author.username || null,
+          }
+        : null;
+      return { ...остальное, author: автор, replies: почистить(replies) };
+    });
+
+  res.json({ success: true, comments: почистить(дерево) });
 });
 
 /** Витрина. Единственный маршрут модуля без сессии. */
