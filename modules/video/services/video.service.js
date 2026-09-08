@@ -363,6 +363,15 @@ export async function listPublicVideos({ query = {}, viewer = null } = {}) {
     ];
   }
 
+  // История просмотров — своя выборка со своим порядком: здесь
+  // важно когда смотрели, а не когда опубликовали.
+  if (query.feed === "history") {
+    if (!viewer) return { items: [] };
+    const { история } = await import("./videoFeed.service.js");
+    const ролики = await история({ viewer, limit: Number(query.limit) || 48 });
+    return { items: await сИменамиИПостерами(ролики) };
+  }
+
   // Лента «Подписки». Условие тоже приходит как $or (каналы-люди и
   // каналы-клиники), поэтому складываем через $and: присвоить второй $or
   // значило бы молча выбросить условие поиска и показать не то.
@@ -752,6 +761,36 @@ export async function publishVideo({ actor, id, visibility }) {
   }
   if (visibility === "clinic" && !video.clinicId) {
     throw new ValidationError("Ролик не привязан к клинике");
+  }
+
+  // ПАЦИЕНТ ПУБЛИКУЕТ ПО СВОИМ ПРАВИЛАМ: своя полка и счётное число.
+  //
+  // Врач отвечает за объяснение по своей специальности именем; пациент
+  // рассказывает свою историю — это другое, и читатель должен видеть
+  // разницу до того, как откроет ролик. Ограничение штучное, потому что
+  // открытый каталог просматривает человек.
+  if (visibility === "public" && actor.ownerType === "user") {
+    const User = (await import("../../../common/models/Auth/users.js")).default;
+    const user = await User.findById(actor.ownerId)
+      .select("role subscriptionPlan subscription")
+      .lean();
+
+    const { этоПациент, проверитьЛимитПубликаций, подготовитьПубликациюПациента } =
+      await import("./videoPatientPublish.service.js");
+
+    if (этоПациент(user)) {
+      // Считаем БЕЗ этого ролика: повторная публикация уже открытого не
+      // должна упираться в предел, который он же и занимает.
+      await проверитьЛимитПубликаций({
+        user,
+        ownerId: actor.ownerId,
+        exceptId: video._id,
+      });
+
+      const правки = await подготовитьПубликациюПациента(video);
+      video.categoryId = правки.categoryId;
+      video.kind = правки.kind;
+    }
   }
 
   video.visibility = visibility;

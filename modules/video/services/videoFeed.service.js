@@ -229,6 +229,48 @@ export async function рекомендации({ viewer = null, limit = 24, lang
   return [...подобранные, ...добор.filter((v) => !взято.has(String(v._id)))];
 }
 
+/**
+ * История просмотров — что человек уже смотрел.
+ *
+ * Строится на том же следе, что и подборка, и с тем же
+ * ограничением: только открытые ролики без PHI. Показ объяснения
+ * перед вмешательством в историю не попадает — её могут читать через
+ * плечо, а список просмотренного говорит о человеке слишком много.
+ *
+ * Порядок — по времени просмотра, а не публикации: человек ищет
+ * то, что смотрел вчера, а не самый свежий ролик.
+ */
+export async function история({ viewer, limit = 48 }) {
+  if (!viewer?.ownerId) return [];
+
+  const след = await VideoInterest.find({ viewerId: viewer.ownerId })
+    .sort({ watchedAt: -1 })
+    .limit(Math.min(limit, 200))
+    .select("videoId watchedAt")
+    .lean();
+
+  if (!след.length) return [];
+
+  const порядок = new Map(след.map((з, i) => [String(з.videoId), i]));
+
+  const ролики = await Video.find({
+    _id: { $in: след.map((з) => з.videoId) },
+    visibility: "public",
+    status: "ready",
+    phi: false,
+    archivedAt: null,
+  })
+    .select(
+      "title description lang kind media.posterKey media.durationSec publishedAt stats likes clinicId ownerId categoryId",
+    )
+    .lean();
+
+  // База вернёт их в своём порядке — восстанавливаем наш.
+  return ролики.sort(
+    (a, b) => порядок.get(String(a._id)) - порядок.get(String(b._id)),
+  );
+}
+
 /** Похожие ролики — колонка справа на странице ролика. */
 export async function похожие({ video, viewerId = null, limit = 12 }) {
   const базовый = {
