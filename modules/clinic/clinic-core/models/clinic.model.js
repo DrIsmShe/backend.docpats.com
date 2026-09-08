@@ -114,12 +114,16 @@ export function defaultLayoutBlocks() {
     { type: "bento", visible: true, order: 6, config: {} },
     { type: "reviews", visible: true, order: 7, config: {} },
     { type: "publications", visible: true, order: 8, config: {} },
-    { type: "gallery", visible: true, order: 9, config: {} },
+    // Ролики клиники. Сам блок ничего не рисует, пока клиника ничего не
+    // опубликовала, поэтому включён по умолчанию: у большинства он просто
+    // невидим, а тем, кто снимает, не придётся искать его в настройках.
+    { type: "videos", visible: true, order: 9, config: {} },
+    { type: "gallery", visible: true, order: 10, config: {} },
     // faq скрыт по умолчанию — включается владельцем после заполнения (V4.1).
-    { type: "faq", visible: false, order: 10, config: {} },
-    { type: "contacts", visible: true, order: 11, config: {} },
-    { type: "cta", visible: true, order: 12, config: {} },
-    { type: "footer", visible: true, order: 13, config: {} },
+    { type: "faq", visible: false, order: 11, config: {} },
+    { type: "contacts", visible: true, order: 12, config: {} },
+    { type: "cta", visible: true, order: 13, config: {} },
+    { type: "footer", visible: true, order: 14, config: {} },
   ];
 }
 

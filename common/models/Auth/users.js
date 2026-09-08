@@ -330,6 +330,16 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Докупленные минуты рендера роликов. Не подписка, а остаток: пакет
+    // покупается разово и тратится по мере съёмки, поэтому здесь число, а
+    // не ключ тарифа со сроком. Складывается с лимитом плана — см.
+    // modules/video/services/videoQuota.service.js.
+    videoRenderMinutesAddon: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     // Когда заканчивается TRIAL для врачей.
     // У пациентов = null. У врачей при регистрации = Date.now() + 180 days.
     // После окончания resolveEffectivePlan вернёт "doctor_basic".

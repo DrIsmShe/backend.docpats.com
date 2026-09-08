@@ -654,4 +654,8 @@ export default {
   "app.mail.telemedInvite.howto": "Qoşulmaq üçün elə bu e-poçt ünvanı ilə DocPats hesabı yaradın. Tibbi kartanız avtomatik qoşulacaq və qəbul təsdiqdən dərhal sonra açılacaq.",
   "app.mail.telemedInvite.cta": "Hesab yarat",
   "app.mail.telemedInvite.footer": "Əgər bu məktub sizə səhvən gəlibsə, sadəcə cavab verməyin.",
+  "app.notification.videoConsent.title": "Prosedurdan əvvəl izahı izləyin",
+  "app.notification.videoConsent.message": "Klinika «{{procedure}}» müdaxiləsi haqqında qısa videonu izləməyi və razılığı təsdiqləməyi xahiş edir.",
+  "app.notification.videoPlaylist.title": "Prosedura hazırlıq",
+  "app.notification.videoPlaylist.message": "Sizə hazırlıq təyin olunub: {{title}}. Qısa videolara göstərilən tarixlərədək baxın.",
 };

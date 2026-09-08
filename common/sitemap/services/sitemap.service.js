@@ -100,6 +100,115 @@ export function urlEntry({ loc, lastmod, changefreq, priority }) {
   </url>`;
 }
 
+// Запись видео.
+//
+// ЧТО ОБЯЗАТЕЛЬНО. Google требует заголовок, описание, картинку превью и
+// один из адресов: либо файл (content_loc), либо страницу с плеером
+// (player_loc). Мы даём player_loc — страницу витрины: файл в R2 раздаётся
+// подписанной ссылкой, которая живёт минуты, и поисковик по ней ничего не
+// получит. Превью — единственное, что действительно должно лежать по
+// вечному публичному адресу.
+//
+// hreflang здесь не выписывается: у ролика один адрес на все языки, а язык
+// выбирается дорожкой субтитров внутри плеера. Пять ссылок на один URL —
+// это не языковая разметка (см. комментарий к urlEntry выше).
+export function urlEntryForVideo({
+  loc,
+  playerLoc,
+  thumbnailLoc,
+  title,
+  description,
+  durationSec,
+  publishedAt,
+  lastmod,
+}) {
+  const строки = [
+    `  <url>`,
+    `    <loc>${escapeXml(loc)}</loc>`,
+    `    <lastmod>${lastmod}</lastmod>`,
+    `    <changefreq>monthly</changefreq>`,
+    `    <priority>0.7</priority>`,
+    `    <video:video>`,
+    `      <video:thumbnail_loc>${escapeXml(thumbnailLoc)}</video:thumbnail_loc>`,
+    `      <video:title>${escapeXml(title)}</video:title>`,
+    `      <video:description>${escapeXml(description)}</video:description>`,
+    `      <video:player_loc>${escapeXml(playerLoc)}</video:player_loc>`,
+  ];
+  // Длительность Google принимает от 1 секунды до 8 часов; вне этих границ
+  // запись отклоняется целиком, поэтому лучше не указывать её вовсе.
+  if (durationSec >= 1 && durationSec <= 28800) {
+    строки.push(`      <video:duration>${Math.round(durationSec)}</video:duration>`);
+  }
+  if (publishedAt) {
+    строки.push(
+      `      <video:publication_date>${new Date(publishedAt).toISOString()}</video:publication_date>`,
+    );
+  }
+  строки.push(`      <video:family_friendly>yes</video:family_friendly>`);
+  строки.push(`    </video:video>`);
+  строки.push(`  </url>`);
+  return строки.join("\n");
+}
+
+// Публичные ролики каталога.
+//
+// В выдачу идут только те, что прошли все три условия сразу: открыты,
+// готовы и без пациента в кадре. Условие phi здесь дублирует правило
+// модели намеренно — sitemap уезжает наружу, и одной проверки на такой
+// дороге мало.
+//
+// Без превью ролик пропускаем: Google отклонит запись без картинки, а
+// половина записей, отклонённых валидатором, выглядит как поломка всего
+// файла.
+async function fetchVideos() {
+  try {
+    const publicBase = process.env.R2_PUBLIC_URL;
+    if (!publicBase) return [];
+
+    const db = mongoose.connection.db;
+    const videos = await db
+      .collection(collectionOf("Video", "videos"))
+      .find(
+        { visibility: "public", status: "ready", phi: { $ne: true } },
+        {
+          projection: {
+            _id: 1,
+            title: 1,
+            description: 1,
+            publishedAt: 1,
+            updatedAt: 1,
+            "media.posterKey": 1,
+            "media.durationSec": 1,
+          },
+        },
+      )
+      .sort({ publishedAt: -1 })
+      .limit(5000)
+      .toArray();
+
+    return videos
+      .filter((v) => v.media?.posterKey && v.title)
+      .map((v) => {
+        const страница = `${FRONTEND_URL}/videos/${v._id}`;
+        return urlEntryForVideo({
+          loc: страница,
+          playerLoc: страница,
+          thumbnailLoc: `${publicBase}/${v.media.posterKey}`,
+          title: v.title,
+          // Описание обязательно: пустое поле — это отклонённая запись.
+          // Заголовок в качестве запасного варианта честнее выдумки.
+          description: v.description || v.title,
+          durationSec: v.media?.durationSec || 0,
+          publishedAt: v.publishedAt,
+          lastmod: toW3cDate(v.updatedAt || v.publishedAt),
+        });
+      });
+  } catch (err) {
+    console.error("[sitemap] fetchVideos:", err.message);
+    return [];
+  }
+}
+
 // 6 записей для синтез-статей — базовый URL + /ru /en /az /tr /ar
 // Язык ЕСТЬ в URL: /articles/:id/:lang
 function urlEntriesForSynthesisArticle({ baseUrl, lastmod }) {
@@ -871,6 +980,7 @@ const URLSET_HEAD = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset
   xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml"
+  xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="
     http://www.sitemaps.org/schemas/sitemap/0.9
@@ -932,6 +1042,7 @@ async function collectSections() {
     docs,
     clinicUrls,
     conferences,
+    videos,
   ] = await Promise.all([
     fetchDoctors(),
     fetchNews(),
@@ -941,6 +1052,7 @@ async function collectSections() {
     fetchDocsSections(),
     fetchClinicUrls(),
     fetchConferences(),
+    fetchVideos(),
   ]);
 
   const staticEntries = STATIC_PAGES.map((p) =>
@@ -961,6 +1073,7 @@ async function collectSections() {
     { name: "articles", entries: synthesis },
     { name: "doctor-articles", entries: doctorArticles },
     { name: "scientific", entries: scientificArticles },
+    { name: "videos", entries: videos },
     {
       name: "clinics",
       entries: [

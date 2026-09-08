@@ -64,6 +64,7 @@ export function toPublicDoctorDTO(parts = {}) {
     country = null,
     experienceYears = null,
     role = "doctor",
+    introVideoId = null,
   } = parts;
 
   const fullName = [firstName, lastName]
@@ -86,6 +87,9 @@ export function toPublicDoctorDTO(parts = {}) {
         ? experienceYears
         : null,
     role,
+    // Видео-визитка. Отдаём только идентификатор: сам ролик витрина берёт
+    // публичным маршрутом каталога, где и проверяется, что он открыт.
+    introVideoId: introVideoId ? String(introVideoId) : null,
     // id — это DoctorProfile._id. По нему витрина строит собственный адрес
     // врача (/<slug>/doctors/<id>), чтобы посетитель оставался на сайте
     // клиники. profileUrl ниже ведёт на страницу ПЛАТФОРМЫ и сохранён для

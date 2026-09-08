@@ -655,4 +655,8 @@ export default {
   "app.mail.telemedInvite.howto": "Чтобы подключиться, заведите аккаунт DocPats на этот же адрес почты. Ваша медицинская карта подцепится сама, и приём откроется сразу после подтверждения.",
   "app.mail.telemedInvite.cta": "Создать аккаунт",
   "app.mail.telemedInvite.footer": "Если письмо пришло вам по ошибке — просто не отвечайте на него.",
+  "app.notification.videoConsent.title": "Посмотрите объяснение перед процедурой",
+  "app.notification.videoConsent.message": "Клиника просит посмотреть короткий ролик о вмешательстве «{{procedure}}» и подтвердить согласие.",
+  "app.notification.videoPlaylist.title": "Подготовка к процедуре",
+  "app.notification.videoPlaylist.message": "Вам назначена подготовка: {{title}}. Посмотрите короткие ролики к указанным датам.",
 };

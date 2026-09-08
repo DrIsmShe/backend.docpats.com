@@ -654,4 +654,8 @@ export default {
   "app.mail.telemedInvite.howto": "للانضمام، أنشئ حساب DocPats بالبريد الإلكتروني نفسه. سيرتبط ملفك الطبي تلقائيا وسيفتح الموعد فور التأكيد.",
   "app.mail.telemedInvite.cta": "إنشاء حساب",
   "app.mail.telemedInvite.footer": "إذا وصلتك هذه الرسالة عن طريق الخطأ، فتجاهلها ببساطة.",
+  "app.notification.videoConsent.title": "شاهد الشرح قبل الإجراء",
+  "app.notification.videoConsent.message": "تطلب العيادة مشاهدة مقطع قصير عن «{{procedure}}» وتأكيد موافقتك.",
+  "app.notification.videoPlaylist.title": "التحضير للإجراء",
+  "app.notification.videoPlaylist.message": "تم تعيين خطة تحضير لك: {{title}}. شاهد المقاطع القصيرة قبل التواريخ المحددة.",
 };

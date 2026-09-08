@@ -654,4 +654,8 @@ export default {
   "app.mail.telemedInvite.howto": "To join, create a DocPats account using this same email address. Your medical record will be linked automatically and the appointment will open right after confirmation.",
   "app.mail.telemedInvite.cta": "Create an account",
   "app.mail.telemedInvite.footer": "If this email reached you by mistake, simply ignore it.",
+  "app.notification.videoConsent.title": "Watch the explanation before your procedure",
+  "app.notification.videoConsent.message": "The clinic asks you to watch a short video about “{{procedure}}” and confirm your consent.",
+  "app.notification.videoPlaylist.title": "Preparation for your procedure",
+  "app.notification.videoPlaylist.message": "You have been assigned a preparation plan: {{title}}. Watch the short videos by the given dates.",
 };

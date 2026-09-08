@@ -85,6 +85,11 @@ export const PLAN_LIMITS = {
     soapEpicrises: 0,
     documentExports: 0,
     videraFilms: 0, // студия требует входа: гость фильмы не снимает
+    // Минуты рендера за 30 дней и гигабайты хранения — гостю рендер недоступен вовсе.
+    // Считать ролики штуками неверно: двадцать секунд и три минуты
+    // стоят по-разному (см. modules/video/services/videoQuota.service.js).
+    videraRenderMinutes: 0,
+    videraStorageGb: 0,
   },
   // ═══ Пациентские планы, пересмотр от 16.08.2026 ═══════════════════
   //
@@ -176,6 +181,11 @@ export const PLAN_LIMITS = {
     labExplanations: 1,
     documentExports: -1, // -1 = без лимита: это СВОИ данные пациента
     videraFilms: 3, // как у doctor_free: 3 бесплатных фильма
+    // Минуты рендера за 30 дней и гигабайты хранения — бесплатный уровень: примерно шесть минут готового видео.
+    // Считать ролики штуками неверно: двадцать секунд и три минуты
+    // стоят по-разному (см. modules/video/services/videoQuota.service.js).
+    videraRenderMinutes: 6,
+    videraStorageGb: 1,
   },
   patient_std: {
     examQuestions: 1000,
@@ -210,6 +220,11 @@ export const PLAN_LIMITS = {
     storedFiles: 20000,
     aiSimulations: 100,
     videraFilms: -1, // в триале фильмы без лимита
+    // Минуты рендера за 30 дней и гигабайты хранения — триал щедрый, но не бездонный: рендер стоит денег.
+    // Считать ролики штуками неверно: двадцать секунд и три минуты
+    // стоят по-разному (см. modules/video/services/videoQuota.service.js).
+    videraRenderMinutes: 30,
+    videraStorageGb: 5,
   },
   // Бесплатный врачебный уровень — вход для врачей и то, куда врач падает,
   // когда НЕ платит: после пробного периода и после окончания подписки.
@@ -247,6 +262,11 @@ export const PLAN_LIMITS = {
     videoMinutes: 60,
     storedFiles: 400,
     videraFilms: 3, // бесплатно 3 объяснительных фильма DP-Videra
+    // Минуты рендера за 30 дней и гигабайты хранения — тот же бесплатный уровень, что и у пациента.
+    // Считать ролики штуками неверно: двадцать секунд и три минуты
+    // стоят по-разному (см. modules/video/services/videoQuota.service.js).
+    videraRenderMinutes: 6,
+    videraStorageGb: 1,
   },
   // Lite — СНЯТ С ПРОДАЖИ (тарифная сетка v5).
   //
@@ -450,6 +470,25 @@ export const EXAM_ADDON_PRICES = {
   exam_unlimited: { monthly: 15, yearly: 150 },
 };
 
+// ─── Пакеты минут рендера роликов ────────────────────────────────────
+//
+// Разовая покупка поверх тарифа, а не подписка: съёмка идёт всплесками —
+// клиника записывает десяток объяснений за неделю и потом не трогает студию
+// месяцами. Ежемесячная плата за такое ощущается как штраф за паузу.
+//
+// Цена считается от себестоимости минуты (0,12 $ рендер + хранение) по тому
+// же правилу «выручка ≥ 3 × расход», что и тарифы: 30 минут обходятся
+// примерно в 4 $, продаём за 12 $.
+export const VIDEO_MINUTE_PACKS = {
+  video_minutes_30: { minutes: 30, price: 12 },
+  video_minutes_120: { minutes: 120, price: 39 },
+};
+
+export const VIDEO_MINUTE_PACK_DISPLAY_NAMES = {
+  video_minutes_30: "30 минут видео",
+  video_minutes_120: "120 минут видео",
+};
+
 export const EXAM_ADDON_DISPLAY_NAMES = {
   exam_plus: "Exam Prep Plus",
   exam_unlimited: "Exam Prep Unlimited",
@@ -620,6 +659,25 @@ export function planHasAI(planKey) {
  */
 export function videraFilmsAllowed(planKey) {
   const v = PLAN_LIMITS[planKey]?.videraFilms;
+  return v === undefined ? -1 : v;
+}
+
+/**
+ * Минуты рендера роликов за 30 дней.
+ *
+ * Поля нет у платных тарифов — там предела нет: платишь, значит снимаешь
+ * сколько нужно. То же соглашение, что и у videraFilms выше.
+ *
+ * @returns {Number} -1 = без лимита
+ */
+export function videraRenderMinutesAllowed(planKey) {
+  const v = PLAN_LIMITS[planKey]?.videraRenderMinutes;
+  return v === undefined ? -1 : v;
+}
+
+/** Гигабайты хранения роликов. Раздача не в счёт: у R2 исходящий бесплатен. */
+export function videraStorageAllowed(planKey) {
+  const v = PLAN_LIMITS[planKey]?.videraStorageGb;
   return v === undefined ? -1 : v;
 }
 

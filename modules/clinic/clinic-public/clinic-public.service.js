@@ -153,7 +153,7 @@ export async function buildDoctorList(clinicId) {
   //    + года окончания специализации/образования — для вывода стажа.
   const profiles = await DoctorProfile.find({ userId: { $in: userIds } })
     .select(
-      "userId profileImage isVerified about country specialty specializationEndYear educationEndYear",
+      "userId profileImage isVerified about country specialty specializationEndYear educationEndYear introVideoId",
     )
     .lean();
 
@@ -215,6 +215,7 @@ export async function buildDoctorList(clinicId) {
         specialization,
         isVerified: profile.isVerified,
         about: profile.about,
+        introVideoId: profile.introVideoId || null,
         country: profile.country,
         experienceYears: computeExperienceYears(profile),
         role: roleByUser.get(key) || "doctor",

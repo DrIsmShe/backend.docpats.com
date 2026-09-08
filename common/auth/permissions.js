@@ -58,6 +58,13 @@ export const RESOURCES = Object.freeze({
   SUPPLIER: "supplier",
   REQUISITION: "requisition", // NEW — заявки отделений в аптеку (nurse → pharmacist)
 
+  // Разъяснительные фильмы DP-Videra и записи, снятые в клинике.
+  // Отдельный ресурс, а не часть article: статью пишет маркетолог, а фильм
+  // про вмешательство — врач, и права на них расходятся ровно там, где в
+  // кадр попадает пациент. Публикация наружу — отдельное действие write
+  // поверх ресурса, гейт «нет PHI в кадре» живёт в сервисе.
+  VIDEO: "video",
+
   // marketing & site
   REVIEW: "review",
   ARTICLE: "article",
@@ -171,6 +178,7 @@ const _basePermissions = {
     [RESOURCES.INVENTORY]: FULL,
     [RESOURCES.SUPPLIER]: FULL,
     [RESOURCES.REQUISITION]: RO, // NEW — надзор за заявками
+    [RESOURCES.VIDEO]: FULL,
     [RESOURCES.REVIEW]: FULL,
     [RESOURCES.ARTICLE]: FULL,
     [RESOURCES.SITE_BUILDER]: FULL,
@@ -196,6 +204,7 @@ const _basePermissions = {
     [RESOURCES.TELEMED]: RW,
     [RESOURCES.SERVICE]: RW,
     [RESOURCES.ANNOUNCEMENT]: RW,
+    [RESOURCES.VIDEO]: RW,
     [RESOURCES.PATIENT]: RO,
     // Чтение медицинских записей. Решение владельца продукта: управляющий
     // ведёт клинику и должен видеть приёмы. Правка и удаление — нет.
@@ -233,6 +242,9 @@ const _basePermissions = {
     [RESOURCES.QUEUE]: RO,
     [RESOURCES.REFERRAL]: RW,
     [RESOURCES.ARTICLE]: RW,
+    // Врач — главный автор фильмов: снимает, правит, сносит свои.
+    // Удаление чужого ролика гейтится по владельцу в сервисе.
+    [RESOURCES.VIDEO]: FULL,
   },
 
   [ROLES.NURSE]: {
@@ -252,6 +264,9 @@ const _basePermissions = {
     [RESOURCES.CHECKIN]: RW,
     [RESOURCES.INVENTORY]: { read: true, write: true, delete: false },
     [RESOURCES.REQUISITION]: RW, // NEW — подаёт/правит заявку своего отделения
+    // Медсестра показывает пациенту готовый ролик перед процедурой,
+    // но автором не является — только чтение.
+    [RESOURCES.VIDEO]: RO,
   },
 
   [ROLES.RECEPTIONIST]: {
@@ -274,6 +289,8 @@ const _basePermissions = {
     [RESOURCES.RECEPTION]: FULL,
     [RESOURCES.REFERRAL]: RO,
     [RESOURCES.LEAD]: RW,
+    // Регистратура выдаёт пациенту ссылку на ролик о подготовке.
+    [RESOURCES.VIDEO]: RO,
   },
 
   [ROLES.ACCOUNTANT]: {
@@ -313,6 +330,10 @@ const _basePermissions = {
     [RESOURCES.REVIEW]: RW,
     // только просмотр аналитики трафика/просмотров сайта
     [RESOURCES.ANALYTICS]: RO,
+    // Ролики витрины — рабочий материал маркетолога, но сносить чужое
+    // он не вправе. Ролики с пациентом ему не покажет сервис: у них
+    // phi=true, и в выдачу маркетолога они не попадают вовсе.
+    [RESOURCES.VIDEO]: RW,
 
     // --- явные запреты (для читаемости и защиты от будущих правок) ---
     // контент врача закрыт полностью

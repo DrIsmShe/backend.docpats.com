@@ -75,9 +75,51 @@ async function fetchCandidates() {
       url: `${FRONTEND_URL}/news/${encodeURIComponent(n.slug)}`,
       title: n.title || "",
       summary: n.aiSummaryShort || n.summary || "",
+      // Дата нужна для общей сортировки с роликами: без неё новости
+      // считались бы вышедшими в 1970-м и всегда шли бы первыми.
+      publishedAt: n.publishedAt,
     }));
   } catch (err) {
     console.error("[social] fetchCandidates:", err.message);
+    return [];
+  }
+}
+
+/**
+ * Свежие публичные ролики — вторая половина кандидатов.
+ *
+ * Отдельным запросом, а не через общий sitemap: там лежат все URL разом, а
+ * канал должен получать только то, что появилось за последние сутки-двое.
+ * Условия те же три, что и в sitemap: открыт, готов, без пациента в кадре —
+ * дублирование намеренное, канал публичный.
+ */
+async function fetchVideoCandidates() {
+  const since = new Date(Date.now() - MAX_AGE_HOURS * 60 * 60 * 1000);
+  try {
+    const mongoose = (await import("mongoose")).default;
+    const items = await mongoose.connection.db
+      .collection("videos")
+      .find(
+        {
+          visibility: "public",
+          status: "ready",
+          phi: { $ne: true },
+          publishedAt: { $gte: since },
+        },
+        { projection: { _id: 1, title: 1, description: 1, publishedAt: 1 } },
+      )
+      .sort({ publishedAt: 1 })
+      .limit(MAX_PER_RUN * 5)
+      .toArray();
+
+    return items.map((v) => ({
+      url: `${FRONTEND_URL}/videos/${v._id}`,
+      title: v.title || "",
+      summary: v.description || "",
+      publishedAt: v.publishedAt,
+    }));
+  } catch (err) {
+    console.error("[social] fetchVideoCandidates:", err.message);
     return [];
   }
 }
@@ -93,7 +135,16 @@ function composePost({ title, summary, url }) {
 export async function runSocialBroadcast() {
   if (!telegramEnabled()) return { skipped: "disabled" };
 
-  const candidates = await fetchCandidates();
+  const [news, videos] = await Promise.all([
+    fetchCandidates(),
+    fetchVideoCandidates(),
+  ]);
+  // Новости и ролики идут одним потоком по времени публикации: канал
+  // читается хронологически, и разделять его на два сорта материала
+  // означало бы, что ролики всегда в хвосте.
+  const candidates = [...news, ...videos].sort(
+    (a, b) => new Date(a.publishedAt || 0) - new Date(b.publishedAt || 0),
+  );
   if (candidates.length === 0) return { candidates: 0, posted: 0 };
 
   const posted = new Set(

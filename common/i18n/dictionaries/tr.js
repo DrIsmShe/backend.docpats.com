@@ -654,4 +654,8 @@ export default {
   "app.mail.telemedInvite.howto": "Katılmak için aynı e-posta adresiyle bir DocPats hesabı oluşturun. Sağlık dosyanız kendiliğinden bağlanacak ve randevu onaydan hemen sonra açılacak.",
   "app.mail.telemedInvite.cta": "Hesap oluştur",
   "app.mail.telemedInvite.footer": "Bu e-posta size yanlışlıkla ulaştıysa yanıtlamayın.",
+  "app.notification.videoConsent.title": "İşlemden önce açıklamayı izleyin",
+  "app.notification.videoConsent.message": "Klinik, “{{procedure}}” işlemiyle ilgili kısa videoyu izlemenizi ve onayınızı vermenizi istiyor.",
+  "app.notification.videoPlaylist.title": "İşleme hazırlık",
+  "app.notification.videoPlaylist.message": "Size bir hazırlık planı atandı: {{title}}. Kısa videoları belirtilen tarihlere kadar izleyin.",
 };

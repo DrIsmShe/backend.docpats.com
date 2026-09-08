@@ -88,6 +88,8 @@ import scribeRoutes from "./modules/scribe/index.js";
 import medicalCodesRoutes from "./modules/medicalCodes/index.js";
 import ebmRoutes from "./modules/ebm/index.js";
 import videraRoutes from "./modules/videra/index.js";
+import videoRoutes from "./modules/video/index.js";
+import { startRenderWorker } from "./modules/video/render/render.worker.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -467,6 +469,21 @@ app.use("/api/v1/ebm", ebmRoutes);
 // считает машина пользователя, здесь только подпись — нагрузки ноль.
 // Глобальный модуль без tenantMiddleware: студией пользуются и вне клиники.
 app.use("/api/v1/videra", videraRoutes);
+
+// Каталог снятых фильмов: кто владелец, что можно показывать и кому, к
+// какому приёму ролик привязан. Студия рендерит и сообщает сюда о готовом
+// файле вебхуком (/api/v1/video/studio/callback) — тот идёт без сессии, но
+// с подписью общим со студией ключом.
+//
+// Тоже глобальный модуль: ролики есть и вне клиники. Витрина
+// /api/v1/video/public отвечает без входа — она и есть публичная часть.
+app.use("/api/v1/video", videoRoutes);
+
+// Воркер рендера. Без VIDEO_RENDER=on не поднимается: генерация роликов
+// стоит денег, и включать её должен человек, а не факт выкладки кода.
+// Очередь идёт со своим префиксом — Redis общий на все окружения, и без
+// префикса воркер разработчика забирал бы боевые задания.
+startRenderWorker();
 
 // ======================= AUTO MODEL LOADER =======================
 console.log("📦 [index.js] Загрузка моделей...");

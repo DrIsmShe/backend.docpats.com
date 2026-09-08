@@ -43,7 +43,7 @@ export async function getPublicClinicDoctor(slug, doctorId) {
   if (!clinic) return null;
 
   const profile = await DoctorProfile.findById(doctorId)
-    .select("userId about")
+    .select("userId about introVideoId")
     .lean();
   if (!profile?.userId) return null;
 
@@ -68,6 +68,7 @@ export async function getPublicClinicDoctor(slug, doctorId) {
     // В карточке «о себе» урезано до превью (shortAbout). На собственной
     // странице врача обрезать нечего — отдаём полный текст.
     about: typeof profile.about === "string" ? profile.about : "",
+    introVideoId: profile.introVideoId || null,
     publications,
   };
 }
