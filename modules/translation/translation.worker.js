@@ -18,6 +18,13 @@ await mongoose.connect(MONGODB_URI, {
 });
 console.log("✅ Worker: MongoDB подключена");
 
+/** Заголовок для сравнения: регистр и пробелы значения не имеют. */
+const нормализовать = (текст) =>
+  String(текст || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
 // ── воркер ──
 const worker = new Worker(
   "translation",
@@ -35,6 +42,19 @@ const worker = new Worker(
         fromLanguage: entity.originalLanguage,
         toLanguage: targetLanguage,
       });
+
+      /* Перевод, совпавший с оригиналом, — это не перевод. Сохранить его
+         значит закрыть задание успехом и оставить читателя с карточкой на
+         чужом языке: снаружи не отличить от настоящего перевода. */
+      const какОригинал =
+        нормализовать(translated?.title) === нормализовать(entity.title) &&
+        entity.originalLanguage !== targetLanguage;
+
+      if (какОригинал) {
+        throw new Error(
+          `Модель вернула оригинал вместо перевода на ${targetLanguage}`,
+        );
+      }
 
       await upsertTranslation({
         entityId: entity._id,
