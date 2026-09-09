@@ -21,7 +21,9 @@ dotenv.config();
 
 const толькоПоказать = process.argv.includes("--dry");
 
-await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
+await mongoose.connect(process.env.MONGO_URL || process.env.MONGO_URI, {
+  dbName: process.env.MONGODB_DB,
+});
 
 const { default: Category } = await import(
   "../common/models/Articles/articlesCategories.js"
@@ -32,6 +34,9 @@ const { перевестиНазваниеРубрики } = await import(
 
 const ЯЗЫКИ = ["ru", "en", "az", "tr", "ar"];
 
+/** На каком языке название сейчас. Кириллица — русский, иначе английский. */
+const исходныйЯзык = (текст) => (/[а-яё]/i.test(текст) ? "ru" : "en");
+
 const рубрики = await Category.find({}).lean();
 console.log(`рубрик всего: ${рубрики.length}`);
 
@@ -40,22 +45,30 @@ let пропущено = 0;
 
 for (const рубрика of рубрики) {
   const текущее = рубрика.title || {};
-  const исходное = String(текущее.ru || рубрика.name || "").trim();
+  const исходное = String(
+    текущее.ru || текущее.en || рубрика.name || "",
+  ).trim();
+  const язык = исходныйЯзык(исходное);
   if (!исходное) {
     console.log(`—  ${рубрика._id}: нет названия, пропускаем`);
     continue;
   }
 
-  const нехватает = ЯЗЫКИ.filter((л) => !String(текущее[л] || "").trim());
+  const нехватает = ЯЗЫКИ.filter(
+    (л) => л !== исходныйЯзык(исходное) && !String(текущее[л] || "").trim(),
+  );
   if (!нехватает.length) {
     пропущено += 1;
     continue;
   }
 
-  console.log(`→  «${исходное}»: нет ${нехватает.join(", ")}`);
+  console.log(`→  «${исходное}» (${язык}): нет ${нехватает.join(", ")}`);
   if (толькоПоказать) continue;
 
-  const title = await перевестиНазваниеРубрики({ ...текущее, ru: исходное });
+  const title = await перевестиНазваниеРубрики(
+    { ...текущее, [язык]: исходное },
+    язык,
+  );
   await Category.updateOne({ _id: рубрика._id }, { $set: { title } });
 
   console.log(

@@ -20,10 +20,14 @@ async function перевестиРубрикуФоном(категория) {
     const { перевестиНазваниеРубрики } = await import(
       "../../../common/services/categoryTitle.service.js"
     );
-    const title = await перевестиНазваниеРубрики({
-      ...(категория.title || {}),
-      ru: категория.title?.ru || категория.name,
-    });
+    const имя = категория.title?.ru || категория.name || "";
+    // Рубрику могли назвать по-английски — переводить её «с русского»
+    // значит просить модель угадать, что перед ней.
+    const язык = /[а-яё]/i.test(имя) ? "ru" : "en";
+    const title = await перевестиНазваниеРубрики(
+      { ...(категория.title || {}), [язык]: имя },
+      язык,
+    );
     await Category.updateOne({ _id: категория._id }, { $set: { title } });
   } catch (err) {
     console.warn("[categories] перевод названия не удался:", err?.message);
