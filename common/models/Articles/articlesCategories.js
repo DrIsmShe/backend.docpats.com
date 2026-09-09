@@ -8,6 +8,17 @@ const categorySchema = new mongoose.Schema(
       unique: true, // уникальное имя категории
       trim: true,
     },
+    // Название на пяти языках. name остаётся исходным — по нему рубрика
+    // уникальна и по нему её ищут в админке; title добавляет переводы для
+    // показа. Пустой язык означает «перевода нет», и интерфейс покажет
+    // исходное название: пустота честнее подделки.
+    title: {
+      ru: { type: String, trim: true, default: "" },
+      en: { type: String, trim: true, default: "" },
+      az: { type: String, trim: true, default: "" },
+      tr: { type: String, trim: true, default: "" },
+      ar: { type: String, trim: true, default: "" },
+    },
     description: {
       type: String,
       default: "", // краткое описание категории

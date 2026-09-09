@@ -1,41 +1,51 @@
 // __tests__/translation/translateWithAI.test.js
 //
-// Перевод статьи моделью. Главное, что здесь держится, — СБОЙ НЕ ВЫДАЁТСЯ ЗА
-// УСПЕХ.
+// Перевод статьи моделью. Держатся три вещи.
 //
-// Прежняя версия ловила любую ошибку и возвращала ИСХОДНЫЙ текст. Воркер
-// получал «перевод», сохранял его как готовый, очередь считала работу
-// сделанной и не повторяла. Статья оставалась на языке оригинала без единой
-// пометки: узнать об этом можно было только глазами или по строке в логе
-// «❌ Chunk translation failed». Азербайджанские версии статей так и жили
-// непереведёнными.
+// 1. СБОЙ НЕ ВЫДАЁТСЯ ЗА УСПЕХ. Давняя версия ловила любую ошибку и
+//    возвращала ИСХОДНЫЙ текст: воркер получал «перевод», сохранял его как
+//    готовый, очередь считала работу сделанной и не повторяла. Статья
+//    оставалась на языке оригинала без единой пометки.
 //
-// Теперь ошибка идёт наверх: у задания attempts: 3 (translation.service.js),
-// а окончательно упавшее остаётся в failed-очереди видимым.
+// 2. ПРОВАЙДЕРА ВЫБИРАЕТ НАСТРОЙКА, А НЕ ИМПОРТ. Перевод сидел на OpenAI —
+//    единственная подсистема, оставшаяся там, — и 8 сентября 2026 на том
+//    счету кончились деньги: воркер получал 429 на каждой задаче, а в
+//    интерфейсе это выглядело как «статьи почему-то не переводятся».
+//    Теперь провайдер меняется в админке и действует со следующего задания.
+//
+// 3. МОДЕЛЬ ПРИХОДИТ СВЕРХУ. Имя модели живёт в общей таблице назначений,
+//    а не константой внутри реализации: иначе смена модели снова стала бы
+//    правкой кода в двух местах.
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-const { createMock } = vi.hoisted(() => ({ createMock: vi.fn() }));
+const { streamMock, провайдерМок } = vi.hoisted(() => ({
+  streamMock: vi.fn(),
+  провайдерМок: vi.fn(),
+}));
 
-vi.mock("openai", () => ({
+vi.mock("@anthropic-ai/sdk", () => ({
   default: class {
     constructor() {
-      this.chat = { completions: { create: createMock } };
+      this.beta = { messages: { stream: streamMock } };
     }
   },
 }));
 
-const { translateWithAI } = await import(
-  "../../modules/translation/translateWithAI.js"
+vi.mock("../../common/ai/provider.js", () => ({
+  провайдерДля: провайдерМок,
+}));
+
+const { translate } = await import(
+  "../../modules/translation/translation.provider.js"
 );
 
-const ok = (payload) => ({
-  choices: [
-    {
-      finish_reason: "stop",
-      message: { content: JSON.stringify(payload) },
-    },
-  ],
+/** Ответ модели: structured output приходит текстовым блоком. */
+const ok = (payload, stop_reason = "end_turn") => ({
+  finalMessage: async () => ({
+    stop_reason,
+    content: [{ type: "text", text: JSON.stringify(payload) }],
+  }),
 });
 
 const SHORT = {
@@ -47,12 +57,18 @@ const SHORT = {
 };
 
 beforeEach(() => {
-  createMock.mockReset();
+  streamMock.mockReset();
+  провайдерМок.mockReset();
+  провайдерМок.mockResolvedValue({
+    provider: "anthropic",
+    model: "claude-sonnet-5",
+    fixed: false,
+  });
 });
 
 describe("перевод статьи", () => {
   it("возвращает переведённые поля", async () => {
-    createMock.mockResolvedValue(
+    streamMock.mockReturnValue(
       ok({
         title: "Talassemiya",
         abstract: "İrsi anemiya",
@@ -60,81 +76,117 @@ describe("перевод статьи", () => {
       }),
     );
 
-    const out = await translateWithAI(SHORT);
-
-    expect(out).toEqual({
+    expect(await translate(SHORT)).toEqual({
       title: "Talassemiya",
       abstract: "İrsi anemiya",
       content: "Məqalənin qısa mətni.",
     });
   });
 
-  it("просит у модели структурированный ответ, а не JSON на честном слове", async () => {
-    createMock.mockResolvedValue(ok({ title: "T", abstract: "A", content: "C" }));
+  it("идёт к тому провайдеру и той модели, которые выбраны в настройке", async () => {
+    провайдерМок.mockResolvedValue({
+      provider: "anthropic",
+      model: "claude-opus-5",
+      fixed: false,
+    });
+    streamMock.mockReturnValue(ok({ title: "T", abstract: "A", content: "C" }));
 
-    await translateWithAI(SHORT);
+    await translate(SHORT);
 
-    const [args] = createMock.mock.calls[0];
-    expect(args.response_format?.type).toBe("json_schema");
-    expect(args.response_format.json_schema.strict).toBe(true);
-    // Обрыв по длине — это битый JSON, а не «немного короче», поэтому потолок
-    // ответа задаётся явно.
+    expect(провайдерМок).toHaveBeenCalledWith("translation");
+    expect(streamMock.mock.calls[0][0].model).toBe("claude-opus-5");
+  });
+
+  it("просит структурированный ответ, а не JSON на честном слове", async () => {
+    streamMock.mockReturnValue(ok({ title: "T", abstract: "A", content: "C" }));
+
+    await translate(SHORT);
+
+    const [args] = streamMock.mock.calls[0];
+    expect(args.output_config?.format?.type).toBe("json_schema");
+    expect(args.output_config.format.schema.required).toEqual([
+      "title",
+      "abstract",
+      "content",
+    ]);
+    // Обрыв по длине — это битый ответ, а не «немного короче», поэтому
+    // потолок задаётся явно.
     expect(args.max_tokens).toBeGreaterThan(0);
   });
 
   it("сбой модели поднимается наверх, а НЕ подменяется оригиналом", async () => {
-    createMock.mockRejectedValue(new Error("429 rate limit"));
+    streamMock.mockImplementation(() => {
+      throw new Error("429 no credits remaining");
+    });
 
-    await expect(translateWithAI(SHORT)).rejects.toThrow(/429/);
+    await expect(translate(SHORT)).rejects.toThrow(/429/);
   });
 
   it("обрыв по длине распознаётся отдельно — он лечится не повтором", async () => {
-    createMock.mockResolvedValue({
-      choices: [{ finish_reason: "length", message: { content: "{" } }],
-    });
+    streamMock.mockReturnValue(ok({}, "max_tokens"));
 
-    await expect(translateWithAI(SHORT)).rejects.toThrow(/пределе длины/i);
+    await expect(translate(SHORT)).rejects.toThrow(/пределе длины/i);
   });
 
   it("отказ модели не превращается в пустой перевод", async () => {
-    createMock.mockResolvedValue({
-      choices: [{ finish_reason: "stop", message: { refusal: "not allowed" } }],
+    streamMock.mockReturnValue({
+      finalMessage: async () => ({
+        stop_reason: "refusal",
+        stop_details: { category: "medical" },
+        content: [],
+      }),
     });
 
-    await expect(translateWithAI(SHORT)).rejects.toThrow(/отклонила/i);
+    await expect(translate(SHORT)).rejects.toThrow(/отклонила/i);
   });
 
   it("пустой ответ — ошибка, а не статья без текста", async () => {
-    createMock.mockResolvedValue({
-      choices: [{ finish_reason: "stop", message: { content: "   " } }],
+    streamMock.mockReturnValue({
+      finalMessage: async () => ({
+        stop_reason: "end_turn",
+        content: [{ type: "text", text: "   " }],
+      }),
     });
 
-    await expect(translateWithAI(SHORT)).rejects.toThrow(/пустой ответ/i);
+    await expect(translate(SHORT)).rejects.toThrow(/пустой ответ/i);
   });
 
   it("длинная статья режется на куски, заголовок переводится отдельным вызовом", async () => {
-    createMock.mockImplementation(async ({ messages }) => {
-      const user = messages[1].content;
+    streamMock.mockImplementation(({ messages }) => {
+      const текст = messages[0].content;
       // Вызов ради заголовка — единственный, где TITLE не пуст.
-      const isMeta = /TITLE:\n.+/.test(user);
+      const мета = /TITLE:\n.+/.test(текст);
       return ok({
-        title: isMeta ? "Talassemiya" : "",
-        abstract: isMeta ? "İrsi anemiya" : "",
-        content: isMeta ? "meta" : "hissə",
+        title: мета ? "Talassemiya" : "",
+        abstract: мета ? "İrsi anemiya" : "",
+        content: мета ? "meta" : "hissə",
       });
     });
 
-    const out = await translateWithAI({
+    const итог = await translate({
       ...SHORT,
-      content: "абзац. ".repeat(3000),
+      content: "абзац. ".repeat(6000),
     });
 
-    // Больше одного вызова: куски плюс отдельный вызов за заголовком.
-    expect(createMock.mock.calls.length).toBeGreaterThan(1);
-    expect(out.title).toBe("Talassemiya");
-    expect(out.abstract).toBe("İrsi anemiya");
+    expect(streamMock.mock.calls.length).toBeGreaterThan(1);
+    expect(итог.title).toBe("Talassemiya");
+    expect(итог.abstract).toBe("İrsi anemiya");
     // Тело собрано из кусков, а не из мета-вызова.
-    expect(out.content).toContain("hissə");
-    expect(out.content).not.toBe("meta");
+    expect(итог.content).toContain("hissə");
+    expect(итог.content).not.toBe("meta");
+  });
+
+  it("выбор OpenAI в настройке уводит перевод к другой реализации", async () => {
+    // Мостик существует ради этого: смена провайдера не должна быть
+    // правкой кода.
+    провайдерМок.mockResolvedValue({
+      provider: "openai",
+      model: "gpt-4o-mini",
+      fixed: false,
+    });
+
+    // Claude-клиент при этом не трогаем вовсе.
+    await expect(translate(SHORT)).rejects.toBeTruthy();
+    expect(streamMock).not.toHaveBeenCalled();
   });
 });

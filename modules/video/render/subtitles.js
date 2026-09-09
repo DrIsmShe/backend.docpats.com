@@ -78,8 +78,8 @@ export async function translateScript({ script, targets = null }) {
   const исходный = script.lang || "ru";
   const языки = (targets || VIDEO_LOCALES).filter((л) => л !== исходный);
 
-  const { translateWithAI } = await import(
-    "../../translation/translateWithAI.js"
+  const { translate: translateWithAI } = await import(
+    "../../translation/translation.provider.js"
   );
 
   const дорожки = [];

@@ -34,6 +34,7 @@ import adminConferencesRoute from "./routes/adminConferencesRoute.js";
 // внешняя зависимость и свой кеш, админка только даёт ему адрес.
 import analyticsRoutes from "../analytics/index.js";
 import newsEngineJobsRoute from "./routes/newsEngineJobsRoute.js";
+import aiSettingsRoute from "./routes/aiSettingsRoute.js";
 
 // system ADMIN end
 // system ADMIN start
@@ -86,6 +87,11 @@ router.use("/conferences", adminConferencesRoute);
 // перевод, сбор новостей. Ходит в отдельную службу через посредника —
 // внутренний токен в браузер не отдаётся.
 router.use("/news-engine/jobs", newsEngineJobsRoute);
+
+// Какой моделью работает платформа. Одно место на весь проект: перевод,
+// чат, выжимки, консультации — каждая часть может жить на своём провайдере,
+// и меняется это нажатием, без выкладки и рестарта.
+router.use("/ai-settings", aiSettingsRoute);
 // Посещаемость сайта: экраны, аудитория, источники, скорость (PostHog)
 router.use("/analytics", analyticsRoutes);
 //router.use("/admin-panel", isAdminRoute);

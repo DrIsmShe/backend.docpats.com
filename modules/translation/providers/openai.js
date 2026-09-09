@@ -21,13 +21,14 @@
 // остаётся в failed-очереди (removeOnFail: false) — видимым.
 
 import OpenAI from "openai";
-import { splitTextIntoChunks } from "../../common/utils/chunkText.js";
+import { splitTextIntoChunks } from "../../../common/utils/chunkText.js";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const MODEL = process.env.TRANSLATION_MODEL || "gpt-4o-mini";
+// Запасное имя: обычно модель приходит сверху, из таблицы назначений.
+const MODEL_ПО_УМОЛЧАНИЮ = "gpt-4o-mini";
 
 // Потолок ответа. Ставим явно: перевод должен целиком поместиться в ответ, а
 // обрыв по длине — это невалидный JSON, а не «немного короче».
@@ -80,9 +81,10 @@ const translateSingle = async ({
   abstract = "",
   fromLanguage,
   toLanguage,
+  model = MODEL_ПО_УМОЛЧАНИЮ,
 }) => {
   const response = await client.chat.completions.create({
-    model: MODEL,
+    model,
     max_tokens: MAX_TOKENS,
     temperature: 0.2,
     response_format: RESPONSE_FORMAT,
@@ -140,7 +142,7 @@ ${content}`,
 
 // -------- CHUNKS (parallel) --------
 
-const translateChunks = async ({ chunks, fromLanguage, toLanguage }) => {
+const translateChunks = async ({ chunks, fromLanguage, toLanguage, model }) => {
   const results = await Promise.all(
     chunks.map((chunk) =>
       translateSingle({
@@ -158,12 +160,13 @@ const translateChunks = async ({ chunks, fromLanguage, toLanguage }) => {
 
 // -------- MAIN --------
 
-export const translateWithAI = async ({
+export const translate = async ({
   title,
   content,
   abstract = "",
   fromLanguage,
   toLanguage,
+  model = MODEL_ПО_УМОЛЧАНИЮ,
 }) => {
   const chunks = splitTextIntoChunks(content, CHUNK_CHARS);
 
@@ -174,6 +177,7 @@ export const translateWithAI = async ({
       abstract,
       fromLanguage,
       toLanguage,
+      model,
     });
 
     return {
@@ -187,13 +191,14 @@ export const translateWithAI = async ({
   // них весь текст статьи ещё раз — лишние токены, а склеивать их из первого
   // куска нельзя, куски переводятся без заголовка намеренно.
   const [translatedContent, meta] = await Promise.all([
-    translateChunks({ chunks, fromLanguage, toLanguage }),
+    translateChunks({ chunks, fromLanguage, toLanguage, model }),
     translateSingle({
       title,
       abstract,
       content: chunks[0].slice(0, 500),
       fromLanguage,
       toLanguage,
+      model,
     }),
   ]);
 

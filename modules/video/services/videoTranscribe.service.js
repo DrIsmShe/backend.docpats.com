@@ -126,7 +126,7 @@ async function скачатьРолик(storageKey) {
  * чем разложить реплики наугад и сдвинуть весь тайминг.
  */
 async function перевестиФрагменты({ фрагменты, from, to, title }) {
-  const { translateWithAI } = await import("../../translation/translateWithAI.js");
+  const { translate: translateWithAI } = await import("../../translation/translation.provider.js");
 
   const исходник = фрагменты.map((ф) => ф.text).join("\n---\n");
   const { content } = await translateWithAI({

@@ -115,7 +115,7 @@ export async function перевестиНазвание(title) {
   );
   if (!языки.length || !title?.ru) return готово;
 
-  const { translateWithAI } = await import("../../translation/translateWithAI.js");
+  const { translate: translateWithAI } = await import("../../translation/translation.provider.js");
 
   for (const язык of языки) {
     try {

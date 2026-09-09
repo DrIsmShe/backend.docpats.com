@@ -1,5 +1,46 @@
-import { translateWithAI } from "./translateWithAI.js";
+// server/modules/translation/translation.provider.js
+//
+// Мостик к модели: кто переводит статьи — решается не здесь и не в коде
+// перевода, а в общей настройке (common/ai/provider.js), которую видно и
+// меняется в админке.
+//
+// ЗАЧЕМ ПРОСЛОЙКА. Реализаций две: Claude и OpenAI. Каждая знает только
+// свой API — как просить структурированный ответ, как отличить отказ от
+// ошибки, как понять обрыв по длине. Общего у них ровно один вход и один
+// выход: {title, abstract, content} на входе, то же на выходе. Прослойка и
+// есть это соглашение; всё остальное — внутри реализаций.
+//
+// ПОЧЕМУ ЭТО ВАЖНО. Пока переводчик был жёстко привязан к OpenAI, кончившийся
+// там баланс означал: статьи врачей не переводятся, и узнать об этом можно
+// только из логов воркера. Теперь провайдер меняется нажатием в админке —
+// без выкладки, без рестарта, на следующем же задании очереди.
 
-export const translate = async (params) => {
-  return translateWithAI(params);
+import { провайдерДля } from "../../common/ai/provider.js";
+
+/* Реализации грузятся по требованию: тянуть SDK обоих провайдеров в память
+   ради одного используемого — лишнее, а в тестах ещё и мешает. */
+const РЕАЛИЗАЦИИ = {
+  anthropic: () => import("./providers/claude.js"),
+  openai: () => import("./providers/openai.js"),
 };
+
+/**
+ * Перевести статью.
+ *
+ * @param {{title: string, content: string, abstract?: string,
+ *          fromLanguage: string, toLanguage: string}} параметры
+ * @returns {Promise<{title: string, abstract: string, content: string}>}
+ */
+export const translate = async (параметры) => {
+  const { provider, model } = await провайдерДля("translation");
+
+  const загрузить = РЕАЛИЗАЦИИ[provider] || РЕАЛИЗАЦИИ.anthropic;
+  const модуль = await загрузить();
+
+  // Модель передаётся сверху: имя живёт в общей таблице назначений, а не в
+  // константе внутри реализации — иначе смена модели снова стала бы правкой
+  // кода в двух местах.
+  return модуль.translate({ ...параметры, model });
+};
+
+export default { translate };

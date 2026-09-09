@@ -14,8 +14,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const переводчик = vi.fn();
 
-vi.mock("../../modules/translation/translateWithAI.js", () => ({
-  translateWithAI: (...args) => переводчик(...args),
+vi.mock("../../modules/translation/translation.provider.js", () => ({
+  translate: (...args) => переводчик(...args),
 }));
 
 const { перевестиНазвание } = await import(

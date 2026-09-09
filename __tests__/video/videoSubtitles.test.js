@@ -7,11 +7,11 @@
 
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("../../modules/translation/translateWithAI.js", () => ({
-  translateWithAI: vi.fn(),
+vi.mock("../../modules/translation/translation.provider.js", () => ({
+  translate: vi.fn(),
 }));
 
-import { translateWithAI } from "../../modules/translation/translateWithAI.js";
+import { translate as translateWithAI } from "../../modules/translation/translation.provider.js";
 import { buildVtt, translateScript } from "../../modules/video/render/subtitles.js";
 
 const сценарий = {

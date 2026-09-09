@@ -9,6 +9,27 @@ const generateSlug = (name) => {
 };
 
 // Создание категории
+/**
+ * Дописать переводы названия рубрики — фоном.
+ *
+ * Ошибки только логируются: перевод названия не может быть причиной, по
+ * которой рубрика не завелась или не переименовалась.
+ */
+async function перевестиРубрикуФоном(категория) {
+  try {
+    const { перевестиНазваниеРубрики } = await import(
+      "../../../common/services/categoryTitle.service.js"
+    );
+    const title = await перевестиНазваниеРубрики({
+      ...(категория.title || {}),
+      ru: категория.title?.ru || категория.name,
+    });
+    await Category.updateOne({ _id: категория._id }, { $set: { title } });
+  } catch (err) {
+    console.warn("[categories] перевод названия не удался:", err?.message);
+  }
+}
+
 export const createCategory = async (req, res) => {
   try {
     const {
@@ -55,6 +76,11 @@ export const createCategory = async (req, res) => {
 
     // Сохраняем категорию в базе
     await newCategory.save();
+
+    // Переводы названия — фоном, уже после ответа. Рубрика важнее её
+    // переводов: ждать модель, пока администратор смотрит в спиннер, незачем,
+    // а падение перевода не должно мешать завести рубрику.
+    перевестиРубрикуФоном(newCategory);
 
     res.status(201).json({
       message: "Category successfully created",
@@ -146,6 +172,17 @@ export const updateCategory = async (req, res) => {
 
     if (!updatedCategory)
       return res.status(404).json({ message: "Category not found" });
+
+    // Переименовали — переводы устарели. Сбрасываем их и заказываем заново:
+    // старый перевод под новым названием хуже отсутствия перевода, потому
+    // что выглядит настоящим.
+    if (name && name !== updatedCategory.title?.ru) {
+      await Category.updateOne(
+        { _id: updatedCategory._id },
+        { $set: { title: { ru: name, en: "", az: "", tr: "", ar: "" } } },
+      );
+      перевестиРубрикуФоном({ _id: updatedCategory._id, name, title: { ru: name } });
+    }
 
     res.status(200).json({
       message: "Category successfully updated",
