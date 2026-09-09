@@ -50,7 +50,7 @@ export const getSingleArticle = async (req, res) => {
       // Та же причина, что и в научной статье: без populate категория
       // уходит клиенту сырым ObjectId и печатается в шапке вместо названия,
       // а на публичной странице попадает ещё и в og:article:section.
-      .populate({ path: "category", select: "name slug" })
+      .populate({ path: "category", select: "name slug title" })
       .exec();
 
     if (!articleDoc) {

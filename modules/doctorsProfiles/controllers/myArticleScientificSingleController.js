@@ -48,7 +48,7 @@ export const myArticleScientificSingleController = async (req, res) => {
       // Без этого category уезжает клиенту сырым ObjectId, и в шапке статьи
       // вместо названия рубрики печатался идентификатор — заглавными, потому
       // что у бейджа text-transform: uppercase.
-      .populate({ path: "category", select: "name slug" })
+      .populate({ path: "category", select: "name slug title" })
       .exec();
 
     if (!articleDoc) {
