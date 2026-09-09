@@ -25,11 +25,32 @@ export const enqueueTranslation = async ({
     return;
   }
 
+  const jobId = `${entityType}:${entity._id}:${targetLanguage}`;
+
+  // Упавшее задание с тем же идентификатором молча съедает новое: BullMQ
+  // считает, что такое уже есть. Убираем его — сбой мы уже увидели, и
+  // держать его ценой того, что перевод больше никогда не повторится, не
+  // стоит. Ждущее или выполняющееся оставляем: там работа идёт.
+  try {
+    const прежнее = await translationQueue.getJob(jobId);
+    if (прежнее) {
+      const состояние = await прежнее.getState();
+      if (состояние === "failed" || состояние === "completed") {
+        await прежнее.remove();
+      } else {
+        console.log(`⏭  Задание уже в очереди (${состояние}): ${jobId}`);
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn("⚠️ Не удалось проверить прежнее задание:", err?.message);
+  }
+
   await translationQueue.add(
     "translate",
     { entity, entityType, targetLanguage },
     {
-      jobId: `${entityType}:${entity._id}:${targetLanguage}`,
+      jobId,
       removeOnComplete: true,
       removeOnFail: false,
       attempts: 3,
