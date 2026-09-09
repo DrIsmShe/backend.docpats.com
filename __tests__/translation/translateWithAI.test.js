@@ -176,6 +176,28 @@ describe("перевод статьи", () => {
     expect(итог.content).not.toBe("meta");
   });
 
+  it("модель без запасной цепочки не роняет перевод, а повторяется без неё", async () => {
+    // `fallbacks` понимает не каждая модель, и это страховка, а не условие
+    // работы: Sonnet отвечал 400, и перевод падал целиком на ровном месте.
+    let вызовов = 0;
+    streamMock.mockImplementation((args) => {
+      вызовов += 1;
+      if (args.fallbacks) {
+        throw new Error(
+          "400 'claude-sonnet-5' does not support the `fallbacks` parameter.",
+        );
+      }
+      return ok({ title: "T", abstract: "A", content: "C" });
+    });
+
+    expect(await translate(SHORT)).toEqual({
+      title: "T",
+      abstract: "A",
+      content: "C",
+    });
+    expect(вызовов).toBe(2);
+  });
+
   it("выбор OpenAI в настройке уводит перевод к другой реализации", async () => {
     // Мостик существует ради этого: смена провайдера не должна быть
     // правкой кода.

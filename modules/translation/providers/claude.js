@@ -51,6 +51,14 @@ const EFFORT = process.env.TRANSLATION_EFFORT || "medium";
 const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 const FALLBACKS_ENABLED = process.env.TRANSLATION_FALLBACKS !== "0";
 
+/* Поддержку `fallbacks` нельзя определить по имени модели — список решает
+   API, и он меняется без нас. Узнаём из первого отказа и больше не
+   спрашиваем: до конца процесса параметр не отправляется. */
+let запаснаяЦепочкаРаботает = FALLBACKS_ENABLED;
+
+const этоОтказОтЗапаснойЦепочки = (err) =>
+  /does not support the .?fallbacks.? parameter/i.test(err?.message || "");
+
 // Потолок ответа. Перевод обычно длиннее оригинала — особенно на
 // азербайджанском и турецком, — поэтому запас двукратный.
 const MAX_TOKENS = 16000;
@@ -106,8 +114,8 @@ const translateSingle = async ({
   model = MODEL_ПО_УМОЛЧАНИЮ,
 }) => {
   let message;
-  try {
-    const stream = getClient().beta.messages.stream({
+  const запрос = (сЗапасными) =>
+    getClient().beta.messages.stream({
       model,
       max_tokens: MAX_TOKENS,
       system: SYSTEM_PROMPT,
@@ -136,15 +144,30 @@ CONTENT:
 ${content}`,
         },
       ],
-      ...(FALLBACKS_ENABLED
-        ? { betas: [FALLBACK_BETA], fallbacks: "default" }
-        : {}),
+      ...(сЗапасными ? { betas: [FALLBACK_BETA], fallbacks: "default" } : {}),
     });
-    message = await stream.finalMessage();
+
+  try {
+    message = await запрос(запаснаяЦепочкаРаботает).finalMessage();
   } catch (err) {
-    // Ошибку не проглатываем и исходником не подменяем: наверху есть
-    // повторы, а «перевод», равный оригиналу, не отличить от настоящего.
-    throw new Error(`Ошибка перевода (${model} → ${toLanguage}): ${err?.message || err}`);
+    if (запаснаяЦепочкаРаботает && этоОтказОтЗапаснойЦепочки(err)) {
+      // Модель запасную цепочку не понимает — она страховка, а не условие
+      // работы. Повторяем без неё и больше не пробуем.
+      запаснаяЦепочкаРаботает = false;
+      try {
+        message = await запрос(false).finalMessage();
+      } catch (повтор) {
+        throw new Error(
+          `Ошибка перевода (${model} → ${toLanguage}): ${повтор?.message || повтор}`,
+        );
+      }
+    } else {
+      // Ошибку не проглатываем и исходником не подменяем: наверху есть
+      // повторы, а «перевод», равный оригиналу, не отличить от настоящего.
+      throw new Error(
+        `Ошибка перевода (${model} → ${toLanguage}): ${err?.message || err}`,
+      );
+    }
   }
 
   if (message.stop_reason === "refusal") {
