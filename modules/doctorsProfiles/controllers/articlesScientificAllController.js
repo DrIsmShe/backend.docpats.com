@@ -431,14 +431,19 @@ const articlesScientificAllController = async (req, res) => {
              русской: переводчику говорили «переведи с русского» текст, который
              русским не является. В статьях-мнениях это уже исправлено тем же
              способом (articlesAllController.js). */
+          /* Язык оригинала определяем ПО ТЕКСТУ, а метку в документе
+             берём лишь запасным вариантом. Метка врёт: статьи, написанные
+             по-русски, приходят помеченными как английские, и лента на
+             английской локали показывала их русский заголовок — «оригинал
+             уже en, переводить нечего». */
           const originalLanguage =
-            (SUPPORTED_LANGS.includes(a.originalLanguage)
-              ? a.originalLanguage
-              : null) ||
             detectArticleLanguage(
               stripHtmlToText(a.title),
               stripHtmlToText(a.content),
-            );
+            ) ||
+            (SUPPORTED_LANGS.includes(a.originalLanguage)
+              ? a.originalLanguage
+              : null);
 
           /* На свой же язык переводить нечего. Проверки здесь не было вовсе,
              и каждый показ ленты ставил в очередь перевод русского в русское. */

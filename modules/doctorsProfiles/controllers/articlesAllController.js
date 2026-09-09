@@ -437,14 +437,17 @@ const articlesAllController = async (req, res) => {
         let title = titleText || a.title || "Без заголовка";
         let preview = makePreview(a.content, previewWords);
 
-        /* Localize the article. The original language is taken from the document if
-           present, otherwise detected from the actual text. We never fall back to
-           "ru" blindly — that's exactly the bug that left English articles untranslated. */
+        /* Язык оригинала определяем ПО ТЕКСТУ, метку в документе берём
+           запасным вариантом. Метка врёт: статьи, написанные по-русски,
+           приходят помеченными английскими, и лента на английской локали
+           показывала русский заголовок — «оригинал уже en, переводить
+           нечего». Текст — факт, метка — намерение автора или импортёра. */
         try {
           const originalLanguage =
+            detectArticleLanguage(titleText, contentText) ||
             (SUPPORTED_LANGS.includes(a.originalLanguage)
               ? a.originalLanguage
-              : null) || detectArticleLanguage(titleText, contentText);
+              : null);
 
           if (originalLanguage !== targetLanguage) {
             const localized = await getOrCreateTranslation({
