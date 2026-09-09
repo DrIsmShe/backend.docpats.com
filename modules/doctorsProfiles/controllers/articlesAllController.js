@@ -316,6 +316,8 @@ const articlesAllController = async (req, res) => {
           title: 1,
           content: 1,
           originalLanguage: 1,
+          // Ветка версии: без неё готовый перевод не находится.
+          translationVersion: 1,
           imageUrl: 1,
           createdAt: 1,
           updatedAt: 1,
@@ -331,6 +333,9 @@ const articlesAllController = async (req, res) => {
             _id: "$categoryDoc._id",
             name: "$categoryDoc.name",
             slug: "$categoryDoc.slug",
+            // Переводы названия рубрики: на витрине она подписывает
+            // карточку и без них остаётся на языке, на котором её завели.
+            title: "$categoryDoc.title",
           },
           categoryNames: 1,
         },
