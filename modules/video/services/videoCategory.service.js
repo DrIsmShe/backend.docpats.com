@@ -149,6 +149,47 @@ export async function перевестиНазвание(title) {
   return готово;
 }
 
+/**
+ * Разделы, доступные ЭТОМУ человеку для публикации.
+ *
+ * Витрина показывает все полки — по ним ищут. Но при публикации выбор
+ * зависит от того, кто публикует: пациент кладёт ролик только в «Мнения
+ * пациентов». Раньше сервер молча переносил ролик на нужную полку, и
+ * человек выбирал одно, а получал другое; честнее показать сразу, что
+ * выбора нет.
+ */
+export async function listPublishableCategories({ actor, lang = "ru" }) {
+  const { этоПациент, полкаПациентов } = await import(
+    "./videoPatientPublish.service.js"
+  );
+
+  let пациент = false;
+  if (actor?.ownerType === "user" && actor.ownerId) {
+    const User = (await import("../../../common/models/Auth/users.js")).default;
+    const user = await User.findById(actor.ownerId).select("role").lean();
+    пациент = этоПациент(user);
+  }
+
+  if (пациент) {
+    const полка = await полкаПациентов();
+    return {
+      items: [
+        {
+          _id: полка._id,
+          slug: полка.slug,
+          title: полка.title?.[lang] || полка.title?.ru || полка.slug,
+          order: полка.order,
+        },
+      ],
+      // Интерфейсу: выбора нет, показывать список бессмысленно.
+      fixed: true,
+    };
+  }
+
+  const { items } = await listCategories({ lang });
+  return { items, fixed: false };
+}
+
 export async function createCategory({ adminId, data }) {
   const существует = await VideoCategory.findOne({ slug: data.slug });
   if (существует) throw new ValidationError("Раздел с таким ключом уже есть");

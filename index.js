@@ -89,6 +89,7 @@ import medicalCodesRoutes from "./modules/medicalCodes/index.js";
 import ebmRoutes from "./modules/ebm/index.js";
 import videraRoutes from "./modules/videra/index.js";
 import videoRoutes from "./modules/video/index.js";
+import feedbackRoutes from "./modules/feedback/index.js";
 import { startRenderWorker } from "./modules/video/render/render.worker.js";
 // ======================= PATHS =======================
 const __filename = fileURLToPath(import.meta.url);
@@ -478,6 +479,14 @@ app.use("/api/v1/videra", videraRoutes);
 // Тоже глобальный модуль: ролики есть и вне клиники. Витрина
 // /api/v1/video/public отвечает без входа — она и есть публичная часть.
 app.use("/api/v1/video", videoRoutes);
+
+// Обратная связь: пожелания, замечания и найденные ошибки — от врачей,
+// пациентов и клиник напрямую разработчикам, с ответом в том же окне.
+//
+// Глобальный модуль: пишет человек, а не клиника. Разбор живёт здесь же —
+// это вторая половина одного разговора, и разносить её в modules/admin
+// значило бы держать правила закрытия обращения в двух местах.
+app.use("/api/v1/feedback", feedbackRoutes);
 
 // Воркер рендера. Без VIDEO_RENDER=on не поднимается: генерация роликов
 // стоит денег, и включать её должен человек, а не факт выкладки кода.

@@ -30,15 +30,18 @@ import { ValidationError, QuotaExceededError } from "../../../common/utils/error
 import { getVideraPublicVideos } from "../../../common/config/aiPlanLimits.js";
 
 /** Ключ полки пациентов. Одна на всех: см. комментарий выше. */
-export const ПОЛКА_ПАЦИЕНТОВ = "patient-stories";
+export const ПОЛКА_ПАЦИЕНТОВ = "patient-opinions";
+
+/** Как полка называлась раньше — чтобы переименовать, а не завести вторую. */
+const ПРЕЖНИЙ_КЛЮЧ = "patient-stories";
 
 /** Название полки на пяти языках — на случай, если её ещё нет. */
 const НАЗВАНИЕ = {
-  ru: "Истории пациентов",
-  en: "Patient stories",
-  az: "Pasiyent hekayələri",
-  tr: "Hasta hikâyeleri",
-  ar: "قصص المرضى",
+  ru: "Мнения пациентов",
+  en: "Patient opinions",
+  az: "Pasiyent rəyləri",
+  tr: "Hasta görüşleri",
+  ar: "آراء المرضى",
 };
 
 /**
@@ -50,6 +53,16 @@ const НАЗВАНИЕ = {
 export async function полкаПациентов() {
   const есть = await VideoCategory.findOne({ slug: ПОЛКА_ПАЦИЕНТОВ });
   if (есть) return есть;
+
+  // Полка могла завестись под прежним именем — переименовываем, а не
+  // заводим вторую: ролики, уже лежащие на ней, должны остаться на месте.
+  const прежняя = await VideoCategory.findOne({ slug: ПРЕЖНИЙ_КЛЮЧ });
+  if (прежняя) {
+    прежняя.slug = ПОЛКА_ПАЦИЕНТОВ;
+    прежняя.title = НАЗВАНИЕ;
+    await прежняя.save();
+    return прежняя;
+  }
 
   return VideoCategory.create({
     slug: ПОЛКА_ПАЦИЕНТОВ,

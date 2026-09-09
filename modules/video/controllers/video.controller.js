@@ -372,6 +372,18 @@ export const listClinicPublicController = asyncHandler(async (req, res) => {
   res.json({ items, count: items.length });
 });
 
+/** Разделы, в которые ЭТОТ человек может публиковать. */
+export const publishableCategoriesController = asyncHandler(async (req, res) => {
+  const { listPublishableCategories } = await import(
+    "../services/videoCategory.service.js"
+  );
+  const итог = await listPublishableCategories({
+    actor: buildActor(req),
+    lang: String(req.query.lang || "ru"),
+  });
+  res.json({ ...итог, count: итог.items.length });
+});
+
 /** Разделы витрины — открыто: по ним строятся чипсы и меню ленты. */
 export const categoriesController = asyncHandler(async (req, res) => {
   const { listCategories } = await import("../services/videoCategory.service.js");

@@ -157,6 +157,9 @@ router.post("/upload/direct", приёмФайла.single("file"), ctrl.directUp
 // разобран как идентификатор ролика.
 router.post("/import/studio", ctrl.importStudioController);
 
+// Разделы, доступные этому человеку для публикации: у пациента он один.
+router.get("/categories/publishable", ctrl.publishableCategoriesController);
+
 // Жалоба на ролик или комментарий — от любого вошедшего.
 router.post("/reports", ctrl.reportController);
 
