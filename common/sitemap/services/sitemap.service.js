@@ -214,49 +214,65 @@ async function fetchVideos() {
   }
 }
 
-// 6 записей для синтез-статей — базовый URL + /ru /en /az /tr /ar
-// Язык ЕСТЬ в URL: /articles/:id/:lang
-function urlEntriesForSynthesisArticle({ baseUrl, lastmod }) {
-  const entries = [];
+/**
+ * Записи синтез-статьи: оригинал на голом адресе плюс адрес на каждый
+ * СУЩЕСТВУЮЩИЙ перевод. Язык здесь сегментом пути: /articles/:id/:lang.
+ *
+ * Раньше на каждую статью безусловно писалось шесть адресов — голый плюс
+ * все пять языков, — и hreflang объявлял пять версий независимо от того,
+ * переведена статья хоть на один язык или нет. Из 73 статей выходило 438
+ * адресов, и на большинстве лежал один и тот же русский текст: движок
+ * переводит статью по требованию и кладёт готовое в
+ * Synthesis.translations, а до перевода отдаёт оригинал.
+ *
+ * Объявленная языковая версия — обещание, что по адресу тот же материал
+ * на другом языке. Когда его там нет, поисковик получает пять почти
+ * одинаковых страниц вместо одной, а человек приходит по русскому запросу
+ * на английский текст. Поэтому языки берутся из фактических переводов —
+ * та же механика, что у врачебных статей выше.
+ */
+function urlEntriesForSynthesisArticle({
+  baseUrl,
+  lastmod,
+  original = "ru",
+  translated = [],
+}) {
+  // Оригинал живёт на голом адресе; перевод на язык оригинала (бывает
+  // при смене исходного языка) второго адреса не заводит.
+  const languages = [
+    original,
+    ...translated.filter((l) => l !== original && LANGS.includes(l)),
+  ];
 
-  // Базовый URL (x-default) — без языка
-  const baseHreflang = [
+  if (languages.length < 2) {
+    return urlEntry({
+      loc: baseUrl,
+      lastmod,
+      changefreq: "monthly",
+      priority: "0.8",
+    });
+  }
+
+  const urlFor = (lang) => (lang === original ? baseUrl : `${baseUrl}/${lang}`);
+
+  const hreflang = [
     `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(baseUrl)}"/>`,
-    ...LANGS.map(
+    ...languages.map(
       (l) =>
-        `    <xhtml:link rel="alternate" hreflang="${l}" href="${escapeXml(`${baseUrl}/${l}`)}"/>`,
+        `    <xhtml:link rel="alternate" hreflang="${l}" href="${escapeXml(urlFor(l))}"/>`,
     ),
   ].join("\n");
 
-  entries.push(`  <url>
-    <loc>${escapeXml(baseUrl)}</loc>
+  return languages
+    .map(
+      (lang) => `  <url>
+    <loc>${escapeXml(urlFor(lang))}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-${baseHreflang}
-  </url>`);
-
-  // Одна запись для каждого языка
-  for (const lang of LANGS) {
-    const langUrl = `${baseUrl}/${lang}`;
-    const langHreflang = [
-      `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(baseUrl)}"/>`,
-      ...LANGS.map(
-        (l) =>
-          `    <xhtml:link rel="alternate" hreflang="${l}" href="${escapeXml(`${baseUrl}/${l}`)}"/>`,
-      ),
-    ].join("\n");
-
-    entries.push(`  <url>
-    <loc>${escapeXml(langUrl)}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
-${langHreflang}
-  </url>`);
-  }
-
-  return entries.join("\n");
+    <priority>${lang === original ? "0.8" : "0.75"}</priority>
+${hreflang}
+  </url>`,
+    ).join("\n");
 }
 
 // 5 записей на новость: голый адрес + ?locale= для четырёх остальных
@@ -584,18 +600,38 @@ async function fetchConferences() {
 async function fetchSynthesisArticles() {
   try {
     const db = mongoose.connection.getClient().db(NEWS_DB_NAME);
+    /* Готовые переводы — ключи Synthesis.translations. Забираем именно
+       ключи, а не поле целиком: под каждым лежит полный текст статьи, и
+       выборка десятков статей на пяти языках весила бы мегабайты ради
+       пяти двухбуквенных кодов. */
     const items = await db
       .collection(collectionOf("Synthesis", "syntheses"))
-      .find(
-        { status: "published" },
-        { projection: { _id: 1, updatedAt: 1, createdAt: 1 } },
-      )
+      .aggregate([
+        { $match: { status: "published" } },
+        {
+          $project: {
+            _id: 1,
+            updatedAt: 1,
+            createdAt: 1,
+            language: 1,
+            переводы: {
+              $map: {
+                input: { $objectToArray: { $ifNull: ["$translations", {}] } },
+                as: "t",
+                in: "$$t.k",
+              },
+            },
+          },
+        },
+      ])
       .toArray();
 
     return items.map((a) =>
       urlEntriesForSynthesisArticle({
         baseUrl: `${FRONTEND_URL}/articles/${a._id}`,
         lastmod: toW3cDate(a.updatedAt || a.createdAt),
+        original: LANGS.includes(a.language) ? a.language : "ru",
+        translated: Array.isArray(a.переводы) ? a.переводы : [],
       }),
     );
   } catch (err) {
