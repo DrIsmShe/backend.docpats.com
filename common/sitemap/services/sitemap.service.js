@@ -492,9 +492,28 @@ async function fetchDoctors() {
   }
 }
 
+/*
+ * Новости в карту сайта НЕ ПОПАДАЮТ — и это решение, а не упущение.
+ *
+ * В ленте лежат полные тексты чужих публикаций (в среднем 25 тысяч знаков)
+ * плюс их машинные переводы на четыре языка: 6554 материала превращались
+ * в ~33 тысячи адресов — почти всю карту сайта. Массовая републикация
+ * чужого текста подпадает под правило Google о scaled content abuse, а
+ * санкция по нему накладывается на ДОМЕН: под ударом оказываются витрины
+ * клиник и профили врачей, ради которых платформа и строится.
+ *
+ * Сама лента остаётся продуктом: врач получает поток публикаций, переводы
+ * и поиск работают. Из индекса уходит только то, что и не наше.
+ *
+ * Функция сохранена целиком: вернуть новости в карту — это снять `false`
+ * в НОВОСТИ_В_КАРТЕ, а не писать выборку заново.
+ */
+const НОВОСТИ_В_КАРТЕ = false;
+
 // /news/:slug  +  /news/:slug?locale=ru|az|tr|ar
 // Язык ЕСТЬ в адресе (query-параметром) — генерируем 5 записей на новость.
 async function fetchNews() {
+  if (!НОВОСТИ_В_КАРТЕ) return [];
   try {
     const db = mongoose.connection.getClient().db(NEWS_DB_NAME);
     const items = await db
@@ -1073,7 +1092,10 @@ async function collectSections() {
     { name: "static", entries: staticEntries },
     { name: "docs", entries: docs },
     { name: "doctors", entries: doctors },
-    { name: "news", entries: news },
+    // Новости в индекс карт не попадают: см. НОВОСТИ_В_КАРТЕ выше.
+    // Пустая карта в индексе — это адрес, который робот скачивает и
+    // выбрасывает, поэтому её нет вовсе.
+    ...(news.length ? [{ name: "news", entries: news }] : []),
     { name: "conferences", entries: conferences },
     { name: "articles", entries: synthesis },
     { name: "doctor-articles", entries: doctorArticles },
@@ -1252,7 +1274,6 @@ Disallow: /otpresetpasswordchange
 
 Sitemap: ${FRONTEND_URL}/sitemap.xml
 # Отдельный файл для Google News: там своё окно в 48 часов и свой формат.
-Sitemap: ${FRONTEND_URL}/news-sitemap.xml
 `;
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=86400");
