@@ -1304,7 +1304,11 @@ export async function generateSitemapFile(req, res) {
 }
 
 export function generateRobots(req, res) {
-  const txt = `User-agent: *
+  const txt = `# Права на содержимое, машинно читаемо: искать — да, обучать
+# модели — нет, цитировать со ссылкой — да.
+Content-Signal: search=yes,ai-train=no,use=reference
+
+User-agent: *
 Allow: /
 
 # Закрытые зоны — требуют авторизации
@@ -1328,6 +1332,26 @@ Disallow: /resetpassword
 Disallow: /confirmationregister
 Disallow: /resetpasswordchange
 Disallow: /otpresetpasswordchange
+
+# ─── Обучение моделей ────────────────────────────────────────────────
+#
+# Google-Extended и Applebot-Extended — не краулеры, а ТОКЕНЫ. Своей
+# строки User-Agent у них нет: Google ходит обычным Googlebot, Apple —
+# обычным Applebot, и отказ от обучения выражается только здесь. Правило
+# по User-Agent их не выразит, поэтому запрет живёт в этом файле.
+#
+# На обычную выдачу это не влияет: Google-Extended управляет Gemini, а не
+# индексом поиска.
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+# Поисковых ботов ИИ здесь НЕТ намеренно: Claude-SearchBot, OAI-SearchBot,
+# PerplexityBot, ChatGPT-User и прочие приходят в момент вопроса живого
+# человека и ставят ссылку на источник. Это канал переходов, и закрывать
+# его значит исчезнуть из ответов ИИ-поиска целиком.
 
 Sitemap: ${FRONTEND_URL}/sitemap.xml
 # Отдельный файл для Google News: там своё окно в 48 часов и свой формат.
