@@ -67,8 +67,12 @@ export async function resolvePatientLimit(doctorUserId) {
     .select("verificationStatus")
     .lean();
 
-  // Профиля нет — ограничивать нечего, лимит не применяется.
-  if (!doctorProfile) return -1;
+  /* Профиля НЕТ — это самое непроверенное состояние, а не исключение из
+     правил. Здесь стояло `return -1`, то есть «без ограничений»: врач,
+     не заводивший карточку, получал больше прав, чем врач с
+     подтверждёнными документами. На проде так и вышло — четыре аккаунта
+     врачей из шести были без карточки и лимита не знали вовсе. */
+  if (!doctorProfile) return 5;
   if (doctorProfile.verificationStatus !== "approved") return 5;
 
   const doctor = await User.findById(id)
@@ -109,9 +113,11 @@ export default async function requireDoctorPatientLimit(req, res, next) {
       .select("verificationStatus")
       .lean();
 
-    if (!doctorProfile) return next();
-
-    const isVerified = doctorProfile.verificationStatus === "approved";
+    /* Та же дыра, что в resolvePatientLimit: без карточки проверка просто
+       пропускала запрос. Считаем такого врача непроверенным — карточка
+       заводится в один клик, а лимит существует ровно для тех, кто ещё не
+       подтвердил документы. */
+    const isVerified = doctorProfile?.verificationStatus === "approved";
 
     // ========================
     // 2️⃣ Собираем УНИКАЛЬНЫХ пациентов

@@ -186,8 +186,17 @@ export async function listPublishableCategories({ actor, lang = "ru" }) {
     };
   }
 
+  /* Не пациент — значит, полка пациентов ему недоступна.
+     Раньше правило действовало в одну сторону: пациенту нельзя никуда,
+     кроме неё, а врачу можно куда угодно, включая её. Полка нужна ровно
+     затем, чтобы читатель отличал историю пациента от объяснения врача;
+     врачебный ролик на ней стирает это различие. */
+  const { ПОЛКА_ПАЦИЕНТОВ } = await import("./videoPatientPublish.service.js");
   const { items } = await listCategories({ lang });
-  return { items, fixed: false };
+  return {
+    items: items.filter((c) => c.slug !== ПОЛКА_ПАЦИЕНТОВ),
+    fixed: false,
+  };
 }
 
 export async function createCategory({ adminId, data }) {

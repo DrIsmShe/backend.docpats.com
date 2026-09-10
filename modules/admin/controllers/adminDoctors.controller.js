@@ -392,12 +392,27 @@ export async function updateDoctor(req, res) {
       : "";
   }
 
+  /* isVerified пишем ЗДЕСЬ же, рядом со статусом.
+   *
+   * В модели есть хук pre("save"), который выводит isVerified из
+   * verificationStatus, но updateOne идёт мимо схемы — хуки не
+   * срабатывают. Из-за этого карточка врача с одобренными документами
+   * жила со статусом "approved" и isVerified: false, а витрина клиники
+   * читает именно isVerified (clinic-public.mapper.js) и показывала
+   * подтверждённого врача как неподтверждённого. Ровно это и было на
+   * проде у первого врача платформы.
+   *
+   * $setOnInsert для isVerified убран: он спорил бы с $set за одно поле,
+   * и Mongo отвергла бы запрос целиком.
+   */
+  profilePatch.isVerified = profilePatch.verificationStatus === "approved";
+
   // upsert: у врача, заведённого до появления карточек, профиля может не быть.
   await db
     .collection("doctorprofiles")
     .updateOne(
       { userId },
-      { $set: profilePatch, $setOnInsert: { userId, isVerified: false, createdAt: new Date(), __v: 0 } },
+      { $set: profilePatch, $setOnInsert: { userId, createdAt: new Date(), __v: 0 } },
       { upsert: true },
     );
 

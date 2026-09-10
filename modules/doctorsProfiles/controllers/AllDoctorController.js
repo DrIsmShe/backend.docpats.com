@@ -1,6 +1,7 @@
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import User from "../../../common/models/Auth/users.js";
 import Article from "../../../common/models/Articles/articles.js";
+import ArticleScientific from "../../../common/models/Articles/articles-scince.js";
 import Specialization from "../../../common/models/DoctorProfile/specialityOfDoctor.js";
 import DoctorReview from "../../../common/models/DoctorProfile/doctorReview.js";
 import { tReq } from "../../../common/i18n/index.js";
@@ -88,9 +89,23 @@ const AllDoctorController = async (req, res) => {
           if (spec) specializationName = spec.name;
         }
 
-        const articlesCount = await Article.countDocuments({
-          authorId: doctor.userId._id,
-        });
+        /* Обе коллекции, а не одна.
+           Мнения врача лежат в Article, научные статьи — в ArticleScine.
+           Считалась только первая, и врач с шестью научными работами и
+           четырьмя мнениями показывал «Статей: 4», а врач с одной научной
+           статьёй — «Статей: 0».
+           Только опубликованные: черновик ещё не статья. */
+        const [мнений, научных] = await Promise.all([
+          Article.countDocuments({
+            authorId: doctor.userId._id,
+            isPublished: true,
+          }),
+          ArticleScientific.countDocuments({
+            authorId: doctor.userId._id,
+            isPublished: true,
+          }),
+        ]);
+        const articlesCount = мнений + научных;
 
         const rawImage = doctor.profileImage || userDoc?.avatar || null;
         const profileImage = normalizeImageUrl(rawImage, publicR2);

@@ -38,10 +38,32 @@ import { resolveClinicPatient } from "../middleware/resolveClinicPatient.middlew
 import { resolvePrescription } from "../middleware/resolvePrescription.middleware.js";
 import { checkConsent } from "../middleware/checkConsent.middleware.js";
 import * as ctrl from "../controllers/prescription.controller.js";
+import {
+  требуетВерификации,
+  ДЕЙСТВИЯ,
+} from "../../../../common/middlewares/requireVerifiedDoctor.js";
 
 const router = express.Router();
 
 const RX = ACTIONS.PRESCRIPTION;
+
+/* Выписать, изменить, отозвать и НАПЕЧАТАТЬ рецепт может только врач с
+ * подтверждёнными документами.
+ *
+ * В бланк уходит номер лицензии из карточки врача — свободный текст,
+ * который никто не проверяет (pdf/prescriptionPayload.js). Распечатанный
+ * лист живёт своей жизнью и обратно не отзывается, поэтому печать
+ * закрыта наравне с выпиской.
+ *
+ * Чтение списка и карточки рецепта НЕ закрываем: запись принадлежит
+ * клинике, и доступ к ней решает её RBAC. Внутренний сотрудник клиники
+ * (ClinicEmployee) проходит везде — у него нет и не может быть карточки
+ * врача платформы, за него отвечает клиника (см. сам страж).
+ */
+const нуженПодтверждённыйВрач = требуетВерификации(
+  ДЕЙСТВИЯ.РЕЦЕПТЫ,
+  "Выписка и печать рецептов доступны после подтверждения документов врача.",
+);
 
 // ─── POST /patients/:patientId/prescriptions ──────────────────────────
 // Create (issue) a prescription. No checkConsent on create — clinic
@@ -52,6 +74,7 @@ const RX = ACTIONS.PRESCRIPTION;
 // (success + failure paths). Same pattern as imaging.controller.js.
 router.post(
   "/patients/:patientId/prescriptions",
+  нуженПодтверждённыйВрач,
   checkClinicMedicalAccess({ action: RX.CREATE }),
   resolveClinicPatient,
   ctrl.createPrescriptionController,
@@ -82,6 +105,7 @@ router.get(
 // ─── PATCH /prescriptions/:id/cancel ──────────────────────────────────
 router.patch(
   "/prescriptions/:id/cancel",
+  нуженПодтверждённыйВрач,
   auditMiddleware({
     resourceType: "clinic-medical-prescription",
     action: RX.CANCEL,
@@ -100,6 +124,7 @@ router.patch(
 // ─── PATCH /prescriptions/:id/complete ────────────────────────────────
 router.patch(
   "/prescriptions/:id/complete",
+  нуженПодтверждённыйВрач,
   auditMiddleware({
     resourceType: "clinic-medical-prescription",
     action: RX.COMPLETE,
@@ -118,6 +143,7 @@ router.patch(
 // Specific subpath BEFORE bare /:id read.
 router.get(
   "/prescriptions/:id/pdf",
+  нуженПодтверждённыйВрач,
   auditMiddleware({
     resourceType: "clinic-medical-prescription",
     action: RX.EXPORT,
@@ -144,6 +170,7 @@ router.get(
 // их, и «отменить» стало бы «править».
 router.patch(
   "/prescriptions/:id",
+  нуженПодтверждённыйВрач,
   auditMiddleware({
     resourceType: "clinic-medical-prescription",
     action: RX.UPDATE,
@@ -163,6 +190,7 @@ router.patch(
 // ─── DELETE /prescriptions/:id (owner only via RBAC) ──────────────────
 router.delete(
   "/prescriptions/:id",
+  нуженПодтверждённыйВрач,
   auditMiddleware({
     resourceType: "clinic-medical-prescription",
     action: RX.DELETE,

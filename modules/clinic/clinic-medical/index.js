@@ -22,6 +22,10 @@
 //   /api/v1/clinic/medical/imaging/:recordId
 
 import express from "express";
+import {
+  требуетВерификации,
+  ДЕЙСТВИЯ,
+} from "../../../common/middlewares/requireVerifiedDoctor.js";
 
 import encounterRoutes from "./routes/medicalHistory.routes.js";
 import patientSummaryRoutes from "./routes/patientSummary.routes.js";
@@ -36,6 +40,27 @@ import prescriptionRoutes from "./routes/prescription.routes.js";
 // модуля, не привязанный к пациенту.
 import examinationTemplateRoutes from "./routes/examinationTemplate.routes.js";
 const router = express.Router();
+
+/* ── Запись в медкарту клиники — только подтверждённому врачу ─────────
+ *
+ * То же правило, что в личной поликлинике врача (modules/myClinic):
+ * диагноз, аллергия, операция, снимок, анализ — медицинская запись о
+ * человеке, и вносить её может тот, чьи документы подтверждены.
+ *
+ * Закрыты ИЗМЕНЕНИЯ, чтение остаётся: запись принадлежит клинике, и кому
+ * её показывать, решает RBAC клиники. Внутренний сотрудник
+ * (ClinicEmployee) проходит везде — у него нет карточки врача платформы,
+ * за него отвечает клиника (см. сам страж). У рецептов страж свой, на их
+ * роутере: там закрыта ещё и печать бланка.
+ */
+const ЗАПИСЬ = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const стражМедкарты = требуетВерификации(
+  ДЕЙСТВИЯ.МЕДКАРТА,
+  "Запись в медицинскую карту доступна после подтверждения документов врача.",
+);
+router.use((req, res, next) =>
+  ЗАПИСЬ.has(req.method) ? стражМедкарты(req, res, next) : next(),
+);
 import labResultRoutes from "./routes/labResult.routes.js";
 router.use("/", labResultRoutes);
 // All mounted at the same root — each sub-router defines its own

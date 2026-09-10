@@ -2,6 +2,7 @@
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
 import Article from "../../../common/models/Articles/articles.js";
+import ArticleScientific from "../../../common/models/Articles/articles-scince.js";
 import Specialization from "../../../common/models/DoctorProfile/specialityOfDoctor.js";
 import Comments from "../../../common/models/Comments/CommentDocpats.js";
 import DoctorSchedule from "../../../common/models/Appointment/doctorSchedule.js";
@@ -137,18 +138,35 @@ const AllDoctorController = async (req, res) => {
         { _id: 1, likes: 1 }
       ).lean();
 
+      /* Научные статьи живут в отдельной коллекции и в счёт не входили:
+         врач с шестью научными работами и четырьмя мнениями показывался
+         как «Статей: 4», а врач с единственной научной статьёй — как 0.
+         Отклики считаем по обоим типам: комментарии различаются полем
+         targetType ("Article" и "ArticleScine"). */
+      const authoredScientific = await ArticleScientific.find(
+        { authorId: doctor.userId, isPublished: true },
+        { _id: 1, likes: 1 },
+      ).lean();
+
       const articleIds = authoredArticles.map((a) => a._id);
-      const totalLikes = authoredArticles.reduce(
-        (acc, a) => acc + (Array.isArray(a.likes) ? a.likes.length : 0),
-        0
-      );
-      const totalComments = articleIds.length
-        ? await Comments.countDocuments({
-            targetType: "Article",
-            targetId: { $in: articleIds },
-            isDeleted: false,
-          })
-        : 0;
+      const scientificIds = authoredScientific.map((a) => a._id);
+      const считатьЛайки = (список) =>
+        список.reduce(
+          (acc, a) => acc + (Array.isArray(a.likes) ? a.likes.length : 0),
+          0,
+        );
+      const totalLikes =
+        считатьЛайки(authoredArticles) + считатьЛайки(authoredScientific);
+      const totalComments =
+        articleIds.length || scientificIds.length
+          ? await Comments.countDocuments({
+              isDeleted: false,
+              $or: [
+                { targetType: "Article", targetId: { $in: articleIds } },
+                { targetType: "ArticleScine", targetId: { $in: scientificIds } },
+              ],
+            })
+          : 0;
       // Реальный рейтинг из DoctorReview (0, если отзывов ещё нет).
       const rt = ratingMap.get(String(doctor._id)) || { count: 0, avg: 0 };
       const realRating = rt.avg;
@@ -175,7 +193,7 @@ const AllDoctorController = async (req, res) => {
         rating: realRating,
         consultationPrice,
         articles: {
-          count: articleIds.length,
+          count: articleIds.length + scientificIds.length,
           comments: totalComments,
           likes: totalLikes,
         },

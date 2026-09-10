@@ -8,6 +8,7 @@ import ChatMessageModel from "../messages/message.model.js";
 import mongoose from "mongoose";
 import { tReq } from "../../../common/i18n/index.js";
 import { errorText } from "../../../common/i18n/index.js";
+import { ссылкаНаЧатДля } from "../chatLink.js";
 import {
   upload,
   uploadFile,
@@ -236,6 +237,14 @@ router.post(
               "Новое сообщение";
             const preview =
               message.text || (message.attachments?.length ? "📎 Файл" : "...");
+            /* Ссылка ведёт в кабинет ПОЛУЧАТЕЛЯ.
+               Здесь был зашит «/doctor/...» — одинаковый для обоих
+               собеседников. Пациент нажимал на своё уведомление, попадал
+               в зону врача, её страж получал от сервера 403 и уводил на
+               страницу входа: со стороны — «выкинуло, хотя я был
+               авторизован». */
+            const ссылка = await ссылкаНаЧатДля(recipientId, finalDialogId);
+
             // 2. Save to DB — guaranteed delivery even if user is offline
             const savedNotification = await Notification.create({
               userId: recipientId,
@@ -243,7 +252,7 @@ router.post(
               type: "chat_message",
               title: senderName,
               message: preview,
-              link: `/doctor/communication/${finalDialogId}`,
+              link: ссылка,
               isRead: false,
               meta: { dialogId: finalDialogId },
             });
@@ -252,7 +261,7 @@ router.post(
               type: "chat_message",
               title: senderName,
               message: preview,
-              link: `/doctor/communication/${finalDialogId}`,
+              link: ссылка,
               dialogId: finalDialogId,
               isRead: false,
               createdAt: savedNotification.createdAt,

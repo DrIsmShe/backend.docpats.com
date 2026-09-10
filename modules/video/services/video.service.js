@@ -790,6 +790,23 @@ export async function publishVideo({ actor, id, visibility }) {
       const правки = await подготовитьПубликациюПациента(video);
       video.categoryId = правки.categoryId;
       video.kind = правки.kind;
+    } else if (video.categoryId) {
+      /* Не пациент — на полку пациентов не пускаем.
+         Проверка на сервере, а не только в списке выбора: список
+         подсказывает интерфейсу, а запрет должен держать тот, кто
+         сохраняет. Иначе достаточно послать чужой categoryId запросом. */
+      const { ПОЛКА_ПАЦИЕНТОВ } = await import("./videoPatientPublish.service.js");
+      const VideoCategory = (await import("../models/videoCategory.model.js"))
+        .default;
+      const полка = await VideoCategory.findById(video.categoryId)
+        .select("slug")
+        .lean();
+      if (полка?.slug === ПОЛКА_ПАЦИЕНТОВ) {
+        throw new ValidationError(
+          "Раздел «Мнения пациентов» — для роликов, снятых пациентами. " +
+            "Выберите медицинский раздел.",
+        );
+      }
     }
   }
 

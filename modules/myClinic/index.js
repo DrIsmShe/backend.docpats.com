@@ -1,5 +1,90 @@
 import express from "express";
+import {
+  требуетВерификации,
+  ДЕЙСТВИЯ,
+} from "../../common/middlewares/requireVerifiedDoctor.js";
+
 const router = express.Router();
+
+/* ── Запись в медкарту — только подтверждённому врачу ────────────────
+ *
+ * Диагноз, анамнез, описание снимка и рекомендация — медицинская запись
+ * о человеке. До этого она была открыта одной ролью doctor: ни один из
+ * полусотни подмаршрутов ниже верификацию не спрашивал.
+ *
+ * Закрыты ИЗМЕНЕНИЯ, а не чтение: врач, чьи документы на проверке, видит
+ * записанное раньше и не теряет доступ к своим пациентам. Добавление
+ * пациента сюда не входит — там действует лимит в пять
+ * (requireDoctorPatientLimit), иначе непроверенный врач не смог бы
+ * начать работу вовсе. У рецептов свой страж, и там закрыта ещё и печать.
+ */
+const ЗАПИСЬ = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const стражМедкарты = требуетВерификации(
+  ДЕЙСТВИЯ.МЕДКАРТА,
+  "Запись в медицинскую карту доступна после подтверждения документов врача.",
+);
+const ПУТИ_МЕДКАРТЫ = [
+  "/add-examinations",
+  "/add-templates-examinations",
+  "/delete-templates-examinations",
+  "/details-templates-examinations",
+  "/get-detail-examinations",
+  "/get-examinations",
+  "/get-templates-examinations",
+  "/patients-medical-history-get",
+  "/patients-medical-history-get-details",
+  "/patients-polyclinic-medical-history",
+  "/temp-additionalDiagnosis",
+  "/temp-additionalDiagnosis-delete",
+  "/temp-additionalDiagnosis-detail",
+  "/temp-additionalDiagnosis-list",
+  "/temp-anamnesis-morbi",
+  "/temp-anamnesis-morbi-delete",
+  "/temp-anamnesis-morbi-detail",
+  "/temp-anamnesis-morbi-list",
+  "/temp-anamnesis-vitae",
+  "/temp-anamnesis-vitae-delete",
+  "/temp-anamnesis-vitae-detail",
+  "/temp-anamnesis-vitae-list",
+  "/temp-complaint-delete",
+  "/temp-complaints",
+  "/temp-complaints-detail",
+  "/temp-complaints-list",
+  "/temp-ct-scan",
+  "/temp-ct-scan-delete",
+  "/temp-ct-scan-detail",
+  "/temp-ct-scan-list",
+  "/temp-laboratory-tests",
+  "/temp-laboratory-tests-delete",
+  "/temp-laboratory-tests-detail",
+  "/temp-laboratory-tests-list",
+  "/temp-mri-results",
+  "/temp-mri-results-delete",
+  "/temp-mri-results-detail",
+  "/temp-mri-results-list",
+  "/temp-recommendations",
+  "/temp-recommendations-delete",
+  "/temp-recommendations-detail",
+  "/temp-recommendations-list",
+  "/temp-status-localis",
+  "/temp-status-localis-delete",
+  "/temp-status-localis-detail",
+  "/temp-status-localis-list",
+  "/temp-status-preasens",
+  "/temp-status-preasens-delete",
+  "/temp-status-preasens-detail",
+  "/temp-status-preasens-list",
+  "/temp-ultrasound-preasens-delete",
+  "/temp-ultrasound-results",
+  "/temp-ultrasound-results-detail",
+  "/temp-ultrasound-results-list",
+  "/update-templates-examinations",
+];
+
+router.use(ПУТИ_МЕДКАРТЫ, (req, res, next) =>
+  ЗАПИСЬ.has(req.method) ? стражМедкарты(req, res, next) : next(),
+);
+
 
 // system POLYCLINIC start
 

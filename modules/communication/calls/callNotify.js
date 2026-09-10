@@ -28,6 +28,7 @@
 // может. Тот же принцип, что в jobs/appointmentReminders.job.js.
 
 import User from "../../../common/models/Auth/users.js";
+import { ссылкаНаЧат } from "../chatLink.js";
 import { sendToUser } from "../../notifications/services/webpush.service.js";
 import { notify } from "../../notifications/services/notification.service.js";
 
@@ -93,8 +94,10 @@ async function recipient(userId) {
   }
 }
 
-const chatLink = (section, dialogId) =>
-  dialogId ? `/${section}/communication/${dialogId}` : `/${section}/home-page`;
+/* Общий помощник: то же правило теперь используют и уведомления о новых
+   сообщениях (modules/communication/chatLink.js). Две копии одного
+   расчёта разошлись бы — в сообщениях адрес и был зашит на «/doctor». */
+const chatLink = ссылкаНаЧат;
 
 /**
  * Пуш о ВХОДЯЩЕМ звонке. Зовётся только когда у человека нет живого
