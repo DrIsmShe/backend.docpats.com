@@ -1,5 +1,6 @@
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import Article from "../../../common/models/Articles/articles.js";
+import ArticleScientific from "../../../common/models/Articles/articles-scince.js";
 import CommentDocpats from "../../../common/models/Comments/CommentDocpats.js";
 import User, { decrypt } from "../../../common/models/Auth/users.js";
 import { tReq } from "../../../common/i18n/index.js";
@@ -45,31 +46,41 @@ const AllDoctorArticlesController = async (req, res) => {
         : "Фамилия",
     };
 
-    const articles = await Article.find({
-      authorId: doctorProfile.userId,
-      isPublished: true,
-    })
-      .lean()
-      .sort({ createdAt: -1 });
+    /* ОБЕ КОЛЛЕКЦИИ, а не одна.
+       Мнения врача лежат в Article, научные статьи — в ArticleScine.
+       Отдавалась только первая, и у врача с шестью научными работами и
+       четырьмя мнениями страница показывала четыре.
 
-    const articlesWithCounts = await Promise.all(
-      articles.map(async (article) => {
-        const commentsCount = await CommentDocpats.countDocuments({
-          targetId: article._id,
-          targetType: "Article",
-        });
-
-        const likesCount = Array.isArray(article.likes)
-          ? article.likes.length
-          : 0;
-
-        return {
-          ...article,
-          commentsCount,
-          likesCount,
-        };
+       kind нужен странице, чтобы вести на нужный экран: у мнения и
+       научной статьи разные адреса просмотра. targetType комментариев
+       тоже разный — считаем каждый своим. */
+    const [мнения, научные] = await Promise.all([
+      Article.find({ authorId: doctorProfile.userId, isPublished: true })
+        .lean()
+        .sort({ createdAt: -1 }),
+      ArticleScientific.find({
+        authorId: doctorProfile.userId,
+        isPublished: true,
       })
-    );
+        .lean()
+        .sort({ createdAt: -1 }),
+    ]);
+
+    const собрать = async (article, kind, targetType) => {
+      const commentsCount = await CommentDocpats.countDocuments({
+        targetId: article._id,
+        targetType,
+      });
+      const likesCount = Array.isArray(article.likes) ? article.likes.length : 0;
+      return { ...article, kind, commentsCount, likesCount };
+    };
+
+    const articlesWithCounts = (
+      await Promise.all([
+        ...мнения.map((a) => собрать(a, "opinion", "Article")),
+        ...научные.map((a) => собрать(a, "scientific", "ArticleScine")),
+      ])
+    ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return res.status(200).json({
       success: true,
