@@ -216,7 +216,12 @@ async function fetchVideos() {
 
 /**
  * Записи синтез-статьи: оригинал на голом адресе плюс адрес на каждый
- * СУЩЕСТВУЮЩИЙ перевод. Язык здесь сегментом пути: /articles/:id/:lang.
+ * СУЩЕСТВУЮЩИЙ перевод.
+ *
+ * Язык — параметром ?locale=, как у новостей, врачебных статей и витрин.
+ * Здесь он был сегментом пути (/articles/:id/:lang) — единственное место
+ * во всём проекте, и две схемы разом означали, что каждая статья доступна
+ * по двум адресам. Старая форма отвечает 301 на edge.
  *
  * Раньше на каждую статью безусловно писалось шесть адресов — голый плюс
  * все пять языков, — и hreflang объявлял пять версий независимо от того,
@@ -253,7 +258,8 @@ function urlEntriesForSynthesisArticle({
     });
   }
 
-  const urlFor = (lang) => (lang === original ? baseUrl : `${baseUrl}/${lang}`);
+  const urlFor = (lang) =>
+    lang === original ? baseUrl : `${baseUrl}?locale=${lang}`;
 
   const hreflang = [
     `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(baseUrl)}"/>`,
