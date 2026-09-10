@@ -161,7 +161,7 @@ const LabTestSchema = new mongoose.Schema(
         "PCR", // ПЦР
         "Immunology", // Иммунология/ИФА
         "GeneticScreening", // Генетический скрининг
-        "CoagulationPanel", // ← ДОБАВИТЬ
+        "CoagulationPanel",
         "Other",
       ],
       required: true,

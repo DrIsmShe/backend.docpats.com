@@ -5,7 +5,7 @@ import { uploadFile } from "../../../common/middlewares/uploadMiddleware.js";
 import { JSDOM } from "jsdom";
 import createDOMPurify from "dompurify";
 import { invalidateSitemapCache } from "../../../common/sitemap/services/sitemap.service.js";
-import { enqueueTranslation } from "../../../modules/translation/translation.service.js"; // ← ДОБАВИТЬ
+import { enqueueTranslation } from "../../../modules/translation/translation.service.js";
 
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
@@ -98,7 +98,7 @@ export const createArticleController = async (req, res) => {
     const saved = await newArticle.save();
     await invalidateSitemapCache();
 
-    // ← ДОБАВИТЬ: перевод на все языки фоново
+    // Перевод на все языки — фоново, ответ клиенту не ждёт.
     const LANGUAGES = ["ru", "en", "az", "tr", "ar"];
     for (const lang of LANGUAGES) {
       enqueueTranslation({

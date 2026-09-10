@@ -8,7 +8,7 @@ const router = Router();
 
 router.use("/dialogs", dialogRoutes);
 router.use("/messages", messageRoutes);
-router.use("/translations", translationRoutes); // ← ДОБАВИТЬ
+router.use("/translations", translationRoutes);
 router.use("/", blockRoutes);
 
 export default router;
