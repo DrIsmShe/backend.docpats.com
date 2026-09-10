@@ -1,4 +1,5 @@
 import { uploadFile } from "../../../common/middlewares/uploadMiddleware.js";
+import { разобратьРубрику } from "../../../common/utils/resolveCategory.js";
 import ArticleScientific from "../../../common/models/Articles/articles-scince.js";
 
 const updateMyArticleController = async (req, res) => {
@@ -21,6 +22,16 @@ const updateMyArticleController = async (req, res) => {
         .json({ message: "Forbidden: you are not the author of this article." });
     }
 
+    /* Рубрика приходит то идентификатором, то названием: список статей
+       отдаёт её уже переведённой, и ссылка «править» несла в форму именно
+       название. Схема ждёт ObjectId — Mongoose бросал CastError, он
+       ловился общим catch, и человек получал «ошибка сервера» вместо
+       сохранённой статьи. */
+    const рубрика = await разобратьРубрику(req.body.category);
+    if (!рубрика.ok) {
+      return res.status(400).json({ message: рубрика.message });
+    }
+
     const updateFields = {
       title: req.body.title,
       content: req.body.content,
@@ -28,7 +39,7 @@ const updateMyArticleController = async (req, res) => {
       metaDescription: req.body.metaDescription,
       metaKeywords: req.body.metaKeywords,
       isPublished: req.body.isPublished,
-      category: req.body.category,
+      category: рубрика.value,
       updatedAt: Date.now(),
     };
 
@@ -53,6 +64,14 @@ const updateMyArticleController = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error updating article:", error);
+    /* Неверное значение поля — вина запроса, а не сервера. 500 здесь
+       уводил в сторону: в логах ошибка есть, а человек видит «ошибка
+       сервера» и повторяет ту же отправку. */
+    if (error?.name === "CastError" || error?.name === "ValidationError") {
+      return res.status(400).json({
+        message: `Неверное значение поля «${error.path || ""}»`,
+      });
+    }
     return res.status(500).json({ message: "Server error" });
   }
 };

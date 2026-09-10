@@ -482,25 +482,40 @@ ${hreflang}
 async function fetchDoctors() {
   try {
     const db = mongoose.connection.db;
-    const doctorUsers = await db
+
+    /* Идём ОТ КАРТОЧЕК, а не от пользователей.
+     *
+     * Раньше выборка начиналась с users по флагу isDoctor и только потом
+     * искала карточки. Признак врача в базе не один: этот же список на
+     * публичной странице «Лучшие врачи» строится по role: "doctor". Врач,
+     * у которого выставлен один признак и не выставлен другой, исчезал из
+     * карты сайта, оставаясь при этом на сайте — и понять это по самой
+     * карте было нельзя.
+     *
+     * Страница профиля открывается для ЛЮБОЙ карточки, поэтому карточка и
+     * есть источник правды: она — и есть страница. Пользователи нужны
+     * только чтобы убрать заблокированных.
+     */
+    const profiles = await db
+      .collection(collectionOf("DoctorProfile", "doctorprofiles"))
+      .find({}, { projection: { _id: 1, userId: 1, updatedAt: 1 } })
+      .toArray();
+
+    if (!profiles.length) return [];
+
+    const blocked = await db
       .collection(collectionOf("User", "users"))
       .find(
-        { isDoctor: true, isBlocked: { $ne: true } },
+        { _id: { $in: profiles.map((p) => p.userId).filter(Boolean) },
+          isBlocked: true },
         { projection: { _id: 1 } },
       )
       .toArray();
+    const заблокированы = new Set(blocked.map((u) => String(u._id)));
 
-    if (!doctorUsers.length) return [];
-
-    const profiles = await db
-      .collection(collectionOf("DoctorProfile", "doctorprofiles"))
-      .find(
-        { userId: { $in: doctorUsers.map((u) => u._id) } },
-        { projection: { _id: 1, updatedAt: 1 } },
-      )
-      .toArray();
-
-    return profiles.map((p) =>
+    return profiles
+      .filter((p) => !заблокированы.has(String(p.userId)))
+      .map((p) =>
       urlEntry({
         loc: `${FRONTEND_URL}/public/doctor-profile/doctor-details/${p._id}`,
         lastmod: toW3cDate(p.updatedAt),
