@@ -39,6 +39,22 @@ const RSS_LIMIT = 50;
 const NEWS_WINDOW_MS = 48 * 60 * 60 * 1000;
 const NEWS_SITEMAP_LIMIT = 1000;
 
+/*
+ * Новости в ленты НЕ ПОПАДАЮТ — то же решение, что и в карте сайта
+ * (см. НОВОСТИ_В_КАРТЕ в sitemap.service.js).
+ *
+ * В ленте лежат полные тексты чужих публикаций. Отдавать их наружу под
+ * своим именем — та же самая массовая републикация, за которую санкция
+ * накладывается на домен, а news-sitemap вдобавок прямая заявка в Google
+ * News: мы приглашали робота обойти ровно те адреса, которые сами же
+ * закрыли от индексации.
+ *
+ * Ленты несут только своё — аналитические разборы. Внутри платформы
+ * новостной поток не меняется: врач его читает, переводы и поиск
+ * работают.
+ */
+const НОВОСТИ_В_ЛЕНТАХ = false;
+
 const RSS_CACHE_TTL_MS = 15 * 60 * 1000;
 const NEWS_CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -166,7 +182,7 @@ function rssItem({ title, link, description, pubDate, guid, image }) {
 
 async function buildRssXml() {
   const [news, synthesis] = await Promise.all([
-    fetchRecentNews(RSS_LIMIT),
+    НОВОСТИ_В_ЛЕНТАХ ? fetchRecentNews(RSS_LIMIT) : [],
     fetchRecentSynthesis(RSS_LIMIT),
   ]);
 
@@ -238,7 +254,23 @@ export async function generateRssFeed(req, res) {
 
 async function buildNewsSitemapXml() {
   const since = new Date(Date.now() - NEWS_WINDOW_MS);
-  const items = await fetchRecentNews(NEWS_SITEMAP_LIMIT, since);
+  /*
+   * Своё вместо чужого. Формат Google News требует ровно того же —
+   * заголовок, язык, дата публикации, — и аналитический разбор под него
+   * подходит: он выходит ежедневно и попадает в окно двух суток.
+   */
+  const items = НОВОСТИ_В_ЛЕНТАХ
+    ? await fetchRecentNews(NEWS_SITEMAP_LIMIT, since)
+    : (await fetchRecentSynthesis(NEWS_SITEMAP_LIMIT))
+        .filter((a) => new Date(a.createdAt) >= since)
+        .map((a) => ({
+          slug: null,
+          _id: a._id,
+          title: a.seo?.ru?.title || a.title,
+          language: "ru",
+          publishedAt: a.createdAt,
+          createdAt: a.createdAt,
+        }));
 
   const entries = items.map((n) => {
     // Язык обязателен и должен быть двухбуквенным кодом. У материала он
@@ -246,7 +278,11 @@ async function buildNewsSitemapXml() {
     // дефолт модели.
     const lang = (n.language || "en").slice(0, 2).toLowerCase();
     return `  <url>
-    <loc>${escapeXml(`${FRONTEND_URL}/news/${encodeURIComponent(n.slug)}`)}</loc>
+    <loc>${escapeXml(
+      n.slug
+        ? `${FRONTEND_URL}/news/${encodeURIComponent(n.slug)}`
+        : `${FRONTEND_URL}/articles/${n._id}`,
+    )}</loc>
     <news:news>
       <news:publication>
         <news:name>${SITE_NAME}</news:name>
