@@ -151,8 +151,32 @@ describe("очередь верификации", () => {
     expect(карточка.accessExpiresAt).toBeTruthy();
   });
 
-  it("одобренный врач в очереди не висит", async () => {
+  it("одобренный врач без новых документов в очереди не висит", async () => {
     const п = await врач({ verificationStatus: "approved" });
+    const { queue } = await очередь();
+    expect(queue.some((к) => к.profileId === String(п._id))).toBe(false);
+  });
+
+  it("ГЛАВНОЕ: врач с документом на проверке виден при ЛЮБОМ статусе профиля", async () => {
+    /* Подача документа не меняла verificationStatus, и врач с присланной
+       лицензией оставался not_submitted — в очередь он не попадал
+       НИКОГДА. Причину починили при подаче, но очередь обязана держаться
+       и на документах: ради них она и существует. */
+    const п = await врач({ verificationStatus: "not_submitted" });
+    await документ(п, "license", { status: "pending" });
+
+    const { queue } = await очередь();
+    const карточка = queue.find((к) => к.profileId === String(п._id));
+
+    expect(карточка).toBeTruthy();
+    expect(карточка.status).toBe("not_submitted");
+    expect(карточка.documents.some((д) => д.type === "license")).toBe(true);
+  });
+
+  it("заархивированный врачом документ в очередь не тянет", async () => {
+    const п = await врач({ verificationStatus: "not_submitted" });
+    await документ(п, "license", { status: "pending", isArchivedByDoctor: true });
+
     const { queue } = await очередь();
     expect(queue.some((к) => к.profileId === String(п._id))).toBe(false);
   });

@@ -178,8 +178,30 @@ const СОСТОЯНИЯ_ОЧЕРЕДИ = ["pending", "expired", "suspended"];
 
 export async function verificationQueue(req, res) {
   try {
+    /* ВРАЧ С ОЖИДАЮЩИМ ДОКУМЕНТОМ ВИДЕН ВСЕГДА, КАКОЙ БЫ СТАТУС НИ СТОЯЛ
+     * В ПРОФИЛЕ.
+     *
+     * Очередь строилась ТОЛЬКО по статусу профиля, а подача документа
+     * этот статус не меняла — врач с присланной лицензией оставался
+     * not_submitted и в очередь не попадал никогда. Причину починили там,
+     * где она возникла (addVerificationDocumentsController теперь
+     * переводит в pending), но уже накопленные заявки так и остались бы
+     * невидимыми, а любая будущая рассинхронизация статуса с документами
+     * снова спрятала бы человека.
+     *
+     * Поэтому очередь собирается из ДВУХ источников: статус профиля и
+     * наличие документа на проверке. Второй — тот, ради чего очередь
+     * вообще существует. */
+    const сПодачей = await DoctorVerificationDocument.distinct(
+      "doctorProfileId",
+      { status: "pending", isArchivedByDoctor: { $ne: true } },
+    );
+
     const profiles = await DoctorProfile.find({
-      verificationStatus: { $in: СОСТОЯНИЯ_ОЧЕРЕДИ },
+      $or: [
+        { verificationStatus: { $in: СОСТОЯНИЯ_ОЧЕРЕДИ } },
+        { _id: { $in: сПодачей } },
+      ],
     })
       .select(
         "userId verificationStatus verificationExpiresAt verificationExtendedUntil " +
