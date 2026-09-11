@@ -157,7 +157,15 @@ const userDoctorSchema = new mongoose.Schema(
 
     profileImage: { type: String },
 
-    about: { type: String, maxlength: 6200 },
+    /* Биография врача. Теперь это РАЗМЕТКА: пишется в том же редакторе,
+       что и статьи (client/src/pages/doctorProfilePages/home).
+
+       Предел поднят с 6200: он был рассчитан на обычный текст, а теги
+       добавляют к тем же словам четверть объёма. Врач с подробной
+       биографией упёрся бы в потолок на ровном месте — и получил бы не
+       «слишком длинно», а отказ сохранения без внятной причины. 24000
+       оставляет запас и по-прежнему не даёт положить сюда статью. */
+    about: { type: String, maxlength: 24000 },
 
     country: { type: String, trim: true, index: true },
 
