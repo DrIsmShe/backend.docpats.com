@@ -42,6 +42,7 @@ const STATIC_PAGES = [
   { path: "/about", priority: "0.6", changefreq: "monthly" },
   { path: "/articles", priority: "0.9", changefreq: "daily" },
   { path: "/news", priority: "0.9", changefreq: "hourly" },
+  { path: "/digest", priority: "0.8", changefreq: "daily" },
   { path: "/consultation", priority: "0.7", changefreq: "monthly" },
   { path: "/pricing", priority: "0.6", changefreq: "monthly" },
   { path: "/top-doctors", priority: "0.8", changefreq: "weekly" },
@@ -569,6 +570,87 @@ async function fetchNews() {
     );
   } catch (err) {
     console.error("[sitemap] fetchNews:", err.message);
+    return [];
+  }
+}
+
+/*
+ * Дайджест исследований — В КАРТУ ПОПАДАЕТ, в отличие от новостей.
+ *
+ * Разница ровно одна и она решающая: здесь лежит НАШ текст. Три-четыре
+ * предложения, написанные по фактам публикации, плюс ссылка на оригинал.
+ * Чужого текста в коллекции нет вовсе — не «мы его не отдаём», а его там
+ * физически не хранится (modules/digest/digest.model.js в движке новостей).
+ *
+ * Поэтому правило о массовой републикации чужого, из-за которого новости
+ * убраны из карты, сюда не относится.
+ *
+ * Языки объявляются ТОЛЬКО те, на которых изложение действительно
+ * написано. Изложение пишется одним вызовом модели сразу на пять, но
+ * вызов мог упасть на части языков, и объявлять их все значило бы
+ * обещать страницы, которых нет.
+ *
+ * Голый адрес — русский: на нём изложение пишется, остальные четыре
+ * получаются переводом в том же вызове.
+ */
+const DIGEST_DEFAULT_LANG = "ru";
+
+function digestLocaleUrl(baseUrl, lang) {
+  return lang === DIGEST_DEFAULT_LANG ? baseUrl : `${baseUrl}?locale=${lang}`;
+}
+
+export function urlEntriesForDigest({ baseUrl, lastmod, langs }) {
+  const набор = (langs || []).filter((l) => LANGS.includes(l));
+  if (!набор.length) return "";
+
+  const hreflang = [
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(baseUrl)}"/>`,
+    ...набор.map(
+      (l) =>
+        `    <xhtml:link rel="alternate" hreflang="${l}" href="${escapeXml(digestLocaleUrl(baseUrl, l))}"/>`,
+    ),
+  ].join("\n");
+
+  return набор
+    .map((lang) => {
+      const loc = digestLocaleUrl(baseUrl, lang);
+      return `  <url>
+    <loc>${escapeXml(loc)}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>${lang === DIGEST_DEFAULT_LANG ? "0.6" : "0.55"}</priority>
+${набор.length > 1 ? hreflang : ""}
+  </url>`;
+    })
+    .join("\n");
+}
+
+async function fetchDigest() {
+  try {
+    const db = mongoose.connection.getClient().db(NEWS_DB_NAME);
+    const items = await db
+      .collection("digest_items")
+      .find(
+        { status: "published", slug: { $exists: true, $ne: null } },
+        { projection: { slug: 1, texts: 1, updatedAt: 1, publishedAt: 1 } },
+      )
+      .toArray();
+
+    return items
+      .map((d) => {
+        const langs = Object.entries(d.texts || {})
+          .filter(([, т]) => т && т.intro)
+          .map(([к]) => к);
+
+        return urlEntriesForDigest({
+          baseUrl: `${FRONTEND_URL}/digest/${encodeURIComponent(d.slug)}`,
+          lastmod: toW3cDate(d.updatedAt || d.publishedAt),
+          langs,
+        });
+      })
+      .filter(Boolean);
+  } catch (err) {
+    console.error("[sitemap] fetchDigest:", err.message);
     return [];
   }
 }
@@ -1124,6 +1206,7 @@ async function collectSections() {
     clinicUrls,
     conferences,
     videos,
+    digest,
   ] = await Promise.all([
     fetchDoctors(),
     fetchNews(),
@@ -1134,6 +1217,7 @@ async function collectSections() {
     fetchClinicUrls(),
     fetchConferences(),
     fetchVideos(),
+    fetchDigest(),
   ]);
 
   const staticEntries = STATIC_PAGES.map((p) =>
@@ -1154,6 +1238,9 @@ async function collectSections() {
     // выбрасывает, поэтому её нет вовсе.
     ...(news.length ? [{ name: "news", entries: news }] : []),
     { name: "conferences", entries: conferences },
+    // Дайджест — наш текст, поэтому в индексе он есть. Пустую карту не
+    // создаём: пока архив не разобран, файл может быть пустым.
+    ...(digest.length ? [{ name: "digest", entries: digest }] : []),
     { name: "articles", entries: synthesis },
     { name: "doctor-articles", entries: doctorArticles },
     { name: "scientific", entries: scientificArticles },
