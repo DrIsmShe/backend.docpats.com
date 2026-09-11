@@ -8,6 +8,9 @@ import User, { decrypt } from "../../../common/models/Auth/users.js";
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { notifyMany } from "../../notifications/services/notification.service.js";
 import { auditAdminAccess } from "../adminAudit.js";
+import DoctorVerificationDocument from "../../../common/models/DoctorVerification/DocumentFiles.js";
+import { действуетДо } from "../../../common/models/DoctorProfile/profileDoctor.js";
+import { чегоНеХватает } from "../services/doctorVerification.service.js";
 
 const safe = (v) => {
   try {
@@ -148,14 +151,40 @@ export async function broadcastNotification(req, res) {
   }
 }
 
-// ─── GET /admin/verification-queue ─────────────────────────────
-// Очередь врачей, ожидающих верификации (verificationStatus = "pending").
-// Одобрение/отклонение — существующим PUT /admin/verification/doctor/:profileId.
+/* ─── GET /admin/verification-queue ─────────────────────────────
+ *
+ * ЗДЕСЬ БЫЛА ПОЛОМКА, ИЗ-ЗА КОТОРОЙ АДМИНИСТРАТОР РЕШАЛ ВСЛЕПУЮ.
+ *
+ * Очередь читала profile.verificationDocuments — массив строк-адресов на
+ * самом профиле. Врач же загружает документы в отдельную коллекцию
+ * DoctorVerificationDocument (modules/doctorsProfiles/controllers/
+ * addVerificationDocumentsController.js), и в profile.verificationDocuments
+ * не пишет НИЧЕГО, кроме формы ручной правки карточки администратором.
+ *
+ * То есть в очереди у каждого врача стояло «документы не приложены»
+ * независимо от того, сколько он их прислал, а решение «одобрить»
+ * принималось без единого документа перед глазами.
+ *
+ * Теперь очередь читает ту коллекцию, куда врач кладёт: с видом
+ * документа, сроком, органом выдачи и признаком сверки даты. И
+ * показывает, чего не хватает до полного набора, — чтобы отказ
+ * «не хватает документов» не приходил неожиданностью после нажатия.
+ *
+ * В очередь попадают не только pending: истёкшие и приостановленные
+ * допуски — тоже работа администратора, только другая (продлить,
+ * восстановить). Раньше они не были видны нигде.
+ */
+const СОСТОЯНИЯ_ОЧЕРЕДИ = ["pending", "expired", "suspended"];
+
 export async function verificationQueue(req, res) {
   try {
-    const profiles = await DoctorProfile.find({ verificationStatus: "pending" })
+    const profiles = await DoctorProfile.find({
+      verificationStatus: { $in: СОСТОЯНИЯ_ОЧЕРЕДИ },
+    })
       .select(
-        "userId verificationStatus verificationDocuments specializationInstitution clinic country educationInstitution updatedAt",
+        "userId verificationStatus verificationExpiresAt verificationExtendedUntil " +
+          "verificationExtensionReason verificationReviewComment " +
+          "specializationInstitution clinic country educationInstitution updatedAt",
       )
       .sort({ updatedAt: 1 })
       .lean();
@@ -166,8 +195,37 @@ export async function verificationQueue(req, res) {
       .lean();
     const umap = new Map(users.map((u) => [String(u._id), u]));
 
+    /* Документы одним запросом на всю очередь, а не по одному на врача:
+       в очереди бывает под сотню карточек. */
+    const документы = await DoctorVerificationDocument.find({
+      doctorProfileId: { $in: profiles.map((p) => p._id) },
+    })
+      .select(
+        "doctorProfileId documentType status fileUrl fileName isArchivedByDoctor " +
+          "expiresAt expiryConfirmed issuedAt documentNumber issuingAuthority " +
+          "jurisdictionCode reviewComment createdAt",
+      )
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const поПрофилю = new Map();
+    for (const д of документы) {
+      const ключ = String(д.doctorProfileId);
+      if (!поПрофилю.has(ключ)) поПрофилю.set(ключ, []);
+      поПрофилю.get(ключ).push(д);
+    }
+
     const queue = profiles.map((p) => {
       const u = umap.get(String(p.userId));
+      const свои = поПрофилю.get(String(p._id)) || [];
+      /* При подсчёте нехватки документ на проверке считаем как одобренный:
+         администратор смотрит очередь именно затем, чтобы его одобрить, и
+         список «чего не хватает» должен показывать, чего НЕТ ВООБЩЕ, а не
+         чего он ещё не успел нажать. */
+      const сУчётомРешения = свои.map((д) =>
+        д.status === "pending" ? { ...д, status: "approved" } : д,
+      );
+
       return {
         profileId: String(p._id),
         userId: p.userId ? String(p.userId) : null,
@@ -179,12 +237,32 @@ export async function verificationQueue(req, res) {
         education: p.educationInstitution || null,
         clinic: p.clinic || null,
         country: p.country || null,
-        documentsCount: Array.isArray(p.verificationDocuments)
-          ? p.verificationDocuments.length
-          : 0,
-        documents: Array.isArray(p.verificationDocuments)
-          ? p.verificationDocuments
-          : [],
+
+        status: p.verificationStatus,
+        accessExpiresAt: действуетДо(p),
+        expiresAtByDocuments: p.verificationExpiresAt || null,
+        extendedUntil: p.verificationExtendedUntil || null,
+        extensionReason: p.verificationExtensionReason || "",
+        reviewComment: p.verificationReviewComment || "",
+
+        documentsCount: свои.filter((д) => !д.isArchivedByDoctor).length,
+        missing: чегоНеХватает(сУчётомРешения),
+        documents: свои.map((д) => ({
+          id: String(д._id),
+          type: д.documentType,
+          status: д.status,
+          url: д.fileUrl,
+          name: д.fileName || null,
+          archived: Boolean(д.isArchivedByDoctor),
+          number: д.documentNumber || null,
+          authority: д.issuingAuthority || null,
+          jurisdiction: д.jurisdictionCode || null,
+          issuedAt: д.issuedAt || null,
+          expiresAt: д.expiresAt || null,
+          expiryConfirmed: Boolean(д.expiryConfirmed),
+          reviewComment: д.reviewComment || "",
+          uploadedAt: д.createdAt,
+        })),
         submittedAt: p.updatedAt,
       };
     });

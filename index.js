@@ -48,6 +48,7 @@ import { scheduleWeeklyCaseNotification } from "./jobs/radiologyWeeklyCase.job.j
 import { scheduleDailyCaseGeneration } from "./jobs/radiologyDailyCases.job.js";
 import { scheduleIndexNowSubmit } from "./jobs/indexnowSubmit.job.js";
 import { scheduleSocialBroadcast } from "./jobs/socialBroadcast.job.js";
+import { scheduleDoctorVerificationExpiry } from "./jobs/doctorVerificationExpiry.job.js";
 import User, { decrypt as decryptUser } from "./common/models/Auth/users.js";
 import NewPatientPolyclinic from "./common/models/PatientProfile/patientProfile.js";
 import "./common/models/Comments/CommentDocpats.js";
@@ -608,6 +609,11 @@ async function bootstrap(startPort = PORT) {
     // Публикация свежих материалов в собственный Telegram-канал.
     // Молча не регистрируется без TELEGRAM_BOT_TOKEN / TELEGRAM_CHANNEL_ID.
     scheduleSocialBroadcast();
+    /* Сроки допуска врачей: предупреждения за 30/7/1 день и снятие в день
+       окончания. Само по себе снятие дублируется стражем на каждом
+       запросе — задание отвечает за письма и смену статуса, а не за
+       безопасность. Выключается DOCTOR_VERIFICATION_EXPIRY=off. */
+    scheduleDoctorVerificationExpiry();
     app.set("io", io);
     setSimulationIo(io);
     server.listen(startPort, () =>

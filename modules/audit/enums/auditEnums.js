@@ -453,6 +453,39 @@ export const ACTION_ENUM = [
   "admin.doctor.update",
   "admin.doctor.delete",
 
+  // ═══════════ ВЕРИФИКАЦИЯ ВРАЧА ═══════════
+  //
+  // Самое весомое решение администратора на платформе. Подтверждение
+  // открывает врачу рецепты, запись в медкарту и публикацию от имени
+  // DocPats; снятие — закрывает. До появления этих событий решение
+  // оставляло след ровно в трёх полях профиля
+  // (verificationReviewedBy / At / Comment), и следующее решение затирало
+  // предыдущее: на вопрос «кто и когда допустил этого врача к рецептам»
+  // ответа не было вовсе.
+  //
+  // Проверяющий орган спрашивает не текущее состояние, а историю: когда
+  // допустили, на основании чего, когда срок истёк, кто продлил и
+  // почему. Поэтому события пишутся в журнал HIPAA, который нельзя ни
+  // изменить, ни удалить.
+  //
+  // submit — врач подал документы; document.* — решение по одному
+  // документу; остальные — по врачу целиком.
+  "doctor.verification.submit",
+  "admin.doctor.verification.document.approve",
+  "admin.doctor.verification.document.reject",
+  "admin.doctor.verification.approve",
+  "admin.doctor.verification.reject",
+  // suspend — временное снятие допуска решением администратора (жалоба,
+  // расследование). Отличается от reject: документы не признаны
+  // негодными, допуск приостановлен.
+  "admin.doctor.verification.suspend",
+  "admin.doctor.verification.restore",
+  // extend — администратор продлил срок, не требуя новых документов.
+  "admin.doctor.verification.extend",
+  // expire — СИСТЕМНОЕ событие: срок документа вышел, допуск снят без
+  // участия человека. Пишется от имени системы, а не администратора.
+  "doctor.verification.expire",
+
   // Заглушка для случаев когда нужно записать что-то нестандартное.
   // Используй редко — лучше добавь конкретный enum выше.
   "other",
@@ -568,6 +601,12 @@ export const RESOURCE_TYPE_ENUM = [
   "consent-request",
   // Profiles
   "doctor-profile",
+
+  // doctor-verification: допуск врача целиком (DoctorProfile как носитель
+  // verificationStatus) и отдельный поданный документ
+  // (DoctorVerificationDocument). resourceId — профиль или документ, что
+  // именно, видно по действию.
+  "doctor-verification",
   "patient-profile",
   "user-account",
   "orphan-r2-file",

@@ -18,6 +18,15 @@
 // «нет ограничений», и на проде четверо из шести врачей не имели
 // карточки вовсе.
 //
+// СРОК ПРОВЕРЯЕТСЯ ЗДЕСЬ, А НЕ ТОЛЬКО КРОНОМ. Лицензия с датой
+// окончания — не «когда-нибудь надо будет снять допуск», а условие
+// прямо сейчас. Ночное задание переводит статус в expired и шлёт
+// письма, но полагаться на него нельзя: сервер перезапущен посреди
+// прогона, задание выключено тумблером, часовой пояс сдвинулся — и
+// просроченный допуск открывал бы рецепты до следующей ночи. Сравнение
+// двух дат на запросе стоит ноль, а ошибается только в безопасную
+// сторону.
+//
 // СОТРУДНИКИ КЛИНИКИ — ОСОБЫЙ СЛУЧАЙ. У ClinicEmployee нет и не может
 // быть DoctorProfile: это внутренняя учётная запись, заведённая самой
 // клиникой, и отвечает за неё клиника. Такие запросы пропускаем — их
@@ -27,7 +36,9 @@
 // проверяется как обычно.
 
 import mongoose from "mongoose";
-import DoctorProfile from "../models/DoctorProfile/profileDoctor.js";
+import DoctorProfile, {
+  допускДействует,
+} from "../models/DoctorProfile/profileDoctor.js";
 import VerificationPolicy from "../models/DoctorVerification/VerificationPolicy.js";
 import { getCurrentActorType } from "../context/tenantContext.js";
 
@@ -112,10 +123,10 @@ export function требуетВерификации(действие, пояс�
       const профиль = await DoctorProfile.findOne({
         userId: new mongoose.Types.ObjectId(String(req.userId)),
       })
-        .select("verificationStatus country")
+        .select("verificationStatus verificationExpiresAt country")
         .lean();
 
-      if (профиль?.verificationStatus === "approved") return next();
+      if (допускДействует(профиль)) return next();
 
       const матрица = await матрицаДоверия(профиль?.country);
       if (матрица[действие] === true) return next();
@@ -123,9 +134,17 @@ export function требуетВерификации(действие, пояс�
       return res.status(403).json({
         success: false,
         code: "DOCTOR_VERIFICATION_REQUIRED",
-        // Статус нужен интерфейсу: «документы на проверке» и «документы не
-        // поданы» — разные сообщения для человека.
-        verificationStatus: профиль?.verificationStatus || "not_submitted",
+        /* Статус нужен интерфейсу: «документы на проверке», «документы
+           не поданы» и «срок истёк» — разные сообщения для человека и
+           разные действия от него.
+           Просроченный допуск показываем как expired, даже если в базе
+           ещё стоит approved: крон мог не успеть, а врачу нужно понять,
+           почему рецепт не выписывается, прямо сейчас. */
+        verificationStatus:
+          профиль?.verificationStatus === "approved"
+            ? "expired"
+            : профиль?.verificationStatus || "not_submitted",
+        verificationExpiresAt: профиль?.verificationExpiresAt || null,
         message:
           пояснение ||
           "Действие доступно после подтверждения документов врача.",

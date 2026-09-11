@@ -2,6 +2,18 @@ import DoctorVerificationDocument from "../../../common/models/DoctorVerificatio
 import DoctorProfile from "../../../common/models/DoctorProfile/profileDoctor.js";
 import { uploadFile } from "../../../common/middlewares/uploadMiddleware.js";
 import { errorText } from "../../../common/i18n/index.js";
+import {
+  СОБЫТИЯ,
+  записатьРешение,
+  контекстЗапроса,
+} from "../../admin/services/doctorVerification.service.js";
+
+/** Дата из формы: либо корректная, либо её нет. */
+function дата(значение) {
+  if (!значение) return null;
+  const d = new Date(значение);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 
 const AddVerificationDocumentsController = async (req, res) => {
   try {
@@ -14,7 +26,25 @@ const AddVerificationDocumentsController = async (req, res) => {
       });
     }
 
-    const { documentType } = req.body;
+    /* Что написано в документе — врач переписывает это с бумаги.
+     *
+     * ПОЧЕМУ ВРУЧНУЮ, А НЕ РАСПОЗНАВАНИЕМ. Дата окончания решает, когда
+     * закроется допуск к рецептам; ошибка распознавания в ней стоит
+     * дороже, чем минута работы врача. Администратор потом сверяет это
+     * с изображением и подтверждает — до подтверждения дата на срок
+     * допуска не влияет вовсе.
+     *
+     * Все поля необязательны: у диплома нет срока, у документа из
+     * страны без реестра может не быть номера. Требовать их от всех
+     * значило бы заставлять придумывать. */
+    const {
+      documentType,
+      documentNumber,
+      issuingAuthority,
+      jurisdictionCode,
+      issuedAt,
+      expiresAt,
+    } = req.body;
 
     if (!documentType) {
       return res.status(400).json({
@@ -85,7 +115,49 @@ const AddVerificationDocumentsController = async (req, res) => {
       fileMime: req.file.mimetype,
       fileSize: req.file.size,
       status: "pending",
+      documentNumber: (documentNumber || "").trim() || null,
+      issuingAuthority: (issuingAuthority || "").trim() || null,
+      jurisdictionCode:
+        (jurisdictionCode || "").trim().toUpperCase() ||
+        // Юрисдикция документа по умолчанию — страна врача. Лицензия
+        // почти всегда выдана там, где он работает; несовпадение
+        // (турецкая лицензия в Азербайджане) врач указывает сам.
+        (doctorProfile.country || "").trim().toUpperCase() ||
+        null,
+      issuedAt: дата(issuedAt),
+      expiresAt: дата(expiresAt),
+      // Слово врача, пока администратор не сверил с изображением.
+      expiryConfirmed: false,
     });
+
+    /* Подача документа — событие журнала.
+     *
+     * Оно нужно не меньше решения администратора: спор «я подавал
+     * лицензию ещё в марте» разрешается записью о подаче, а не
+     * отсутствием таковой. Пишем без транзакции и не роняем загрузку
+     * при сбое журнала: файл уже в хранилище, и откатывать его дороже,
+     * чем потерять одну строчку следа о подаче. Решения администратора,
+     * в отличие от этого, пишутся внутри транзакции. */
+    записатьРешение({
+      действие: СОБЫТИЯ.ПОДАНО,
+      администратор: { userId, role: "doctor" },
+      профиль: doctorProfile,
+      ресурсId: newDocument._id,
+      сведения: {
+        documentType,
+        hasNumber: Boolean(newDocument.documentNumber),
+        hasAuthority: Boolean(newDocument.issuingAuthority),
+        jurisdictionCode: newDocument.jurisdictionCode || null,
+        expiresAt: newDocument.expiresAt
+          ? new Date(newDocument.expiresAt).toISOString()
+          : null,
+        fileMime: req.file.mimetype,
+        fileSize: req.file.size,
+      },
+      контекст: контекстЗапроса(req),
+    }).catch((err) =>
+      console.warn("[верификация] подача не записана в журнал:", err.message),
+    );
 
     return res.status(201).json({
       success: true,

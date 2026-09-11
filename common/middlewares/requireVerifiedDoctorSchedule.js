@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
-import DoctorProfile from "../models/DoctorProfile/profileDoctor.js";
+import DoctorProfile, {
+  допускДействует,
+} from "../models/DoctorProfile/profileDoctor.js";
 
 export default async function requireVerifiedDoctorSchedule(req, res, next) {
   try {
@@ -15,7 +17,7 @@ export default async function requireVerifiedDoctorSchedule(req, res, next) {
     const doctorProfile = await DoctorProfile.findOne({
       userId: doctorUserId,
     })
-      .select("verificationStatus")
+      .select("verificationStatus verificationExpiresAt")
       .lean();
 
     if (!doctorProfile) {
@@ -25,10 +27,19 @@ export default async function requireVerifiedDoctorSchedule(req, res, next) {
       });
     }
 
-    if (doctorProfile.verificationStatus !== "approved") {
+    /* Сравнение со статусом заменено на допускДействует: иначе
+       расписание продолжало бы публиковаться по лицензии, срок которой
+       вышел. Проверка одна на все ограничители — второй истины о том,
+       что такое «подтверждённый врач», быть не должно. */
+    if (!допускДействует(doctorProfile)) {
       return res.status(403).json({
         success: false,
         code: "DOCTOR_VERIFICATION_REQUIRED",
+        verificationStatus:
+          doctorProfile.verificationStatus === "approved"
+            ? "expired"
+            : doctorProfile.verificationStatus,
+        verificationExpiresAt: doctorProfile.verificationExpiresAt || null,
         message:
           "You must verify your doctor account before creating a schedule.",
       });
