@@ -566,6 +566,8 @@ export default {
   "app.scribe.patientCardNotSelected": "Pasiyent kartası seçilməyib",
   "app.upload.pngJpegWebpOnly": "Yalnız PNG, JPEG və ya WEBP",
   "app.surgery.disclaimerRequired": "Simulyasiyadan əvvəl xəbərdarlığı qəbul etməlisiniz",
+  "app.surgery.promptCompileFailed":
+    "Sorğunu model üçün tərcümə etmək mümkün olmadı. Sorğunu ingiliscə yazın və ya sonra yenidən cəhd edin.",
   "app.surgery.caseNotFound": "Keys tapılmadı",
   "app.surgery.simulationNotFound": "Simulyasiya tapılmadı",
   "app.validation.invalidIndex": "İndeks yanlışdır",

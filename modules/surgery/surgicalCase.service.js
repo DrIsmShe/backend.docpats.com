@@ -579,8 +579,17 @@ export async function deleteCase(caseId, surgeonId) {
   return true;
 }
 
+/** Допустимые ракурсы — те же, что в enum схемы. */
+export const PHOTO_VIEWS = ["front", "profile", "three_quarter", "other"];
+
 // ─── Добавить фото ────────────────────────────────────────────────────────
-export async function addPhoto(caseId, surgeonId, fileInfo, label = "before") {
+export async function addPhoto(
+  caseId,
+  surgeonId,
+  fileInfo,
+  label = "before",
+  view = "",
+) {
   const doc = await SurgicalCase.findOne({
     _id: caseId,
     surgeonId,
@@ -592,6 +601,7 @@ export async function addPhoto(caseId, surgeonId, fileInfo, label = "before") {
     filename: fileInfo.filename,
     originalName: fileInfo.originalname,
     label,
+    view: PHOTO_VIEWS.includes(view) ? view : "",
     mimetype: fileInfo.mimetype,
     size: fileInfo.size,
     takenAt: new Date(),
@@ -600,6 +610,32 @@ export async function addPhoto(caseId, surgeonId, fileInfo, label = "before") {
 
   await doc.save();
   return doc.photos[doc.photos.length - 1];
+}
+
+/**
+ * Проставить ракурс уже загруженному снимку.
+ *
+ * Отдельная ручка нужна из-за снимков, залитых до появления поля: их у
+ * врачей уже целые кейсы, а без ракурса симуляция продолжает промахиваться
+ * мимо нужного кадра. Перезаливать ради одной метки — заведомо не тот
+ * способ, которым этим будут пользоваться.
+ */
+export async function setPhotoView(caseId, surgeonId, photoId, view) {
+  if (!PHOTO_VIEWS.includes(view) && view !== "") return null;
+
+  const doc = await SurgicalCase.findOne({
+    _id: caseId,
+    surgeonId,
+    deletedAt: null,
+  });
+  if (!doc) return null;
+
+  const photo = doc.photos.id(photoId);
+  if (!photo) return null;
+
+  photo.view = view;
+  await doc.save();
+  return photo;
 }
 
 // ─── Удалить фото ─────────────────────────────────────────────────────────

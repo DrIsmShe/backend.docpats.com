@@ -566,6 +566,8 @@ export default {
   "app.scribe.patientCardNotSelected": "لم يتم اختيار ملف المريض",
   "app.upload.pngJpegWebpOnly": "PNG أو JPEG أو WEBP فقط",
   "app.surgery.disclaimerRequired": "يجب قبول إخلاء المسؤولية قبل المحاكاة",
+  "app.surgery.promptCompileFailed":
+    "تعذّرت ترجمة الطلب للنموذج. اكتب الطلب بالإنجليزية أو أعد المحاولة لاحقًا.",
   "app.surgery.caseNotFound": "لم يتم العثور على الحالة",
   "app.surgery.simulationNotFound": "لم يتم العثور على المحاكاة",
   "app.validation.invalidIndex": "الفهرس غير صالح",

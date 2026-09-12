@@ -94,17 +94,48 @@ export async function addPhoto(req, res) {
         .json({ success: false, error: "No file uploaded" });
 
     const label = req.body.label || "before";
+    // Ракурс необязателен: старые клиенты его не шлют, и это не ошибка —
+    // снимок просто останется без пометки.
+    const view = String(req.body.view || "");
     const photo = await caseService.addPhoto(
       req.params.id,
       surgeonId,
       req.file,
       label,
+      view,
     );
     if (!photo)
       return res.status(404).json({ success: false, error: "Case not found" });
     res.status(201).json({ success: true, photo });
   } catch (err) {
     console.error("[surgery] addPhoto error:", err);
+    res.status(400).json({ success: false, error: errorText(err, req) });
+  }
+}
+
+// ─── PATCH /api/surgery/cases/:id/photos/:photoId/view ────────────────────
+//
+// Проставить ракурс снимку, который уже лежит в кейсе. Нужно из-за фото,
+// загруженных до появления поля: перезаливать их ради одной пометки никто
+// не станет, а без ракурса симуляция промахивается мимо нужного кадра.
+export async function setPhotoView(req, res) {
+  try {
+    const surgeonId = req.session.userId;
+    const view = String(req.body?.view || "");
+    if (view !== "" && !caseService.PHOTO_VIEWS.includes(view))
+      return res.status(400).json({ success: false, error: "Unknown view" });
+
+    const photo = await caseService.setPhotoView(
+      req.params.id,
+      surgeonId,
+      req.params.photoId,
+      view,
+    );
+    if (!photo)
+      return res.status(404).json({ success: false, error: "Photo not found" });
+    res.json({ success: true, photo });
+  } catch (err) {
+    console.error("[surgery] setPhotoView error:", err);
     res.status(400).json({ success: false, error: errorText(err, req) });
   }
 }

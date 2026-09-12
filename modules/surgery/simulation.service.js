@@ -523,10 +523,18 @@ function pickPrompt(procedure, promptIdx = 0) {
 // Хвост, который держит пациента собой в режиме без маски. Там кадр не
 // собирается по маске, и единственное, что удерживает личность, — сам
 // запрос плюс input_fidelity у модели.
+//
+// ЧЕГО ЗДЕСЬ БЫТЬ НЕ ДОЛЖНО: «keep the same face shape, bone structure».
+// Стояло — и было прямым запретом на то, о чём просит врач: спинка носа и
+// есть костная структура, кончик и есть форма лица. Модель выбирала
+// наименее рискованное прочтение и возвращала исходный кадр без правок —
+// снаружи это выглядело как «ИИ ничего не сделал». По той же причине убрано
+// «change nothing else» сразу после перечисления: рядом с описанием правки
+// оно читается как «не меняй ничего».
 const KEEP_IDENTITY =
-  "Keep the same person with the same identity, face shape, bone structure," +
-  " skin texture, hair, lighting, background and framing, change nothing else," +
-  " photorealistic clinical photograph.";
+  "Keep the same person: identity, hair, skin texture, lighting, background" +
+  " and framing unchanged. Apply the requested change clearly and visibly;" +
+  " leave the rest of the face untouched. Do not flip or mirror the image. Photorealistic clinical photograph.";
 
 /**
  * Пресет каталога под нужный режим. Каталог писался для инпейнта — это
@@ -598,12 +606,28 @@ export async function createSimulation(
     : cas.procedure;
 
   const raw = (customPrompt || "").trim();
-  const { prompt, compiled } = raw
+  const { prompt, compiled, reason: compileReason } = raw
     ? await compilePrompt(raw, cas.procedure, mode === "full" ? "edit" : "inpaint")
     : {
         prompt: presetFor(promptZone, Number(promptIdx) || 0, mode),
         compiled: false,
       };
+
+  // Текст не на латинице, а перевести его не удалось — генерацию не
+  // запускаем вовсе. FLUX обучен на английских подписях: русский текст для
+  // неё шум, она вернёт почти исходный кадр. Раньше это всё равно уходило в
+  // модель — врач платил за генерацию и получал свой же снимок обратно, без
+  // единого намёка на то, что перевод не состоялся.
+  if (raw && !compiled && /[^\u0000-\u024F]/.test(raw)) {
+    throw Object.assign(
+      new Error(
+        "Не удалось перевести запрос для модели" +
+          (compileReason ? ` (${compileReason})` : "") +
+          ". Напишите запрос по-английски или повторите позже.",
+      ),
+      { i18n: "app.surgery.promptCompileFailed" },
+    );
+  }
 
   const simulation = await Simulation.create({
     caseId,
@@ -615,6 +639,7 @@ export async function createSimulation(
     prompt,
     promptRaw: raw || null,
     promptCompiled: compiled,
+    promptCompileReason: compiled ? null : compileReason || null,
     negativePrompt: NEGATIVE_PROMPT,
     // Сколько вариантов просить у модели. Каждый — отдельная оплаченная
     // генерация: на gpt-image-2 при quality=high вариант стоит около $0.165,

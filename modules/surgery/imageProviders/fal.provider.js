@@ -12,11 +12,21 @@
 // Работа асинхронная: submit → опрос статуса → забрать результат.
 
 // Две модели, потому что задачи разные. Fill заполняет отмеченную зону и
-// без маски работать не может вовсе. Kontext правит снимок по инструкции —
-// «подними кончик носа» — и маски не требует: это аналог того, как
-// редактирует ChatGPT.
+// без маски работать не может вовсе. Правка по инструкции — «подними
+// кончик носа» — маски не требует: модель сама находит нужное место.
+//
+// ПОЧЕМУ НЕ FLUX KONTEXT. Он стоял здесь и на клинических снимках просто
+// не делал правку: на профильном фото с выраженной горбинкой и kontext, и
+// kontext/max возвращали тот же нос — проверено прогонами через этот же
+// провайдер. Дело не в формулировке: грубое «сделай нос заметно меньше»
+// он тоже отработал едва различимо. Nano Banana (Gemini 2.5 Flash Image)
+// на том же снимке и том же запросе выпрямляет спинку носа и поднимает
+// кончик — видно невооружённым глазом.
+//
+// Старая модель остаётся доступной через FAL_EDIT_MODEL: форма запроса у
+// семейств разная, и переключение учитывает это ниже, в run().
 const MODEL = process.env.FAL_MODEL || "fal-ai/flux-pro/v1/fill";
-const EDIT_MODEL = process.env.FAL_EDIT_MODEL || "fal-ai/flux-pro/kontext";
+const EDIT_MODEL = process.env.FAL_EDIT_MODEL || "fal-ai/nano-banana/edit";
 const MAX_WAIT_MS = 180_000;
 const POLL_INTERVAL_MS = 3_000;
 
@@ -53,16 +63,38 @@ export const falProvider = {
     if (!FAL_KEY) throw new Error(this.missingHint);
 
     const model = maskBuffer ? MODEL : EDIT_MODEL;
-    const body = {
-      image_url: toDataUri(imageBuffer, sniffMime(imageBuffer)),
-      prompt,
-      num_images: numOutputs || 1,
-      output_format: "jpeg",
-      safety_tolerance: "5",
-    };
+    const dataUri = toDataUri(imageBuffer, sniffMime(imageBuffer));
+
+    // Форма запроса зависит от семейства модели. Nano Banana принимает
+    // МАССИВ image_urls и не знает ни guidance_scale, ни negative_prompt;
+    // FLUX принимает одиночный image_url. Перепутать нельзя: лишнее поле
+    // возвращается как 422, а не игнорируется.
+    const nanoBanana = model.includes("nano-banana");
+
+    const body = nanoBanana
+      ? {
+          prompt,
+          image_urls: [dataUri],
+          num_images: numOutputs || 1,
+          output_format: "jpeg",
+        }
+      : {
+          image_url: dataUri,
+          prompt,
+          num_images: numOutputs || 1,
+          output_format: "jpeg",
+          safety_tolerance: "5",
+        };
+
     if (maskBuffer) {
       body.mask_url = toDataUri(maskBuffer, sniffMime(maskBuffer));
       body.negative_prompt = negativePrompt;
+    } else if (!nanoBanana) {
+      // Насколько буквально FLUX следует инструкции. Значение по умолчанию
+      // (3.5) настроено на бытовые правки, где осторожность уместна; на
+      // клинических снимках она оборачивается тем, что модель возвращает
+      // почти исходный кадр.
+      body.guidance_scale = Number(process.env.FAL_EDIT_GUIDANCE || 4);
     }
 
     console.log(

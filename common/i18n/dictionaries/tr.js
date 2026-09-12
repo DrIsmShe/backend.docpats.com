@@ -566,6 +566,8 @@ export default {
   "app.scribe.patientCardNotSelected": "Hasta dosyası seçilmedi",
   "app.upload.pngJpegWebpOnly": "Yalnızca PNG, JPEG veya WEBP",
   "app.surgery.disclaimerRequired": "Simülasyondan önce sorumluluk reddini kabul etmelisiniz",
+  "app.surgery.promptCompileFailed":
+    "İstek model için çevrilemedi. İsteği İngilizce yazın veya daha sonra tekrar deneyin.",
   "app.surgery.caseNotFound": "Vaka bulunamadı",
   "app.surgery.simulationNotFound": "Simülasyon bulunamadı",
   "app.validation.invalidIndex": "Dizin geçersiz",

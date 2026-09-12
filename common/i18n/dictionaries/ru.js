@@ -567,6 +567,8 @@ export default {
   "app.scribe.patientCardNotSelected": "Не выбрана карта пациента",
   "app.upload.pngJpegWebpOnly": "Только PNG/JPEG/WEBP",
   "app.surgery.disclaimerRequired": "Необходимо принять дисклеймер перед симуляцией",
+  "app.surgery.promptCompileFailed":
+    "Не удалось перевести запрос для модели. Напишите запрос по-английски или повторите позже.",
   "app.surgery.caseNotFound": "Кейс не найден",
   "app.surgery.simulationNotFound": "Симуляция не найдена",
   "app.validation.invalidIndex": "Неверный индекс",

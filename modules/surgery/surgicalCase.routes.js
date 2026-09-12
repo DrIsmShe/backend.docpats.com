@@ -107,6 +107,9 @@ router.post(
   ctrl.addPhoto,
 );
 router.delete("/cases/:id/photos/:photoId", ctrl.removePhoto);
+// Ракурс снимка проставляется отдельно от загрузки: у врачей уже лежат
+// кейсы со снимками без него.
+router.patch("/cases/:id/photos/:photoId/view", ctrl.setPhotoView);
 
 // Follow-up
 router.post("/cases/:id/followup", ctrl.addFollowUp);

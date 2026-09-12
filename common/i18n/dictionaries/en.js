@@ -566,6 +566,8 @@ export default {
   "app.scribe.patientCardNotSelected": "No patient chart selected",
   "app.upload.pngJpegWebpOnly": "PNG, JPEG or WEBP only",
   "app.surgery.disclaimerRequired": "You must accept the disclaimer before the simulation",
+  "app.surgery.promptCompileFailed":
+    "Could not translate the request for the model. Write the request in English or try again later.",
   "app.surgery.caseNotFound": "Case not found",
   "app.surgery.simulationNotFound": "Simulation not found",
   "app.validation.invalidIndex": "Invalid index",

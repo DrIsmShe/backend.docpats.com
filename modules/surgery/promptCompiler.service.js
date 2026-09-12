@@ -49,13 +49,14 @@ Rules:
 - COVER EVERY CHANGE THE SURGEON ASKED FOR. Two requests mean two instructions. Dropping one silently is the worst failure mode: the surgeon sees a result that ignores part of the request and cannot tell why.
 - Imperative and local: "Raise the nasal tip slightly." "Remove the under-eye bags." Never describe the person, never restate what is already there.
 - Numeric amounts (degrees, millimetres) cannot be honoured by image models. Convert them into qualitative wording: "raise 10 degrees" -> "raise slightly". Never keep the number.
-- Always end with exactly this sentence: Keep the same person with the same identity, face shape, bone structure, skin texture, hair, lighting, background and framing, change nothing else, photorealistic clinical photograph.
+- Always end with exactly this sentence: Keep the same person: identity, hair, skin texture, lighting, background and framing unchanged. Apply the requested change clearly and visibly; leave the rest of the face untouched. Do not flip or mirror the image. Photorealistic clinical photograph.
+- NEVER add "keep the same face shape" or "keep the same bone structure": for facial surgery that forbids the very change being asked for, and the model responds by returning the photograph unchanged.
 - No beautification: do not smooth unrelated skin, do not add makeup, do not slim the face, do not change age or expression.
 - 60 words maximum.
 
 Example.
 Request (rhinoplasty): "подними кончик носа и убери мешки под глазами"
-Output: Raise the nasal tip slightly. Remove the puffiness and bags under both eyes. Keep the same person with the same identity, face shape, bone structure, skin texture, hair, lighting, background and framing, change nothing else, photorealistic clinical photograph.`;
+Output: Raise the nasal tip slightly. Remove the puffiness and bags under both eyes. Keep the same person: identity, hair, skin texture, lighting, background and framing unchanged. Apply the requested change clearly and visibly; leave the rest of the face untouched. Do not flip or mirror the image. Photorealistic clinical photograph.`;
 
 // Режим маски — для случая, когда врач ограничил правку участком. Здесь
 // модель видит только вырезанную зону и заполняет её по ОПИСАНИЮ: команда

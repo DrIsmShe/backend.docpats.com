@@ -18,6 +18,7 @@ import {
   strokeSurvival,
 } from "./maskGeometry.js";
 import { describeSubject } from "./subjectAnalysis.service.js";
+import { meanAbsDiff, WEAK_CHANGE_THRESHOLD } from "./changeScore.js";
 import {
   isFaceProcedure,
   maxPaintedPct,
@@ -285,13 +286,63 @@ const worker = new Worker(
       sim.cropRegion = region || null;
       await sim.save();
 
-      const { requestId, images, ext } = await provider.run({
+      let { requestId, images, ext } = await provider.run({
         imageBuffer: modelImage,
         maskBuffer: modelMask,
         prompt: promptFinal,
         negativePrompt: sim.negativePrompt,
         numOutputs: sim.numOutputs || 1,
       });
+
+      // ─── Правка вообще состоялась? ──────────────────────────────────
+      //
+      // Модели редактирования недетерминированы: на одном снимке с одним
+      // запросом Nano Banana то выпрямляет спинку носа, то возвращает кадр
+      // нетронутым. Раньше второй случай доходил до врача как успех —
+      // статус «Готово» и та же фотография. Отличить поломку платформы от
+      // осечки модели было нечем, и врач решал, что сломано всё.
+      //
+      // В режиме с маской не меряем: там кадр собирается композитом, и
+      // отличие гарантировано самой сборкой.
+      let changeScore = null;
+      if (!maskBuffer && images.length) {
+        changeScore = await meanAbsDiff(imageBuffer, images[0]);
+        console.log(
+          `📏 [simulation.worker] отличие от оригинала: ${changeScore.toFixed(2)}`,
+        );
+
+        if (changeScore < WEAK_CHANGE_THRESHOLD) {
+          // Одна повторная попытка — не цикл. Каждая попытка оплачена, и
+          // модель, дважды вернувшая исходник, третий раз его же и вернёт.
+          console.log("🔁 [simulation.worker] правки не видно — повтор с усиленной формулировкой");
+          const retry = await provider.run({
+            imageBuffer: modelImage,
+            maskBuffer: modelMask,
+            prompt:
+              "The previous attempt returned the photograph unchanged. " +
+              "Make the requested change clearly and unmistakably visible this time. " +
+              promptFinal,
+            negativePrompt: sim.negativePrompt,
+            numOutputs: sim.numOutputs || 1,
+          });
+
+          const retryScore = retry.images.length
+            ? await meanAbsDiff(imageBuffer, retry.images[0])
+            : 0;
+          console.log(
+            `📏 [simulation.worker] повтор: ${retryScore.toFixed(2)}`,
+          );
+
+          // Берём лучшую из двух попыток, а не последнюю: вторая может
+          // оказаться хуже первой, и тогда повтор только ухудшил бы результат.
+          if (retryScore > changeScore) {
+            images = retry.images;
+            requestId = retry.requestId;
+            ext = retry.ext;
+            changeScore = retryScore;
+          }
+        }
+      }
 
       // ─── Сборка кадра ───────────────────────────────────────────────
       //
@@ -331,6 +382,11 @@ const worker = new Worker(
       sim.status = "done";
       sim.replicateId = requestId;
       sim.resultFilenames = resultFilenames;
+      sim.changeScore = changeScore === null ? null : Number(changeScore.toFixed(2));
+      // Честная пометка: модель отработала, но снимок остался прежним.
+      // Врач должен это видеть, а не искать разницу на глаз.
+      sim.weakChange =
+        changeScore !== null && changeScore < WEAK_CHANGE_THRESHOLD;
       await sim.save();
 
       if (io) {
