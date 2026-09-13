@@ -24,6 +24,7 @@ import { decryptPHI } from "../../common/utils/phiCrypto.js";
 import {
   resolveEffectivePlan,
   videraFilmsAllowed,
+  videraBrandingMode,
 } from "../../common/config/aiPlanLimits.js";
 import User from "../../common/models/Auth/users.js";
 import ClinicEmployee from "../clinic/clinic-staff/models/clinicEmployee.model.js";
@@ -49,13 +50,31 @@ function имя(сущность) {
  * неподписанным, а не не выйдет вовсе.
  */
 async function клиника(clinicId) {
-  if (!clinicId) return "";
+  if (!clinicId) return { name: "", logo: "" };
   try {
-    const к = await Clinic.findById(clinicId).select("name").lean();
-    return к?.name || "";
+    const к = await Clinic.findById(clinicId).select("name logo").lean();
+    return { name: к?.name || "", logo: к?.logo || "" };
   } catch {
-    return "";
+    return { name: "", logo: "" };
   }
+}
+
+/**
+ * Логотип клиники абсолютной ссылкой.
+ *
+ * Студия стоит на другом сервере и относительный путь у себя не найдёт —
+ * знак просто не появится, и понять почему будет неоткуда. Если логотип
+ * уже полный URL (R2, CDN), отдаём как есть.
+ */
+function ссылкаНаЛоготип(logo) {
+  const v = String(logo || "").trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  const base = String(process.env.PUBLIC_API_URL || process.env.API_URL || "")
+    .trim()
+    .replace(/\/+$/, "");
+  if (!base) return "";
+  return `${base}/${v.replace(/^\/+/, "")}`;
 }
 
 /**
@@ -100,10 +119,22 @@ router.get(
     // и водяной знак (и лимит фильмов) берётся от её плана, а не его.
     const plan = userId ? resolveEffectivePlan(кто) : "clinic";
 
+    const данныеКлиники = await клиника(clinicId);
+
+    // Чей знак на фильме. Свой логотип разрешён только клиническим
+    // тарифам — и только если логотип у клиники действительно загружен:
+    // обещать «свой знак» и поставить пустоту хуже, чем оставить наш.
+    const режимЗнака = videraBrandingMode(plan);
+    const логотип =
+      режимЗнака === "own" ? ссылкаНаЛоготип(данныеКлиники.logo) : "";
+    const знак = режимЗнака === "own" && !логотип ? "none" : режимЗнака;
+
     const url = ссылкаНаСтудию({
       id: String(userId || employeeId),
       name: имя(кто),
-      clinic: await клиника(clinicId),
+      clinic: данныеКлиники.name,
+      badge: знак,
+      logo: логотип,
       /* Роль нужна студии, чтобы кнопка «Отправить в DocPats» вела в ЕГО
          кабинет. Раньше роли в пропуске не было, студия открывала
          /doctor/videos всем подряд, и пациент попадал в чужую зону: её
