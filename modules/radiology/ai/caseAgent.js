@@ -84,6 +84,7 @@ import {
   reviseVpCase,
 } from "./caseReviser.js";
 import { runAutoFix, runTargetedFix } from "./autoFix.js";
+import { getAgentLimits } from "../radiology-cases/models/autogenSetting.model.js";
 import { saveAiReview, resolveAiIssuesByAgent } from "./aiReviewStore.js";
 import { adjudicateIssues } from "./issueAdjudicator.js";
 import { startCaseTranslation } from "../translation/onPublish.js";
@@ -408,7 +409,7 @@ export async function runCaseAgent({
   caseId,
   actorId,
   actorRole,
-  maxRounds = 3,
+  maxRounds,
   hint,
   publish = true,
   resolveIssues = true,
@@ -416,8 +417,14 @@ export async function runCaseAgent({
   const cfg = STATIONS[station];
   if (!cfg) throw new ValidationError(`Неизвестная станция "${station}"`);
 
+  // Потолок — из настроек владельца. Явно переданный maxRounds (вызов из
+  // кода, тесты) сильнее: там уже сказано, сколько кругов нужно.
+  const limits = await getAgentLimits();
+  const roundsCap = Number.isFinite(maxRounds) ? maxRounds : limits.maxRounds;
+  const deadlineMs = Math.min(DEADLINE_MS, limits.deadlineMin * 60_000);
+
   const startedAt = Date.now();
-  const deadlineAt = startedAt + DEADLINE_MS;
+  const deadlineAt = startedAt + deadlineMs;
   const timeLeft = () => deadlineAt - Date.now();
   const elapsed = () => Date.now() - startedAt;
 
@@ -489,7 +496,13 @@ export async function runCaseAgent({
     return cfg.revise(current, issues, doc, insistentHint);
   };
 
-  const out = await runAutoFix({ draft, revise, verify, maxRounds, deadlineAt });
+  const out = await runAutoFix({
+    draft,
+    revise,
+    verify,
+    maxRounds: roundsCap,
+    deadlineAt,
+  });
 
   const usage = { ...out.usage };
   const addUsage = (u) => {

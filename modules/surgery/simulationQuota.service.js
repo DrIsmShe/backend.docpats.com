@@ -29,11 +29,21 @@ import { ValidationError } from "../../common/utils/errors.js";
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 const FEATURE = "aiSimulations";
 
-/** Сколько симуляций сделано за последние 30 дней. */
+/**
+ * Сколько УДАВШИХСЯ симуляций сделано за последние 30 дней.
+ *
+ * weakChange исключается намеренно. Модели редактирования недетерминированы
+ * и время от времени возвращают снимок нетронутым; воркер это измеряет и
+ * помечает. Списывать за такой результат квоту — значит брать деньги за
+ * пустой кадр: врач на Lite сжигает все пять попыток на осечках модели и
+ * уходит с выводом, что платформа сломана. Расход на сам кадр мы при этом
+ * несём (0.07 $), но терять из-за него пользователя дороже.
+ */
 export async function usedInWindow(surgeonId, now = Date.now()) {
   return Simulation.countDocuments({
     surgeonId,
     status: "done",
+    weakChange: { $ne: true },
     createdAt: { $gte: new Date(now - MONTH_MS) },
   });
 }
@@ -48,7 +58,9 @@ export async function usedInWindow(surgeonId, now = Date.now()) {
  */
 async function planQuota(surgeonId) {
   const user = await User.findById(surgeonId)
-    .select("role subscriptionPlan subscriptionEndsAt trialEndsAt")
+    .select(
+      "role subscriptionPlan subscriptionEndsAt trialEndsAt aiSimulationsAddon",
+    )
     .lean();
   if (!user) return { plan: "unknown", limit: 0 };
 
@@ -56,7 +68,13 @@ async function planQuota(surgeonId) {
   const limit = getLimit(plan, FEATURE);
 
   if (limit < 0) return null; // явный безлимит
-  return { plan, limit: limit || 0 };
+
+  // Докупленный пакет поднимает потолок сразу: врач упирается в лимит
+  // посреди месяца, когда пациент уже сидит перед ним, и ждать первого
+  // числа ему незачем. Тратится пакет только ПОСЛЕ месячного лимита —
+  // списание живёт в chargeSimulation().
+  const addon = Math.max(0, Number(user.aiSimulationsAddon) || 0);
+  return { plan, limit: (limit || 0) + addon, planLimit: limit || 0, addon };
 }
 
 /**
@@ -105,8 +123,35 @@ export async function simulationQuotaLeft(surgeonId, now = Date.now()) {
   };
 }
 
+/**
+ * Списать одну симуляцию с докупленного пакета, если месячный лимит
+ * тарифа уже исчерпан.
+ *
+ * Вызывается ПОСЛЕ того, как стало известно, что правка состоялась: до
+ * этого момента неизвестно, за что списывать. Поэтому проверка квоты
+ * (перед обращением к модели) и списание пакета (после результата) —
+ * разные вызовы, а не один.
+ *
+ * Безлимитный тариф и остаток внутри месячного лимита пакета не трогают.
+ */
+export async function chargeSimulation(surgeonId, now = Date.now()) {
+  const quota = await planQuota(surgeonId);
+  if (!quota || !quota.addon) return;
+
+  const used = await usedInWindow(surgeonId, now);
+  if (used <= quota.planLimit) return; // ещё внутри тарифа
+
+  // $inc с проверкой остатка в фильтре: два параллельных воркера не
+  // должны увести баланс в минус.
+  await User.updateOne(
+    { _id: surgeonId, aiSimulationsAddon: { $gt: 0 } },
+    { $inc: { aiSimulationsAddon: -1 } },
+  );
+}
+
 export default {
   assertSimulationAllowed,
   simulationQuotaLeft,
   usedInWindow,
+  chargeSimulation,
 };

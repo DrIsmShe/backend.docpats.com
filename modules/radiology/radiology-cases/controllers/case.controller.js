@@ -36,6 +36,8 @@ import {
   stopDailyCaseGeneration,
   getAutogenFullState,
   setNightlyAutogen,
+  setAutogenPerNight,
+  setAutogenAgentLimits,
 } from "../../../../jobs/radiologyDailyCases.job.js";
 import {
   createCaseSchema,
@@ -385,6 +387,24 @@ export const stopAutogenController = asyncHandler(async (req, res) => {
 export const autogenStateController = asyncHandler(async (req, res) => {
   const state = await getAutogenFullState();
   res.json({ ...state, aiEnabled: aiConfigured() });
+});
+
+// Сколько кейсов генерировать за ночь на каждую станцию.
+//
+// Отдельно от выключателя намеренно: «выключить совсем» и «делать меньше» —
+// разные решения, и объединять их в один запрос значило бы заставлять
+// владельца трогать выключатель, когда он просто хочет два кейса вместо семи.
+export const autogenPerNightController = asyncHandler(async (req, res) => {
+  const actorId = req.radiologyActor?.userId ?? null;
+  const applied = await setAutogenPerNight(req.body || {}, actorId);
+  // Потолок агента приходит тем же запросом: для владельца это одно
+  // решение — «сколько платформа тратит на арену», — и разносить его по
+  // двум формам значило бы заставить нажимать «Сохранить» дважды.
+  if (req.body?.agent) {
+    await setAutogenAgentLimits(req.body.agent, actorId);
+  }
+  const state = await getAutogenFullState();
+  res.json({ ...state, perNight: applied, aiEnabled: aiConfigured() });
 });
 
 // Включить/выключить НОЧНУЮ генерацию. Идущий прогон это не трогает — для

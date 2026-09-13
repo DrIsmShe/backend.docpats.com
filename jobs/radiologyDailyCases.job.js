@@ -75,6 +75,10 @@ import { findCaseImageSources } from "../modules/radiology/ai/imageSourceFinder.
 import {
   isAutogenAllowedByStore,
   setAutogenAllowed,
+  getPerNight,
+  setPerNight,
+  getAgentLimits,
+  setAgentLimits,
 } from "../modules/radiology/radiology-cases/models/autogenSetting.model.js";
 import {
   verifyRadiologyCase,
@@ -531,6 +535,13 @@ export async function runDailyCaseGeneration({
   // Выключатель из админки. Проверяется ЗДЕСЬ, при каждом прогоне, а не при
   // регистрации cron: иначе выключение требовало бы перезапуска сервера — то
   // самое, от чего кнопка и избавляет.
+  //
+  // ДЕЙСТВУЕТ И НА РУЧНОЙ ЗАПУСК — намеренно, это стоп-кран расходов, а не
+  // расписание: выключив генерацию, владелец не должен обнаружить счёт
+  // из-за случайного нажатия кнопки. Поведение закреплено тестом
+  // «ручной запуск тоже подчиняется выключателю». Цена решения — кнопки
+  // молча не работают, пока ночная выключена; чтобы это не выглядело
+  // поломкой, админка гасит их и объясняет причину.
   if (!(await isAutogenAllowedByStore())) {
     console.log("🤖 Автокейсы арены: выключены владельцем в админке");
     result.disabled = true;
@@ -548,14 +559,49 @@ export async function runDailyCaseGeneration({
   // План работ: лучевые модальности + станции без снимков. Порядок такой,
   // чтобы при обрыве прогона в первую очередь были сделаны лучевые кейсы —
   // те, что дольше всего ждут человека.
+  // СКОЛЬКО КЕЙСОВ ЗА НОЧЬ. Настройка владельца из админки; ручной прогон
+  // с явным списком модальностей её не касается — там человек уже сказал,
+  // что именно хочет получить.
+  const perNight = modalities ? null : await getPerNight();
+
+  // Какие модальности берём, если их просят меньше, чем есть.
+  //
+  // Не первые N подряд: при одной модальности в сутки арена год получала бы
+  // только рентген, а ЭКГ не появилась бы никогда. Сдвиг по номеру дня
+  // прокручивает список, поэтому за пять суток покрываются все пять станций
+  // без хранения «на чём остановились» — состояние здесь только лишний
+  // источник расхождений.
+  const pickModalities = (list, count) => {
+    if (!Number.isFinite(count) || count >= list.length) return list;
+    if (count <= 0) return [];
+    const dayIndex = Math.floor(now.getTime() / 86400000);
+    const offset = list.length ? dayIndex % list.length : 0;
+    return Array.from({ length: count }, (_, i) => list[(offset + i) % list.length]);
+  };
+
+  const chosenModalities = perNight
+    ? pickModalities(modalityList, perNight.radiology)
+    : modalityList;
+
+  // Станция без снимков может быть запрошена несколько раз за ночь: каждый
+  // повтор берёт СЛЕДУЮЩУЮ тему программы, поэтому кейсы не дублируются.
+  const repeat = (station) => {
+    const count = perNight ? perNight[station] ?? 1 : 1;
+    return Array.from({ length: Math.max(0, count) }, () => ({
+      station,
+      topicKey: station,
+      name: station,
+    }));
+  };
+
   const plan = [
-    ...modalityList.map((modality) => ({
+    ...chosenModalities.map((modality) => ({
       station: "radiology",
       topicKey: modality,
       modality,
       name: modality,
     })),
-    ...stations.map((station) => ({ station, topicKey: station, name: station })),
+    ...stations.flatMap((station) => repeat(station)),
   ];
 
   for (const item of plan) {
@@ -678,6 +724,13 @@ export async function getAutogenFullState() {
     // не решает, и владелец должен это видеть, а не гадать.
     envEnabled: isAutogenEnabled(),
     nightlyEnabled: await isAutogenAllowedByStore(),
+    // Сколько кейсов запланировано на ночь по каждой станции: админка
+    // показывает это рядом с выключателем, чтобы «включено» не означало
+    // неизвестно какой счёт.
+    perNight: await getPerNight(),
+    // Потолок агента сборки кейса — самая дорогая операция арены, и
+    // владелец должен видеть её рядом с остальными расходными настройками.
+    agentLimits: await getAgentLimits(),
   };
 }
 
@@ -689,6 +742,22 @@ export async function getAutogenFullState() {
  * переживает перезапуск сервера — иначе выключенная вечером генерация сама
  * ожила бы ночью после любого рестарта.
  */
+/**
+ * Сохранить, сколько кейсов делать за ночь на каждую станцию.
+ *
+ * Живёт рядом с выключателем, а не в модели, чтобы у админки был один
+ * источник правды об автогенерации: состояние, выключатель и количества
+ * приходят и уходят через этот модуль.
+ */
+export async function setAutogenPerNight(counts, actorId = null) {
+  return setPerNight(counts, actorId);
+}
+
+/** Сохранить потолок агента сборки кейса. */
+export async function setAutogenAgentLimits(limits, actorId = null) {
+  return setAgentLimits(limits, actorId);
+}
+
 export async function setNightlyAutogen(enabled, actorId = null) {
   const value = await setAutogenAllowed(enabled, actorId);
   console.log(`🤖 Автокейсы арены: ночная генерация ${value ? "ВКЛЮЧЕНА" : "ВЫКЛЮЧЕНА"} владельцем`);

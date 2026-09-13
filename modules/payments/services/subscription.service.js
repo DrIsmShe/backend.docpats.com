@@ -11,6 +11,8 @@ import {
   PLAN_PRICES,
   EXAM_ADDONS,
   EXAM_ADDON_PRICES,
+  SIMULATION_PACKS,
+  SIMULATION_PACK_PRICES,
 } from "../../../common/config/aiPlanLimits.js";
 
 /**
@@ -21,6 +23,14 @@ import {
  */
 export function isExamAddon(planKey) {
   return Boolean(EXAM_ADDONS[planKey]);
+}
+
+/**
+ * Пакет AI-симуляций. Отличается от подписки и от экзаменационного аддона
+ * тем, что не имеет срока: это баланс, который тратится по мере работы.
+ */
+export function isSimulationPack(planKey) {
+  return Boolean(SIMULATION_PACKS[planKey]);
 }
 
 // Аддон доступен любой роли: он про подготовку к экзаменам, а не про
@@ -64,6 +74,16 @@ export function assertPlanAllowed(planKey, period, role) {
     return;
   }
 
+  // Пакет симуляций покупает только врач: инструмент врачебный, и
+  // показывать его пациенту как товар нельзя — симуляция перестала бы
+  // быть средством объяснения и стала обещанием результата.
+  if (isSimulationPack(planKey)) {
+    if (role !== "doctor") {
+      throw new Error(`Role "${role}" cannot purchase pack "${planKey}"`);
+    }
+    return;
+  }
+
   if (!PLAN_PRICES[planKey]) {
     throw new Error(`Unknown or non-purchasable plan: ${planKey}`);
   }
@@ -79,7 +99,9 @@ export function assertPlanAllowed(planKey, period, role) {
 export function getPlanAmount(planKey, period) {
   const price = isExamAddon(planKey)
     ? EXAM_ADDON_PRICES[planKey]
-    : PLAN_PRICES[planKey];
+    : isSimulationPack(planKey)
+      ? SIMULATION_PACK_PRICES[planKey]
+      : PLAN_PRICES[planKey];
   if (!price) return 0;
   return price[period] || 0;
 }
@@ -159,6 +181,19 @@ export async function grantPlan(user, { planKey, months = 1, now = new Date() })
   // срок считается из months.
   assertPlanAllowed(planKey, "monthly", user.role);
 
+  // Пакет симуляций не трогает ни подписку, ни её срок: он прибавляет
+  // остаток. Докупка поверх остатка складывается, а не заменяет его.
+  if (isSimulationPack(planKey)) {
+    const pack = SIMULATION_PACKS[planKey];
+    user.aiSimulationsAddon = (user.aiSimulationsAddon || 0) + pack.simulations;
+    user.paymentLastChargedAt = now;
+    await user.save({ validateModifiedOnly: true });
+    return {
+      aiSimulationsAddon: user.aiSimulationsAddon,
+      subscriptionPlan: user.subscriptionPlan ?? null,
+    };
+  }
+
   if (isExamAddon(planKey)) {
     user.examAddon = planKey;
     user.examAddonEndsAt = computeEndFromMonths(
@@ -204,6 +239,19 @@ export async function activateSubscription(user, opts) {
   // Аддон не трогает основной план — у него своё поле и свой срок.
   // Стекинг тот же: докупка до истечения продлевает от конца, а не
   // обнуляет остаток.
+  // Пакет симуляций не трогает ни подписку, ни её срок: он прибавляет
+  // остаток. Докупка поверх остатка складывается, а не заменяет его.
+  if (isSimulationPack(planKey)) {
+    const pack = SIMULATION_PACKS[planKey];
+    user.aiSimulationsAddon = (user.aiSimulationsAddon || 0) + pack.simulations;
+    user.paymentLastChargedAt = now;
+    await user.save({ validateModifiedOnly: true });
+    return {
+      aiSimulationsAddon: user.aiSimulationsAddon,
+      subscriptionPlan: user.subscriptionPlan ?? null,
+    };
+  }
+
   if (isExamAddon(planKey)) {
     user.examAddon = planKey;
     user.examAddonEndsAt = computeSubscriptionEnd(

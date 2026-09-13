@@ -20,7 +20,12 @@ export const CONFERENCE_CATEGORIES = [
   "womens-health",
   "pediatrics",
   "mental-health",
-  "ophthalmology-ent",
+  // Разделены: офтальмолог и ЛОР — разные конференции, разные аудитории.
+  // Старый код "ophthalmology-ent" оставлен ниже в разборе названий: у уже
+  // размеченных конференций он лежит в базе, и выкинуть его значило бы
+  // потерять их из фильтра.
+  "ophthalmology",
+  "ent",
   "sports-medicine",
   "oncology",
   "emergency",
@@ -39,7 +44,11 @@ const BY_CATEGORY_NAME = {
   "womens health": "womens-health",
   pediatrics: "pediatrics",
   "mental health": "mental-health",
-  "ophthalmology and ent": "ophthalmology-ent",
+  ophthalmology: "ophthalmology",
+  ent: "ent",
+  // Легаси: так категория называлась до разделения. Оставлено, чтобы
+  // конференции, размеченные раньше, не остались без кода.
+  "ophthalmology and ent": "ophthalmology",
   "sports medicine": "sports-medicine",
   oncology: "oncology",
   "emergency care": "emergency",

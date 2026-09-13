@@ -12,6 +12,9 @@ import {
   EXAM_ADDONS,
   EXAM_ADDON_PRICES,
   EXAM_ADDON_DISPLAY_NAMES,
+  SIMULATION_PACKS,
+  SIMULATION_PACK_PRICES,
+  SIMULATION_PACK_DISPLAY_NAMES,
   resolveEffectivePlan,
   resolveExamAddon,
 } from "../../../common/config/aiPlanLimits.js";
@@ -53,11 +56,26 @@ export async function getPlans(req, res) {
       limits: EXAM_ADDONS[key],
     }));
 
+    // Пакеты симуляций — тоже надстройка, но с важным отличием от
+    // экзаменационных аддонов: у них нет срока. Это остаток, который
+    // тратится по мере работы, поэтому period в ответе одинаковый, а
+    // интерфейсу отдаётся количество, а не лимит в месяц.
+    const simulationPacks = Object.keys(SIMULATION_PACKS).map((key) => ({
+      key,
+      name: SIMULATION_PACK_DISPLAY_NAMES[key] || key,
+      audience: "doctors",
+      currency: "USD",
+      price: SIMULATION_PACK_PRICES[key]?.monthly ?? null,
+      simulations: SIMULATION_PACKS[key].simulations,
+      oneOff: true,
+    }));
+
     return res.status(200).json({
       success: true,
       currency: "USD",
       plans,
       addons,
+      simulationPacks,
       // Состояние кассы. Интерфейс по нему решает, показывать «Подключить»
       // или «Сообщить о запуске» — и не хранит собственной заглушки, из-за
       // которой в день запуска пришлось бы править компоненты.

@@ -19,6 +19,7 @@ import {
 } from "./maskGeometry.js";
 import { describeSubject } from "./subjectAnalysis.service.js";
 import { meanAbsDiff, WEAK_CHANGE_THRESHOLD } from "./changeScore.js";
+import { chargeSimulation } from "./simulationQuota.service.js";
 import {
   isFaceProcedure,
   maxPaintedPct,
@@ -388,6 +389,22 @@ const worker = new Worker(
       sim.weakChange =
         changeScore !== null && changeScore < WEAK_CHANGE_THRESHOLD;
       await sim.save();
+
+      // Удавшаяся симуляция сверх месячного лимита тратит докупленный
+      // пакет. За пустой результат не списываем ничего — ни квоту, ни
+      // пакет: врач не должен платить за осечку модели.
+      if (!sim.weakChange) {
+        try {
+          await chargeSimulation(surgeonId);
+        } catch (err) {
+          // Не роняем готовую симуляцию из-за учёта: картинка сделана и
+          // врачу нужна. Расхождение видно по реестру платежей.
+          console.warn(
+            "[simulation.worker] списание пакета не прошло:",
+            err?.message,
+          );
+        }
+      }
 
       if (io) {
         io.of("/communication")

@@ -59,5 +59,8 @@ router.get("/autogen/state", requireAuthor, ctrl.autogenStateController);
 // Включить/выключить НОЧНУЮ генерацию. Переживает перезапуск сервера:
 // выключенная вечером генерация не должна ожить ночью после рестарта.
 router.post("/autogen/nightly", requireAuthor, ctrl.autogenToggleController);
+// Сколько кейсов за ночь на станцию. Тот же уровень доступа, что у
+// выключателя: это решение о расходе, а не о содержании кейса.
+router.post("/autogen/per-night", requireAuthor, ctrl.autogenPerNightController);
 
 export default router;

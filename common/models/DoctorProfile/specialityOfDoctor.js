@@ -199,12 +199,12 @@ export const SPECIALIZATIONS = [
 
   {
     name: "Ophthalmologist",
-    category: "Ophthalmology and ENT",
+    category: "Ophthalmology",
     subcategories: ["Retinologist"],
   },
   {
     name: "Otolaryngologist",
-    category: "Ophthalmology and ENT",
+    category: "ENT",
     subcategories: ["Audiologist", "Phoniatrist", "Rhinologist"],
   },
 
@@ -316,10 +316,10 @@ export const SPECIALIZATIONS = [
 
   {
     name: "Neuro-ophthalmologist",
-    category: "Ophthalmology and ENT",
+    category: "Ophthalmology",
     subcategories: [],
   },
-  { name: "Oculist", category: "Ophthalmology and ENT", subcategories: [] },
+  { name: "Oculist", category: "Ophthalmology", subcategories: [] },
 
   { name: "Cytologist", category: "Diagnostics", subcategories: [] },
   { name: "Biochemist", category: "Diagnostics", subcategories: [] },

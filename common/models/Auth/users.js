@@ -340,6 +340,16 @@ const userSchema = new mongoose.Schema(
       min: 0,
     },
 
+    // Докупленные AI-симуляции. Как и минуты рендера — остаток, а не
+    // подписка: пакет покупается разово и тратится по мере работы.
+    // Тратится ТОЛЬКО после того, как исчерпан месячный лимит тарифа, —
+    // см. modules/surgery/simulationQuota.service.js.
+    aiSimulationsAddon: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     // Когда заканчивается TRIAL для врачей.
     // У пациентов = null. У врачей при регистрации = Date.now() + 180 days.
     // После окончания resolveEffectivePlan вернёт "doctor_basic".
